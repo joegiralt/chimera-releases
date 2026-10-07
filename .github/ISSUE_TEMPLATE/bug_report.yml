@@ -1,0 +1,47 @@
+name: Bug report
+description: Something sounds, looks or behaves wrong on your Chimera.
+labels: ["bug"]
+body:
+  - type: input
+    id: version
+    attributes:
+      label: Firmware version and hash
+      description: SETTINGS > SYSTEM > ABOUT, the boot splash, or the `build` line of `chimera-usb.py status`.
+      placeholder: "0.1.0 a1b2c3d4"
+    validations:
+      required: true
+  - type: input
+    id: board
+    attributes:
+      label: Board revision
+      description: The REV cell on SETTINGS > SYSTEM > ABOUT.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: What you did
+      description: Steps, in order, from a fresh boot if you can.
+      placeholder: |
+        1. ...
+        2. ...
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What you expected, and what you heard or saw
+    validations:
+      required: true
+  - type: textarea
+    id: attachments
+    attributes:
+      label: Attachments
+      description: A recording, a photo, or a screenshot (`chimera-usb.py shot`). Drag files in here.
+  - type: checkboxes
+    id: known
+    attributes:
+      label: Known issues
+      options:
+        - label: I checked the known issues (KNOWN-ISSUES.md)
+          required: true
