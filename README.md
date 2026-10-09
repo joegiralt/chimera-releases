@@ -8,11 +8,11 @@ This repository holds **releases only**: firmware binaries, notes and the bug tr
 
 ## Install (when a release is out)
 
-1. Download `chimera.bin` and `chimera.bin.sha256` from the [Releases](../../releases) page and check the checksum.
+1. Download `chimera-<version>.bin` (or `chimera-<version>-orbit.bin`, with the ORBIT sequencer) and `SHA256SUMS` from the [Releases](../../releases) page, and check it: `sha256sum -c SHA256SUMS --ignore-missing`.
 2. Put the PreenFM3 into DFU mode (stock firmware: see the PreenFM3 documentation; Chimera: **SETTINGS › SYSTEM › OS UPGRADE**).
 3. Flash the firmware area only:
    ```
-   dfu-util -a0 -d 0483:df11 -D chimera.bin -s 0x8020000:leave
+   dfu-util -a0 -d 0483:df11 -D chimera-<version>.bin -s 0x8020000:leave
    ```
    - **Never** write to `0x08000000` (the bootloader) and **never** use `-a1` (option bytes).
 
