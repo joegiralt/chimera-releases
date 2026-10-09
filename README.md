@@ -27,6 +27,10 @@ dfu-util -a0 -d 0483:df11 -D p3_1_03.bin -s 0x8020000:leave
 
 Chimera only reads and writes inside a `/CHIMERA/` folder on the card. Your stock PreenFM3 patches, banks and settings are left alone.
 
+## TAPE sources
+
+TAPE plays sample sources from the card. To add the factory set, copy its `.SRC` files with a card reader into `/CHIMERA/TAPES/` on the card (create the folders if needed; keep the file names exactly as they are), then put the card back.
+
 ## Reporting bugs
 
 Please use **Issues › New issue › Bug report**. Tell us the firmware version (shown at boot), what you did, and what you heard or saw — a short recording or photo helps a lot. Check the known issues in the release notes first.
