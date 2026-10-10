@@ -4,6 +4,8 @@ Chimera is alternative firmware for the **PreenFM3** synthesizer: a multi-engine
 
 This repository holds **releases only**: firmware binaries, notes and the bug tracker for testers. The source is not public.
 
+New here? Read the [getting-started guide](GETTING-STARTED.md).
+
 > **Status: no release yet.** The first alpha is being prepared. Watch this repository (Watch › Custom › Releases) to be told when it lands.
 
 ## Install (when a release is out)
@@ -41,6 +43,8 @@ Later updates: OS UPGRADE, then the same line.
 
 Hold MENU alone, before power reaches the unit, and keep holding until the screen lights. If the bootloader screen still never appears, tell us on the tracker before trying anything else.
 
+Once Chimera boots, the [getting-started guide](GETTING-STARTED.md) takes it from there.
+
 ## Go back to the stock firmware
 
 From the same v1.03 zip, `p3_1_03.bin`. In Chimera, open **SETTINGS › SYSTEM › OS UPGRADE**, then:
@@ -55,7 +59,7 @@ Chimera only reads and writes inside a `/CHIMERA/` folder on the card. Your stoc
 
 ## TAPE sources
 
-TAPE plays sample sources from the card. To add the factory set, copy its `.SRC` files with a card reader into `/CHIMERA/TAPES/` on the card (create the folders if needed; keep the file names exactly as they are), then put the card back.
+TAPE plays sample sources from the card. The card is inside the case, so don't pull it: send the factory set's `.SRC` files over USB instead. See "Add TAPE sources" in the [getting-started guide](GETTING-STARTED.md#how-do-i).
 
 ## Reporting bugs
 
