@@ -39,6 +39,22 @@ This is the only step that writes the bootloader. **Don't cut the power during i
 
 Later updates: OS UPGRADE, then the same line.
 
+On Linux, if `dfu-util` says "Cannot open DFU device", run it with `sudo`, or allow your user once:
+```
+echo 'SUBSYSTEM=="usb", ATTRS{idVendor}=="0483", ATTRS{idProduct}=="df11", TAG+="uaccess"' | sudo tee /etc/udev/rules.d/70-stm32-dfu.rules && sudo udevadm control --reload
+```
+
+### Or flash from the SD card (no dfu-util)
+
+The bootloader can also install from the card, with only a USB cable and a file manager.
+
+1. Power off, hold **MENU only**, power on. Press **button 3 (SD card access)**. The card shows up on your computer as a USB drive.
+2. Copy `chimera-<version>.bin` to the card's top folder. Leave the `pfm3` and `CHIMERA` folders alone.
+3. Eject the drive on your computer, then press **MENU** on the unit to leave SD card access.
+4. Press **button 1 (flash from SD)**, choose the Chimera file with **−/+** if it asks, and confirm. The unit boots into Chimera.
+
+Remove the `.bin` from the card afterwards (SD card access again), so the next update can't pick an old file.
+
 ### If holding MENU does nothing
 
 Hold MENU alone, before power reaches the unit, and keep holding until the screen lights. If the bootloader screen still never appears, tell us on the tracker before trying anything else.
