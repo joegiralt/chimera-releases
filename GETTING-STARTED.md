@@ -42,12 +42,13 @@ Each cell shows its value as a number and a bar. Changes glide rather than jump,
 
 ## Parts and engines
 
-Each Part runs one engine. Load a Sound with the other engine and the Part's pages change to match.
+Each Part runs one engine. Load a Sound with another engine and the Part's pages change to match.
 
 | Engine | What it is | Pages |
 |---|---|---|
 | ALGO | six-operator phase-modulation synth | ALG (algorithm), WAVE and its per-operator sub-pages, DRV, FLT, AMP, MOD |
 | MODAL | struck, plucked and bowed resonators | EXC (exciter), RES (models STRING, BANK, BOWED, SYMP), FLT, AMP, MOD |
+| VA | two variable-wave oscillators combined by MODE (MIX, SYNC, RING, XOR, BITS), with a sub and STABILITY drift | VA (WAVE1, WAVE2, MODE, BLEND, SUB, STABILITY) and its OSC 1 / OSC 2 sub-pages (CRSE, FINE, SHAPE), DRV, FLT, AMP, MOD |
 
 TAPE (sample playback from the card) and DRUM are coming in a later release.
 
