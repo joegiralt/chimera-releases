@@ -98,7 +98,7 @@ Repeat for each file.
 
 ## Not working yet
 
-- MIDI control change and pitch bend messages are ignored; notes work.
+- Of the MIDI control changes only the sustain pedal (CC 64) works, and pitch bend (its range is BEND on each Part's PART page, default 2 semitones); the mod wheel, volume and every other CC are ignored until the per-Part MIDI map.
 - There is no MIDI learn or CC mapping page.
 - MIDI input is DIN only.
 - SETTINGS rows that are dimmed are not built yet; EDIT skips them.
