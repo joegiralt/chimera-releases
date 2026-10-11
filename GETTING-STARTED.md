@@ -76,7 +76,7 @@ TAPE machines: ONESHOT, LOOP, TRON, STRETCH, TRANSWAVE, SCRUB, PING-PONG. Each l
 
 **Change a Part's MIDI channel?** SETTINGS › MIDI CONFIG › CHANNELS (all six Parts on one page), or the CH cell on the mixer's PART page. Part MODE (MONO or POLY) and OUTPUT are on that PART page too, and OUTPUTS is under SETTINGS › AUDIO ROUTING.
 
-**Set a Part's volume and pan?** The LEVEL and PAN cells on that Part's mixer PART page. (MASTER › LVL and SETTINGS › AUDIO ROUTING › TUNING are not hooked up yet.)
+**Set a Part's volume and pan?** The LEVEL and PAN cells on that Part's mixer PART page. The whole unit's volume and balance are MASTER › LVL (VOL, PAN); SETTINGS › AUDIO ROUTING › TUNING shifts every engine's pitch, -100 to +100 cents around A4 = 440 Hz.
 
 **Change the screen theme?** SETTINGS › PERSONALIZE › THEME: BRIGHT, GAMMA, ACCENT, BLACK, HINTS.
 
