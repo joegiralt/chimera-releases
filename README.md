@@ -76,7 +76,7 @@ Each release has a `chimera-usb.py` file next to the firmware (also in `SHA256SU
 ```
 python3 chimera-usb.py status      # the unit's state; paste it into bug reports
 python3 chimera-usb.py shot        # saves a screenshot (PNG) in the current folder
-python3 chimera-usb.py put <file> <remote>   # TAPE sources and library Sounds onto the card
+python3 chimera-usb.py put <file> <remote>   # library Sounds onto the card
 python3 chimera-usb.py --help
 ```
 
@@ -86,9 +86,9 @@ On Linux, if it says "no access", add yourself to the `dialout` group (`sudo use
 
 Chimera only reads and writes inside a `/CHIMERA/` folder on the card. Your stock PreenFM3 patches, banks and settings are left alone.
 
-## TAPE sources
+## Coming soon
 
-TAPE plays sample sources from the card. The card is inside the case, so don't pull it: send the factory set's `.SRC` files over USB with the [console tool](#the-console-tool) instead. See "Add TAPE sources" in the [getting-started guide](GETTING-STARTED.md#how-do-i).
+TAPE, the sample engine, and DRUM are coming in a later release; their rows in the Sound browser say COMING SOON. The card is inside the case, so don't pull it: files go over USB with the [console tool](#the-console-tool).
 
 ## Reporting bugs
 

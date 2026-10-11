@@ -10,7 +10,7 @@ You will need a MIDI keyboard or sequencer on the **DIN MIDI input**. USB is the
 2. Press **B1**. That is Part 1. There are six Parts (B1 to B6), each a separate instrument.
 3. Play Part 1 from your keyboard. Out of the box, Part *n* listens on MIDI channel *n*, is POLY, and plays out of output pair P1.
 4. Turn the six encoders under the screen. Each one drives the cell above it.
-5. Choose what a Part is: hold **EDIT** and press **B1** to open the Sound browser. The top rows are INIT sounds, one per engine (ALGO, MODAL, TAPE, VA), above the pool's Sounds; each row names its engine. The list opens on Sound 1, so turn encoder 1 up for INIT, to the one you want, and press **EDIT** to load it.
+5. Choose what a Part is: hold **EDIT** and press **B1** to open the Sound browser. The top rows are INIT sounds, one per engine (ALGO, MODAL, VA), then TAPE and DRUM, which say COMING SOON and don't load yet, above the pool's Sounds; each row names its engine. The list opens on Sound 1, so turn encoder 1 up for INIT, to the one you want, and press **EDIT** to load it.
 
 ## Getting around
 
@@ -48,9 +48,8 @@ Each Part runs one engine. Load a Sound with the other engine and the Part's pag
 |---|---|---|
 | ALGO | six-operator phase-modulation synth | ALG (algorithm), WAVE and its per-operator sub-pages, DRV, FLT, AMP, MOD |
 | MODAL | struck, plucked and bowed resonators | EXC (exciter), RES (models STRING, BANK, BOWED, SYMP), FLT, AMP, MOD |
-| TAPE | plays sample sources from the card through a "machine" | SRC (source and window), DECK (machine, tape, age), DRV, FLT, AMP, MOD |
 
-TAPE machines: ONESHOT, LOOP, TRON, STRETCH, TRANSWAVE, SCRUB, PING-PONG. Each labels its own parameters.
+TAPE (sample playback from the card) and DRUM are coming in a later release.
 
 **Filter** (FLT page, KIND): CLEAN, 2040, DIRTY, LADDER. The panel and its labels follow the kind. The FMD sub-page holds the modulation inputs.
 
@@ -80,15 +79,9 @@ TAPE machines: ONESHOT, LOOP, TRON, STRETCH, TRANSWAVE, SCRUB, PING-PONG. Each l
 
 **Change the screen theme?** SETTINGS › PERSONALIZE › THEME: BRIGHT, GAMMA, ACCENT, BLACK, HINTS.
 
-**Add TAPE sources?** The card is inside the case, so use the USB console. Download `chimera-usb.py` from the release (Python 3 is all it needs; see the [README](README.md#the-console-tool)). Connect USB, then:
-```
-python3 chimera-usb.py put <file>.SRC /CHIMERA/TAPES/
-```
-Repeat for each file.
+**Add a library Sound?** The card is inside the case, so use the USB console: download `chimera-usb.py` from the release (Python 3 is all it needs; see the [README](README.md#the-console-tool)), connect USB, then `python3 chimera-usb.py put <file> /CHIMERA/SOUNDS/` (it takes the next free number; `python3 chimera-usb.py ls sounds` lists what is there).
 
-**Add a library Sound?** Same tool: `python3 chimera-usb.py put <file> /CHIMERA/SOUNDS/` (it takes the next free number; `python3 chimera-usb.py ls sounds` lists what is there).
-
-**Report a bug with details?** Run `python3 chimera-usb.py status` and paste the output, and `python3 chimera-usb.py shot` to save a screenshot of the unit; attach both to the bug report. If the console is not there after a cold power-on, that is a [known issue](KNOWN-ISSUES.md); a trip through SETTINGS › SYSTEM › OS UPGRADE brings it back. Then pick the source on a TAPE Part's SRC page; a card source that fits loads with **MIX + PLUS** (the hint shows its size).
+**Report a bug with details?** Run `python3 chimera-usb.py status` and paste the output, and `python3 chimera-usb.py shot` to save a screenshot of the unit; attach both to the bug report. If the console is not there after a cold power-on, that is a [known issue](KNOWN-ISSUES.md); a trip through SETTINGS › SYSTEM › OS UPGRADE brings it back.
 
 **Use ORBIT?** (builds with ORBIT only.) Hold **SEQ**. ORBIT is a ring sequencer: a set of rings (chords and steps). B1 to B5 select a ring; **hold** one to jump to the Part that ring plays. **MIX + B1 to B5** mutes a ring. **B6** plays and stops. MENU leaves. Pages: ORB, RHYTHM (with VOICE and NOTES), CHRD, SCN (scenes). Scenes have their own save under SETTINGS › ORBIT.
 
