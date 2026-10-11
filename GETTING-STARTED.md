@@ -10,7 +10,7 @@ You will need a MIDI keyboard or sequencer on the **DIN MIDI input**. USB is the
 2. Press **B1**. That is Part 1. There are six Parts (B1 to B6), each a separate instrument.
 3. Play Part 1 from your keyboard. Out of the box, Part *n* listens on MIDI channel *n*, is POLY, and plays out of output pair P1.
 4. Turn the six encoders under the screen. Each one drives the cell above it.
-5. Choose what a Part is: hold **EDIT** and press **B1** to open the Sound browser. The last three rows are INIT sounds, one per engine (ALGO, MODAL, TAPE). Turn encoder 1 to the one you want and press **EDIT** to load it.
+5. Choose what a Part is: hold **EDIT** and press **B1** to open the Sound browser. The top rows are INIT sounds, one per engine (ALGO, MODAL, TAPE, VA), above the pool's Sounds; each row names its engine. The list opens on Sound 1, so turn encoder 1 up for INIT, to the one you want, and press **EDIT** to load it.
 
 ## Getting around
 
