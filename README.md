@@ -53,17 +53,30 @@ dfu-util -a0 -d 0483:df11 -D p3_1_03.bin -s 0x8020000:leave
 ```
 Keep bootloader 1.09; the stock firmware runs on it. To return to Chimera, use the stock route into DFU above.
 
+## The console tool
+
+Each release has a `chimera-usb.py` file next to the firmware (also in `SHA256SUMS`). It needs only Python 3 on Linux or macOS; there is nothing to install. Connect the unit by USB, then run it from the folder you saved it in:
+
+```
+python3 chimera-usb.py status      # the unit's state; paste it into bug reports
+python3 chimera-usb.py shot        # saves a screenshot (PNG) in the current folder
+python3 chimera-usb.py put <file> <remote>   # TAPE sources and library Sounds onto the card
+python3 chimera-usb.py --help
+```
+
+On Linux, if it says "no access", add yourself to the `dialout` group (`sudo usermod -aG dialout $USER`, then log out and in), or run the one-line rule it prints. On macOS the port is `/dev/cu.usbmodem*`, found automatically; to pick one, `CHIMERA_USB=/dev/cu.usbmodemXXXX python3 chimera-usb.py status`.
+
 ## Your SD card
 
 Chimera only reads and writes inside a `/CHIMERA/` folder on the card. Your stock PreenFM3 patches, banks and settings are left alone.
 
 ## TAPE sources
 
-TAPE plays sample sources from the card. The card is inside the case, so don't pull it: send the factory set's `.SRC` files over USB instead. See "Add TAPE sources" in the [getting-started guide](GETTING-STARTED.md#how-do-i).
+TAPE plays sample sources from the card. The card is inside the case, so don't pull it: send the factory set's `.SRC` files over USB with the [console tool](#the-console-tool) instead. See "Add TAPE sources" in the [getting-started guide](GETTING-STARTED.md#how-do-i).
 
 ## Reporting bugs
 
-Please use **Issues › New issue › Bug report**. Tell us the firmware version (shown at boot), what you did, and what you heard or saw — a short recording or photo helps a lot. Check the known issues in the release notes first.
+Please use **Issues › New issue › Bug report**. Tell us the firmware version (shown at boot), what you did, and what you heard or saw — a short recording or photo helps a lot. Attach the output of `python3 chimera-usb.py status` and, for anything on screen, a `python3 chimera-usb.py shot`. Check the known issues in the release notes first.
 
 ## Licence
 

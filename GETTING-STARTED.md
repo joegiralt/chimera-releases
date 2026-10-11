@@ -80,11 +80,15 @@ TAPE machines: ONESHOT, LOOP, TRON, STRETCH, TRANSWAVE, SCRUB, PING-PONG. Each l
 
 **Change the screen theme?** SETTINGS › PERSONALIZE › THEME: BRIGHT, GAMMA, ACCENT, BLACK, HINTS.
 
-**Add TAPE sources?** The card is inside the case, so use the USB console. Connect USB, then:
+**Add TAPE sources?** The card is inside the case, so use the USB console. Download `chimera-usb.py` from the release (Python 3 is all it needs; see the [README](README.md#the-console-tool)). Connect USB, then:
 ```
 python3 chimera-usb.py put <file>.SRC /CHIMERA/TAPES/
 ```
-Repeat for each file. If the console is not there after a cold power-on, that is a [known issue](KNOWN-ISSUES.md); a trip through SETTINGS › SYSTEM › OS UPGRADE brings it back. Then pick the source on a TAPE Part's SRC page; a card source that fits loads with **MIX + PLUS** (the hint shows its size).
+Repeat for each file.
+
+**Add a library Sound?** Same tool: `python3 chimera-usb.py put <file> /CHIMERA/SOUNDS/` (it takes the next free number; `python3 chimera-usb.py ls sounds` lists what is there).
+
+**Report a bug with details?** Run `python3 chimera-usb.py status` and paste the output, and `python3 chimera-usb.py shot` to save a screenshot of the unit; attach both to the bug report. If the console is not there after a cold power-on, that is a [known issue](KNOWN-ISSUES.md); a trip through SETTINGS › SYSTEM › OS UPGRADE brings it back. Then pick the source on a TAPE Part's SRC page; a card source that fits loads with **MIX + PLUS** (the hint shows its size).
 
 **Use ORBIT?** (builds with ORBIT only.) Hold **SEQ**. ORBIT is a ring sequencer: a set of rings (chords and steps). B1 to B5 select a ring; **hold** one to jump to the Part that ring plays. **MIX + B1 to B5** mutes a ring. **B6** plays and stops. MENU leaves. Pages: ORB, RHYTHM (with VOICE and NOTES), CHRD, SCN (scenes). Scenes have their own save under SETTINGS › ORBIT.
 
