@@ -4,7 +4,7 @@ Chimera is alternative firmware for the **PreenFM3** synthesizer: a multi-engine
 
 This repository holds **releases only**: firmware binaries, notes and the bug tracker for testers. The source is not public.
 
-New here? Read the [getting-started guide](GETTING-STARTED.md).
+New here? Read the [getting-started guide](GETTING-STARTED.md), then the [quick start](QUICK-START.md) for getting around and the [FAQ](FAQ.md) for "how do I…".
 
 > **Status: no release yet.** The first alpha is being prepared. Watch this repository (Watch › Custom › Releases) to be told when it lands.
 
