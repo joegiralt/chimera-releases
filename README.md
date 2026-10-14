@@ -20,7 +20,7 @@ Power the unit off. Hold **MENU**, and keep holding it while you power on, until
 
 ### Step 2: install Chimera
 
-Download `chimera-<version>.bin` from [Releases](../../releases). Pick `chimera-<version>-orbit.bin` instead if you want the ORBIT sequencer. Then use either way below.
+Download `chimera-<version>.bin` from [Releases](../../releases) (one file; the ORBIT sequencer is included). Then use either way below.
 
 **With a USB cable and `dfu-util`** (one command):
 

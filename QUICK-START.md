@@ -51,7 +51,7 @@ The screenshots are rendered by the firmware's own screen code. Your values will
 | MIX + MINUS | On a route: delete it. In the browser: clear the slot |
 | MENU | Open SETTINGS; inside, step back a level |
 | hold MENU | Quick-save the project to the card (a new project asks for a name first) |
-| hold SEQ | ORBIT, the ring sequencer (ORBIT build only) |
+| hold SEQ | ORBIT, the ring sequencer |
 
 ## 4. The screen
 
@@ -59,7 +59,7 @@ The screenshots are rendered by the firmware's own screen code. Your values will
 
 1. **Part and place.** `PART 1 · SOUND` is Part 1's sound pages; `PART 1 · MIX` is its mixer. If the Part plays out of output pair 2 or 3, an `OUT P2` or `OUT P3` warning shows on the right of this line.
 2. **Page name.** The page you are on (ALGORITHM).
-3. **Sounding dot.** Lit while the instrument is making sound. In ORBIT builds a second dot to its left pulses ORBIT's beat while it runs.
+3. **Sounding dot.** Lit while the instrument is making sound. A second dot to its left pulses ORBIT's beat while it runs.
 4. **Focus band: label.** The parameter you last touched or turned.
 5. **Focus band: value**, large.
 6. **Focus band: glyph.** A picture of the value. It depends on the parameter: an arc for most knobs (filled from 12 o'clock when the value is bipolar), a crossfader for blends (MORPH, DRV MIX), a level bar for levels and sends, a switch for on/off, a wave scope for a wave choice, a staff note for TRANSPOSE, and animated pictures for the effects (the chorus braid, the delay rings, the reverb cube). Word choices (MODEL, MODE, STEAL) have no glyph: the word takes the band.
@@ -161,7 +161,7 @@ MENU opens it. EDIT opens a row (or runs it), SEQ or MENU goes back, MINUS / PLU
 5. The loaded project's name, then its state (`SAVED`, `* MODIFIED`).
 6. What the keys do here.
 
-The top list: PROJECT, PART, ORBIT, MIDI CONFIG, SYSEX DUMP (later), AUDIO ROUTING, PERSONALIZE, SYSTEM. Without ORBIT, the ORBIT row is dimmed.
+The top list: PROJECT, PART, ORBIT, MIDI CONFIG, SYSEX DUMP (later), AUDIO ROUTING, PERSONALIZE, SYSTEM.
 
 ## 11. ORBIT, the ring sequencer
 

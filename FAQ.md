@@ -141,7 +141,7 @@ They say LATER and aren't built yet; EDIT skips them.
 It's on the boot splash, and at SETTINGS › SYSTEM › ABOUT.
 
 **Which file do I flash?**
-`chimera-<version>.bin` is the synth. `chimera-<version>-orbit.bin` adds ORBIT, the ring sequencer (hold SEQ). Both are on the [Releases](../../releases) page.
+There is one: `chimera-<version>.bin`, on the [Releases](../../releases) page. It includes ORBIT, the ring sequencer (hold SEQ).
 
 **How do I update the firmware, or go back to stock?**
 SETTINGS › SYSTEM › OS UPGRADE puts the unit in DFU mode; then follow the [README](README.md#2-flash-chimera). To return to the stock firmware: [Go back to the stock firmware](README.md#go-back-to-the-stock-firmware).
