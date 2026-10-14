@@ -25,7 +25,7 @@ In the browser's PROJECT tab, select it and press **MIX + MINUS**. It asks befor
 There is no FACTORY tab yet. Every new project starts with the factory Sounds in its PROJECT tab: TX BASS, TX EPIANO, TX BRASS, TX BELL, SAW LEAD, SQR BASS, MORPH PAD, MORPH KEYS, and the formant Sounds CHOIR, TALK BASS, BREATH and VOX. Parts 1 to 5 start on some of them. To get them back, start a new project: SETTINGS › PROJECT › LOAD PROJECT › + CREATE NEW.
 
 **How do I add Sounds from my computer?**
-The card is inside the case, so use the USB console: `python3 chimera-usb.py put <file> /CHIMERA/SOUNDS/`. They show up on the LIBRARY tab. See [the console tool](README.md#the-console-tool).
+Use SD card access (hold MENU at power-on, then button 3) and copy the Sound files into the card's `CHIMERA/SOUNDS` folder. They show up on the LIBRARY tab.
 
 **How do I rename a Sound, or reload it from the project?**
 SETTINGS › PART: RENAME, CLEAR, SAVE TO PROJ, RELOAD FROM PROJ, LIVE SNAP, SAVE TO LIBRARY.
@@ -147,7 +147,7 @@ There is one: `chimera-<version>.bin`, on the [Releases](../../releases) page. I
 SETTINGS › SYSTEM › OS UPGRADE puts the unit in DFU mode; then follow the [README](README.md#2-flash-chimera). To return to the stock firmware: [Go back to the stock firmware](README.md#go-back-to-the-stock-firmware).
 
 **How do I report a bug?**
-Check [KNOWN-ISSUES.md](KNOWN-ISSUES.md) first. Then **Issues › New issue › Bug report**, with the version, what you did and what you heard or saw. Attach the output of `python3 chimera-usb.py status` and, for anything on screen, a `python3 chimera-usb.py shot`. See [the console tool](README.md#the-console-tool) and [reporting bugs](README.md#reporting-bugs).
+Check [KNOWN-ISSUES.md](KNOWN-ISSUES.md) first. Then **Issues › New issue › Bug report**, with the version, what you did and what you heard or saw. A photo, screenshot or short recording helps a lot. See [reporting bugs](README.md#reporting-bugs).
 
 **The console tool can't find the unit.**
 After a cold power-on the USB console may not come up; a pass through SETTINGS › SYSTEM › OS UPGRADE brings it back. It's a [known issue](KNOWN-ISSUES.md).

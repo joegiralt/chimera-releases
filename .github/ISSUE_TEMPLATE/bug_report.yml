@@ -71,7 +71,7 @@ body:
     id: attachments
     attributes:
       label: Attachments (optional)
-      description: Drag in a recording, photo or the project file. If you use the console tool, paste `python3 chimera-usb.py status` and attach a `python3 chimera-usb.py shot` screenshot.
+      description: Drag in a recording, a photo of the screen, or the project file.
   - type: checkboxes
     id: known
     attributes:
