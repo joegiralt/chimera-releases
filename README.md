@@ -6,60 +6,64 @@ This repository holds **releases only**: firmware binaries, notes and the bug tr
 
 New here? Read the [getting-started guide](GETTING-STARTED.md), then the [quick start](QUICK-START.md) for getting around and the [FAQ](FAQ.md) for "how do I…".
 
-> **Status: no release yet.** The first alpha is being prepared. Watch this repository (Watch › Custom › Releases) to be told when it lands.
+> **Status: alpha 0.1.0.** Download it from [Releases](../../releases). Watch this repository (Watch › Custom › Releases) to hear about the next one.
 
-## Install (when a release is out)
+## Install
 
-You need [`dfu-util`](https://dfu-util.sourceforge.net/) and a USB cable. Chimera needs the PreenFM3's **stock bootloader 1.09**, the newest; it is the only one we test against. Everything below is done from the front panel, without opening the case, and was tested on a PCB v1 unit.
+### Step 1: check your bootloader (30 seconds)
 
-### DFU mode
+Power the unit off. Hold **MENU**, and keep holding it while you power on, until the screen lights. The bootloader screen shows its version at the top.
 
-- **From the stock firmware:** power off, hold **MENU only**, power on. The bootloader screen shows its version (`pfm3 BootLoader 1.09`). Press **button 2 (DFU Mode)**.
-- **From Chimera:** **SETTINGS › SYSTEM › OS UPGRADE**.
+- **`pfm3 BootLoader 1.09`:** you're ready. Go to step 2.
+- **An older version:** update the bootloader first, once ([below](#if-your-bootloader-is-older-than-109)), then come back to step 2.
+- **No bootloader screen:** see [if holding MENU does nothing](#if-holding-menu-does-nothing).
 
-Check with `lsusb` (or System Information on macOS): you should see `0483:df11 STM Device in DFU Mode`.
+### Step 2: install Chimera
 
-### 1. Update the bootloader to 1.09 (once, if the screen shows an older version)
+Download `chimera-<version>.bin` from [Releases](../../releases). Pick `chimera-<version>-orbit.bin` instead if you want the ORBIT sequencer. Then use either way below.
 
-Download the stock PreenFM3 v1.03 release zip; it holds `p3_boot_1_09.bin`. Enter DFU mode, then:
-```
-dfu-util -a0 -d 0483:df11 -D p3_boot_1_09.bin -s 0x08000000
-```
-This is the only step that writes the bootloader. **Don't cut the power during its two seconds.** If it is interrupted, the unit stays recoverable through the chip's own DFU mode (BOOT0 jumper), but that does mean opening the case.
+**With a USB cable and `dfu-util`** (one command):
 
-### 2. Flash Chimera
-
-1. Download `chimera-<version>.bin` (or `chimera-<version>-orbit.bin`, with the ORBIT sequencer) and `SHA256SUMS` from the [Releases](../../releases) page, and check it: `sha256sum -c SHA256SUMS --ignore-missing`.
-2. Enter DFU mode, then flash the firmware area only:
+1. On the bootloader screen from step 1, press **button 2 (DFU Mode)**.
+2. Run:
    ```
    dfu-util -a0 -d 0483:df11 -D chimera-<version>.bin -s 0x8020000:leave
    ```
-   - "File downloaded successfully" followed by `Error during download get_status` is normal: the unit has already left DFU and is booting.
-   - Never write the Chimera file to `0x08000000`, and **never** use `-a1` (option bytes).
+   "File downloaded successfully" followed by `Error during download get_status` is normal: the unit has already left DFU and is booting into Chimera.
 
-Later updates: OS UPGRADE, then the same line.
+**From the SD card** (no `dfu-util`, just a file manager):
 
-On Linux, if `dfu-util` says "Cannot open DFU device", run it with `sudo`, or allow your user once:
-```
-echo 'SUBSYSTEM=="usb", ATTRS{idVendor}=="0483", ATTRS{idProduct}=="df11", TAG+="uaccess"' | sudo tee /etc/udev/rules.d/70-stm32-dfu.rules && sudo udevadm control --reload
-```
-
-### Or flash from the SD card (no dfu-util)
-
-The bootloader can also install from the card, with only a USB cable and a file manager.
-
-1. Power off, hold **MENU only**, power on. Press **button 3 (SD card access)**. The card shows up on your computer as a USB drive.
+1. On the bootloader screen, press **button 3 (SD card access)**. The card shows up on your computer as a USB drive.
 2. Copy `chimera-<version>.bin` to the card's top folder. Leave the `pfm3` and `CHIMERA` folders alone.
-3. Eject the drive on your computer, then press **MENU** on the unit to leave SD card access.
+3. Eject the drive, then press **MENU** on the unit to leave SD card access.
 4. Press **button 1 (flash from SD)**, choose the Chimera file with **−/+** if it asks, and confirm. The unit boots into Chimera.
+5. Next time you're in SD card access, delete the `.bin` so a later update can't pick an old file.
 
-Remove the `.bin` from the card afterwards (SD card access again), so the next update can't pick an old file.
+**Then add the factory Sounds** (56 Sounds and 4 demo projects): the release notes show how, from `factory-v1.zip`.
+
+That's it. The [getting-started guide](GETTING-STARTED.md) takes it from there. For later updates, open **SETTINGS › SYSTEM › OS UPGRADE** in Chimera (it goes straight to DFU), then run the same `dfu-util` line.
+
+### Good to know
+
+- Check the download if you like: `sha256sum -c SHA256SUMS --ignore-missing`.
+- Only ever flash Chimera to `0x8020000`. Never write it to `0x08000000`, and **never** use `-a1` (option bytes).
+- On Linux, if `dfu-util` says "Cannot open DFU device", run it with `sudo`, or allow your user once:
+  ```
+  echo 'SUBSYSTEM=="usb", ATTRS{idVendor}=="0483", ATTRS{idProduct}=="df11", TAG+="uaccess"' | sudo tee /etc/udev/rules.d/70-stm32-dfu.rules && sudo udevadm control --reload
+  ```
+- `lsusb` (or System Information on macOS) shows `0483:df11 STM Device in DFU Mode` while the unit is in DFU.
+
+### If your bootloader is older than 1.09
+
+Do this once. Download the stock PreenFM3 v1.03 release zip; it holds `p3_boot_1_09.bin`. On the bootloader screen, press **button 2 (DFU Mode)**, then:
+```
+dfu-util -a0 -d 0483:df11 -D p3_boot_1_09.bin -s 0x08000000
+```
+This is the only step that writes the bootloader. **Don't cut the power during its two seconds.** If it is interrupted, the unit can still be recovered through the chip's own DFU mode (the BOOT0 jumper), but that means opening the case. Then go back to step 1 and check it now says 1.09.
 
 ### If holding MENU does nothing
 
 Hold MENU alone, before power reaches the unit, and keep holding until the screen lights. If the bootloader screen still never appears, tell us on the tracker before trying anything else.
-
-Once Chimera boots, the [getting-started guide](GETTING-STARTED.md) takes it from there.
 
 ## Go back to the stock firmware
 
