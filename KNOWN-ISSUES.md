@@ -2,11 +2,10 @@
 
 Check here before filing. Known and being worked on.
 
-- A filter turned up to self-oscillate (RES near max) keeps ringing after you let go of the key, on ALGO and MODAL
-- A power cut in the middle of a save can leave the card's free space smaller (the old file still loads); the boot sweep is the fix in progress
-- The USB console does not come up after a cold power-on; the synth plays normally, and a pass through OS UPGRADE brings it back until the next power cut
-- If the audio DMA for output pairs 2 or 3 hits a transfer error, that pair goes silent until you restart
-- ALGO INIT can peak past full scale (clip) through a loud reverb send or at MORPH B
+- The ROOM reverb can leave a faint high-pitched ring in its tail after a sharp hit such as a snare
+- Under the heaviest possible load (every voice of every Part playing, all effects on), a big chord landing at once can cause a single tiny click
+- PreenFM3s with the newer "1.6 - 100" main board are detected, and their knobs and buttons should work, but this hasn't been tried on that board yet. If yours is one, please tell us how it goes (SETTINGS › SYSTEM › ABOUT shows the board next to the chip revision)
+- Push encoders (SETTINGS › SYSTEM › PUSH ENCODERS): push to jump a value to its default, push and turn for fine steps. Untested on push-encoder hardware so far; reports welcome
 
 ## Not a bug: hum when powered over USB
 
