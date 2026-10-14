@@ -2,46 +2,80 @@ name: Bug report
 description: Something sounds, looks or behaves wrong on your Chimera.
 labels: ["bug"]
 body:
+  - type: markdown
+    attributes:
+      value: Thanks for testing. The goal is to let us make it happen on our own unit, so short and specific beats long.
   - type: input
     id: version
     attributes:
-      label: Firmware version and hash
-      description: SETTINGS > SYSTEM > ABOUT, the boot splash, or the `build` line of `chimera-usb.py status`.
+      label: Which build are you on?
+      description: SETTINGS › SYSTEM › ABOUT, or the boot splash.
       placeholder: "0.1.0 a1b2c3d4"
     validations:
       required: true
   - type: input
     id: board
     attributes:
-      label: Board revision
-      description: The REV cell on SETTINGS > SYSTEM > ABOUT.
+      label: Board
+      description: The CHIP cell on SETTINGS › SYSTEM › ABOUT, e.g. "V 176".
+    validations:
+      required: true
+  - type: textarea
+    id: doing
+    attributes:
+      label: What were you doing when you first noticed it?
+      description: Which Part and engine, which Sound or project, what you were playing or turning.
+      placeholder: Playing chords on Part 2 (VA, SLOW TIDE) while sweeping the filter cutoff.
     validations:
       required: true
   - type: textarea
     id: steps
     attributes:
-      label: What you did
-      description: Steps, in order, from a fresh boot if you can.
+      label: How can we make it happen?
+      description: Steps in order, from a fresh boot if you can. If you can't make it happen again, say so.
       placeholder: |
-        1. ...
-        2. ...
+        1. Load SLOW TIDE on Part 2
+        2. Hold a chord
+        3. Turn CUTOFF quickly from min to max
     validations:
       required: true
   - type: textarea
     id: expected
     attributes:
-      label: What you expected, and what you heard or saw
+      label: What did you expect to happen?
     validations:
       required: true
   - type: textarea
+    id: actual
+    attributes:
+      label: What actually happened?
+      description: What you heard or saw. A recording or phone video helps a lot.
+    validations:
+      required: true
+  - type: dropdown
+    id: often
+    attributes:
+      label: How often?
+      options:
+        - Every time
+        - Sometimes
+        - Once so far
+    validations:
+      required: true
+  - type: textarea
+    id: setup
+    attributes:
+      label: Your setup (optional)
+      description: MIDI controller or sequencer, how it's powered (9 V supply or USB), anything else connected.
+  - type: textarea
     id: attachments
     attributes:
-      label: Attachments
-      description: Paste the output of `python3 chimera-usb.py status` (from the release's console tool), and attach a screenshot from `python3 chimera-usb.py shot`, plus a recording or photo if it helps. Drag files in here.
+      label: Attachments (optional)
+      description: Drag in a recording, photo or the project file. If you use the console tool, paste `python3 chimera-usb.py status` and attach a `python3 chimera-usb.py shot` screenshot.
   - type: checkboxes
     id: known
     attributes:
       label: Known issues
       options:
-        - label: I checked the known issues (KNOWN-ISSUES.md)
+        - label: I checked KNOWN-ISSUES.md and this isn't on it
           required: true
