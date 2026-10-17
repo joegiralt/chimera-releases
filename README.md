@@ -69,10 +69,12 @@ You don't have to remove the SD card from your PreenFM3.
 5. Open the drive and copy the Chimera `.bin` file into its main folder (not inside another folder).
 6. Safely eject the drive from your computer.
 7. Press **MENU** on the PreenFM3 to leave SD card access.
-8. Press **button 1 (flash from SD)**.
-9. Select the Chimera file if asked, and confirm.
+8. Under **Firmware to flash**, press **−** and **+** to step through the files on the card until it shows the Chimera file. Its name appears shortened, for example `CHIMER~1.BIN`.
+9. Press **button 1 (flash)**.
 
-**On a Mac:** macOS adds a small hidden file next to anything you copy to the card. The bootloader lists it as `_CHIME~1.BIN` (with a leading underscore). Don't pick that one: it isn't firmware, and flashing it leaves a black screen. Pick `CHIMER~1.BIN`. To remove the hidden file, run `dot_clean /Volumes/<card name>` in Terminal before ejecting.
+> **Make sure you've picked the Chimera file before you press button 1.** The bootloader shows every `.bin` on the card, one at a time, and the Chimera file may not be the first. Step through them all with − / + and check the name. This applies on every computer: Mac, Windows and Linux.
+
+**On a Mac:** macOS also adds a small hidden file next to anything you copy. The bootloader lists it as `_CHIME~1.BIN`, with a leading underscore. It isn't firmware, and flashing it leaves a black screen. You can leave it on the card: just step past it to `CHIMER~1.BIN`.
 
 **Black screen after flashing?** The bootloader is never touched, so hold MENU while powering on and flash again with the right file.
 
