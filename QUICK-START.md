@@ -75,7 +75,7 @@ The sub-pages of a page sit in a row at the bottom of the screen. The diagram ab
 12. **Chain map: the other pages** of the chain, MINUS / PLUS away.
 13. **Sub-pages** sit in a row under the map. The current one is underlined. `<` and `>` at the ends mean there are more.
 
-Some pages (FILTER, MASTER, the MOD matrix, ORBIT's ORB) give the whole band to a picture and have no focus band. On FILTER the picture is drawn from the filter's real response, and the CUTOFF number is the value you set. Modulation shows as a faint mark beside it. <!-- 0.2.0 final pass: re-shoot a FILTER shot and add it here once #624 and #626 are merged. -->
+Some pages (FILTER, MASTER, the envelopes and LFO speeds, ORBIT's ORB) give the whole band to a picture and have no focus band. On FILTER the picture is drawn from the filter's real response, and the CUTOFF number is the value you set. Modulation shows as a faint mark beside it. <!-- 0.2.0 final pass: re-shoot a FILTER shot and add it here once #624 and #626 are merged. -->
 
 ## 5. Sub-pages and hints
 
