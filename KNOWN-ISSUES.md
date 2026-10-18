@@ -6,6 +6,7 @@ Check here before filing. Known and being worked on.
 - Under the heaviest possible load (every voice of every Part playing, all effects on), a big chord landing at once can cause a single tiny click
 - PreenFM3s with the newer "1.6 - 100" main board are detected, and their knobs and buttons should work, but this hasn't been tried on that board yet. If yours is one, please tell us how it goes (SETTINGS › SYSTEM › ABOUT shows the board next to the chip revision)
 - Push encoders (SETTINGS › SYSTEM › PUSH ENCODERS): push to jump a value to its default, push and turn for fine steps. Untested on push-encoder hardware so far; reports welcome
+<!-- 0.2.0 final pass: add here only once #624 is merged: the filter picture for the NOTCH2 type is still a sketch, not the real response (#631). Also re-check every item above against 0.2.0, and add any known issue of TAPE (#476), FX in the filter (#614) and the new VA modes (#601-605, #613). -->
 
 ## Not a bug: hum when powered over USB
 
