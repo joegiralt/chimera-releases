@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Known issues · Chimera</title>
+<meta name="description" content="Chimera: alternative firmware for the PreenFM3 synthesizer. New engines, effects and sequencing.">
+<link rel="stylesheet" href="site.css">
+</head><body>
+<header class="top"><div class="wrap bar">
+<a class="brand" href="index.html">CHIMERA</a>
+<nav><a href="install.html">Install</a><a href="quick-start.html">Quick start</a><a href="getting-started.html">Getting started</a><a href="faq.html">FAQ</a><a href="known-issues.html" aria-current="page">Known issues</a><a href="changelog.html">Changelog</a></nav>
+<a class="btn small" href="https://github.com/joegiralt/chimera-releases/releases/latest">Download</a>
+</div></header>
+<main class="doc">
+<div class="wrap prose"><h1 id="known-issues">Known issues</h1>
+<p>Check here before filing. Known and being worked on.</p>
+<ul><li>The ROOM reverb can leave a faint high-pitched ring in its tail after a sharp hit such as a snare</li><li>Under the heaviest possible load (every voice of every Part playing, all effects on), a big chord landing at once can cause a single tiny click</li><li>PreenFM3s with the newer "1.6 - 100" main board are detected, and their knobs and buttons should work, but this hasn't been tried on that board yet. If yours is one, please tell us how it goes (SETTINGS › SYSTEM › ABOUT shows the board next to the chip revision)</li><li>Push encoders (SETTINGS › SYSTEM › PUSH ENCODERS): push to jump a value to its default, push and turn for fine steps. Untested on push-encoder hardware so far; reports welcome</li></ul>
+<h2 id="not-a-bug-hum-when-powered-over-usb">Not a bug: hum when powered over USB</h2>
+<p>If you hear a faint buzz or whine with the PreenFM3 powered over USB from the same computer your audio interface is connected to, that's a ground loop between the two. Power the PreenFM3 from its 9 V DC supply (or use a USB isolator) and it goes away.</p></div>
+</main>
+<footer><div class="wrap">Chimera is &copy; 2026 Joe Giralt. Alpha firmware for the PreenFM3, released for testers.
+ <a href="https://github.com/joegiralt/chimera-releases/releases">Releases</a> &middot; <a href="https://github.com/joegiralt/chimera-releases/issues">Issues</a>
+ &middot; <a href="https://github.com/joegiralt/chimera-releases/blob/main/LICENSE.md">Tester licence</a></div></footer>
+</body></html>

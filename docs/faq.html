@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>FAQ · Chimera</title>
+<meta name="description" content="Chimera: alternative firmware for the PreenFM3 synthesizer. New engines, effects and sequencing.">
+<link rel="stylesheet" href="site.css">
+</head><body>
+<header class="top"><div class="wrap bar">
+<a class="brand" href="index.html">CHIMERA</a>
+<nav><a href="install.html">Install</a><a href="quick-start.html">Quick start</a><a href="getting-started.html">Getting started</a><a href="faq.html" aria-current="page">FAQ</a><a href="known-issues.html">Known issues</a><a href="changelog.html">Changelog</a></nav>
+<a class="btn small" href="https://github.com/joegiralt/chimera-releases/releases/latest">Download</a>
+</div></header>
+<main class="doc">
+<div class="wrap prose"><h1 id="chimera-faq">Chimera FAQ</h1>
+<p>Short answers for alpha testers. New to the controls? Read the <a href="quick-start.html">quick start</a> first. Labels below are as they appear on screen.</p>
+<p><strong>Contents:</strong> <a href="#sounds">Sounds</a> · <a href="#projects">Projects</a> · <a href="#modulation">Modulation</a> · <a href="#engines">Engines</a> · <a href="#midi-and-playing">MIDI and playing</a> · <a href="#effects">Effects</a> · <a href="#the-screen">The screen</a> · <a href="#firmware-and-bugs">Firmware and bugs</a></p>
+<h2 id="sounds">Sounds</h2>
+<p><strong>How do I load a Sound?</strong> Hold <strong>EDIT</strong> and press <strong>B<em>n</strong></em> to open the Sound browser for Part <em>n</em>. Turn <strong>encoder 1</strong> to the Sound and press <strong>EDIT</strong>. Turn <strong>encoder 2</strong> to switch between the PROJECT tab (the project's own Sounds), the LIBRARY tab (Sounds saved on the card) and the FACTORY tab (the factory Sounds). If the Part has edits you haven't saved, it asks first.</p>
+<p><strong>How do I start a new Sound from INIT?</strong> In the Sound browser, turn encoder 1 up past Sound 01 to the INIT rows (INIT ALGO, INIT MODAL, INIT VA) and press <strong>EDIT</strong>. Or, to reset the Part to INIT of its engine: SETTINGS › PART › CLEAR.</p>
+<p><strong>How do I save a Sound?</strong> In the browser's PROJECT tab, press <strong>MIX + EDIT</strong>: it saves the Part's Sound over its own slot, or to a new slot if it has none. The hint shows how much memory it takes. SETTINGS › PART › SAVE TO PROJ gives you the choice (OVER SLOT, TO NEW SLOT). Sounds saved this way live in the project, so then <strong>hold MENU</strong> to save the project to the card.</p>
+<p><strong>How do I keep a Sound for other projects?</strong> SETTINGS › PART › SAVE TO LIBRARY, or <strong>MIX + EDIT</strong> on the browser's LIBRARY tab. It asks for a name and writes the Sound to the card.</p>
+<p><strong>How do I clear a Sound slot?</strong> In the browser's PROJECT tab, select it and press <strong>MIX + MINUS</strong>. It asks before clearing.</p>
+<p><strong>Where are the factory Sounds?</strong> Unzip <code>factory-v1.zip</code> from the releases page and copy its <strong>CHIMERA</strong> folder onto the card (hold MENU at power-on, then button 3; choose Replace or Merge if asked). Then <strong>EDIT + B1</strong> and turn <strong>encoder 2</strong> to the FACTORY tab. Every new project starts with the factory Sounds in its PROJECT tab: TX BASS, TX EPIANO, TX BRASS, TX BELL, SAW LEAD, SQR BASS, MORPH PAD, MORPH KEYS, and the formant Sounds CHOIR, TALK BASS, BREATH and VOX. Parts 1 to 5 start on some of them. To get them back, start a new project: SETTINGS › PROJECT › LOAD PROJECT › + CREATE NEW.</p>
+<p><strong>How do I add Sounds from my computer?</strong> Use SD card access (hold MENU at power-on, then button 3) and copy the Sound files into the card's <code>CHIMERA/SOUNDS</code> folder. They show up on the LIBRARY tab.</p>
+<p><strong>How do I rename a Sound, or reload it from the project?</strong> SETTINGS › PART: RENAME, CLEAR, SAVE TO PROJ, RELOAD FROM PROJ, LIVE SNAP, SAVE TO LIBRARY.</p>
+<h2 id="projects">Projects</h2>
+<p><strong>How do I save the project?</strong> <strong>Hold MENU</strong>, from anywhere. A new project asks for a name first. SETTINGS › PROJECT › SAVE PROJECT AS saves a copy under a new name.</p>
+<p><strong>How do I load one, or start a new one?</strong> SETTINGS › PROJECT › LOAD PROJECT, select it, <strong>EDIT</strong>. The <strong>+ CREATE NEW</strong> row starts a fresh project. If the current one has unsaved changes, it asks first.</p>
+<p><strong>How do I rename, copy or delete a project?</strong> SETTINGS › PROJECT › MANAGE PROJECTS. Select a project, then EDIT for its commands: LOAD FROM, SAVE TO, RENAME, CLEAR, DELETE, PROTECT.</p>
+<p><strong>Where do projects live?</strong> On the SD card, in <code>/CHIMERA/PROJECTS/</code>. Library Sounds are in <code>/CHIMERA/SOUNDS/</code>. Chimera reads and writes only inside <code>/CHIMERA/</code>; your stock PreenFM3 files are left alone.</p>
+<p><strong>How do I name things?</strong> On the naming screen: encoder 1 moves the cursor, 2 picks a letter, 3 a digit, space or dash, 4 switches case, 5 deletes. <strong>EDIT</strong> saves, <strong>MENU</strong> or <strong>SEQ</strong> cancels.</p>
+<h2 id="modulation">Modulation</h2>
+<p><strong>How do I route an LFO or an envelope to a parameter?</strong></p>
+<ol><li>On any page, touch the parameter (turn its encoder a little) and press <strong>MIX + PLUS</strong>. The focus band says ADDED: it is now a column in the matrix.</li><li>Go to the Part's MOD page (PLUS along the chain). Its first page is the matrix.</li><li>Encoder 1 moves the cursor to a source row (ENV1–3, LFO1–3, VELO, NOTE), encoder 2 to the column, and <strong>encoder 5</strong> sets the amount. Under the grid, the route reads in words, with what the amount means (for example <code>+42 = +3.3 oct</code>).</li></ol>
+<p>Other messages you may see after MIX + PLUS: ALREADY ROUTED, NOT MODULATABLE, MATRIX FULL.</p>
+<p><strong>How do I remove a route?</strong> On the matrix, put the cursor on it and press <strong>MIX + MINUS</strong>. On a parameter page, <strong>MIX + MINUS</strong> takes the touched parameter out of the matrix altogether.</p>
+<p><strong>Where are the envelopes and LFOs?</strong> Under MOD: press <strong>SEQ</strong> to step on from the matrix to E1, E2, E3 (envelopes), SPD (their speeds), L1, L2, L3 (LFOs).</p>
+<p><strong>What about the filter's FM and QM knobs?</strong> On FLT and its FILTER MOD sub-page they are routes themselves: turn the IN cell (FM3 IN, QM IN) to pick a source and the amount cell to set how much. <strong>MIX + MINUS</strong> on an amount deletes the route.</p>
+<h2 id="engines">Engines</h2>
+<p><strong>How do I change a Part's engine?</strong> Load a Sound with another engine: the INIT row of that engine is a clean start. The Part's pages change to match.</p>
+<p><strong>What do the engines do?</strong></p>
+<div class="tw"><table><thead><tr><th>Engine</th><th>What it is</th><th>Its chain</th></tr></thead><tbody><tr><td>ALGO</td><td>Six-operator phase modulation (FM). Two algorithms, ALG A and ALG B, with MORPH blending between them</td><td>ALG · OSC · DRV · FLT · AMP · MOD</td></tr><tr><td>MODAL</td><td>Physical models: struck, plucked and bowed resonators. MODEL picks STRING, BANK, BOWED or SYMP (sympathetic strings)</td><td>EXC · RES · FLT · AMP · MOD</td></tr><tr><td>VA</td><td>Two variable-wave oscillators combined by MODE (MIX, SYNC, RING, XOR, BITS), with a SUB and STABILITY drift</td><td>VA · DRV · FLT · AMP · MOD</td></tr></tbody></table></div>
+<p><strong>Why do TAPE and DRUM say COMING SOON?</strong></p>
+<p>They aren't in this release. TAPE, the sample engine, is being reworked and DRUM is still to come. Their rows are in the browser so you know they're on the way; EDIT on them only shows COMING SOON.</p>
+<p><strong>What filter types are there?</strong> On the FLT page, TYPE: CLEAN, 2040, DIRTY, LADDER. The cells change with the type. The picture shows the filter's real response.</p>
+<h2 id="midi-and-playing">MIDI and playing</h2>
+<p><strong>How do I set a Part's MIDI channel?</strong> The CH cell on the mixer's PART page (MIX + B<em>n</em>, MINUS to PRT), or all six at once at SETTINGS › MIDI CONFIG › CHANNELS. Out of the box, Part <em>n</em> listens on channel <em>n</em>.</p>
+<p><strong>MONO or POLY?</strong> MODE on the same PART page.</p>
+<p><strong>How do I set glide?</strong> On the engine's PIT sub-page (SEQ from ALG, RES or VA): set STEAL to GLIDE and TIME to the glide time (150 ms at INIT). A note that takes over a voice of the same Part glides from that voice's pitch; on a MONO Part, legato playing glides.</p>
+<p><strong>How do I set the pitch-bend range?</strong> BEND on the mixer's PART page, in semitones (2 by default).</p>
+<p><strong>Which MIDI messages work?</strong> Notes, pitch bend, the sustain pedal (CC 64) and other CCs, on the DIN input. Each Sound carries a MIDI map of up to 16 CCs, per Part: SETTINGS › PART › MIDI MAP. To learn a CC, touch a cell, hold <strong>MIX</strong> and press <strong>SEQ</strong>, then move the knob on your controller. USB carries the console only, not notes.</p>
+<p><strong>I hear nothing from a Part.</strong> Check its CH matches your keyboard, its LEVEL is up, and its OUT. A Part sent to output pair P2 or P3 is silent on the main pair: the header then shows <code>OUT P2</code> or <code>OUT P3</code>.</p>
+<p><strong>How do I tune the whole synth?</strong> SETTINGS › AUDIO ROUTING › TUNING.</p>
+<h2 id="effects">Effects</h2>
+<p><strong>How do the effects work?</strong> Each Part sends to three shared effects. Open the mixer (B<em>n</em> twice, or MIX + B<em>n</em>) and use SND: the CHORUS, DELAY and REVERB send levels. PLUS walks on to the effects themselves:</p>
+<div class="tw"><table><thead><tr><th>Page</th><th>Cells</th><th>Sub-page</th></tr></thead><tbody><tr><td>CHR (chorus)</td><td>MODE (OFF, I, II, I+II), RATE, DEPTH, MIX</td><td></td></tr><tr><td>DLY (delay)</td><td>TIME, FDBK, TONE, REV (delay into the reverb), MIX</td><td>CHAR: MECH (wow and flutter), SAT</td></tr><tr><td>REV (reverb)</td><td>TYPE (QUAD, ROOM, HALL, BLOOM, GATE, REVERSE), SIZE, TIME, DAMP, SMEAR, MIX</td><td>MORE: extra controls for the TYPE</td></tr><tr><td>MST (master)</td><td>Compressor: THRESH, RATIO, ATK, REL, MAKEUP, MIX</td><td>LVL: VOL and PAN of the whole synth</td></tr></tbody></table></div>
+<p>A Sound keeps its send levels when you save it.</p>
+<h2 id="the-screen">The screen</h2>
+<p><strong>How do I turn the hints off?</strong> SETTINGS › PERSONALIZE › THEME › HINTS: OFF. The combos still work.</p>
+<p><strong>How do I switch to light mode?</strong> SETTINGS › PERSONALIZE › THEME › INVERT: ON. The same page has BRIGHT, GAMMA, ACCENT and BLACK. These settings belong to the unit, not to a project.</p>
+<p><strong>Can I change the screensaver?</strong> SETTINGS › PERSONALIZE › SCREENSAVER: OFF, or from 5 seconds up to 10 minutes. The default is 5 minutes. A button that wakes the screen also does its job. A turn that wakes it loses its first notch, so you never change a value you couldn't see.</p>
+<p><strong>Can I get the old vertical list of sub-pages back?</strong> SETTINGS › PERSONALIZE › CHAIN MAP › PAGES: STACK. With STACK, <strong>EDIT</strong> goes down a sub-page and <strong>SEQ</strong> goes back up. With ROW (the default), the sub-pages sit in a row: <strong>EDIT</strong> goes back one and <strong>SEQ</strong> goes on one.</p>
+<p><strong>What do EDIT and MENU do in a dialog?</strong> <strong>EDIT</strong> is OK. <strong>MENU</strong> or <strong>SEQ</strong> cancels. Any encoder moves the highlight. The hint under the question reads <code>EDIT OK · MENU BACK</code>. The risky ones (DELETE, CLEAR, SAVE OVER) open on CANCEL, so a quick EDIT does no harm.</p>
+<p><strong>Why is a WAVE or ALG choice dimmed?</strong> The formant budget can't pay for it. The focus band says why, for example <code>OP 1 MODULATED · OVER BUDGET</code> or <code>BUDGET FULL · OTHER FORMANTS</code>. Nothing is changed until you land on a choice that isn't dimmed.</p>
+<p><strong>The CUTOFF number doesn't move when an LFO moves the sound.</strong> That's on purpose. The number is the value you set. Modulation is a faint mark beside it.</p>
+<p><strong>What does <code>MIX + B1-6 PART</code> mean in the mixer?</strong> Hold MIX and press B1 to B6 to jump to that Part's mixer. You stay on the same page.</p>
+<p><strong>Some SETTINGS rows are grey.</strong> They say LATER and aren't built yet; EDIT skips them.</p>
+<h2 id="firmware-and-bugs">Firmware and bugs</h2>
+<p><strong>Which version am I running?</strong> It's on the boot splash, and at SETTINGS › SYSTEM › ABOUT.</p>
+<p><strong>Which file do I flash?</strong> There are two, on the <a href="https://github.com/joegiralt/chimera-releases/releases">Releases</a> page: <code>CHIMERA.BIN</code> (flash it) and <code>CHIMERA.BK2</code> (copy it to the card; it installs on the first start). Together they include ORBIT, the ring sequencer (hold SEQ). The file names never carry a version; the version is in the release title and on the boot splash.</p>
+<p><strong>How do I update the firmware, or go back to stock?</strong> SETTINGS › SYSTEM › OS UPGRADE puts the unit in DFU mode; then follow the <a href="install.html#step-3-install-using-your-sd-card-recommended">install guide</a>. To return to the stock firmware: <a href="install.html#switching-back-to-the-original-preenfm3-firmware">Switching back to the original PreenFM3 firmware</a>.</p>
+<p><strong>The bootloader lists <code>CHIMER~1.BIN</code>. Which one do I pick?</strong> On a Mac, copying <code>CHIMERA.BIN</code> also leaves a hidden twin called <code>._CHIMERA.BIN</code>, and the bootloader shows it as <code>CHIMER~1.BIN</code>. It isn't firmware. Press − / + until the list shows <code>CHIMERA.BIN</code>, the big one, and flash that. Copying from Windows or Linux avoids the twin.</p>
+<p><strong>My browser saved <code>CHIMERA (1).BIN</code>.</strong> That's a second download of the same file. Rename it back to <code>CHIMERA.BIN</code> in Finder or Explorer (and <code>CHIMERA (1).BK2</code> to <code>CHIMERA.BK2</code>). Rename, don't delete. When you copy it to the card, choose Replace.</p>
+<p><strong>TAPE or the reverb is silent and says UPDATE.</strong> <code>CHIMERA.BK2</code> isn't installed. Copy it to the top of the card (hold MENU at power-on, then button 3), eject, and restart. The screen says DON'T POWER OFF while it installs.</p>
+<p><strong>How do I report a bug?</strong> Check <a href="known-issues.html">KNOWN-ISSUES.md</a> first. Then <strong>Issues › New issue › Bug report</strong>, with the version, what you did and what you heard or saw. A photo, screenshot or short recording helps a lot. See <a href="install.html#reporting-bugs">reporting bugs</a>.</p>
+<p><strong>The console tool can't find the unit.</strong> After a cold power-on the USB console may not come up; a pass through SETTINGS › SYSTEM › OS UPGRADE brings it back. It's a <a href="known-issues.html">known issue</a>.</p>
+<p><strong>I hear a hum when the unit is powered over USB.</strong> That's a ground loop with your computer, not a bug. Use the 9 V supply. See <a href="known-issues.html">KNOWN-ISSUES.md</a>.</p></div>
+</main>
+<footer><div class="wrap">Chimera is &copy; 2026 Joe Giralt. Alpha firmware for the PreenFM3, released for testers.
+ <a href="https://github.com/joegiralt/chimera-releases/releases">Releases</a> &middot; <a href="https://github.com/joegiralt/chimera-releases/issues">Issues</a>
+ &middot; <a href="https://github.com/joegiralt/chimera-releases/blob/main/LICENSE.md">Tester licence</a></div></footer>
+</body></html>

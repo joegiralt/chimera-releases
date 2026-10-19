@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Getting started · Chimera</title>
+<meta name="description" content="Chimera: alternative firmware for the PreenFM3 synthesizer. New engines, effects and sequencing.">
+<link rel="stylesheet" href="site.css">
+</head><body>
+<header class="top"><div class="wrap bar">
+<a class="brand" href="index.html">CHIMERA</a>
+<nav><a href="install.html">Install</a><a href="quick-start.html">Quick start</a><a href="getting-started.html" aria-current="page">Getting started</a><a href="faq.html">FAQ</a><a href="known-issues.html">Known issues</a><a href="changelog.html">Changelog</a></nav>
+<a class="btn small" href="https://github.com/joegiralt/chimera-releases/releases/latest">Download</a>
+</div></header>
+<main class="doc">
+<div class="wrap prose"><h1 id="getting-started-with-chimera">Getting started with Chimera</h1>
+<p>A short tour for alpha testers. To install (or go back to stock), follow the <a href="install.html">install guide</a>; this guide starts once Chimera boots. The <a href="quick-start.html">quick start</a> explains the screen and the controls with annotated screenshots; the <a href="faq.html">FAQ</a> answers "how do I…".</p>
+<p>You will need a MIDI keyboard or sequencer on the <strong>DIN MIDI input</strong>. USB is the console only; it does not carry notes yet.</p>
+<h2 id="first-five-minutes">First five minutes</h2>
+<ol><li>Power on. The boot splash shows the firmware version; note it, you will want it for bug reports. (It's also at SETTINGS › SYSTEM › ABOUT.)</li><li>Press <strong>B1</strong>. That is Part 1. There are six Parts (B1 to B6), each a separate instrument. The six dots at the top of the screen are the Parts: the current one is a bright green dot, and a Part that is playing gets a ring.</li><li>Play Part 1 from your keyboard. Out of the box, Part <em>n</em> listens on MIDI channel <em>n</em>, is POLY, and plays out of output pair P1.</li><li>Turn the six encoders under the screen. Each one drives the cell above it.</li><li>Choose what a Part is: hold <strong>EDIT</strong> and press <strong>B1</strong> to open the Sound browser. The top rows are INIT sounds, one per engine (ALGO, MODAL, VA), then TAPE and DRUM, which say COMING SOON and don't load yet, above the pool's Sounds; each row names its engine. The list opens on Sound 1, so turn encoder 1 up for INIT, to the one you want, and press <strong>EDIT</strong> to load it.</li></ol>
+<h2 id="getting-around">Getting around</h2>
+<p>Every Part is a chain of pages. <strong>MINUS / PLUS</strong> move along it. A page's sub-pages sit in a row at the bottom of the screen: <strong>SEQ</strong> goes on to the next one (wrapping round at the end) and <strong>EDIT</strong> goes back one. The same keys work everywhere: Parts, the mixer, the Sound browser, ORBIT and SETTINGS. In a list, any encoder moves the bar. In a dialog, <strong>EDIT</strong> is OK and <strong>MENU</strong> or <strong>SEQ</strong> cancels. Touch a cell and the focus band shows any combo it answers to. The <a href="quick-start.html">quick start</a> has the whole map, the key combos and an annotated tour of the screen.</p>
+<h2 id="parts-and-engines">Parts and engines</h2>
+<p>Each Part runs one engine. Load a Sound with another engine and the Part's pages change to match.</p>
+<div class="tw"><table><thead><tr><th>Engine</th><th>What it is</th><th>Pages</th></tr></thead><tbody><tr><td>ALGO</td><td>six-operator phase-modulation synth</td><td>ALG, OSC (and its per-operator sub-pages), DRV, FLT, AMP, MOD</td></tr><tr><td>MODAL</td><td>struck, plucked and bowed resonators</td><td>EXC (exciter), RES (models STRING, BANK, BOWED, SYMP), FLT, AMP, MOD</td></tr><tr><td>VA</td><td>two variable-wave oscillators combined by MODE (MIX, SYNC, RING, XOR, BITS), with a SUB and STABILITY drift</td><td>VA (and its OSC 1 / OSC 2 sub-pages), DRV, FLT, AMP, MOD</td></tr></tbody></table></div>
+<p>TAPE (sample playback from the card) and DRUM aren't in this release.</p>
+<p>Filters, modulation and the effects are in the <a href="faq.html#modulation">FAQ</a>.</p>
+<h2 id="how-do-i">How do I...</h2>
+<p>Load and save Sounds and projects, route modulation, set MIDI channels, glide and bend, use the effects, change the theme, update the firmware or report a bug: see the <a href="faq.html">FAQ</a>.</p>
+<h2 id="not-working-yet">Not working yet</h2>
+<ul><li>MIDI input is DIN only.</li><li>TAPE and DRUM aren't in this release.</li><li>SETTINGS rows that are dimmed are not built yet; EDIT skips them.</li></ul>
+<h2 id="alpha-notes">Alpha notes</h2>
+<ul><li>Check <a href="known-issues.html">KNOWN-ISSUES.md</a> before filing.</li><li>Chimera only reads and writes under <code>/CHIMERA/</code> on the card. Your stock PreenFM3 files are untouched.</li><li>Reporting a bug: <strong>Issues › New issue › Bug report</strong>. Give the version (boot splash or ABOUT), what you did, and what you heard or saw. A short recording or photo helps.</li></ul></div>
+</main>
+<footer><div class="wrap">Chimera is &copy; 2026 Joe Giralt. Alpha firmware for the PreenFM3, released for testers.
+ <a href="https://github.com/joegiralt/chimera-releases/releases">Releases</a> &middot; <a href="https://github.com/joegiralt/chimera-releases/issues">Issues</a>
+ &middot; <a href="https://github.com/joegiralt/chimera-releases/blob/main/LICENSE.md">Tester licence</a></div></footer>
+</body></html>
