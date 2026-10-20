@@ -2,16 +2,15 @@
 
 A short tour for alpha testers. To install (or go back to stock), follow the [README](README.md); this guide starts once Chimera boots. The [quick start](QUICK-START.md) explains the screen and the controls with annotated screenshots; the [FAQ](FAQ.md) answers "how do I…".
 
-You will need a MIDI keyboard or sequencer on the **DIN MIDI input**. USB is the console only; it does not carry notes yet.
+You will need a MIDI keyboard or sequencer on the **DIN MIDI input**. USB doesn't carry MIDI.
 
 ## First five minutes
 
 1. Power on. The boot splash shows the firmware version; note it, you will want it for bug reports. (It's also at SETTINGS › SYSTEM › ABOUT.)
 2. Press **B1**. That is Part 1. There are six Parts (B1 to B6), each a separate instrument. The six dots at the top of the screen are the Parts: the current one is a bright green dot, and a Part that is playing gets a ring.
-<!-- 0.2.0 final pass: Part dots land with #625. Keep or cut this sentence to match what merged. -->
 3. Play Part 1 from your keyboard. Out of the box, Part *n* listens on MIDI channel *n*, is POLY, and plays out of output pair P1.
 4. Turn the six encoders under the screen. Each one drives the cell above it.
-5. Choose what a Part is: hold **EDIT** and press **B1** to open the Sound browser. The top rows are INIT sounds, one per engine (ALGO, MODAL, VA), then TAPE and DRUM, which say COMING SOON and don't load yet, above the pool's Sounds; each row names its engine. The list opens on Sound 1, so turn encoder 1 up for INIT, to the one you want, and press **EDIT** to load it.
+5. Choose what a Part is: hold **EDIT** and press **B1** to open the Sound browser. The top rows are INIT sounds, one per engine (ALGO, MODAL, VA), then TAPE and DRUM, which say COMING SOON and don't load yet, above the project's Sounds; each row names its engine. The list opens on Sound 1, so turn encoder 1 up for INIT, to the one you want, and press **EDIT** to load it. Turn encoder 2 for the LIBRARY and FACTORY tabs.
 
 ## Getting around
 
@@ -25,13 +24,13 @@ Each Part runs one engine. Load a Sound with another engine and the Part's pages
 |---|---|---|
 | ALGO | six-operator phase-modulation synth | ALG, OSC (and its per-operator sub-pages), DRV, FLT, AMP, MOD |
 | MODAL | struck, plucked and bowed resonators | EXC (exciter), RES (models STRING, BANK, BOWED, SYMP), FLT, AMP, MOD |
-| VA | two variable-wave oscillators combined by MODE (MIX, SYNC, RING, XOR, BITS), with a SUB and STABILITY drift | VA (and its OSC 1 / OSC 2 sub-pages), DRV, FLT, AMP, MOD |
+| VA | two variable-wave oscillators combined by MODE (MIX, SYNC, RING, XOR, BITS, FM, AM, MAX, LOOPFM, SOFT), with a SUB and STABILITY drift | VA (and its OSC 1 / OSC 2 sub-pages), DRV, FLT, AMP, MOD |
 
 TAPE (sample playback from the card) and DRUM aren't in this release.
 
 Filters, modulation and the effects are in the [FAQ](FAQ.md#modulation).
 
-<!-- 0.2.0 final pass: TAPE (#476) is the headline: add its row to the engines table and take it out of "Not working yet" once merged. Also add the new VA modes (#601-605, #613), FX in the filter (#614), the STABILITY glyph (#593) and the chain-map engine track (#592), each only once merged. -->
+<!-- 0.2.0 final pass: TAPE (#476) is the headline: add its row to the engines table and take it out of "Not working yet" once merged. Also, each only once merged: VA's PHASE mode (#602), FX in the filter (#614: DRV leaves every chain, FLT gains FX), the STABILITY glyph (#593) and the chain-map engine track (#592). -->
 
 ## How do I...
 

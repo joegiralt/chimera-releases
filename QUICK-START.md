@@ -38,7 +38,8 @@ The screenshots are rendered by the firmware's own screen code. Your values will
              └ OP1 … OP6                         └ L1  L2  L3
 ```
 
-The sub-pages of a page sit in a row at the bottom of the screen. The diagram above shows them stacked, the old way. If you like the stacked list better, SETTINGS › PERSONALIZE › CHAIN MAP › PAGES: STACK. Then **EDIT** goes down a sub-page and **SEQ** goes back up.
+The sub-pages of a page sit in a row at the bottom of the screen, each named in a full word (ALGORITHM, PITCH, MATRIX, ENV1 …). The diagram above draws them stacked, with their short names. If you like a stacked list better, SETTINGS › PERSONALIZE › CHAIN MAP › PAGES: STACK. Then **EDIT** goes down a sub-page and **SEQ** goes back up.
+<!-- 0.2.0 final pass: FX in the filter (#614) takes DRV out of the chain (ALG · OSC · FLT · AMP · MOD) and gives FLT an FX sub-page; redraw this diagram once it is merged. -->
 
 ## 3. Key combos
 
@@ -59,23 +60,32 @@ The sub-pages of a page sit in a row at the bottom of the screen. The diagram ab
 
 ![A Part page, annotated](docs/img/part-page.png)
 
-1. **Part and place.** `PART 1 · SOUND` is Part 1's sound pages; `PART 1 · MIX` is its mixer. If the Part plays out of output pair 2 or 3, an `OUT P2` or `OUT P3` warning shows on the right of this line.
-2. **Page name.** The page you are on (ALGORITHM).
-3. **Sounding dot.** Lit while the instrument is making sound. A second dot to its left pulses ORBIT's beat while it runs.
+1. **Part dots.** One dot a Part, B1 to B6. The current Part is the bright green dot; a Part that is playing has a ring round its dot.
+2. **Part and place.** `PART 1 · SOUND` is Part 1's sound pages; `PART 1 · MIX` is its mixer. If the Part plays out of output pair 2 or 3, an `OUT P2` or `OUT P3` warning shows on the right of this line.
+3. **Page name.** The page you are on (ALGORITHM).
+4. **Sounding dot.** Lit while the instrument is making sound. A second dot to its left pulses ORBIT's beat while it runs.
+5. **Focus band: label.** The parameter you last touched or turned.
+6. **Focus band: value**, large. A unit (Hz, kHz, ms, %) is set small after the number, so `2.14 kHz` never runs under the gauge. The number is the value you set: it shows as soon as you turn, and modulation never moves it.
+7. **Focus band: glyph.** A picture of the value. It depends on the parameter: an arc for most knobs (filled from 12 o'clock when the value is bipolar), a crossfader for blends (MORPH, DRV MIX), a level bar for levels and sends, a switch for on/off, a wave scope for a wave choice and for VA's MODE (the two oscillators combined), a staff note for TRANSPOSE, and animated pictures for the effects (the chorus braid, the delay rings, the reverb cube). Word choices (MODEL, the filter's MODE, STEAL) have no glyph: the word takes the band.
+<!-- 0.2.0 final pass: add the glyphs that land, each once merged: TAPE's machine pictures (#476), the STABILITY spirit level (#593), FX PLACE (#614), the LFO page's own scope (#649). -->
+8. **The page's picture.** Here the algorithm diagram. While you pick ALG A or ALG B, the picture shows that one algorithm on its own; on any other cell it shows A blending into B. Pages without their own picture show the live output's waveform.
+9. **The focused cell.** Its label turns to the accent colour.
+10. **The bar** under a cell shows where the value sits in its range; accent on the focused cell. Stepped values (ALG A, PITCH, CRSE) have no bar. A thin line under the bar shows modulation reaching that parameter.
+11. **A cell.** Six per page, in encoder order. A dash means the slot is empty; a dimmed cell does nothing in the current setting.
+12. **Chain map: where you are.** The current page is the filled pill.
+13. **Chain map: the other pages** of the chain, MINUS / PLUS away.
+14. **Sub-pages** sit in a row under the map. The current one is underlined. `<` and `>` at the ends mean there are more.
 
-<!-- 0.2.0 final pass: re-shoot part-page.png once #625 (Part dots) is merged. The header then carries six dots: the current Part a bright green dot, Parts that are playing a ring. Reword this item to name the dots, and renumber. -->
-4. **Focus band: label.** The parameter you last touched or turned.
-5. **Focus band: value**, large. A unit (Hz, kHz, ms, %) is set small after the number, so `2.14 kHz` never runs under the gauge. A set value shows at once; it doesn't count up after you stop turning.
-6. **Focus band: glyph.** A picture of the value. It depends on the parameter: an arc for most knobs (filled from 12 o'clock when the value is bipolar), a crossfader for blends (MORPH, DRV MIX), a level bar for levels and sends, a switch for on/off, a wave scope for a wave choice, a staff note for TRANSPOSE, and animated pictures for the effects (the chorus braid, the delay rings, the reverb cube). Word choices (MODEL, MODE, STEAL) have no glyph: the word takes the band.
-7. **The page's picture.** Here the algorithm diagram. While you pick ALG A or ALG B, the picture shows that one algorithm on its own; on any other cell it shows A blending into B. Pages without their own picture show the live output's waveform.
-8. **The focused cell.** Its label turns to the accent colour.
-9. **The bar** under a cell shows where the value sits in its range; accent on the focused cell. Stepped values (ALG A, PITCH, CRSE) have no bar. A thin line under the bar shows modulation reaching that parameter.
-10. **A cell.** Six per page, in encoder order. A dash means the slot is empty; a dimmed cell does nothing in the current setting.
-11. **Chain map: where you are.** The current page is the filled pill.
-12. **Chain map: the other pages** of the chain, MINUS / PLUS away.
-13. **Sub-pages** sit in a row under the map. The current one is underlined. `<` and `>` at the ends mean there are more.
+Some pages (FILTER, MASTER, the envelopes and LFO speeds, ORBIT's ORB) give the whole band to a picture and have no focus band.
 
-Some pages (FILTER, MASTER, the envelopes and LFO speeds, ORBIT's ORB) give the whole band to a picture and have no focus band. On FILTER the picture is drawn from the filter's real response, and the CUTOFF number is the value you set. Modulation shows as a faint mark beside it. <!-- 0.2.0 final pass: re-shoot a FILTER shot and add it here once #624 and #626 are merged. -->
+![The FILTER page, annotated](docs/img/filter.png)
+
+1. **The response**, drawn from the filter's real response at the values you set, resonance peak included.
+2. **The corner**, at the cutoff you set.
+3. **The cutoff readout** (FREQ, or CUTOFF on the 2040): the value you set. It stays still while an LFO or envelope moves the sound.
+4. **The modulation mark.** A faint band under the plot runs from the corner to where modulation has the cutoff now, with a tick at its end. It is gone when nothing modulates the cutoff.
+
+<!-- 0.2.0 final pass: FX in the filter (#614) changes FLT's front page (KIND · MODE · FX · PLACE · FREQ · Q): re-shoot filter.png and part-page.png (no DRV on the map) once it is merged. -->
 
 ## 5. Sub-pages and hints
 
@@ -128,11 +138,11 @@ EDIT + B*n*, or EDIT from the mixer. MINUS / PLUS switch Part; SEQ goes back up 
 
 ![The Sound browser, annotated](docs/img/sound-browser.png)
 
-1. **Tabs.** PROJECT lists the project's own Sounds; LIBRARY lists Sounds saved on the card; FACTORY lists the factory Sounds from the card.
+1. **Tabs.** PROJECT lists the project's own Sounds; LIBRARY lists Sounds saved on the card; FACTORY lists the factory Sounds from the card. A long list comes in pages of 48: `NEXT ›` at the bottom turns to the next page, `‹ PREVIOUS` at the top goes back (LIBRARY says `OLDER ›` and `‹ NEWER`). The 88 factory Sounds fill two pages.
 2. Turn **encoder 2** to switch tab.
 3. The Part you are loading into.
 4. **INIT rows:** a clean Sound per engine, above the project's Sounds.
-5. TAPE and DRUM read COMING SOON and don't load yet.
+5. TAPE and DRUM read COMING SOON and don't load yet. <!-- 0.2.0 final pass: TAPE (#476) loads once merged; re-shoot sound-browser.png then. -->
 6. The slot number. Turn **encoder 1** to move.
 7. The selected row.
 8. What the Sound costs in the project's Sound memory.
@@ -146,7 +156,7 @@ The MOD node's own page (MTX). Its sub-pages are the three envelopes (E1–E3), 
 
 ![The MOD matrix, annotated](docs/img/mod-matrix.png)
 
-1. **Columns** are destinations you have primed: on any page, touch a parameter and press MIX + PLUS. Encoder 4 scrolls them sideways.
+1. **Columns.** The first four (FLT FREQ, FLT Q, OUT VCA, FX) are always there; after them come the destinations you have primed: on any page, touch a parameter and press MIX + PLUS. Encoder 4 scrolls them sideways. <!-- 0.2.0 final pass: say what the FX column moves (the filter's FX slot, P1) once #614's UI is merged. -->
 2. **Rows** are the sources: ENV1–3, LFO1–3, VELO, NOTE (and OP5, OP6 for ALGO's operator taps).
 3. **A route**, with its amount.
 4. **The cursor.** Encoder 1 moves it up and down, encoder 2 across; encoder 5 sets the amount.
@@ -168,7 +178,7 @@ MENU opens it. EDIT opens a row (or runs it), SEQ or MENU goes back. MINUS / PLU
 5. The loaded project's name, then its state (`SAVED`, `* MODIFIED`).
 6. What the keys do here.
 
-The top list: PROJECT, PART, ORBIT, MIDI CONFIG, SYSEX DUMP (later), AUDIO ROUTING, PERSONALIZE, SYSTEM. PERSONALIZE holds THEME, SCREENSAVER (OFF, or 5 seconds up to 10 minutes; 5 minutes is the default) and CHAIN MAP (PAGES: ROW or STACK).
+The top list: PROJECT, PART, ORBIT, MIDI CONFIG, SYSEX DUMP (later), AUDIO ROUTING, PERSONALIZE, SYSTEM. PERSONALIZE holds THEME, SCREENSAVER (OFF, or 5 seconds up to 10 minutes; 5 minutes is the default), CHAIN MAP (PAGES: ROW or STACK) and TEXT SIZE (SIZE: NORMAL or LARGE; LARGE sets the cells, the focus label, the hints, the SETTINGS lists and the Sound names a size up).
 
 ## 11. ORBIT, the ring sequencer
 
@@ -211,6 +221,6 @@ ORBIT follows its own clock, or a MIDI clock from your DAW: SETTINGS › MIDI CO
 3. Press **PLUS** a few times to walk the chain, then **SEQ** to step into a sub-page and **EDIT** to come back.
 4. Press **B1** again for its mixer. It opens on SND, the sends: turn REVERB to send Part 1 to the reverb. MINUS goes to PRT for LEVEL and PAN.
 5. Press **EDIT** to reach the Sound browser. Turn encoder 1 up to INIT VA and press **EDIT**: Part 1 is now a VA. Press **B1** to see its pages.
-6. PLUS to FLT, turn FREQ a touch, then press **MIX + PLUS** to prime it. PLUS to MOD: on the matrix, move the cursor to the LFO1 row under that column (encoders 1 and 2) and turn encoder 5.
-7. **Hold MENU** to save the project. Give it a name (encoder 1 moves the cursor, 2 picks a letter) and press **SEQ**.
+6. PLUS along to MOD. On the matrix, move the cursor to the LFO1 row under the FLT FREQ column (encoders 1 and 2) and turn encoder 5. MINUS back to FLT: the faint band under the picture shows the LFO moving the cutoff. To modulate any other parameter, touch it and press **MIX + PLUS** to give it a column first.
+7. **Hold MENU** to save the project. Give it a name (encoder 1 moves the cursor, 2 picks a letter) and press **EDIT**.
 8. ORBIT: **hold SEQ**, then press **B6**.

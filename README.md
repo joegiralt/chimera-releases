@@ -75,7 +75,7 @@ You don't have to remove the SD card from your PreenFM3.
 7. Press **MENU** on the PreenFM3 to leave SD card access.
 8. Under **Firmware to flash**, press **−** and **+** to step through the files on the card until it shows `CHIMERA.BIN`.
 9. Press **button 1 (flash)**.
-10. When Chimera starts, it finds `CHIMERA.BK2` on the card and installs it. The screen says **DON'T POWER OFF**. Wait until it is done.
+10. When Chimera starts, it finds `CHIMERA.BK2` on the card and installs it. The screen says **DON'T POWER OFF** and **INSTALLING**, and steps through ERASING, WRITING and SEALING. Wait until Chimera starts by itself.
 
 > **Make sure you've picked `CHIMERA.BIN` before you press button 1.** The bootloader shows every `.bin` on the card, one at a time, and the Chimera file may not be the first. Step through them all with − / + and check the name. This applies on every computer: Mac, Windows and Linux.
 
@@ -83,7 +83,8 @@ You don't have to remove the SD card from your PreenFM3.
 
 **Black screen after flashing?** The bootloader is never touched, so hold MENU while powering on and flash again with the right file.
 
-**If you skip `CHIMERA.BK2`**, Chimera still starts, but TAPE and the reverbs make no sound, and their screens say **UPDATE** or **NEEDS UPDATE**. Copy the file to the card as in step 5 and restart.
+**If you skip `CHIMERA.BK2`**, Chimera still starts, but the reverbs and VA's FM, LOOPFM and SOFT modes make no sound, and their screens say **UPDATE** or **NEEDS UPDATE**. Copy the file to the card as in step 5 and restart.
+<!-- 0.2.0 final pass: TAPE (#476) also plays from CHIMERA.BK2: add it to this list once it is merged. -->
 
 The PreenFM3 will install Chimera and start up.
 
@@ -148,7 +149,7 @@ Your PreenFM3 should restart into Chimera.
 
 ### Windows
 
-On Windows, please use the [SD card method](#step-3-install-using-your-sd-card-recommended) for now. USB steps for Windows are coming.
+On Windows, please use the [SD card method](#step-3-install-using-your-sd-card-recommended).
 
 ### Linux
 
@@ -188,9 +189,7 @@ We recommend starting here:
 
 **[FAQ](FAQ.md)** answers common questions.
 
-You can also download `factory-v1.zip` from the releases page. It includes 56 sounds and four demo projects to get you started.
-
-**Coming from 0.1.0?** The screen has changed a little: see [what's new in 0.2.0](#whats-new-in-020) below.
+You can also download `factory-v1.zip` from the releases page. It includes 88 sounds and four demo projects to get you started.
 
 ---
 
@@ -281,35 +280,21 @@ If possible, include a photo, screenshot, or short recording.
 
 ---
 
-## What's new in 0.2.0
+## What's inside
 
-**Easier to read**
+- **Six Parts**, each its own instrument on its own MIDI channel, with a mixer, three shared effects (chorus, delay, reverb) and a master compressor.
+- **ALGO**, a six-operator phase-modulation synth: two algorithms, ALG A and ALG B, with MORPH blending between them.
+- **MODAL**, struck, plucked and bowed resonators: STRING, BANK, BOWED and SYMP.
+- **VA**, two variable-wave oscillators combined by MODE: MIX, SYNC, RING, XOR, BITS, FM, AM, MAX, LOOPFM and SOFT (soft sync), with a SUB and STABILITY drift.
+- **ORBIT**, a ring sequencer that plays Chimera by itself: a chord progression round five rhythm rings.
+- **88 factory Sounds** in `factory-v1.zip`, and four demo projects.
+<!-- 0.2.0 final pass: add, each only once merged: TAPE (#476, #651), FX in the filter (#614), VA's PHASE mode (#602), the STABILITY glyph (#593), the chain map's engine track (#592), the LFO page's scope (#649). Describe them as they are, not as changes. -->
 
-- The chain map at the bottom shows a page's sub-pages as one row. **EDIT** steps to the previous sub-page and **SEQ** to the next. Prefer the old vertical list? SETTINGS › PERSONALIZE › CHAIN MAP › PAGES: STACK.
-- Values in the focus band are a big number with a small unit (`2.14` and `kHz`), and the gauge never covers them.
-- The header shows six dots, one per Part. The current Part is a bright green dot; Parts that are playing get a ring around theirs.
-- The CUTOFF number shows the value you set. Modulation is a faint mark beside it, so the number stays still while an LFO moves the sound.
-- The filter picture is drawn from the filter's real response.
-- Picking ALG A or ALG B shows that algorithm's diagram on its own.
-- A choice the formant budget refuses is dimmed, with the reason underneath.
+## Not in this release
 
-**Easier to use**
-
-- Dialogs: **EDIT** confirms, **MENU** or **SEQ** cancels. Any encoder moves the highlight. The hint reads `EDIT OK · MENU BACK`.
-- In every list, any encoder moves the bar.
-- The mixer hints `MIX + B1-6 PART`: that jumps to another Part's mixer.
-- The screensaver waits up to 10 minutes (the default is now 5). A button that wakes the screen also acts; a turn that wakes it loses its first notch.
-- The firmware files are now `CHIMERA.BIN` and `CHIMERA.BK2`.
-
-<!-- 0.2.0 final pass: list the headline features here, each only once its PR has merged: TAPE (#476), FX in the filter (#614), new VA modes (#601-605, #613), the STABILITY glyph (#593), and the chain-map engine track (#592). Do not describe any of them as shipped before then. -->
-
-## What's coming next?
-
-We're working on additional synthesis engines, including TAPE (sample playback) and DRUM.
+TAPE (sample playback) and DRUM are marked COMING SOON in the Sound browser. They aren't in this release.
 
 <!-- 0.2.0 final pass: if TAPE ships in 0.2.0, take it out of this section and out of the COMING SOON wording in the other docs. -->
-
-These aren't available in the current alpha, but you'll see them marked as COMING SOON in the Sound browser.
 
 Watch this repository for new releases.
 
