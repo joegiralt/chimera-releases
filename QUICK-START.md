@@ -221,6 +221,6 @@ ORBIT follows its own clock, or a MIDI clock from your DAW: SETTINGS › MIDI CO
 3. Press **PLUS** a few times to walk the chain, then **SEQ** to step into a sub-page and **EDIT** to come back.
 4. Press **B1** again for its mixer. It opens on SND, the sends: turn REVERB to send Part 1 to the reverb. MINUS goes to PRT for LEVEL and PAN.
 5. Press **EDIT** to reach the Sound browser. Turn encoder 1 up to INIT VA and press **EDIT**: Part 1 is now a VA. Press **B1** to see its pages.
-6. PLUS along to MOD. On the matrix, move the cursor to the LFO1 row under the FLT FREQ column (encoders 1 and 2) and turn encoder 5. MINUS back to FLT: the faint band under the picture shows the LFO moving the cutoff. To modulate any other parameter, touch it and press **MIX + PLUS** to give it a column first.
+6. PLUS along to MOD. On the matrix, move the cursor to the LFO1 row under the FLT FREQ column (encoders 1 and 2) and turn encoder 5. Press MINUS twice, back to FLT, and play: the faint band under the picture shows the LFO moving the cutoff. To modulate any other parameter, touch it and press **MIX + PLUS** to give it a column first.
 7. **Hold MENU** to save the project. Give it a name (encoder 1 moves the cursor, 2 picks a letter) and press **EDIT**.
 8. ORBIT: **hold SEQ**, then press **B6**.
