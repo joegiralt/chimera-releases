@@ -110,6 +110,8 @@ NOISE is the voice's own noise source, mixed in beside SUB after MODE and before
 
 LEVEL can be modulated in the MOD matrix and learned to a MIDI CC like SUB.
 
+NOISE plays from `CHIMERA.BK2`: without it the noise is silent and KIND reads NEEDS UPDATE.
+
 <!-- 0.2.0 final pass: AM's top third runs on into RING once #682 is merged (BLEND's right end then reads RING); add PHASE (#602) once merged; add the STABILITY glyph (#593) once merged. Re-check LOOPFM's line against #683. -->
 
 **Why do TAPE and DRUM say COMING SOON?**
