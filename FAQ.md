@@ -123,6 +123,19 @@ On the FLT page, TYPE: CLEAN, 2040, DIRTY, LADDER. The cells change with the typ
 
 <!-- 0.2.0 final pass: FX in the filter (#614): add how to use it here. -->
 
+**What do LPG, DECAY and STRIKE on AMP do?**
+They turn the VCA into a low-pass gate, the kind modelled on Mutable Instruments Plaits. AMP's cells are VEL · LPG · DECAY · STRIKE. With all three at 0 the VCA is a plain VCA.
+
+| Cell | What it does |
+|---|---|
+| LPG | Darkening follows the gain: the quieter the note, the darker it is. At full it is Plaits' low-pass gate |
+| DECAY | How slowly the gate closes after its level falls: fast while bright, slower as it dims, like a vactrol |
+| STRIKE | Each note-on strikes the gate and it rings out through DECAY, held or not. At full the strike alone plays the note, which ends when the gate shuts, even with the key held. In between, the strike adds to the envelope routed into VCA. VEL scales how hard it strikes |
+
+Any filter TYPE plays in front of the gate. A sine through FLT › FX FOLD with LPG and STRIKE at full is a bongo. All three knobs can be modulated in the MOD matrix and learned to a MIDI CC.
+
+The gate plays from `CHIMERA.BK2`: without it the VCA stays a plain VCA.
+
 ## MIDI and playing
 
 **How do I set a Part's MIDI channel?**
@@ -149,7 +162,7 @@ SETTINGS › AUDIO ROUTING › TUNING.
 ## Effects
 
 **How do the effects work?**
-Each Part sends to three shared effects. Open the mixer (B*n* twice, or MIX + B*n*) and use SND: the CHORUS, DELAY and REVERB send levels. PLUS walks on to the effects themselves:
+Each Part sends to three shared effects. Open the mixer (B*n* twice, or MIX + B*n*) and use SND: the CHORUS, DELAY and REVERB send levels. The same page is AMP › SENDS on the Part's chain (EDIT from AMP). PLUS walks on to the effects themselves:
 
 | Page | Cells | Sub-page |
 |---|---|---|
