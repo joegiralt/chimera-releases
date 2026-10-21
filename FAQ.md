@@ -130,7 +130,7 @@ They turn the VCA into a low-pass gate, the kind modelled on Mutable Instruments
 |---|---|
 | LPG | Darkening follows the gain: the quieter the note, the darker it is. At full it is Plaits' low-pass gate |
 | DECAY | How slowly the gate closes after its level falls: fast while bright, slower as it dims, like a vactrol |
-| STRIKE | Each note-on strikes the gate and it rings out through DECAY, held or not. At full the strike alone plays the note, which ends when the gate shuts, even with the key held. In between, the strike adds to the envelope routed into VCA. VEL scales how hard it strikes |
+| STRIKE | Each note-on strikes the gate and it rings out through DECAY, held or not. At full the strike alone plays the note, which ends when the gate shuts, even with the key held. In between, the strike adds to the envelope routed into VCA. The harder you play, the harder it strikes |
 
 Any filter TYPE plays in front of the gate. A sine through FLT › FX FOLD with LPG and STRIKE at full is a bongo. All three knobs can be modulated in the MOD matrix and learned to a MIDI CC.
 
