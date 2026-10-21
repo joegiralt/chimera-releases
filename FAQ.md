@@ -154,9 +154,11 @@ Each Part sends to three shared effects. Open the mixer (B*n* twice, or MIX + B*
 | Page | Cells | Sub-page |
 |---|---|---|
 | CHR (chorus) | MODE (OFF, I, II, I+II), RATE, DEPTH, MIX | |
-| DLY (delay) | TIME, FDBK, TONE, REV (delay into the reverb), MIX | CHAR: MECH (wow and flutter), SAT |
+| DLY (delay) | TYPE (TAPE, GRAIN), TIME, FDBK, TONE, REV (delay into the reverb), MIX | CHAR, by TYPE. TAPE: MECH (wow and flutter), SAT. GRAIN: SIZE, DENSITY, PITCH, TEXTURE |
 | REV (reverb) | TYPE (QUAD, ROOM, HALL, BLOOM, GATE, REVERSE), SIZE, TIME, DAMP, SMEAR, MIX | MORE: extra controls for the TYPE |
 | MST (master) | Compressor: THRESH, RATIO, ATK, REL, MAKEUP, MIX | LVL: VOL and PAN of the whole synth |
+
+TAPE is a tape echo. GRAIN builds its repeats from short grains of the last half second: SIZE is a grain's length, DENSITY how many start each second, PITCH shifts each grain (+12 with a high FDBK is a shimmer), and TEXTURE scatters where and when they start. If TYPE reads NEEDS UPDATE, GRAIN plays as TAPE until CHIMERA.BK2 is installed.
 
 A Sound keeps its send levels when you save it.
 
