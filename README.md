@@ -285,7 +285,7 @@ If possible, include a photo, screenshot, or short recording.
 - **Six Parts**, each its own instrument on its own MIDI channel, with a mixer, three shared effects (chorus, delay, reverb) and a master compressor.
 - **ALGO**, a six-operator phase-modulation synth: two algorithms, ALG A and ALG B, with MORPH blending between them.
 - **MODAL**, struck, plucked and bowed resonators: STRING, BANK, BOWED and SYMP.
-- **VA**, two variable-wave oscillators combined by MODE: MIX, SYNC, RING, XOR, BITS, FM, AM, MAX, LOOPFM and SOFT (soft sync), with a SUB and STABILITY drift.
+- **VA**, two variable-wave oscillators combined by MODE: MIX, SYNC, RING, XOR, BITS, FM, AM, MAX, LOOPFM and SOFT (soft sync), with a SUB, a NOISE source (WHITE, PINK, RED or DIGITAL) and STABILITY drift.
 - **ORBIT**, a ring sequencer that plays Chimera by itself: a chord progression round five rhythm rings.
 - **88 factory Sounds** in `factory-v1.zip`, and four demo projects.
 <!-- 0.2.0 final pass: add, each only once merged: TAPE (#476, #651), FX in the filter (#614), VA's PHASE mode (#602), the STABILITY glyph (#593), the chain map's engine track (#592), the LFO page's scope (#649). Describe them as they are, not as changes. -->

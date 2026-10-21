@@ -76,7 +76,7 @@ Load a Sound with another engine: the INIT row of that engine is a clean start. 
 |---|---|---|
 | ALGO | Six-operator phase modulation (FM). Two algorithms, ALG A and ALG B, with MORPH blending between them | ALG · OSC · DRV · FLT · AMP · MOD |
 | MODAL | Physical models: struck, plucked and bowed resonators. MODEL picks STRING, BANK, BOWED or SYMP (sympathetic strings) | EXC · RES · FLT · AMP · MOD |
-| VA | Two variable-wave oscillators combined by MODE, with a SUB and STABILITY drift | VA · DRV · FLT · AMP · MOD |
+| VA | Two variable-wave oscillators combined by MODE, with a SUB, a NOISE source and STABILITY drift | VA · DRV · FLT · AMP · MOD |
 
 <!-- 0.2.0 final pass: FX in the filter (#614) takes DRV out of these chains once merged. -->
 
@@ -97,6 +97,18 @@ MODE picks how OSC 1 and OSC 2 combine, and BLEND sets how far. The words at BLE
 | BITS | The mix crushed from 16 bits down to 2 | CLEAN · CRUSH |
 
 FM, LOOPFM and SOFT play from `CHIMERA.BK2`: without it they are silent and read NEEDS UPDATE.
+
+**What does VA's NOISE page do?**
+NOISE is the voice's own noise source, mixed in beside SUB after MODE and before the filter. KIND picks its colour and LEVEL how much: the lower half of LEVEL is a breath, and at full the noise sits under the oscillators rather than over them. As with SUB, the oscillators dip a little as LEVEL comes up, so the filter sees the same level.
+
+| KIND | Sound |
+|---|---|
+| WHITE | Even hiss across the whole range |
+| PINK | Softer, fuller hiss: less top |
+| RED | Dark rumble and wind: mostly low end |
+| DIGITAL | Stepped, gritty noise that follows the key: brighter on higher notes |
+
+LEVEL can be modulated in the MOD matrix and learned to a MIDI CC like SUB.
 
 <!-- 0.2.0 final pass: AM's top third runs on into RING once #682 is merged (BLEND's right end then reads RING); add PHASE (#602) once merged; add the STABILITY glyph (#593) once merged. Re-check LOOPFM's line against #683. -->
 

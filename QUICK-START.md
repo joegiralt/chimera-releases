@@ -19,7 +19,7 @@ The screenshots are rendered by the firmware's own screen code. Your values will
 ## 2. The idea
 
 - **A Part is a chain of pages.** Each page holds up to six parameters, one per encoder.
-- **Some pages have sub-pages** in a row under the chain map. The FILTER page has MODULATION beside it; a VA Part's VA page has OSC 1, OSC 2 and PITCH beside it.
+- **Some pages have sub-pages** in a row under the chain map. The FILTER page has MODULATION beside it; a VA Part's VA page has OSC 1, OSC 2, NOISE and PITCH beside it.
 - **One D-pad, everywhere.** The same four keys move you through a Part's pages, the mixer, the Sound browser, ORBIT and every SETTINGS list.
 - **Any encoder moves a list.** In SETTINGS, the Sound browser, project lists and dialogs, turn any encoder to move the bar.
 - **Nothing to memorise.** Touch a cell and the focus band shows any MIX combo that cell answers to.
