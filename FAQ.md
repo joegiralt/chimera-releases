@@ -167,7 +167,7 @@ Each Part sends to three shared effects. Open the mixer (B*n* twice, or MIX + B*
 | Page | Cells | Sub-page |
 |---|---|---|
 | CHR (chorus) | MODE (OFF, I, II, I+II), RATE, DEPTH, MIX | |
-| DLY (delay) | TYPE (TAPE, GRAIN), TIME, FDBK, TONE, REV (delay into the reverb), MIX | CHAR, by TYPE. TAPE: MECH (wow and flutter), SAT. GRAIN: SIZE, DENSITY, PITCH, TEXTURE |
+| DLY (delay) | TYPE (TAPE, GRAIN), TIME, FDBK, TONE, REV (delay into the reverb), MIX | CHAR: MECH (wow and flutter), SAT, for TAPE. GRAIN: SIZE, DENSITY, PITCH, TEXTURE, for GRAIN |
 | REV (reverb) | TYPE (QUAD, ROOM, HALL, BLOOM, GATE, REVERSE), SIZE, TIME, DAMP, SMEAR, MIX | MORE: extra controls for the TYPE |
 | MST (master) | Compressor: THRESH, RATIO, ATK, REL, MAKEUP, MIX | LVL: VOL and PAN of the whole synth |
 
