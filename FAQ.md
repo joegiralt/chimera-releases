@@ -99,7 +99,7 @@ MODE picks how OSC 1 and OSC 2 combine, and BLEND sets how far. The words at BLE
 FM, LOOPFM and SOFT play from `CHIMERA.BK2`: without it they are silent and read NEEDS UPDATE.
 
 **What does VA's NOISE page do?**
-NOISE is the voice's own noise source, mixed in beside SUB after MODE and before the filter. KIND picks its colour and LEVEL how much: the lower half of LEVEL is a breath, and at full the noise sits under the oscillators rather than over them. As with SUB, the oscillators dip a little as LEVEL comes up, so the filter sees the same level.
+NOISE is the voice's own noise source, mixed in beside SUB after MODE and before the filter. KIND picks its colour and LEVEL how much: the lower half of LEVEL is a breath, and at full the noise is about as loud as INIT's two oscillators, never louder. As with SUB, the oscillators dip a little as LEVEL comes up, so the filter sees the same level.
 
 | KIND | Sound |
 |---|---|

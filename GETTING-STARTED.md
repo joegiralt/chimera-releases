@@ -24,7 +24,7 @@ Each Part runs one engine. Load a Sound with another engine and the Part's pages
 |---|---|---|
 | ALGO | six-operator phase-modulation synth | ALG, OSC (and its per-operator sub-pages), DRV, FLT, AMP, MOD |
 | MODAL | struck, plucked and bowed resonators | EXC (exciter), RES (models STRING, BANK, BOWED, SYMP), FLT, AMP, MOD |
-| VA | two variable-wave oscillators combined by MODE (MIX, SYNC, RING, XOR, BITS, FM, AM, MAX, LOOPFM, SOFT), with a SUB, a NOISE source and STABILITY drift | VA (and its OSC 1 / OSC 2 / NOISE sub-pages), DRV, FLT, AMP, MOD |
+| VA | two variable-wave oscillators combined by MODE (MIX, SYNC, RING, XOR, BITS, FM, AM, MAX, LOOPFM, SOFT), with a SUB, a NOISE source and STABILITY drift | VA (and its OSC1 / OSC2 / NOISE sub-pages), DRV, FLT, AMP, MOD |
 
 TAPE (sample playback from the card) and DRUM aren't in this release.
 
