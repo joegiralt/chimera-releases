@@ -31,9 +31,28 @@ FLT holds the filter (CLEAN, 2040, DIRTY, LADDER or SEM) and the voice's FX slot
 
 ## Voices and CPU
 
-<!-- PLACEHOLDER: the voice table (voices per engine, model and filter on each chip revision) is supplied by the owner after the 0.2.0 stress test. Replace this comment and the line below with it. -->
+Chimera has 8 voices in all, shared by the six Parts. Each note costs a share of the processor that depends on its Sound: the engine, the model, the filter and the FX slot. A note gets a voice only if its cost fits in what is left, so a light Sound plays all 8 and a heavy one fewer.
 
-*The table of how many voices each engine plays is coming with the final 0.2.0 build.*
+Voices one Part gets on its own, with the TAPE delay and the QUAD reverb:
+
+| Sound type | Example | Voices |
+|---|---|---|
+| ALGO, one or two operators | DRIFT ORGAN | 7 |
+| ALGO, typical | AIR RAID | 6 |
+| ALGO, heaviest | SOFT HORNS | 3 |
+| ALGO with formants | NULL CHOIR | 3 |
+| VA on the 2040 | SOLO PORTA | 6 |
+| VA with FUZZ | INIT VA, FX FUZZ | 5 |
+| VA on the LADDER with FOLD | GROWL BASS | 5 |
+| MODAL STRING | NYLON | 8 |
+| MODAL BOWED | CELLO SWELL | 6 |
+| MODAL BANK | GAMELAN | 2 |
+| TAPE one-shot or loop | HARP HIT, PAD LOOP | 8 |
+| TAPE STRETCH GRAIN | VOICE STRETCH | 5 |
+
+The delay's GRAIN type and the ROOM, HALL and BLOOM reverbs cost about a voice: with one of them on, many Sounds play one voice fewer.
+
+These counts are for the rev V chip (480 MHz). A rev Y chip runs at 400 MHz and has less to share, so heavier Sounds play fewer voices. SETTINGS › SYSTEM › ABOUT shows which chip yours has.
 
 ## How do I...
 
