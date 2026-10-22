@@ -10,7 +10,7 @@ You will need a MIDI keyboard or sequencer on the **DIN MIDI input**. USB doesn'
 2. Press **B1**. That is Part 1. There are six Parts (B1 to B6), each a separate instrument. The six dots at the top of the screen are the Parts: the current one is a bright green dot, and a Part that is playing gets a ring.
 3. Play Part 1 from your keyboard. Out of the box, Part *n* listens on MIDI channel *n*, is POLY, and plays out of output pair P1.
 4. Turn the six encoders under the screen. Each one drives the cell above it.
-5. Choose what a Part is: hold **EDIT** and press **B1** to open the Sound browser. The top rows are INIT sounds, one per engine (ALGO, MODAL, VA, TAPE), then DRUM, which says COMING SOON and doesn't load yet, above the project's Sounds; each row names its engine. The list opens on Sound 1, so turn encoder 1 up for INIT, to the one you want, and press **EDIT** to load it. Turn encoder 2 for the LIBRARY and FACTORY tabs: FACTORY holds the 127 factory Sounds once they are on the card.
+5. Choose what a Part is: hold **EDIT** and press **B1** to open the Sound browser. The top rows are INIT sounds, one per engine (ALGO, MODAL, VA, TAPE), then DRUM, which says COMING SOON and doesn't load yet, above the project's Sounds; each row names its engine. The list opens on Sound 1, so turn encoder 1 up for INIT, to the one you want, and press **EDIT** to load it. Turn encoder 2 for the LIBRARY and FACTORY tabs: FACTORY holds the 128 factory Sounds once they are on the card.
 
 ## Getting around
 
