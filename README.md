@@ -10,8 +10,6 @@ And if you decide Chimera isn't for you, you can switch back to the original Pre
 
 **Current version: Alpha 0.2.0**
 
-<!-- 0.2.0 final pass: TAPE (sample playback) is the headline of this release. Add a one-line mention here once #476 is merged; until then TAPE stays COMING SOON everywhere. -->
-
 Chimera is still in development. Some features aren't finished, and you may run into bugs.
 
 [Download Chimera](../../releases) | [Getting Started](GETTING-STARTED.md) | [FAQ](FAQ.md)
@@ -20,14 +18,15 @@ Chimera is still in development. Some features aren't finished, and you may run 
 
 ## Installing Chimera
 
-Installing Chimera is straightforward. **We recommend using an SD card**, since this doesn't require installing any software on your computer.
+Installing Chimera is straightforward. **We recommend using the SD card**, since this doesn't require installing any software on your computer. The card stays inside your PreenFM3: your computer reaches it over USB.
 
 You'll need:
 
 - Your PreenFM3
 - A computer
-- The SD card already in your PreenFM3
 - A USB cable
+
+The same steps install Chimera for the first time and update it from an earlier version.
 
 ### Step 1: Check your bootloader
 
@@ -42,7 +41,7 @@ You should see a screen with a version number at the top.
 
 **Does it say `pfm3 BootLoader 1.09`?**
 
-Great! You're ready to install Chimera. Continue to Step 2.
+Great! You're ready to install Chimera. Continue to Step 2. Chimera never changes the bootloader.
 
 **Does it show an older version?**
 
@@ -55,27 +54,40 @@ See [Troubleshooting](#troubleshooting).
 ### Step 2: Download Chimera
 
 1. Open the [Chimera Releases page](../../releases).
-2. Download two files: `CHIMERA.BIN` and `CHIMERA.BK2`. Together they are the firmware.
-3. Save them somewhere easy to find, like your Downloads folder.
+2. Download three files: `CHIMERA.BIN`, `CHIMERA.BK2` and `factory-v1.zip`. `CHIMERA.BIN` and `CHIMERA.BK2` are the firmware: Chimera needs both. `factory-v1.zip` holds the factory Sounds, the sources the TAPE Sounds play, and four demo projects.
+3. Save them somewhere easy to find, like your Downloads folder, and unzip `factory-v1.zip`. It unzips to a folder called **CHIMERA**.
 
 **Keep the names exactly as they are.** If your browser saved a second copy as `CHIMERA (1).BIN` (or `CHIMERA (1).BK2`), rename it back to `CHIMERA.BIN` in Finder or Explorer. Rename it; don't delete it. The version number is in the release title, not in the file name.
 
-That's the firmware. Now let's put it on your PreenFM3.
+### Step 3: Copy the files to the card
 
-### Step 3: Install using your SD card (recommended)
-
-You don't have to remove the SD card from your PreenFM3.
+You don't have to take the SD card out of your PreenFM3.
 
 1. Connect your PreenFM3 to your computer using a USB cable.
 2. Enter the bootloader (turn on the synth while holding MENU).
 3. Press **button 3 (SD card access)**.
-4. Your SD card should appear on your computer like a USB drive.
-5. Open the drive and copy **both** `CHIMERA.BIN` and `CHIMERA.BK2` into its main folder (not inside another folder). If an older copy is already there, choose **Replace**.
-6. Safely eject the drive from your computer.
-7. Press **MENU** on the PreenFM3 to leave SD card access.
-8. Under **Firmware to flash**, press **−** and **+** to step through the files on the card until it shows `CHIMERA.BIN`.
-9. Press **button 1 (flash)**.
-10. When Chimera starts, it finds `CHIMERA.BK2` on the card and installs it. The screen says **DON'T POWER OFF**. Wait until it is done.
+4. Your SD card appears on your computer like a USB drive.
+5. Copy `CHIMERA.BIN` and `CHIMERA.BK2` into the drive's main folder (not inside another folder). If older copies are already there, choose **Replace**.
+6. Copy the factory set from the unzipped **CHIMERA** folder:
+   - **If the drive has no CHIMERA folder yet**, copy the whole **CHIMERA** folder onto the drive.
+   - **If it already has one**, copy folder by folder instead: open **SOUNDS**, **TAPES** and **PROJECTS** in the unzipped folder, and copy the files inside each into the folder of the same name on the drive (copy the whole folder across if the drive doesn't have it). Choose **Replace** for files with the same name. Copying file by file keeps your own Sounds and projects: on a Mac, replacing a whole *folder* throws away what was in it.
+   - The demo projects take the first four project slots. If you saved projects of your own there (`P0000001.A` to `P0000004.A` in **PROJECTS**), copy them to your computer first.
+7. Safely eject the drive from your computer.
+8. Press **MENU** on the PreenFM3 to leave SD card access.
+
+### Step 4: Flash and install
+
+1. Under **Firmware to flash**, press **−** and **+** to step through the files on the card until it shows `CHIMERA.BIN`.
+2. Press **button 1 (flash)**.
+3. When Chimera starts, it finds `CHIMERA.BK2` on the card and installs it. Leave the power on until it's done.
+
+![The install screen, annotated](docs/img/install.png)
+
+1. **DON'T POWER OFF.** Chimera is writing the second half of its firmware. Your sound keeps playing, but leave the power on.
+2. The version it is installing.
+3. What it is doing: **ERASING**, then **WRITING**, then **SEALING**. When it's done, Chimera carries on by itself.
+
+If the power does go off during the install, nothing is lost: the next start installs it again.
 
 > **Make sure you've picked `CHIMERA.BIN` before you press button 1.** The bootloader shows every `.bin` on the card, one at a time, and the Chimera file may not be the first. Step through them all with − / + and check the name. This applies on every computer: Mac, Windows and Linux.
 
@@ -83,17 +95,13 @@ You don't have to remove the SD card from your PreenFM3.
 
 **Black screen after flashing?** The bootloader is never touched, so hold MENU while powering on and flash again with the right file.
 
-**If you skip `CHIMERA.BK2`**, Chimera still starts, but TAPE and the reverbs make no sound, and their screens say **UPDATE** or **NEEDS UPDATE**. Copy the file to the card as in step 5 and restart.
-
-The PreenFM3 will install Chimera and start up.
+**`CHIMERA.BK2` is required.** It holds TAPE, ORBIT, the reverbs, the GRAIN delay, NOISE, the low-pass gate, the SEM filter, FUZZ, the filter's FEEDBACK and VA's FM, LOOPFM, SOFT SYNC and PHASE modes, among other things. If it's missing from the card, or is from another version, those stay silent and their screens say **UPDATE** or **NEEDS UPDATE**. Copy the `CHIMERA.BK2` from the same release onto the card as in Step 3 and restart.
 
 **That's it. Chimera is installed!**
 
-You can now continue to the [Getting Started Guide](GETTING-STARTED.md).
+You can now continue to the [Getting Started Guide](GETTING-STARTED.md). To find the factory Sounds, press **EDIT + B1** and turn **encoder 2** to the **FACTORY** tab.
 
-The latest release also includes factory sounds and demo projects. See the release notes for instructions on adding them.
-
-**A small tip:** You can leave both files on the card. The next release uses the same two names: copy the new ones over them and choose Replace. That keeps old firmware from getting mixed up with new.
+**A small tip:** You can leave `CHIMERA.BIN` and `CHIMERA.BK2` on the card. The next release uses the same two names: copy the new ones over them and choose Replace. That keeps old firmware from getting mixed up with new.
 
 ---
 
@@ -144,11 +152,11 @@ Now follow the instructions for your computer.
 
 Your PreenFM3 should restart into Chimera.
 
-**Then add `CHIMERA.BK2`.** Hold MENU while powering on, press **button 3 (SD card access)**, copy `CHIMERA.BK2` into the card's main folder, eject, and restart. It installs on the next start (**DON'T POWER OFF** on the screen).
+**Then add `CHIMERA.BK2` and the factory set.** Hold MENU while powering on, press **button 3 (SD card access)**, and copy `CHIMERA.BK2` and the factory set onto the card as in [Step 3](#step-3-copy-the-files-to-the-card). Eject, press MENU, and turn the PreenFM3 off and on. Chimera installs `CHIMERA.BK2` on that start (**DON'T POWER OFF** on the screen).
 
 ### Windows
 
-On Windows, please use the [SD card method](#step-3-install-using-your-sd-card-recommended) for now. USB steps for Windows are coming.
+On Windows, please use the [SD card method](#step-3-copy-the-files-to-the-card).
 
 ### Linux
 
@@ -168,7 +176,7 @@ On Windows, please use the [SD card method](#step-3-install-using-your-sd-card-r
    dfu-util -a 0 -d 0483:df11 -D CHIMERA.BIN -s 0x08020000:leave
    ```
 
-4. Copy `CHIMERA.BK2` onto the card as described at the end of the macOS steps.
+4. Copy `CHIMERA.BK2` and the factory set onto the card as described at the end of the macOS steps.
 
 If Linux says it cannot access the USB device, see [Troubleshooting](#troubleshooting).
 
@@ -188,9 +196,7 @@ We recommend starting here:
 
 **[FAQ](FAQ.md)** answers common questions.
 
-You can also download `factory-v1.zip` from the releases page. It includes 56 sounds and four demo projects to get you started.
-
-**Coming from 0.1.0?** The screen has changed a little: see [what's new in 0.2.0](#whats-new-in-020) below.
+`factory-v1.zip` holds 127 factory Sounds across ALGO, MODAL, VA and TAPE, the sources the TAPE Sounds play, and four demo projects. If you skipped it, copy it onto the card as in [Step 3](#step-3-copy-the-files-to-the-card) at any time.
 
 ---
 
@@ -281,35 +287,21 @@ If possible, include a photo, screenshot, or short recording.
 
 ---
 
-## What's new in 0.2.0
+## What's inside
 
-**Easier to read**
+- **Six Parts**, each its own instrument on its own MIDI channel, with a mixer, three shared effects (chorus, delay with TAPE and GRAIN types, reverb) and a master compressor.
+- **ALGO**, a six-operator phase-modulation synth: two algorithms, ALG A and ALG B, with MORPH blending between them.
+- **MODAL**, struck, plucked and bowed resonators: STRING, BANK, BOWED and SYMP.
+- **VA**, two variable-wave oscillators combined by MODE (MIX, SYNC, SOFT SYNC, RING, AM, FM, PHASE, LOOPFM, MAX, XOR, BITS), with a SUB, a NOISE source and STABILITY drift.
+- **TAPE**, which plays sound sources from the card through four machines: WALK (one-shots, loops, ping-pong and Mellotron-style tapes), STRETCH, SCRUB and WAVE.
+- **A filter for every voice**: CLEAN, 2040, DIRTY, LADDER and SEM, with an FX slot (SOFT drive, FUZZ or FOLD) before or after it, and FEEDBACK.
+- **A low-pass gate** in every voice's VCA: LPG, DECAY and STRIKE on AMP.
+- **ORBIT**, a ring sequencer that plays Chimera by itself: a chord progression round five rhythm rings.
+- **127 factory Sounds** in `factory-v1.zip`, with the TAPE sources they play and four demo projects.
 
-- The chain map at the bottom shows a page's sub-pages as one row. **EDIT** steps to the previous sub-page and **SEQ** to the next. Prefer the old vertical list? SETTINGS › PERSONALIZE › CHAIN MAP › PAGES: STACK.
-- Values in the focus band are a big number with a small unit (`2.14` and `kHz`), and the gauge never covers them.
-- The header shows six dots, one per Part. The current Part is a bright green dot; Parts that are playing get a ring around theirs.
-- The CUTOFF number shows the value you set. Modulation is a faint mark beside it, so the number stays still while an LFO moves the sound.
-- The filter picture is drawn from the filter's real response.
-- Picking ALG A or ALG B shows that algorithm's diagram on its own.
-- A choice the formant budget refuses is dimmed, with the reason underneath.
+## Not in this release
 
-**Easier to use**
-
-- Dialogs: **EDIT** confirms, **MENU** or **SEQ** cancels. Any encoder moves the highlight. The hint reads `EDIT OK · MENU BACK`.
-- In every list, any encoder moves the bar.
-- The mixer hints `MIX + B1-6 PART`: that jumps to another Part's mixer.
-- The screensaver waits up to 10 minutes (the default is now 5). A button that wakes the screen also acts; a turn that wakes it loses its first notch.
-- The firmware files are now `CHIMERA.BIN` and `CHIMERA.BK2`.
-
-<!-- 0.2.0 final pass: list the headline features here, each only once its PR has merged: TAPE (#476), FX in the filter (#614), new VA modes (#601-605, #613), the STABILITY glyph (#593), and the chain-map engine track (#592). Do not describe any of them as shipped before then. -->
-
-## What's coming next?
-
-We're working on additional synthesis engines, including TAPE (sample playback) and DRUM.
-
-<!-- 0.2.0 final pass: if TAPE ships in 0.2.0, take it out of this section and out of the COMING SOON wording in the other docs. -->
-
-These aren't available in the current alpha, but you'll see them marked as COMING SOON in the Sound browser.
+DRUM is marked COMING SOON in the Sound browser. It isn't in this release.
 
 Watch this repository for new releases.
 
