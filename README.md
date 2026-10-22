@@ -70,7 +70,9 @@ You don't have to take the SD card out of your PreenFM3.
 5. Copy `CHIMERA.BIN` and `CHIMERA.BK2` into the drive's main folder (not inside another folder). If older copies are already there, choose **Replace**.
 6. Copy the factory set from the unzipped **CHIMERA** folder:
    - **If the drive has no CHIMERA folder yet**, copy the whole **CHIMERA** folder onto the drive.
-   - **If it already has one**, copy folder by folder instead: open **SOUNDS**, **TAPES** and **PROJECTS** in the unzipped folder, and copy the files inside each into the folder of the same name on the drive (copy the whole folder across if the drive doesn't have it). Choose **Replace** for files with the same name. Copying file by file keeps your own Sounds and projects: on a Mac, replacing a whole *folder* throws away what was in it.
+   - **If it already has one**, copy folder by folder instead: open **SOUNDS**, **TAPES** and **PROJECTS** in the unzipped folder, and copy the files inside each into the folder of the same name on the drive. Copying file by file keeps your own Sounds and projects: on a Mac, replacing a whole *folder* throws away what was in it.
+     - **SOUNDS** and **PROJECTS**: choose **Replace** for files with the same name.
+     - **TAPES**: if the drive has no **TAPES** folder (a card from 0.1.0 doesn't), copy the whole **TAPES** folder across. If it has one, choose **Skip** for any `.SRC` file that is already there. A source's name is a checksum of what's in it, so the one on the card is the same file, and Chimera keeps it read-only, so replacing it may ask for permission or stop the copy.
    - The demo projects take the first four project slots. If you saved projects of your own there (`P0000001.A` to `P0000004.A` in **PROJECTS**), copy them to your computer first.
 7. Safely eject the drive from your computer.
 8. Press **MENU** on the PreenFM3 to leave SD card access.
@@ -196,7 +198,7 @@ We recommend starting here:
 
 **[FAQ](FAQ.md)** answers common questions.
 
-`factory-v1.zip` holds 127 factory Sounds across ALGO, MODAL, VA and TAPE, the sources the TAPE Sounds play, and four demo projects. If you skipped it, copy it onto the card as in [Step 3](#step-3-copy-the-files-to-the-card) at any time.
+`factory-v1.zip` holds 128 factory Sounds across ALGO, MODAL, VA and TAPE, the sources the TAPE Sounds play, and four demo projects. If you skipped it, copy it onto the card as in [Step 3](#step-3-copy-the-files-to-the-card) at any time.
 
 ---
 
@@ -297,7 +299,7 @@ If possible, include a photo, screenshot, or short recording.
 - **A filter for every voice**: CLEAN, 2040, DIRTY, LADDER and SEM, with an FX slot (SOFT drive, FUZZ or FOLD) before or after it, and FEEDBACK.
 - **A low-pass gate** in every voice's VCA: LPG, DECAY and STRIKE on AMP.
 - **ORBIT**, a ring sequencer that plays Chimera by itself: a chord progression round five rhythm rings.
-- **127 factory Sounds** in `factory-v1.zip`, with the TAPE sources they play and four demo projects.
+- **128 factory Sounds** in `factory-v1.zip`, with the TAPE sources they play and four demo projects.
 
 ## Not in this release
 

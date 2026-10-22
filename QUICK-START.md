@@ -439,7 +439,7 @@ EDIT + B*n*, or EDIT from the mixer. MINUS / PLUS switch Part; SEQ goes back up 
 
 ![The Sound browser, annotated](docs/img/sound-browser.png)
 
-1. **Tabs.** PROJECT lists the project's own Sounds; LIBRARY lists Sounds saved on the card; FACTORY lists the factory Sounds from the card. A long list comes in pages of 48: `NEXT ›` at the bottom turns to the next page, `‹ PREVIOUS` at the top goes back (LIBRARY says `OLDER ›` and `‹ NEWER`). The 127 factory Sounds fill three pages.
+1. **Tabs.** PROJECT lists the project's own Sounds; LIBRARY lists Sounds saved on the card; FACTORY lists the factory Sounds from the card. A long list comes in pages of 48: `NEXT ›` at the bottom turns to the next page, `‹ PREVIOUS` at the top goes back (LIBRARY says `OLDER ›` and `‹ NEWER`). The 128 factory Sounds fill three pages.
 2. `B ◂▸`: turn **encoder 2** to switch tab.
 3. The Part you are loading into.
 4. **INIT rows:** a clean Sound per engine (ALGO, MODAL, VA, TAPE), above the project's Sounds.
