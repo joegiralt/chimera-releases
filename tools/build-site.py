@@ -6,7 +6,8 @@ import html, re, pathlib
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 OUT = ROOT / "docs"
-RELEASES = "https://github.com/joegiralt/chimera-releases/releases"
+REPO = "https://github.com/joegiralt/chimera-releases"
+RELEASES = REPO + "/releases"
 # source md -> (output file, nav label, title)
 PAGES = [
     ("README.md", "install.html", "Install", "Install Chimera"),
@@ -26,8 +27,9 @@ def link(m):
     text, url = m.group(1), m.group(2)
     if text == "README":
         text = "install guide"
-    if url.startswith("../../releases"):
-        url = RELEASES
+    if url.startswith("../../"):
+        # GitHub's repo-relative links (releases, issues) from the README.
+        url = REPO + url[len("../.."):]
     else:
         f, _, frag = url.partition("#")
         if f in LINKMAP:
@@ -42,7 +44,8 @@ def inline(s):
     def keep(m):
         codes.append(m.group(1)); return f"\x00{len(codes)-1}\x00"
     s = re.sub(r"`([^`]+)`", keep, s)
-    s = re.sub(r"!\[([^\]]*)\]\(([^)]+)\)", r'<img src="\2" alt="\1" loading="lazy">', s)
+    # The guides name images from the repo root (docs/img/...); the pages sit in docs/.
+    s = re.sub(r"!\[([^\]]*)\]\((?:docs/)?([^)]+)\)", r'<img src="\2" alt="\1" loading="lazy">', s)
     s = re.sub(r"\[([^\]]+)\]\(([^)]+)\)", link, s)
     s = re.sub(r"\*\*(.+?)\*\*", r"<strong>\1</strong>", s)
     s = re.sub(r"(?<!\*)\*(?!\s)(.+?)(?<!\s)\*(?!\*)", r"<em>\1</em>", s)
@@ -111,7 +114,6 @@ def shell(title, body, active, home=False):
         for _, o, lbl, _ in PAGES[1:] if True
     )
     nav = f'<a href="install.html"{" aria-current=\"page\"" if active=="install.html" else ""}>Install</a>' + nav
-    nav += f'<a href="changelog.html"{" aria-current=\"page\"" if active=="changelog.html" else ""}>Changelog</a>'
     t = "Chimera" if home else f"{title} · Chimera"
     return f"""<!doctype html>
 <html lang="en"><head><meta charset="utf-8">
@@ -138,14 +140,8 @@ def main():
     for src, out, _, title in PAGES:
         body = convert((ROOT / src).read_text())
         (OUT / out).write_text(shell(title, f'<div class="wrap prose">{body}</div>', out))
-    (OUT / "changelog.html").write_text(shell("Changelog", f"""<div class="wrap prose">
-<h1>Changelog</h1>
-<p>Every release has its own notes, with the files to download, on the releases page.</p>
-<p><a class="btn" href="{RELEASES}">Release notes on GitHub</a></p>
-<p>The <a href="install.html#whats-new-in-020">install page</a> lists what changed in 0.2.0 in plain words.</p>
-</div>""", "changelog.html"))
     home = (ROOT / "tools" / "home.html").read_text().replace("{{RELEASES}}", RELEASES)
     (OUT / "index.html").write_text(shell("Chimera", home, "index.html", home=True))
-    print("built", len(PAGES) + 2, "pages")
+    print("built", len(PAGES) + 1, "pages")
 
 main()

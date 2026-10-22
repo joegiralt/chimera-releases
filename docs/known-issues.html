@@ -7,13 +7,22 @@
 </head><body>
 <header class="top"><div class="wrap bar">
 <a class="brand" href="index.html">CHIMERA</a>
-<nav><a href="install.html">Install</a><a href="quick-start.html">Quick start</a><a href="getting-started.html">Getting started</a><a href="faq.html">FAQ</a><a href="known-issues.html" aria-current="page">Known issues</a><a href="changelog.html">Changelog</a></nav>
+<nav><a href="install.html">Install</a><a href="quick-start.html">Quick start</a><a href="getting-started.html">Getting started</a><a href="faq.html">FAQ</a><a href="known-issues.html" aria-current="page">Known issues</a></nav>
 <a class="btn small" href="https://github.com/joegiralt/chimera-releases/releases/latest">Download</a>
 </div></header>
 <main class="doc">
 <div class="wrap prose"><h1 id="known-issues">Known issues</h1>
 <p>Check here before filing. Known and being worked on.</p>
-<ul><li>The ROOM reverb can leave a faint high-pitched ring in its tail after a sharp hit such as a snare</li><li>Under the heaviest possible load (every voice of every Part playing, all effects on), a big chord landing at once can cause a single tiny click</li><li>PreenFM3s with the newer "1.6 - 100" main board are detected, and their knobs and buttons should work, but this hasn't been tried on that board yet. If yours is one, please tell us how it goes (SETTINGS › SYSTEM › ABOUT shows the board next to the chip revision)</li><li>Push encoders (SETTINGS › SYSTEM › PUSH ENCODERS): push to jump a value to its default, push and turn for fine steps. Untested on push-encoder hardware so far; reports welcome</li></ul>
+<h2 id="sound">Sound</h2>
+<ul><li>The ROOM reverb can leave a faint high-pitched ring in its tail after a sharp hit such as a snare</li><li>Under the heaviest load (every voice of every Part playing, all effects on), a big chord landing at once can cause a single tiny click</li><li>VA: RING with saw waves can click at the start of a note, and switching MODE to SYNC while a note is held can click once</li><li>Some knobs only take effect at the next note: a held note doesn't follow them. Among them: MODAL's exciter and body controls, and TAPE's START, END, XFADE and DRAG</li></ul>
+<h2 id="tape">TAPE</h2>
+<ul><li>INIT TAPE has no source, so it is silent until you pick one on SRC. The screen doesn't yet say why</li><li>On WAVE, SOURCE lists every source, not only wavetables; a source that isn't one won't play there</li><li>A long source on a card that has been filled and emptied many times can read <code>FRAGMENTED · COPY IT AGAIN</code> and won't stream. Copying it again doesn't always help yet</li><li>A project whose TAPE sources didn't all fit in memory when it loaded can show SOURCE MISSING for a source that is on the card</li><li>Rarely, a streamed source drops out for a moment under fast, dense chords</li><li>Turning START while a streamed source plays can cut the note sharply</li><li>Turning TAPE's MODEL from a MIDI CC changes the machine but doesn't set its knobs to the machine's defaults, as turning the encoder does</li></ul>
+<h2 id="screen">Screen</h2>
+<ul><li>On the FILTER page, the picture for CLEAN's NOTCH2 mode is a sketch of the response, not the filter's real response</li><li>A cell's bar can follow modulation while its number shows the value you set, so the two can disagree</li><li>In the Sound browser, the selected row's cost can run into its engine name (<code>0.3KMODAL</code>)</li></ul>
+<h2 id="midi">MIDI</h2>
+<ul><li>A MIDI CC move can be lost while the card is busy (saving, loading, or streaming TAPE hard)</li></ul>
+<h2 id="hardware">Hardware</h2>
+<ul><li>PreenFM3s with the newer "1.6 - 100" main board are detected, and their knobs and buttons should work, but this hasn't been tried on that board yet. If yours is one, please tell us how it goes (SETTINGS › SYSTEM › ABOUT shows the board next to the chip revision)</li><li>Push encoders (SETTINGS › SYSTEM › PUSH ENCODERS): push to jump a value to its default, push and turn for fine steps. Untested on push-encoder hardware so far; reports welcome</li></ul>
 <h2 id="not-a-bug-hum-when-powered-over-usb">Not a bug: hum when powered over USB</h2>
 <p>If you hear a faint buzz or whine with the PreenFM3 powered over USB from the same computer your audio interface is connected to, that's a ground loop between the two. Power the PreenFM3 from its 9 V DC supply (or use a USB isolator) and it goes away.</p></div>
 </main>

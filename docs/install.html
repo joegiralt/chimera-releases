@@ -7,7 +7,7 @@
 </head><body>
 <header class="top"><div class="wrap bar">
 <a class="brand" href="index.html">CHIMERA</a>
-<nav><a href="install.html" aria-current="page">Install</a><a href="quick-start.html">Quick start</a><a href="getting-started.html">Getting started</a><a href="faq.html">FAQ</a><a href="known-issues.html">Known issues</a><a href="changelog.html">Changelog</a></nav>
+<nav><a href="install.html" aria-current="page">Install</a><a href="quick-start.html">Quick start</a><a href="getting-started.html">Getting started</a><a href="faq.html">FAQ</a><a href="known-issues.html">Known issues</a></nav>
 <a class="btn small" href="https://github.com/joegiralt/chimera-releases/releases/latest">Download</a>
 </div></header>
 <main class="doc">
@@ -21,35 +21,40 @@
 <p><a href="https://github.com/joegiralt/chimera-releases/releases">Download Chimera</a> | <a href="getting-started.html">Getting Started</a> | <a href="faq.html">FAQ</a></p>
 <hr>
 <h2 id="installing-chimera">Installing Chimera</h2>
-<p>Installing Chimera is straightforward. <strong>We recommend using an SD card</strong>, since this doesn't require installing any software on your computer.</p>
+<p>Installing Chimera is straightforward. <strong>We recommend using the SD card</strong>, since this doesn't require installing any software on your computer. The card stays inside your PreenFM3: your computer reaches it over USB.</p>
 <p>You'll need:</p>
-<ul><li>Your PreenFM3</li><li>A computer</li><li>The SD card already in your PreenFM3</li><li>A USB cable</li></ul>
+<ul><li>Your PreenFM3</li><li>A computer</li><li>A USB cable</li></ul>
+<p>The same steps install Chimera for the first time and update it from an earlier version.</p>
 <h3 id="step-1-check-your-bootloader">Step 1: Check your bootloader</h3>
 <p>Before installing Chimera, let's check that your PreenFM3 is ready.</p>
 <ol><li>Turn off your PreenFM3.</li><li>Hold down the <strong>MENU</strong> button.</li><li>While holding MENU, turn the PreenFM3 back on.</li><li>Keep holding MENU until the screen lights up.</li></ol>
 <p>You should see a screen with a version number at the top.</p>
 <p><strong>Does it say <code>pfm3 BootLoader 1.09</code>?</strong></p>
-<p>Great! You're ready to install Chimera. Continue to Step 2.</p>
+<p>Great! You're ready to install Chimera. Continue to Step 2. Chimera never changes the bootloader.</p>
 <p><strong>Does it show an older version?</strong></p>
 <p>You'll need to <a href="#updating-an-older-bootloader">update your bootloader</a> first. This is a one-time process.</p>
 <p><strong>Nothing happens?</strong></p>
 <p>See <a href="#troubleshooting">Troubleshooting</a>.</p>
 <h3 id="step-2-download-chimera">Step 2: Download Chimera</h3>
-<ol><li>Open the <a href="https://github.com/joegiralt/chimera-releases/releases">Chimera Releases page</a>.</li><li>Download two files: <code>CHIMERA.BIN</code> and <code>CHIMERA.BK2</code>. Together they are the firmware.</li><li>Save them somewhere easy to find, like your Downloads folder.</li></ol>
+<ol><li>Open the <a href="https://github.com/joegiralt/chimera-releases/releases">Chimera Releases page</a>.</li><li>Download three files: <code>CHIMERA.BIN</code>, <code>CHIMERA.BK2</code> and <code>factory-v1.zip</code>. <code>CHIMERA.BIN</code> and <code>CHIMERA.BK2</code> are the firmware: Chimera needs both. <code>factory-v1.zip</code> holds the factory Sounds, the sources the TAPE Sounds play, and four demo projects.</li><li>Save them somewhere easy to find, like your Downloads folder, and unzip <code>factory-v1.zip</code>. It unzips to a folder called <strong>CHIMERA</strong>.</li></ol>
 <p><strong>Keep the names exactly as they are.</strong> If your browser saved a second copy as <code>CHIMERA (1).BIN</code> (or <code>CHIMERA (1).BK2</code>), rename it back to <code>CHIMERA.BIN</code> in Finder or Explorer. Rename it; don't delete it. The version number is in the release title, not in the file name.</p>
-<p>That's the firmware. Now let's put it on your PreenFM3.</p>
-<h3 id="step-3-install-using-your-sd-card-recommended">Step 3: Install using your SD card (recommended)</h3>
-<p>You don't have to remove the SD card from your PreenFM3.</p>
-<ol><li>Connect your PreenFM3 to your computer using a USB cable.</li><li>Enter the bootloader (turn on the synth while holding MENU).</li><li>Press <strong>button 3 (SD card access)</strong>.</li><li>Your SD card should appear on your computer like a USB drive.</li><li>Open the drive and copy <strong>both</strong> <code>CHIMERA.BIN</code> and <code>CHIMERA.BK2</code> into its main folder (not inside another folder). If an older copy is already there, choose <strong>Replace</strong>.</li><li>Safely eject the drive from your computer.</li><li>Press <strong>MENU</strong> on the PreenFM3 to leave SD card access.</li><li>Under <strong>Firmware to flash</strong>, press <strong>−</strong> and <strong>+</strong> to step through the files on the card until it shows <code>CHIMERA.BIN</code>.</li><li>Press <strong>button 1 (flash)</strong>.</li><li>When Chimera starts, it finds <code>CHIMERA.BK2</code> on the card and installs it. The screen says <strong>DON'T POWER OFF</strong>. Wait until it is done.</li></ol>
+<h3 id="step-3-copy-the-files-to-the-card">Step 3: Copy the files to the card</h3>
+<p>You don't have to take the SD card out of your PreenFM3.</p>
+<ol><li>Connect your PreenFM3 to your computer using a USB cable.</li><li>Enter the bootloader (turn on the synth while holding MENU).</li><li>Press <strong>button 3 (SD card access)</strong>.</li><li>Your SD card appears on your computer like a USB drive.</li><li>Copy <code>CHIMERA.BIN</code> and <code>CHIMERA.BK2</code> into the drive's main folder (not inside another folder). If older copies are already there, choose <strong>Replace</strong>.</li><li>Copy the factory set from the unzipped <strong>CHIMERA</strong> folder:</li></ol>
+<p>- <strong>If the drive has no CHIMERA folder yet</strong>, copy the whole <strong>CHIMERA</strong> folder onto the drive. - <strong>If it already has one</strong>, copy folder by folder instead: open <strong>SOUNDS</strong>, <strong>TAPES</strong> and <strong>PROJECTS</strong> in the unzipped folder, and copy the files inside each into the folder of the same name on the drive (copy the whole folder across if the drive doesn't have it). Choose <strong>Replace</strong> for files with the same name. Copying file by file keeps your own Sounds and projects: on a Mac, replacing a whole <em>folder</em> throws away what was in it. - The demo projects take the first four project slots. If you saved projects of your own there (<code>P0000001.A</code> to <code>P0000004.A</code> in <strong>PROJECTS</strong>), copy them to your computer first.</p>
+<ol start="7"><li>Safely eject the drive from your computer.</li><li>Press <strong>MENU</strong> on the PreenFM3 to leave SD card access.</li></ol>
+<h3 id="step-4-flash-and-install">Step 4: Flash and install</h3>
+<ol><li>Under <strong>Firmware to flash</strong>, press <strong>−</strong> and <strong>+</strong> to step through the files on the card until it shows <code>CHIMERA.BIN</code>.</li><li>Press <strong>button 1 (flash)</strong>.</li><li>When Chimera starts, it finds <code>CHIMERA.BK2</code> on the card and installs it. Leave the power on until it's done.</li></ol>
+<figure><img src="img/install.png" alt="The install screen, annotated" loading="lazy"><figcaption>The install screen, annotated</figcaption></figure>
+<ol><li><strong>DON'T POWER OFF.</strong> Chimera is writing the second half of its firmware. Your sound keeps playing, but leave the power on.</li><li>The version it is installing.</li><li>What it is doing: <strong>ERASING</strong>, then <strong>WRITING</strong>, then <strong>SEALING</strong>. When it's done, Chimera carries on by itself.</li></ol>
+<p>If the power does go off during the install, nothing is lost: the next start installs it again.</p>
 <blockquote><p><strong>Make sure you've picked <code>CHIMERA.BIN</code> before you press button 1.</strong> The bootloader shows every <code>.bin</code> on the card, one at a time, and the Chimera file may not be the first. Step through them all with − / + and check the name. This applies on every computer: Mac, Windows and Linux.</p></blockquote>
 <p><strong>On a Mac:</strong> macOS also adds a small hidden twin next to anything you copy, named <code>._CHIMERA.BIN</code>. The bootloader lists it as <code>CHIMER~1.BIN</code>. It isn't firmware, and flashing it leaves a black screen. You can leave it on the card: just pick the real one, <code>CHIMERA.BIN</code> (the big file), with − / +. Copying the files from a Windows or Linux computer doesn't make the twin at all.</p>
 <p><strong>Black screen after flashing?</strong> The bootloader is never touched, so hold MENU while powering on and flash again with the right file.</p>
-<p><strong>If you skip <code>CHIMERA.BK2</code></strong>, Chimera still starts, but TAPE and the reverbs make no sound, and their screens say <strong>UPDATE</strong> or <strong>NEEDS UPDATE</strong>. Copy the file to the card as in step 5 and restart.</p>
-<p>The PreenFM3 will install Chimera and start up.</p>
+<p><strong><code>CHIMERA.BK2</code> is required.</strong> It holds TAPE, ORBIT, the reverbs, the GRAIN delay, NOISE, the low-pass gate, the SEM filter, FUZZ, the filter's FEEDBACK and VA's FM, LOOPFM, SOFT SYNC and PHASE modes, among other things. If it's missing from the card, or is from another version, those stay silent and their screens say <strong>UPDATE</strong> or <strong>NEEDS UPDATE</strong>. Copy the <code>CHIMERA.BK2</code> from the same release onto the card as in Step 3 and restart.</p>
 <p><strong>That's it. Chimera is installed!</strong></p>
-<p>You can now continue to the <a href="getting-started.html">Getting Started Guide</a>.</p>
-<p>The latest release also includes factory sounds and demo projects. See the release notes for instructions on adding them.</p>
-<p><strong>A small tip:</strong> You can leave both files on the card. The next release uses the same two names: copy the new ones over them and choose Replace. That keeps old firmware from getting mixed up with new.</p>
+<p>You can now continue to the <a href="getting-started.html">Getting Started Guide</a>. To find the factory Sounds, press <strong>EDIT + B1</strong> and turn <strong>encoder 2</strong> to the <strong>FACTORY</strong> tab.</p>
+<p><strong>A small tip:</strong> You can leave <code>CHIMERA.BIN</code> and <code>CHIMERA.BK2</code> on the card. The next release uses the same two names: copy the new ones over them and choose Replace. That keeps old firmware from getting mixed up with new.</p>
 <hr>
 <h2 id="another-way-to-install-usb-dfu">Another way to install: USB (DFU)</h2>
 <p>If you can't use the SD card method, you can install Chimera directly over USB.</p>
@@ -69,16 +74,16 @@
 <ol start="3"><li>Run this command:</li></ol>
 <p>``<code>bash dfu-util -a 0 -d 0483:df11 -D CHIMERA.BIN -s 0x08020000:leave </code>``</p>
 <p>Your PreenFM3 should restart into Chimera.</p>
-<p><strong>Then add <code>CHIMERA.BK2</code>.</strong> Hold MENU while powering on, press <strong>button 3 (SD card access)</strong>, copy <code>CHIMERA.BK2</code> into the card's main folder, eject, and restart. It installs on the next start (<strong>DON'T POWER OFF</strong> on the screen).</p>
+<p><strong>Then add <code>CHIMERA.BK2</code> and the factory set.</strong> Hold MENU while powering on, press <strong>button 3 (SD card access)</strong>, and copy <code>CHIMERA.BK2</code> and the factory set onto the card as in <a href="#step-3-copy-the-files-to-the-card">Step 3</a>. Eject, press MENU, and turn the PreenFM3 off and on. Chimera installs <code>CHIMERA.BK2</code> on that start (<strong>DON'T POWER OFF</strong> on the screen).</p>
 <h3 id="windows">Windows</h3>
-<p>On Windows, please use the <a href="#step-3-install-using-your-sd-card-recommended">SD card method</a> for now. USB steps for Windows are coming.</p>
+<p>On Windows, please use the <a href="#step-3-copy-the-files-to-the-card">SD card method</a>.</p>
 <h3 id="linux">Linux</h3>
 <ol><li>Install <code>dfu-util</code> using your Linux distribution's package manager.</li></ol>
 <p>For example, on Ubuntu or Debian:</p>
 <p>``<code>bash sudo apt install dfu-util </code>``</p>
 <ol start="2"><li>Open a terminal in the folder containing your downloaded Chimera firmware.</li><li>Run:</li></ol>
 <p>``<code>bash dfu-util -a 0 -d 0483:df11 -D CHIMERA.BIN -s 0x08020000:leave </code>``</p>
-<ol start="4"><li>Copy <code>CHIMERA.BK2</code> onto the card as described at the end of the macOS steps.</li></ol>
+<ol start="4"><li>Copy <code>CHIMERA.BK2</code> and the factory set onto the card as described at the end of the macOS steps.</li></ol>
 <p>If Linux says it cannot access the USB device, see <a href="#troubleshooting">Troubleshooting</a>.</p>
 <p><strong>Note:</strong> You might see <code>Error during download get_status</code> after the firmware transfers successfully. If the PreenFM3 has already restarted into Chimera, this is normal.</p>
 <hr>
@@ -88,8 +93,7 @@
 <p><strong><a href="getting-started.html">Getting Started</a></strong> explains the basics of Chimera.</p>
 <p><strong><a href="quick-start.html">Quick Start</a></strong> shows you how to navigate the synth.</p>
 <p><strong><a href="faq.html">FAQ</a></strong> answers common questions.</p>
-<p>You can also download <code>factory-v1.zip</code> from the releases page. It includes 56 sounds and four demo projects to get you started.</p>
-<p><strong>Coming from 0.1.0?</strong> The screen has changed a little: see <a href="#whats-new-in-020">what's new in 0.2.0</a> below.</p>
+<p><code>factory-v1.zip</code> holds 127 factory Sounds across ALGO, MODAL, VA and TAPE, the sources the TAPE Sounds play, and four demo projects. If you skipped it, copy it onto the card as in <a href="#step-3-copy-the-files-to-the-card">Step 3</a> at any time.</p>
 <hr>
 <h2 id="switching-back-to-the-original-preenfm3-firmware">Switching back to the original PreenFM3 firmware</h2>
 <p>Chimera doesn't replace or modify your PreenFM3's bootloader during a normal installation.</p>
@@ -113,7 +117,7 @@
 <h2 id="troubleshooting">Troubleshooting</h2>
 <p><strong>I held MENU, but nothing happened.</strong></p>
 <p>Turn your PreenFM3 off completely. Hold MENU before turning it back on, and keep holding until the bootloader screen appears.</p>
-<p>If it still doesn't work, please <a href="../../issues">open an issue</a> before trying anything else.</p>
+<p>If it still doesn't work, please <a href="https://github.com/joegiralt/chimera-releases/issues">open an issue</a> before trying anything else.</p>
 <p><strong>My computer doesn't see the SD card.</strong></p>
 <p>Check your USB cable and make sure you've selected button 3 (SD card access) from the bootloader menu.</p>
 <p>Some USB cables only provide power and can't transfer data.</p>
@@ -123,22 +127,18 @@
 <p>Then unplug the PreenFM3 and plug it back in.</p>
 <p><strong>Chimera doesn't start after installation.</strong></p>
 <p>Restart the PreenFM3 and try entering the bootloader again. If the bootloader still works, you can reinstall the firmware.</p>
-<p>If the problem continues, <a href="../../issues">report a bug</a>.</p>
+<p>If the problem continues, <a href="https://github.com/joegiralt/chimera-releases/issues">report a bug</a>.</p>
 <hr>
 <h2 id="reporting-bugs">Reporting bugs</h2>
 <p>Chimera is currently in alpha, so bug reports are extremely helpful.</p>
-<p>If something goes wrong, please open a <a href="../../issues/new/choose">bug report</a>.</p>
+<p>If something goes wrong, please open a <a href="https://github.com/joegiralt/chimera-releases/issues/new/choose">bug report</a>.</p>
 <p>Tell us which version you're using, what you were doing when the problem happened, and what you expected to happen.</p>
 <p>If possible, include a photo, screenshot, or short recording.</p>
 <hr>
-<h2 id="whats-new-in-020">What's new in 0.2.0</h2>
-<p><strong>Easier to read</strong></p>
-<ul><li>The chain map at the bottom shows a page's sub-pages as one row. <strong>EDIT</strong> steps to the previous sub-page and <strong>SEQ</strong> to the next. Prefer the old vertical list? SETTINGS › PERSONALIZE › CHAIN MAP › PAGES: STACK.</li><li>Values in the focus band are a big number with a small unit (<code>2.14</code> and <code>kHz</code>), and the gauge never covers them.</li><li>The header shows six dots, one per Part. The current Part is a bright green dot; Parts that are playing get a ring around theirs.</li><li>The CUTOFF number shows the value you set. Modulation is a faint mark beside it, so the number stays still while an LFO moves the sound.</li><li>The filter picture is drawn from the filter's real response.</li><li>Picking ALG A or ALG B shows that algorithm's diagram on its own.</li><li>A choice the formant budget refuses is dimmed, with the reason underneath.</li></ul>
-<p><strong>Easier to use</strong></p>
-<ul><li>Dialogs: <strong>EDIT</strong> confirms, <strong>MENU</strong> or <strong>SEQ</strong> cancels. Any encoder moves the highlight. The hint reads <code>EDIT OK · MENU BACK</code>.</li><li>In every list, any encoder moves the bar.</li><li>The mixer hints <code>MIX + B1-6 PART</code>: that jumps to another Part's mixer.</li><li>The screensaver waits up to 10 minutes (the default is now 5). A button that wakes the screen also acts; a turn that wakes it loses its first notch.</li><li>The firmware files are now <code>CHIMERA.BIN</code> and <code>CHIMERA.BK2</code>.</li></ul>
-<h2 id="whats-coming-next">What's coming next?</h2>
-<p>We're working on additional synthesis engines, including TAPE (sample playback) and DRUM.</p>
-<p>These aren't available in the current alpha, but you'll see them marked as COMING SOON in the Sound browser.</p>
+<h2 id="whats-inside">What's inside</h2>
+<ul><li><strong>Six Parts</strong>, each its own instrument on its own MIDI channel, with a mixer, three shared effects (chorus, delay with TAPE and GRAIN types, reverb) and a master compressor.</li><li><strong>ALGO</strong>, a six-operator phase-modulation synth: two algorithms, ALG A and ALG B, with MORPH blending between them.</li><li><strong>MODAL</strong>, struck, plucked and bowed resonators: STRING, BANK, BOWED and SYMP.</li><li><strong>VA</strong>, two variable-wave oscillators combined by MODE (MIX, SYNC, SOFT SYNC, RING, AM, FM, PHASE, LOOPFM, MAX, XOR, BITS), with a SUB, a NOISE source and STABILITY drift.</li><li><strong>TAPE</strong>, which plays sound sources from the card through four machines: WALK (one-shots, loops, ping-pong and Mellotron-style tapes), STRETCH, SCRUB and WAVE.</li><li><strong>A filter for every voice</strong>: CLEAN, 2040, DIRTY, LADDER and SEM, with an FX slot (SOFT drive, FUZZ or FOLD) before or after it, and FEEDBACK.</li><li><strong>A low-pass gate</strong> in every voice's VCA: LPG, DECAY and STRIKE on AMP.</li><li><strong>ORBIT</strong>, a ring sequencer that plays Chimera by itself: a chord progression round five rhythm rings.</li><li><strong>127 factory Sounds</strong> in <code>factory-v1.zip</code>, with the TAPE sources they play and four demo projects.</li></ul>
+<h2 id="not-in-this-release">Not in this release</h2>
+<p>DRUM is marked COMING SOON in the Sound browser. It isn't in this release.</p>
 <p>Watch this repository for new releases.</p>
 <h2 id="source-code-and-licence">Source code and licence</h2>
 <p>Chimera is © 2026 Joe Giralt. All rights reserved.</p>
