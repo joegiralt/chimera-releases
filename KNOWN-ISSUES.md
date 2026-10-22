@@ -7,6 +7,7 @@ Check here before filing. Known and being worked on.
 - The ROOM reverb can leave a faint high-pitched ring in its tail after a sharp hit such as a snare
 - Under the heaviest load (every voice of every Part playing, all effects on), a big chord landing at once can cause a single tiny click
 - VA: RING with saw waves can click at the start of a note, and switching MODE to SYNC while a note is held can click once
+- ALGO with the low-pass gate on (AMP › LPG with STRIKE): a held note closes after a fraction of a second instead of staying open. VA, MODAL and TAPE hold as expected
 - Some knobs only take effect at the next note: a held note doesn't follow them. Among them: MODAL's exciter and body controls, and TAPE's START, END, XFADE and DRAG
 
 ## TAPE
