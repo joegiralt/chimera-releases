@@ -7,7 +7,6 @@ Check here before filing. Known and being worked on.
 - The ROOM reverb can leave a faint high-pitched ring in its tail after a sharp hit such as a snare
 - Under the heaviest load (every voice of every Part playing, all effects on), a big chord landing at once can cause a single tiny click
 - VA: RING with saw waves can click at the start of a note, and switching MODE to SYNC while a note is held can click once
-- ALGO with the low-pass gate on (AMP › LPG with STRIKE): a held note closes after a fraction of a second instead of staying open. VA, MODAL and TAPE hold as expected
 - Some knobs only take effect at the next note: a held note doesn't follow them. Among them: MODAL's exciter and body controls, and TAPE's START, END, XFADE and DRAG
 
 ## TAPE
@@ -28,7 +27,12 @@ Check here before filing. Known and being worked on.
 
 ## MIDI
 
-- A MIDI CC move can be lost while the card is busy (saving, loading, or streaming TAPE hard)
+- A MIDI CC move can be lost while a Sound or project loads from the card
+
+## USB
+
+- USB MIDI and USB audio have been tried on Linux only. macOS and Windows should work without a driver, since Chimera is a class-compliant USB MIDI and audio device, but they haven't been tried yet. If you use a Mac or Windows, please tell us in a [new issue](../../issues/new/choose) whether the unit shows up, plays MIDI and records audio
+- On Windows, the first time you connect the unit after updating, Windows may set up its driver again, because the unit's USB layout changed. Let it finish, then pick **Chimera** again in your music software
 
 ## Hardware
 
