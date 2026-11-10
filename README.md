@@ -8,7 +8,7 @@ It runs on the original PreenFM3 hardware. You don't need to modify your synth o
 
 And if you decide Chimera isn't for you, you can switch back to the original PreenFM3 firmware.
 
-**Current version: Alpha 0.2.0**
+**Current version: Alpha 0.3.0**
 
 Chimera is still in development. Some features aren't finished, and you may run into bugs.
 
@@ -91,13 +91,15 @@ You don't have to take the SD card out of your PreenFM3.
 
 If the power does go off during the install, nothing is lost: the next start installs it again.
 
+**Using USB for MIDI or audio?** On Windows, the first time you connect the unit after an update, Windows may set up its driver again. Let it finish.
+
 > **Make sure you've picked `CHIMERA.BIN` before you press button 1.** The bootloader shows every `.bin` on the card, one at a time, and the Chimera file may not be the first. Step through them all with − / + and check the name. This applies on every computer: Mac, Windows and Linux.
 
 **On a Mac:** macOS also adds a small hidden twin next to anything you copy, named `._CHIMERA.BIN`. The bootloader lists it as `CHIMER~1.BIN`. It isn't firmware, and flashing it leaves a black screen. You can leave it on the card: just pick the real one, `CHIMERA.BIN` (the big file), with − / +. Copying the files from a Windows or Linux computer doesn't make the twin at all.
 
 **Black screen after flashing?** The bootloader is never touched, so hold MENU while powering on and flash again with the right file.
 
-**`CHIMERA.BK2` is required.** It holds TAPE, ORBIT, the reverbs, the GRAIN delay, NOISE, the low-pass gate, the SEM filter, FUZZ, the filter's FEEDBACK and VA's FM, LOOPFM, SOFT SYNC and PHASE modes, among other things. If it's missing from the card, or is from another version, those stay silent and their screens say **UPDATE** or **NEEDS UPDATE**. Copy the `CHIMERA.BK2` from the same release onto the card as in Step 3 and restart.
+**`CHIMERA.BK2` is required.** It holds ALGO, MODAL, TAPE, ORBIT, the effects, NOISE, the low-pass gate, the SEM filter, FUZZ, the filter's FEEDBACK, VA's FM, LOOPFM, SOFT SYNC and PHASE modes, RANDOMIZE and most of MIDI, among other things. If it's missing from the card, or is from another version, those stay silent, Chimera ignores MIDI in, and their screens say **UPDATE** or **NEEDS UPDATE**. Copy the `CHIMERA.BK2` from the same release onto the card as in Step 3 and restart.
 
 **That's it. Chimera is installed!**
 
@@ -198,6 +200,8 @@ We recommend starting here:
 
 **[FAQ](FAQ.md)** answers common questions.
 
+**[MIDI control](MIDI.md)** covers controllers, MPE, sequencers and USB, and **[Tuning](TUNING.md)** the tunings each Part can play in.
+
 `factory-v1.zip` holds 128 factory Sounds across ALGO, MODAL, VA and TAPE, the sources the TAPE Sounds play, and four demo projects. If you skipped it, copy it onto the card as in [Step 3](#step-3-copy-the-files-to-the-card) at any time.
 
 ---
@@ -291,13 +295,17 @@ If possible, include a photo, screenshot, or short recording.
 
 ## What's inside
 
-- **Six Parts**, each its own instrument on its own MIDI channel, with a mixer, three shared effects (chorus, delay with TAPE and GRAIN types, reverb) and a master compressor.
+- **Six Parts**, each its own instrument on its own MIDI channel, with a mixer, three shared effects (chorus with FLANGER and PHASER types, delay with TAPE and GRAIN types, reverb) and a master compressor.
 - **ALGO**, a six-operator phase-modulation synth: two algorithms, ALG A and ALG B, with MORPH blending between them.
 - **MODAL**, struck, plucked and bowed resonators: STRING, BANK, BOWED and SYMP.
 - **VA**, two variable-wave oscillators combined by MODE (MIX, SYNC, SOFT SYNC, RING, AM, FM, PHASE, LOOPFM, MAX, XOR, BITS), with a SUB, a NOISE source and STABILITY drift.
 - **TAPE**, which plays sound sources from the card through four machines: WALK (one-shots, loops, ping-pong and Mellotron-style tapes), STRETCH, SCRUB and WAVE.
 - **A filter for every voice**: CLEAN, 2040, DIRTY, LADDER and SEM, with an FX slot (SOFT drive, FUZZ or FOLD) before or after it, and FEEDBACK.
 - **A low-pass gate** in every voice's VCA: LPG, DECAY and STRIKE on AMP.
+- **Deep MIDI control**, per Part: learn any knob, fader, endless encoder, button, 14-bit control, NRPN, pressure or SysEx programmer; controller maps kept on the card for every project; MPE; program change and bank select; channels for the mixer, ORBIT and the Part you are on; values sent back to your controller. See [MIDI control](MIDI.md).
+- **USB MIDI and audio**, with no driver: one MIDI port, and the main out as an audio input for your DAW.
+- **Tunings per Part**: just, Pythagorean, meantone, Werckmeister III, Scala files from the card and MIDI Tuning Standard. See [Tuning](TUNING.md).
+- **RANDOMIZE**, which rolls a musical new Sound from a seed.
 - **ORBIT**, a ring sequencer that plays Chimera by itself: a chord progression round five rhythm rings.
 - **128 factory Sounds** in `factory-v1.zip`, with the TAPE sources they play and four demo projects.
 

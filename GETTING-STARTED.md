@@ -2,7 +2,7 @@
 
 A short tour for alpha testers. To install (or go back to stock), follow the [README](README.md); this guide starts once Chimera boots. The [quick start](QUICK-START.md) explains the screen, the controls and every page with annotated screenshots; the [FAQ](FAQ.md) answers "how do I…".
 
-You will need a MIDI keyboard or sequencer on the **DIN MIDI input**. USB doesn't carry MIDI.
+You will need a MIDI keyboard, controller or sequencer, on the **DIN MIDI input** or over **USB**. Over USB, Chimera needs no driver: it shows up as a MIDI port called **Chimera**, and as an audio input that records its main out.
 
 ## First five minutes
 
@@ -10,7 +10,7 @@ You will need a MIDI keyboard or sequencer on the **DIN MIDI input**. USB doesn'
 2. Press **B1**. That is Part 1. There are six Parts (B1 to B6), each a separate instrument. The six dots at the top of the screen are the Parts: the current one is a bright green dot, and a Part that is playing gets a ring.
 3. Play Part 1 from your keyboard. Out of the box, Part *n* listens on MIDI channel *n*, is POLY, and plays out of output pair P1.
 4. Turn the six encoders under the screen. Each one drives the cell above it.
-5. Choose what a Part is: hold **EDIT** and press **B1** to open the Sound browser. The top rows are INIT sounds, one per engine (ALGO, MODAL, VA, TAPE), then DRUM, which says COMING SOON and doesn't load yet, above the project's Sounds; each row names its engine. The list opens on Sound 1, so turn encoder 1 up for INIT, to the one you want, and press **EDIT** to load it. Turn encoder 2 for the LIBRARY and FACTORY tabs: FACTORY holds the 128 factory Sounds once they are on the card.
+5. Choose what a Part is: hold **EDIT** and press **B1** to open the Sound browser. It opens on the Part's own Sound. The top rows are INIT sounds, one per engine (ALGO, MODAL, VA, TAPE), then DRUM, which says COMING SOON and doesn't load yet, above the project's Sounds; each row names its engine. Turn encoder 1 to the one you want and press **EDIT** to load it. Turn encoder 2 for the LIBRARY and FACTORY tabs: FACTORY holds the 128 factory Sounds once they are on the card.
 
 ## Getting around
 
@@ -45,7 +45,7 @@ Voices one Part gets on its own, with the TAPE delay and the QUAD reverb:
 | VA with FUZZ | INIT VA, FX FUZZ | 5 |
 | VA on the LADDER with FOLD | GROWL BASS | 5 |
 | MODAL STRING | NYLON | 8 |
-| MODAL BOWED | CELLO SWELL | 6 |
+| MODAL BOWED | CELLO SWELL | 7 |<!-- CELLO SWELL 7: derived from main's bills (MODAL BOWED 640 → 530 cycles), not read on the unit. -->
 | MODAL BANK | GAMELAN | 2 |
 | TAPE one-shot or loop | HARP HIT, PAD LOOP | 8 |
 | TAPE STRETCH GRAIN | VOICE STRETCH | 5 |
@@ -54,13 +54,16 @@ The delay's GRAIN type and the ROOM, HALL and BLOOM reverbs cost about a voice: 
 
 These counts are for the rev V chip (480 MHz). A rev Y chip runs at 400 MHz and has less to share, so heavier Sounds play fewer voices. SETTINGS › SYSTEM › ABOUT shows which chip yours has.
 
+## MIDI
+
+Out of the box, Part *n* listens on MIDI channel *n*, over DIN and USB alike. To turn a controller's knob into a Chimera control, touch a cell, press **MIX + SEQ**, move the knob, and press **MIX + SEQ** again. Controller maps, MPE, program changes, the mixer and ORBIT on their own channels, and values sent back to your controller are in [MIDI control](MIDI.md). Each Part can also play in its own [tuning](TUNING.md).
+
 ## How do I...
 
 Load and save Sounds and projects, route modulation, set MIDI channels, glide and bend, use TAPE and the effects, change the theme, update the firmware or report a bug: see the [FAQ](FAQ.md).
 
 ## Not working yet
 
-- MIDI input is DIN only.
 - DRUM isn't in this release.
 - SETTINGS rows that are dimmed are not built yet; EDIT skips them.
 

@@ -7,7 +7,7 @@ Short answers for alpha testers. New to the controls? Read the [quick start](QUI
 ## Sounds
 
 **How do I load a Sound?**
-Hold **EDIT** and press **B*n*** to open the Sound browser for Part *n*. Turn **encoder 1** to the Sound and press **EDIT**. Turn **encoder 2** to switch between the PROJECT tab (the project's own Sounds), the LIBRARY tab (Sounds saved on the card) and the FACTORY tab (the factory Sounds). If the Part has edits you haven't saved, it asks first.
+Hold **EDIT** and press **B*n*** to open the Sound browser for Part *n*. It opens on the PROJECT tab, on the Part's own Sound. Turn **encoder 1** to the Sound and press **EDIT**. Turn **encoder 2** to switch between the PROJECT tab (the project's own Sounds), the LIBRARY tab (Sounds saved on the card) and the FACTORY tab (the factory Sounds). If the Part has edits you haven't saved, it asks first.
 
 **How do I start a new Sound from INIT?**
 In the Sound browser, turn encoder 1 up past Sound 01 to the INIT rows (INIT ALGO, INIT MODAL, INIT VA, INIT TAPE) and press **EDIT**. Or, to reset the Part to INIT of its engine: SETTINGS › PART › CLEAR.
@@ -27,8 +27,11 @@ Unzip `factory-v1.zip` from the releases page and copy what's in its **CHIMERA**
 **How do I add Sounds from my computer?**
 Use SD card access (hold MENU at power-on, then button 3) and copy the Sound files into the card's `CHIMERA/SOUNDS` folder. They show up on the LIBRARY tab.
 
+**Can Chimera make up a Sound for me?**
+SETTINGS › PART › RANDOMIZE rolls a new Sound on the Part. OSC, ENV, TONE and MOD set how far each part of the Sound may go, and SEED picks the roll: turn back to a seed and its Sound comes back. RELOAD FROM PROJ takes you back to the saved Sound. See the [quick start](QUICK-START.md#17-randomize).
+
 **How do I rename a Sound, or reload it from the project?**
-SETTINGS › PART: RENAME, CLEAR, SAVE TO PROJ, RELOAD FROM PROJ, LIVE SNAP, SAVE TO LIBRARY.
+SETTINGS › PART: RENAME, CLEAR, SAVE TO PROJ, RELOAD FROM PROJ, LIVE SNAP, SAVE TO LIBRARY, RANDOMIZE, MIDI MAP.
 
 ## Projects
 
@@ -52,7 +55,7 @@ On the naming screen: encoder 1 moves the cursor, 2 picks a letter, 3 a digit, s
 **How do I route an LFO or an envelope to a parameter?**
 1. On any page, touch the parameter (turn its encoder a little) and press **MIX + PLUS**. The focus band says ADDED: it is now a column in the matrix.
 2. Go to the Part's MOD page (PLUS along the chain). Its first page is the matrix.
-3. Encoder 1 moves the cursor to a source row (ENV1–3, LFO1–3, VELO, NOTE), encoder 2 to the column, and **encoder 5** sets the amount. Under the grid, the route reads in words, with what the amount means (for example `+42 = +3.3 oct`).
+3. Encoder 1 moves the cursor to a source row (ENV1–3, LFO1–3, VELO, NOTE, WHEEL, PRESS, SLIDE), encoder 2 to the column, and **encoder 5** sets the amount. Under the grid, the route reads in words, with what the amount means (for example `+42 = +3.3 oct`).
 
 Other messages you may see after MIX + PLUS: ALREADY ROUTED, NOT MODULATABLE, MATRIX FULL.
 
@@ -61,6 +64,9 @@ On the matrix, put the cursor on it and press **MIX + MINUS**. On a parameter pa
 
 **Where are the envelopes and LFOs?**
 Under MOD: press **SEQ** to step on from the matrix to ENV1, ENV2, ENV3 (envelopes), SPEED (their speeds), LFO1, LFO2, LFO3. Each LFO page draws the LFO itself, one cycle at the values you set.
+
+**How do I use the mod wheel or aftertouch?**
+They are rows in the MOD matrix: WHEEL (the mod wheel), PRESS (aftertouch, channel or poly) and SLIDE (CC 74, an MPE controller's slide). Route them like any source. A new Sound already has one route: WHEEL into LFO 1's DEPTH, so the wheel brings in vibrato. Any LFO's DEPTH is a destination: touch DEPTH on its LFO page and press **MIX + PLUS**. See [MIDI control](MIDI.md#the-mod-wheel-and-aftertouch-in-the-matrix).
 
 **What about FREQ MOD and RES MOD on the filter?**
 They are routes themselves. On FLT › JACKS, FREQ SRC and RES SRC pick the sources; on FLT › MODULATION, FREQ MOD and RES MOD set how much. The focus band names the source (`FREQ MOD LFO1`). **MIX + MINUS** on an amount deletes the route.
@@ -181,13 +187,50 @@ On the engine's PITCH sub-page (the last in the row under ALG, RES, VA or DECK):
 BEND on the mixer's PART page, in semitones (2 by default).
 
 **Which MIDI messages work?**
-Notes, pitch bend, the sustain pedal (CC 64) and other CCs, on the DIN input. Each Sound carries a MIDI map of up to 16 CCs, per Part: SETTINGS › PART › MIDI MAP. To learn a CC, touch a cell, hold **MIX** and press **SEQ**, then move the knob on your controller. USB doesn't carry MIDI.
+Notes, velocity, pitch bend, the sustain pedal, the mod wheel, aftertouch, CCs, 14-bit CCs, NRPNs, SysEx from old programmers, program change and bank select, MPE, MIDI clock and MIDI Tuning Standard, on DIN and over USB. Every parameter also has a fixed NRPN address (the [NRPN chart](NRPN.md)). The whole story is in [MIDI control](MIDI.md).
+
+**Does USB carry MIDI?**
+Yes. Over USB Chimera needs no driver: it shows up as one MIDI port called **Chimera**, both ways, every channel, as on DIN. DIN and USB work side by side.
+
+**Can I record Chimera over USB?**
+Yes. Chimera also shows up as an audio input, also called **Chimera**: the main out in stereo, 24-bit, 48 kHz. Pick it as the input in your DAW. The jacks keep playing while it records.
+
+**How do I control a cell from my MIDI controller?**
+Touch the cell (turn its encoder a notch), hold **MIX** and press **SEQ**, move the knob on your controller, turn it right and then left, and press **MIX + SEQ** again. Chimera works out whether it is a knob, an endless encoder, a button or a 14-bit control. SETTINGS › PART › MIDI MAP lists the Part's bindings. See [MIDI control](MIDI.md#learn).
+
+**Can I keep one setup for my controller in every project?**
+Yes: save it as a controller map. On SETTINGS › PART › MIDI MAP, press **EDIT** on the `CONTROLLER` row and give it a name. Any Part in any project can then pick it on that row with encoder 2. See [Controller maps](MIDI.md#controller-maps).
+
+**How do I browse Sounds without losing the knobs I learned?**
+On MIDI MAP, with the bar on `CONTROLLER`, press **MIX + PLUS**: KEEP MAP keeps the Part's own rows through every Sound load. See [KEEP MAP](MIDI.md#keeping-the-parts-rows-keep-map).
+
+**Can I play Chimera from an MPE controller?**
+Yes. Each note bends, presses and slides on its own. Most controllers set Chimera's zones themselves; you can also set them at SETTINGS › MIDI CONFIG › MPE. Put the Part on channel 1 for the lower zone. See [MPE](MIDI.md#mpe).
+
+**Can my sequencer change Sounds?**
+Yes, with program changes: turn on PROGRAM at SETTINGS › MIDI CONFIG › SYNC. A program change loads one of the project's Sounds into every Part on its channel. See [Program change](MIDI.md#program-change-sounds-from-a-sequencer).
+
+**Can I control the mixer or ORBIT from MIDI?**
+Yes: SETTINGS › MIDI CONFIG › CONTROL CHANNELS gives the mixer (MIXER), ORBIT (SEQ) and the Part you are on (AUTO) a MIDI channel each, with a fixed chart of CCs. See [CONTROL CHANNELS](MIDI.md#control-channels-mixer-sequencer-and-auto).
+
+**Does Chimera send MIDI?**
+Yes, from MIDI OUT and over USB: each binding sends its cell's value back to your controller, so LED rings and motor faders follow (ECHO, at SETTINGS › MIDI CONFIG › ECHO). It also answers an identity request. See [ECHO](MIDI.md#echo-values-back-to-the-controller).
+
+<!-- VERIFY after merge: PARAM OUT (nrpn-out, #913). -->
+**Can my DAW record my knob moves?**
+Yes: set PARAM OUT to `NRPN` at SETTINGS › MIDI CONFIG › ECHO. Every cell you turn goes out as its NRPN, on the Part's channel. See [PARAM OUT](MIDI.md#param-out-recording-your-edits).
+
+**The screen says DIN MIDI LOST or USB MIDI LOST.**
+Your controller or computer stopped sending: a cable came out, or the computer reset or went to sleep. Chimera lets go of every note and the sustain pedal it was holding, so nothing hangs.
 
 **I hear nothing from a Part.**
 Check its CH matches your keyboard, its LEVEL is up, and its OUT. A Part sent to output pair P2 or P3 is silent on the main pair: the header then shows `OUT P2` or `OUT P3`.
 
 **How do I tune the whole synth?**
-SETTINGS › AUDIO ROUTING › TUNING.
+SETTINGS › AUDIO ROUTING › TUNING, TUNE.
+
+**Can I play in other tunings?**
+Yes, each Part in its own: just intonation, Pythagorean, meantone, Werckmeister III, a Scala file from the card, or a tuning your DAW sends (MTS). Pick it at SETTINGS › AUDIO ROUTING › TUNING, TUNING. See [Tuning](TUNING.md).
 
 ## Effects
 
@@ -196,12 +239,14 @@ Each Part sends to three shared effects. Open the mixer (B*n* twice, or MIX + B*
 
 | Page | Cells | Sub-page |
 |---|---|---|
-| CHR (chorus) | MODE (OFF, I, II, I+II), RATE, DEPTH, MIX | |
+| CHR (chorus) | TYPE (OFF, I, II, I+II, FLANGER, PHASER), RATE, DEPTH, MIX | |
 | DLY (delay) | TYPE (TAPE, GRAIN), TIME, FDBK, TONE, REV (delay into the reverb), MIX | CHARACTER: MECH (wow and flutter), SAT, for TAPE. GRAIN: SIZE, DENSITY, PITCH, TEXTURE, for GRAIN |
 | REV (reverb) | TYPE (QUAD, ROOM, HALL, BLOOM, GATE, REVERSE), SIZE, TIME, DAMP, SMEAR, MIX | MORE, MORE 2: extra controls for the TYPE |
 | MST (master) | Compressor: THRESH, RATIO, ATK, REL, MAKEUP, MIX | LVL: VOL and PAN of the whole synth |
 
-TAPE is a tape echo. GRAIN, in the manner of Mutable Instruments' Beads, builds its repeats from short grains of the last half second: SIZE is a grain's length, DENSITY how many start each second, PITCH shifts each grain (+12 with a high FDBK is a shimmer), and TEXTURE scatters where and when they start. CHARACTER's cells are heard under TAPE and GRAIN's under GRAIN; under the other TYPE they are dimmed.
+The chorus's I, II and I+II are the Juno-60's chorus buttons. FLANGER is a short swept delay fed back on itself; PHASER sweeps six all-pass stages a side, fed back. RATE and DEPTH set each TYPE's sweep.
+
+The delay's TAPE is a tape echo. GRAIN, in the manner of Mutable Instruments' Beads, builds its repeats from short grains of the last half second: SIZE is a grain's length, DENSITY how many start each second, PITCH shifts each grain (+12 with a high FDBK is a shimmer), and TEXTURE scatters where and when they start. CHARACTER's cells are heard under TAPE and GRAIN's under GRAIN; under the other TYPE they are dimmed.
 
 A Sound keeps its send levels when you save it.
 
@@ -254,8 +299,8 @@ On a Mac, copying `CHIMERA.BIN` also leaves a hidden twin called `._CHIMERA.BIN`
 **My browser saved `CHIMERA (1).BIN`.**
 That's a second download of the same file. Rename it back to `CHIMERA.BIN` in Finder or Explorer (and `CHIMERA (1).BK2` to `CHIMERA.BK2`). Rename, don't delete. When you copy it to the card, choose Replace.
 
-**TAPE, ORBIT, the reverb or something else is silent and says UPDATE or NEEDS UPDATE.**
-`CHIMERA.BK2` isn't installed, or it's from another version. Copy the `CHIMERA.BK2` from the same release as your `CHIMERA.BIN` to the top of the card (hold MENU at power-on, then button 3), eject, and restart. The screen says DON'T POWER OFF while it installs.
+**A Part, ORBIT, an effect or MIDI is silent and says UPDATE or NEEDS UPDATE.**
+`CHIMERA.BK2` isn't installed, or it's from another version. Without it, Parts and effects stay silent and Chimera ignores MIDI in. Copy the `CHIMERA.BK2` from the same release as your `CHIMERA.BIN` to the top of the card (hold MENU at power-on, then button 3), eject, and restart. The screen says DON'T POWER OFF while it installs.
 
 **How do I report a bug?**
 Check [KNOWN-ISSUES.md](KNOWN-ISSUES.md) first. Then **Issues › New issue › Bug report**, with the version, what you did and what you heard or saw. A photo, screenshot or short recording helps a lot. See [reporting bugs](README.md#reporting-bugs).
