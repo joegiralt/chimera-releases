@@ -2,7 +2,7 @@
 
 How Chimera answers your controllers, keyboards and sequencers, over DIN and USB. New to the panel? Read the [quick start](QUICK-START.md) first. On SETTINGS pages and on MIDI MAP, the letters **A** to **F** are encoders 1 to 6.
 
-**Contents:** [What a binding can drive](#what-a-binding-can-drive) · [The mod wheel and aftertouch in the matrix](#the-mod-wheel-and-aftertouch-in-the-matrix) · [MPE](#mpe) · [Learn](#learn) · [SysEx controllers](#sysex-controllers) · [The MIDI MAP page](#the-midi-map-page) · [Controller maps](#controller-maps) · [CONTROL CHANNELS](#control-channels-mixer-sequencer-and-auto) · [ECHO](#echo-values-back-to-the-controller) · [USB MIDI and audio](#usb-midi-and-audio) · [Program change](#program-change-sounds-from-a-sequencer) · [What else Chimera answers](#what-else-chimera-answers)
+**Contents:** [What a binding can drive](#what-a-binding-can-drive) · [The mod wheel and aftertouch in the matrix](#the-mod-wheel-and-aftertouch-in-the-matrix) · [MPE](#mpe) · [The built-in CCs](#the-built-in-ccs) · [Learn](#learn) · [SysEx controllers](#sysex-controllers) · [The MIDI MAP page](#the-midi-map-page) · [Controller maps](#controller-maps) · [CONTROL CHANNELS](#control-channels-mixer-sequencer-and-auto) · [ECHO](#echo-values-back-to-the-controller) · [USB MIDI and audio](#usb-midi-and-audio) · [Program change](#program-change-sounds-from-a-sequencer) · [What else Chimera answers](#what-else-chimera-answers)
 
 Each Sound carries a MIDI map of up to 16 bindings. A binding ties one control on your controller to one cell of the Sound, on the Part's own MIDI channel. The map travels with the Sound: load the Sound on another Part and its knobs come with it, on that Part's channel. Parts that share a channel each follow their own map.
 
@@ -66,7 +66,33 @@ Most MPE controllers set the zones themselves when they start: their configurati
 
 The zones never overlap: growing one shrinks the other. RPN 0 on a note channel sets its zone's bend range; on the master channel it sets the Part's BEND, as on any channel. The zones are kept with the rest of SETTINGS, not in the project. With both zones OFF every channel is its own, as with any keyboard.
 
-## Learn
+## The built-in CCs
+
+Every Part answers the General MIDI controllers on its own channel, with no binding and no setup, so a DAW's mixer lanes, a GM sequencer or any keyboard's sliders work at once:
+
+| CC | Name | Moves |
+|---|---|---|
+| 7 | Volume | The Part's LEVEL |
+| 10 | Pan | The Part's PAN |
+| 11 | Expression | A swell on top of LEVEL (see below) |
+| 71 | Resonance | FILTER RESO |
+| 72 | Release | Shifts the release from the Sound's own (64 is the Sound). ALGO: every operator's RR. VA and TAPE: ENV 1's REL. MODAL: DAMP |
+| 73 | Attack | Shifts the attack from the Sound's own (64 is the Sound). ALGO: every operator's AR. VA and TAPE: ENV 1's ATK. MODAL: nothing |
+| 74 | Brightness | FILTER CUTOFF |
+| 91 | Reverb | The Sound's REVERB send |
+| 93 | Chorus | The Sound's CHORUS send |
+| 94 | Delay | The Sound's DELAY send |
+
+- **Each glides** to its value as a knob does, the same way an [NRPN](NRPN.md) with no binding does. A 0 to 127 sweep covers the cell's whole range. ATTACK and RELEASE are the exception (below).
+- **ATTACK and RELEASE** shift the envelope that shapes the Part's loudness, as the MIDI sound controllers are meant to: 64 is the Sound as it is, above 64 is longer, below is shorter. They move each cell from its own value, so an ALGO patch keeps the shape of its six operators' envelopes. On VA and TAPE that is ENV 1's ATK and REL, 1/127 of the range a step. On ALGO it is every operator's AR or RR, turned round (a higher rate is a shorter time): 64 to 127 is 15 AR steps slower and 7 RR steps longer, and AR never reaches 0, which never rises. MODAL rings until DAMP stops it, so RELEASE shifts DAMP; its strike has no attack. What you hear is what you see and save: the cells on the page show the shifted values, and saving the Sound (SAVE TO PROJ, the LIBRARY, a project save or the MENU-hold quick save) keeps them as they sound. From then on 64 is the Sound as saved. A cell stops at its end, so going back to 64 after a clamp lands a little off. A Sound load starts again from that Sound, and a Reset All Controllers (CC 121) takes the shifts back to 64.
+- **Expression** (CC 11) turns the whole Part down from its LEVEL, its sends to the master FX too: 127 is the Part as set, 64 about 12 dB under it, 0 silent. It is playing, not editing: it is never saved, leaves no `*`, and is back at 127 after a project load, NEW, or a Reset All Controllers (CC 121).
+- **Your bindings come first.** When the Sound's own rows or the Part's controller map bind a CC, that binding moves and the built-in CC does nothing. Bind CC 74 to MORPH and CC 74 drives MORPH.
+- **With MPE**, CC 74 on a zone's master channel is SLIDE only and leaves CUTOFF alone; the other built-in CCs still answer there. On a zone's note channels every CC is the note's own.
+- **AUTO** (see [CONTROL CHANNELS](#control-channels-mixer-sequencer-and-auto)) plays the Part you are on, so the built-in CCs sent there move that Part. MIXER's and SEQUENCER's channels are never a Part's, so their charts never meet these.
+- The mod wheel (CC 1) is the WHEEL row in the matrix, as above.
+
+To turn the built-in CCs off (when a controller sends CC 7 or CC 74 for something else and you'd rather not bind it), set **BUILT-IN** (D) to `OFF` on SETTINGS › MIDI CONFIG › CONTROL CHANNELS. It is kept with the rest of SETTINGS.
+
 
 1. Touch the cell you want to control (turn its encoder a notch), on a Part's page, a master FX page or an ORBIT page.
 2. Hold **MIX** and press **SEQ**. The value line reads `MOVE A KNOB · CUTOFF` (the cell's name).
@@ -200,10 +226,52 @@ To copy a map to or from your computer, reach the card over USB from the bootloa
 
 1. Turn the PreenFM3 off. Hold **MENU** and turn it on.
 2. Press **button 3 (SD card access)**. The card shows up on your computer like a USB drive.
-3. Open **CHIMERA**, then **MAPS**. Each map is a pair of files with the same name, one ending `.A` and one `.B`. Copy both files of the pair, to keep a map on your computer or to bring one onto the card. If the card has no **MAPS** folder yet, save a map on the unit first.
+3. Open **CHIMERA**, then **MAPS**. Each map is one or two files with the same name, ending `.A` and `.B`. Copy every file of that name, to keep a map on your computer or to bring one onto the card. If the card has no **MAPS** folder yet, save a map on the unit first.
 4. Eject the drive, press **MENU** to leave SD card access, and turn the PreenFM3 off and on.
 
 The map's name is inside its files, so MIDI MAP lists it under that name. A map copied onto the card replaces the one of the same name; every Part playing it plays the new one after the restart.
+
+### SUGGEST, the factory map
+
+The factory set's `CHIMERA/MAPS` holds **SUGGEST**, a ready-made map for any controller of knobs or faders: set them to send these CCs on the Part's channel, pick `SUGGEST` on MIDI MAP, and each knob plays the same kind of control whatever the Part's engine. CC 20 is the engine's main timbre knob, CC 21 its second, CC 29 its character; the shared rows play on every engine. A Part plays 16 rows: the 6 shared and its engine's 10.
+
+| CC | Shared |
+|---|---|
+| 14 | LFO 1 RATE |
+| 15 | LFO 1 DEPTH |
+| 85 | ENV 2 LEVEL |
+| 86 | VOICE TIME |
+| 87 | FX AMOUNT |
+| 88 | FX MIX |
+
+| CC | ALGO | MODAL | VA | TAPE |
+|---|---|---|---|---|
+| 20 | MORPH | STRUCT | WAVE1 | POSITION (WALK POSITION, STRCH POSITION, SCRUB FINGER, WAVE FRAME) |
+| 21 | VOWEL | BRIGHT | WAVE2 | MOTION (STRCH SPEED, SCRUB SPEED, WAVE SCAN) |
+| 22 | OPERATOR 2 LEVEL | POS | SHAPE1 | SIZE (WALK LENGTH, STRCH D-TIME, SCRUB LENGTH, WAVE RANGE) |
+| 23 | OPERATOR 3 LEVEL | EXCITE | SHAPE2 | DRAG (WALK FADE, SCRUB DRAG) |
+| 24 | OPERATOR 4 LEVEL | BODY | AMNT | DRIFT (WALK DRIFT) |
+| 25 | OPERATOR 2 CRSE | COLOR | MODE | LENGTH (STRCH LENGTH) |
+| 26 | OPERATOR 3 CRSE | BURST | SUB | GRAIN (STRCH GRAIN) |
+| 27 | OPERATOR 4 CRSE | FORCE | NOISE | SPRAY (STRCH SPRAY) |
+| 28 | OPERATOR 2 DETUN | COUPLE | FINE2 | TAPE |
+| 29 | OPERATOR 4 FDBK | HALO | STAB | AGE |
+
+Here Part 1, on INIT ALGO, plays SUGGEST:
+
+![MIDI MAP with SUGGEST picked, annotated](docs/img/midi-suggest.png)
+
+1. **Breadcrumb:** the Part whose map this is.
+2. **`CONTROLLER`:** the Part's controller map …
+3. … here `SUGGEST`.
+4. **The bar** on SUGGEST's first ALGO row: CC 20 drives MORPH.
+5. **`IN SUGGEST`:** the row is the map's, not the Sound's.
+
+Every row is absolute, `JUMP`, as learn sets a knob; change one to PICKUP with **E** on MIDI MAP. The CCs are ones MIDI leaves undefined, so they meet no GM control: CC 1 (the wheel), 7 (LEVEL), 10 (PAN), 74 (CUTOFF) and the other [built-in CCs](#the-built-in-ccs) stay free. A TAPE row names the cell, then in brackets what each machine calls it; on a machine that doesn't read the cell, the knob does nothing. ENV 2 LEVEL sets how far ENV 2 moves what it drives (the filter, in most Sounds); VOICE TIME is the glide; FX AMOUNT and FX MIX are the Sound's FX slot.
+
+To change SUGGEST, first save it under a new name (with the bar on `CONTROLLER`, press **EDIT** and type another name), then edit that copy. Copying the factory set onto the card again replaces `SUGGEST`'s file, and any edit made to it, with the factory map; that is also how to get it back. The file is `SUGG05F6.A`, in **CHIMERA/MAPS**.
+
+SUGGEST fills all 16 rows of every engine. Learning still works, since a learned row goes into the Sound's own rows and wins over the map's row on the same control. But saving a learned row into SUGGEST or a copy of it is refused with `MAP FULL`, unless the row takes over a control or cell the map already uses. Delete a row from your copy first (**MIX + MINUS** on it), or start a new map from `NONE`.
 
 ### Pickup
 
@@ -227,6 +295,7 @@ SETTINGS › MIDI CONFIG › CONTROL CHANNELS gives three channels a job of thei
 3. **SEQ:** SEQUENCER's channel, ORBIT's chart below. B turns it.
 4. **AUTO:** the channel that plays whichever Part you are on. C turns it. Here it is `1`, Part 1's channel, so it reads dimmed: it does nothing.
 5. **Why:** on a dimmed cell the band reads `A PART HAS THIS CHANNEL`.
+6. **BUILT-IN:** `ON` (the default) or `OFF`: whether each Part answers the [built-in CCs](#the-built-in-ccs) on its own channel. D turns it.
 
 A Part's own channel always wins: a CONTROL channel that a Part also listens on is the Part's, and its cell reads dimmed until you move one of them. When two CONTROL channels share a channel, MIXER wins over SEQUENCER, and SEQUENCER over AUTO. If you use MPE, keep these channels off its zones' member channels.
 
@@ -370,22 +439,23 @@ Over USB, Chimera is class compliant: it needs no driver on Linux, macOS or Wind
 
 - **Chimera**, one MIDI port both ways: every channel, as on DIN, each Part on its own channel. Clock, SysEx, the identity reply and ECHO use this port.
 - **Chimera**, an audio input: the main out in stereo, 24-bit, 48 kHz, exactly what the main out jacks play. Record it in your DAW like any interface's input; the jacks keep playing while it streams.
-<!-- VERIFY after merge: USB audio from the computer (PR #937). Then shoot docs/img/usb-audio.png (SETTINGS › AUDIO ROUTING › USB AUDIO) with numbered callouts and put it above the USB IN list. -->
 - **Chimera**, an audio output: stereo, 24-bit, 48 kHz from your computer, mixed into the main out jacks. Pick it as your DAW's or your system's output and Chimera plays it beside its own sound. Chimera sets the pace (the computer follows its clock), so it never drifts or clicks over a long session.
 
 DIN and USB work side by side. So far USB MIDI and audio have been tried on Linux only: see [KNOWN-ISSUES.md](KNOWN-ISSUES.md#usb).
 
-<!-- VERIFY after merge: USB audio from the computer (PR #937). -->
 ### Playing your computer through Chimera
 
 Chimera plays your computer's sound at the computer's own scale: a full-scale sample is as loud as the synth at full scale. Your computer's output volume for Chimera still applies. On Linux, PipeWire may start the new Chimera output at 40 % (about −24 dB): set Chimera's output to 100 % in your sound settings.
 
 Your computer's sound is mixed in after the synth's, so the audio input never records it back: a DAW recording Chimera while it plays a backing track records only Chimera. If you monitor the input in your DAW while playing out through Chimera, you hear Chimera twice; turn the DAW's input monitoring off.
 
-**SETTINGS › AUDIO ROUTING › USB AUDIO** sets how loud your computer plays:
+### USB AUDIO: how loud the computer plays
 
-1. **USB IN** (A): how loud your computer's sound joins the main out: `OFF`, `-24dB`, `-18dB`, `-12dB`, `-9dB`, `-6dB`, `-3dB` or `0dB` (the default). A change fades in over a few milliseconds, never with a click. `OFF` keeps the output there for your computer but silent.
-2. **MENU** goes back.
+![SETTINGS › AUDIO ROUTING › USB AUDIO, annotated](docs/img/usb-audio.png)
+
+1. **SETTINGS › AUDIO ROUTING › USB AUDIO.**
+2. **USB IN** (A): how loud your computer's sound joins the main out: `OFF`, `-24dB`, `-18dB`, `-12dB`, `-9dB`, `-6dB`, `-3dB` or `0dB` (the default). A change fades in over a few milliseconds, never with a click. At `0dB` a loud computer track on top of a loud patch can pass full scale: the main out then clips hard at full scale, so turn one of them down. `OFF` keeps the output there for your computer but silent.
+3. **The hint:** `A-F EDIT · MENU BACK`. MENU goes back.
 
 ## Program change: Sounds from a sequencer
 
@@ -412,7 +482,7 @@ Select the bank with **CC 0** (bank select MSB) before the program change; if yo
 When SETTINGS › ABOUT reads `NEEDS UPDATE`, Chimera ignores MIDI in, notes and clock too, until the update is installed: MIDI MAP reads `NEEDS UPDATE`, and **MIX + SEQ** says `NEEDS UPDATE` instead of starting learn.
 
 - **Identity request** (`F0 7E 7F 06 01 F7`): Chimera answers with its identity and firmware version, while ECHO is on.
-- **All Notes Off** (CC 123), and the Omni and Mono/Poly messages (CC 124–127): the notes of every Part on that channel are released. **All Sound Off** (CC 120) silences them, and **Reset All Controllers** (CC 121) resets the pedal, the bend, the mod wheel, pressure and CC 74.
+- **All Notes Off** (CC 123), and the Omni and Mono/Poly messages (CC 124–127): the notes of every Part on that channel are released. **All Sound Off** (CC 120) silences them, and **Reset All Controllers** (CC 121) resets the pedal, the bend, the mod wheel, pressure, CC 74 and expression (CC 11).
 - **System Reset** (`FF`): every sound stops and every controller resets.
 - **Active Sensing:** once a controller sends it, a pulled cable releases every held note within a third of a second, and the screen shows **DIN MIDI LOST**. A USB host that resets or sleeps while you hold a note or pedal does the same, with **USB MIDI LOST**.
 - **RPN 0** sets the Part's BEND range, in semitones (0 to 24).

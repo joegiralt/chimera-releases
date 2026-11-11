@@ -50,6 +50,8 @@ Voices one Part gets on its own, with the TAPE delay and the QUAD reverb:
 | TAPE one-shot or loop | HARP HIT, PAD LOOP | 8 |
 | TAPE STRETCH GRAIN | VOICE STRETCH | 5 |
 
+Each Sound's cost is the worst the unit has measured for it, so a Sound never asks for more than the processor can give. Because of that, some heavier Sounds play one voice fewer: on their own with the QUAD reverb, DEAD RADIO plays 7, BIT SHRED 6, SERVO and GROWL BASS 5, and YELLING LEAD 4.
+
 The delay's GRAIN type and the ROOM, HALL and BLOOM reverbs cost about a voice: with one of them on, many Sounds play one voice fewer.
 
 These counts are for the rev V chip (480 MHz). A rev Y chip runs at 400 MHz and has less to share, so heavier Sounds play fewer voices. SETTINGS › SYSTEM › ABOUT shows which chip yours has.

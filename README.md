@@ -54,7 +54,7 @@ See [Troubleshooting](#troubleshooting).
 ### Step 2: Download Chimera
 
 1. Open the [Chimera Releases page](../../releases).
-2. Download three files: `CHIMERA.BIN`, `CHIMERA.BK2` and `factory-v1.zip`. `CHIMERA.BIN` and `CHIMERA.BK2` are the firmware: Chimera needs both. `factory-v1.zip` holds the factory Sounds, the sources the TAPE Sounds play, and four demo projects.
+2. Download three files: `CHIMERA.BIN`, `CHIMERA.BK2` and `factory-v1.zip`. `CHIMERA.BIN` and `CHIMERA.BK2` are the firmware: Chimera needs both. `factory-v1.zip` holds the factory Sounds, the sources the TAPE Sounds play, four demo projects and the SUGGEST controller map.
 3. Save them somewhere easy to find, like your Downloads folder, and unzip `factory-v1.zip`. It unzips to a folder called **CHIMERA**.
 
 **Keep the names exactly as they are.** If your browser saved a second copy as `CHIMERA (1).BIN` (or `CHIMERA (1).BK2`), rename it back to `CHIMERA.BIN` in Finder or Explorer. Rename it; don't delete it. The version number is in the release title, not in the file name.
@@ -70,8 +70,9 @@ You don't have to take the SD card out of your PreenFM3.
 5. Copy `CHIMERA.BIN` and `CHIMERA.BK2` into the drive's main folder (not inside another folder). If older copies are already there, choose **Replace**.
 6. Copy the factory set from the unzipped **CHIMERA** folder:
    - **If the drive has no CHIMERA folder yet**, copy the whole **CHIMERA** folder onto the drive.
-   - **If it already has one**, copy folder by folder instead: open **SOUNDS**, **TAPES** and **PROJECTS** in the unzipped folder, and copy the files inside each into the folder of the same name on the drive. Copying file by file keeps your own Sounds and projects: on a Mac, replacing a whole *folder* throws away what was in it.
+   - **If it already has one**, copy folder by folder instead: open **SOUNDS**, **TAPES**, **PROJECTS** and **MAPS** in the unzipped folder, and copy the files inside each into the folder of the same name on the drive. Copying file by file keeps your own Sounds and projects: on a Mac, replacing a whole *folder* throws away what was in it.
      - **SOUNDS** and **PROJECTS**: choose **Replace** for files with the same name.
+     - **MAPS**: if the drive has no **MAPS** folder, copy the whole folder across. If it has one, choose **Replace**: that puts back the factory SUGGEST map, and leaves your own maps as they are.
      - **TAPES**: if the drive has no **TAPES** folder (a card from 0.1.0 doesn't), copy the whole **TAPES** folder across. If it has one, choose **Skip** for any `.SRC` file that is already there. A source's name is a checksum of what's in it, so the one on the card is the same file, and Chimera keeps it read-only, so replacing it may ask for permission or stop the copy.
    - The demo projects take the first four project slots. If you saved projects of your own there (`P0000001.A` to `P0000004.A` in **PROJECTS**), copy them to your computer first.
 7. Safely eject the drive from your computer.
@@ -202,7 +203,7 @@ We recommend starting here:
 
 **[MIDI control](MIDI.md)** covers controllers, MPE, sequencers and USB, and **[Tuning](TUNING.md)** the tunings each Part can play in.
 
-`factory-v1.zip` holds 128 factory Sounds across ALGO, MODAL, VA and TAPE, the sources the TAPE Sounds play, and four demo projects. If you skipped it, copy it onto the card as in [Step 3](#step-3-copy-the-files-to-the-card) at any time.
+`factory-v1.zip` holds 128 factory Sounds across ALGO, MODAL, VA and TAPE, the sources the TAPE Sounds play, four demo projects and the SUGGEST controller map. If you skipped it, copy it onto the card as in [Step 3](#step-3-copy-the-files-to-the-card) at any time.
 
 ---
 
@@ -302,8 +303,8 @@ If possible, include a photo, screenshot, or short recording.
 - **TAPE**, which plays sound sources from the card through four machines: WALK (one-shots, loops, ping-pong and Mellotron-style tapes), STRETCH, SCRUB and WAVE.
 - **A filter for every voice**: CLEAN, 2040, DIRTY, LADDER and SEM, with an FX slot (SOFT drive, FUZZ or FOLD) before or after it, and FEEDBACK.
 - **A low-pass gate** in every voice's VCA: LPG, DECAY and STRIKE on AMP.
-- **Deep MIDI control**, per Part: learn any knob, fader, endless encoder, button, 14-bit control, NRPN, pressure or SysEx programmer; controller maps kept on the card for every project; MPE; program change and bank select; channels for the mixer, ORBIT and the Part you are on; values sent back to your controller. See [MIDI control](MIDI.md).
-- **USB MIDI and audio**, with no driver: one MIDI port, the main out as an audio input for your DAW, and an audio output that plays your computer through Chimera.<!-- VERIFY after merge: the audio output (PR #937). -->
+- **Deep MIDI control**, per Part: the General MIDI CCs (volume, pan, expression, cutoff, resonance, attack, release, sends) with no setup; learn any knob, fader, endless encoder, button, 14-bit control, NRPN, pressure or SysEx programmer; controller maps kept on the card for every project, with SUGGEST ready for any bank of knobs; MPE; program change and bank select; channels for the mixer, ORBIT and the Part you are on; values sent back to your controller. See [MIDI control](MIDI.md).
+- **USB MIDI and audio**, with no driver: one MIDI port, the main out as an audio input for your DAW, and an audio output that plays your computer through Chimera.
 - **Tunings per Part**: just, Pythagorean, meantone, Werckmeister III, Scala files from the card and MIDI Tuning Standard. See [Tuning](TUNING.md).
 - **RANDOMIZE**, which rolls a musical new Sound from a seed.
 - **ORBIT**, a ring sequencer that plays Chimera by itself: a chord progression round five rhythm rings.

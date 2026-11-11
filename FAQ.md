@@ -195,12 +195,17 @@ Yes. Over USB Chimera needs no driver: it shows up as one MIDI port called **Chi
 **Can I record Chimera over USB?**
 Yes. Chimera also shows up as an audio input, also called **Chimera**: the main out in stereo, 24-bit, 48 kHz. Pick it as the input in your DAW. The jacks keep playing while it records.
 
-<!-- VERIFY after merge: USB audio from the computer (PR #937). -->
 **Can Chimera play my computer's sound?**
 Yes. Chimera also shows up as an audio output called **Chimera**: pick it in your DAW or your system's sound settings and Chimera mixes it into its main out. SETTINGS › AUDIO ROUTING › USB AUDIO › USB IN sets how loud, `OFF` to `0dB` (the default). Recording from Chimera never includes what the computer plays. On Linux, PipeWire may start the Chimera output at 40 %: set it to 100 %. See [USB MIDI and audio](MIDI.md#usb-midi-and-audio).
 
 **How do I control a cell from my MIDI controller?**
 Touch the cell (turn its encoder a notch), hold **MIX** and press **SEQ**, move the knob on your controller, turn it right and then left, and press **MIX + SEQ** again. Chimera works out whether it is a knob, an endless encoder, a button or a 14-bit control. SETTINGS › PART › MIDI MAP lists the Part's bindings. See [MIDI control](MIDI.md#learn).
+
+**Do my keyboard's volume and cutoff sliders work without setup?**
+Yes. Every Part answers the General MIDI CCs on its own channel: 7 volume, 10 pan, 11 expression, 71 resonance, 72 release, 73 attack, 74 cutoff, 91 reverb, 93 chorus, 94 delay. A binding on the same CC wins. To turn them off: SETTINGS › MIDI CONFIG › CONTROL CHANNELS, BUILT-IN. See [The built-in CCs](MIDI.md#the-built-in-ccs).
+
+**Is there a ready-made map for a box of knobs?**
+Yes: SUGGEST, in the factory set. Set your controller's knobs to send CC 14, 15 and 20 to 29 and 85 to 88, and pick `SUGGEST` on SETTINGS › PART › MIDI MAP. The same knob plays the same kind of control on every engine. See [SUGGEST](MIDI.md#suggest-the-factory-map).
 
 **Can I keep one setup for my controller in every project?**
 Yes: save it as a controller map. On SETTINGS › PART › MIDI MAP, press **EDIT** on the `CONTROLLER` row and give it a name. Any Part in any project can then pick it on that row with encoder 2. See [Controller maps](MIDI.md#controller-maps).

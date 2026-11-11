@@ -470,7 +470,7 @@ The top list: PROJECT, PART, ORBIT, MIDI CONFIG, SYSEX DUMP (later), AUDIO ROUTI
 
 - **PART** holds RENAME, CLEAR, SAVE TO PROJ, RELOAD FROM PROJ, LIVE SNAP, SAVE TO LIBRARY, RANDOMIZE (section 17) and MIDI MAP ([MIDI control](MIDI.md#the-midi-map-page)).
 - **MIDI CONFIG** holds SYNC (the clock, and PROGRAM for program changes), PORT CONFIG (later), CHANNELS, CONTROL CHANNELS, ECHO and MPE: see [MIDI control](MIDI.md).
-- **AUDIO ROUTING** holds OUTPUTS, SENDS (later), TUNING (see [Tuning](TUNING.md)) and USB AUDIO, how loud your computer plays through Chimera (see [USB MIDI and audio](MIDI.md#usb-midi-and-audio)).<!-- VERIFY after merge: USB AUDIO row (PR #937). -->
+- **AUDIO ROUTING** holds OUTPUTS, SENDS (later), TUNING (see [Tuning](TUNING.md)) and USB AUDIO, how loud your computer plays through Chimera (see [USB MIDI and audio](MIDI.md#usb-midi-and-audio)).
 - **PROJECT** also holds POOL (the project's memory) and PURGE UNUSED SRC, which frees the memory held by TAPE sources no Part uses (the files on the card stay). PERSONALIZE holds THEME, SCREENSAVER (OFF, or 5 seconds up to 10 minutes; 5 minutes is the default), CHAIN MAP (PAGES: ROW or STACK) and TEXT SIZE (SIZE: NORMAL or LARGE; LARGE sets the cells, the focus label, the hints, the SETTINGS lists and the Sound names a size up).
 
 ## 16. ORBIT, the ring sequencer
