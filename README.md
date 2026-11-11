@@ -303,7 +303,7 @@ If possible, include a photo, screenshot, or short recording.
 - **A filter for every voice**: CLEAN, 2040, DIRTY, LADDER and SEM, with an FX slot (SOFT drive, FUZZ or FOLD) before or after it, and FEEDBACK.
 - **A low-pass gate** in every voice's VCA: LPG, DECAY and STRIKE on AMP.
 - **Deep MIDI control**, per Part: learn any knob, fader, endless encoder, button, 14-bit control, NRPN, pressure or SysEx programmer; controller maps kept on the card for every project; MPE; program change and bank select; channels for the mixer, ORBIT and the Part you are on; values sent back to your controller. See [MIDI control](MIDI.md).
-- **USB MIDI and audio**, with no driver: one MIDI port, and the main out as an audio input for your DAW.
+- **USB MIDI and audio**, with no driver: one MIDI port, the main out as an audio input for your DAW, and an audio output that plays your computer through Chimera.<!-- VERIFY after merge: the audio output (PR #937). -->
 - **Tunings per Part**: just, Pythagorean, meantone, Werckmeister III, Scala files from the card and MIDI Tuning Standard. See [Tuning](TUNING.md).
 - **RANDOMIZE**, which rolls a musical new Sound from a seed.
 - **ORBIT**, a ring sequencer that plays Chimera by itself: a chord progression round five rhythm rings.

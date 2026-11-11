@@ -34,6 +34,9 @@ Check here before filing. Known and being worked on.
 - USB MIDI and USB audio have been tried on Linux only. macOS and Windows should work without a driver, since Chimera is a class-compliant USB MIDI and audio device, but they haven't been tried yet. If you use a Mac or Windows, please tell us in a [new issue](../../issues/new/choose) whether the unit shows up, plays MIDI and records audio
 - On Windows, the first time you connect the unit after updating, Windows may set up its driver again, because the unit's USB layout changed. Let it finish, then pick **Chimera** again in your music software
 
+- Computer sleep, and unplugging and replugging the USB cable, haven't been tried with the unit yet. If you try them, please tell us whether USB MIDI and USB audio come back afterwards. Starting and stopping USB audio recording has been tried and works
+- On Linux, PipeWire may start the Chimera audio output at 40 % volume. Set it to 100 % in your sound settings <!-- VERIFY after merge: USB audio from the computer (PR #937). -->
+
 ## Hardware
 
 - PreenFM3s with the newer "1.6 - 100" main board are detected, and their knobs and buttons should work, but this hasn't been tried on that board yet. If yours is one, please tell us how it goes (SETTINGS › SYSTEM › ABOUT shows the board next to the chip revision)

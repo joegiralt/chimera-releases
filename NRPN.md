@@ -1,7 +1,5 @@
 # NRPN chart
 
-<!-- VERIFY after merge: this chart comes from branch nrpn-out (#926, #913); regenerate it from main with chimera-utils once merged. PARAM OUT (last paragraph of the intro) is #913. -->
-
 Every cell below has a fixed NRPN address that never changes from one firmware to the next, so a sequencer's instrument definition (a Cirklon CK instrument, a Hapax definition, a DAW's NRPN lane) made once keeps working. No binding is needed: send the NRPN on the Part's MIDI channel and the cell moves, gliding as a knob does. A binding on the same NRPN number in the Sound's MIDI map wins over the address (see [MIDI control](MIDI.md)).
 
 An NRPN is CC 99 (the address MSB), CC 98 (the address LSB), then CC 6 (the value MSB) and, for a 14-bit value, CC 38 (the value LSB). The **NRPN** column gives the address as MSB:LSB, then as one 14-bit number (MSB × 128 + LSB).
@@ -13,7 +11,7 @@ The **Value** column says what the value carries:
 
 An ENGINE's cells move only on a Part playing that engine. The master FX are shared by every Part: their NRPNs work on any Part's channel. ORBIT's ring cells move the playing scene. Addresses not listed here are reserved and do nothing.
 
-With SETTINGS › MIDI CONFIG › ECHO › PARAM OUT at `NRPN`, Chimera sends these same NRPNs, on the Part's channel, for every cell you turn on the panel, so a sequencer can record your edits.
+With SETTINGS › MIDI CONFIG › ECHO › PARAM OUT at `NRPN`, Chimera sends these same NRPNs, on the Part's channel, for every cell you turn on the panel, so a sequencer can record your edits. A master FX or ORBIT ring cell goes out on the active Part's channel.
 
 ## ALGO
 

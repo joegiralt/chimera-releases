@@ -195,6 +195,10 @@ Yes. Over USB Chimera needs no driver: it shows up as one MIDI port called **Chi
 **Can I record Chimera over USB?**
 Yes. Chimera also shows up as an audio input, also called **Chimera**: the main out in stereo, 24-bit, 48 kHz. Pick it as the input in your DAW. The jacks keep playing while it records.
 
+<!-- VERIFY after merge: USB audio from the computer (PR #937). -->
+**Can Chimera play my computer's sound?**
+Yes. Chimera also shows up as an audio output called **Chimera**: pick it in your DAW or your system's sound settings and Chimera mixes it into its main out. SETTINGS › AUDIO ROUTING › USB AUDIO › USB IN sets how loud, `OFF` to `0dB` (the default). Recording from Chimera never includes what the computer plays. On Linux, PipeWire may start the Chimera output at 40 %: set it to 100 %. See [USB MIDI and audio](MIDI.md#usb-midi-and-audio).
+
 **How do I control a cell from my MIDI controller?**
 Touch the cell (turn its encoder a notch), hold **MIX** and press **SEQ**, move the knob on your controller, turn it right and then left, and press **MIX + SEQ** again. Chimera works out whether it is a knob, an endless encoder, a button or a 14-bit control. SETTINGS › PART › MIDI MAP lists the Part's bindings. See [MIDI control](MIDI.md#learn).
 
@@ -216,7 +220,6 @@ Yes: SETTINGS › MIDI CONFIG › CONTROL CHANNELS gives the mixer (MIXER), ORBI
 **Does Chimera send MIDI?**
 Yes, from MIDI OUT and over USB: each binding sends its cell's value back to your controller, so LED rings and motor faders follow (ECHO, at SETTINGS › MIDI CONFIG › ECHO). It also answers an identity request. See [ECHO](MIDI.md#echo-values-back-to-the-controller).
 
-<!-- VERIFY after merge: PARAM OUT (nrpn-out, #913). -->
 **Can my DAW record my knob moves?**
 Yes: set PARAM OUT to `NRPN` at SETTINGS › MIDI CONFIG › ECHO. Every cell you turn goes out as its NRPN, on the Part's channel. See [PARAM OUT](MIDI.md#param-out-recording-your-edits).
 

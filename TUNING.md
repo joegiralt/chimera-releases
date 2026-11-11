@@ -4,12 +4,13 @@ Each Part plays in a tuning of its own: equal temperament, a historical temperam
 
 Pick the tuning on **SETTINGS › AUDIO ROUTING › TUNING**, cell B, **TUNING**. It sets the tuning of the Part you are on (press another Part's button to set its own). Cell A, **TUNE**, shifts the whole unit. A new note plays the tuning; a note already sounding keeps its pitch.
 
-<!-- VERIFY after merge: tuning by file name and MAPPING (tuning-parity, #907). Then shoot docs/img/tuning.png (SETTINGS › AUDIO ROUTING › TUNING on a Scala file, MAPPING beside it) with numbered callouts, and put it here, above this list. -->
+![SETTINGS › AUDIO ROUTING › TUNING with bohlen-pierce.scl picked, annotated](docs/img/tuning.png)
 
 1. **TUNE** (A): the whole unit, in cents.
-2. **TUNING** (B): the Part's tuning. Turn past `MTS` and it steps through the Scala files on the card, by file name.
+2. **TUNING** (B): the Part's tuning. Turn past `MTS` and it steps through the Scala files on the card, by file name. The cell shows a name's first 7 characters.
 3. **MAPPING** (C): how a Scala file lies on the keys, `CONTIN.` (continuous) or `KEYBD` (keyboard).
-4. Under the big readout: the Scala file's own name for its scale (its description line), or the file's name if it has none.
+4. The Scala file's own name for its scale (its description line), or the file's name if it has none.
+5. While TUNING has focus, a longer file name scrolls here and in the cell: it holds still, runs to its end, holds, and starts again.
 
 | TUNING | What it plays |
 |---|---|
@@ -23,7 +24,7 @@ Pick the tuning on **SETTINGS › AUDIO ROUTING › TUNING**, cell B, **TUNING**
 
 C stays at its usual pitch in every named temperament, so a Part in `JUST` plays in tune with one in `12-TET` on C.
 
-The PITCH sub-page's tuner reads the note as the Part's tuning plays it. <!-- VERIFY after merge: #904 (e2e-fixes). -->
+The PITCH sub-page's tuner reads the note as the Part's tuning plays it.
 
 ## Scala files
 
@@ -33,20 +34,21 @@ A Scala file (`.scl`) holds a scale: up to 128 steps, in cents or as ratios. Tho
 
 The card is inside the case, so you reach it over USB from the bootloader, as when you install:
 
-1. Rename the file so its name, before `.scl`, is 1 to 8 letters and digits: `bohlen-pierce.scl` becomes, say, `bohlen.scl`. The name is what TUNING shows.
-2. Turn the PreenFM3 off. Hold **MENU** and turn it on.
-3. Press **button 3 (SD card access)**. The card shows up on your computer like a USB drive.
-4. Open the **CHIMERA** folder. If it has no **TUNINGS** folder, make one there.
-5. Copy the `.scl` file into **TUNINGS**. To map it to the keys yourself, copy a `.kbm` file of the same name beside it (`PELOG.KBM` with `PELOG.SCL`).
-6. Eject the drive, press **MENU** to leave SD card access, and turn the PreenFM3 off and on.
+1. Turn the PreenFM3 off. Hold **MENU** and turn it on.
+2. Press **button 3 (SD card access)**. The card shows up on your computer like a USB drive.
+3. Open the **CHIMERA** folder. If it has no **TUNINGS** folder, make one there.
+4. Copy the `.scl` file into **TUNINGS**. To map it to the keys yourself, copy a `.kbm` file of the same name beside it (`bohlen-pierce.kbm` with `bohlen-pierce.scl`).
+5. Eject the drive, press **MENU** to leave SD card access, and turn the PreenFM3 off and on.
 
-Chimera only reads that folder; it never writes to it.
+Files keep the names they have: `bohlen-pierce.scl` shows as `BOHLEN-PIERCE`, in capitals (letters outside A–Z show as `?`, and the first 32 characters are shown). The hidden files a Mac leaves beside the ones you copy (`._bohlen-pierce.scl`, `.DS_Store`) are harmless: they are never listed. Chimera only reads that folder; it never writes to it.
+
+To take a file off the card, move it out of the folder the same way. Every Part playing it then plays `12-TET` (or, with only the `.kbm` gone, the scale by its MAPPING).
 
 ### Picking one
 
-On TUNING, turn past `MTS`: B steps through the files in name order, and the cell shows the file's name. The first 128 files are listed. If a file is missing or can't be read, the Part plays `12-TET` and the screen says why, such as `PELOG.SCL NOT FOUND` or `PELOG.SCL NOT SCALA`.
+On TUNING, turn past `MTS`: B steps through the `.scl` files, and the cell shows the file's name. The first 128 `.scl` files in the folder are reached, in the order they were copied; turning past the last of them when the folder holds more says `FIRST 128 FILES ONLY`. If a file is missing or can't be read, the Part plays `12-TET` and the screen says why, such as `PELOG.SCL NOT FOUND` or `PELOG.SCL NOT SCALA`.
 
-The project keeps the file's name, not its place in the list: a file added later moves nothing, and a changed `PELOG.SCL` on the card changes every project that plays `PELOG`.
+The project keeps the file's name, not its place in the list: a file added later moves nothing, a file copied onto the card again under the same name is still the one it plays, and a changed `PELOG.SCL` on the card changes every project that plays `PELOG`.
 
 ### MAPPING: the scale on the keys
 

@@ -191,7 +191,7 @@ Every engine has a PITCH sub-page: under ALG on ALGO, under RES on MODAL, under 
 
 ![The PITCH sub-page, annotated](docs/img/pit.png)
 
-1. **The tuner:** the note the Part's last note sounds at, and how far off it is in cents (A4 = 440 Hz). On a Part in another [tuning](TUNING.md), it reads the note as that tuning plays it.<!-- VERIFY after merge: #904 (e2e-fixes). --> It follows PITCH and FINE as they turn, with no note held. It is lit while the Part sounds and dim between notes; before the first note it reads `REF C4`.
+1. **The tuner:** the note the Part's last note sounds at, and how far off it is in cents (A4 = 440 Hz). On a Part in another [tuning](TUNING.md), it reads the note as that tuning plays it. It follows PITCH and FINE as they turn, with no note held. It is lit while the Part sounds and dim between notes; before the first note it reads `REF C4`.
 2. That pitch in Hz.
 3. **PITCH** in semitones, **FINE** in cents.
 4. **STEAL:** CUT, or GLIDE (a note that takes over a voice glides from its pitch).
@@ -470,7 +470,7 @@ The top list: PROJECT, PART, ORBIT, MIDI CONFIG, SYSEX DUMP (later), AUDIO ROUTI
 
 - **PART** holds RENAME, CLEAR, SAVE TO PROJ, RELOAD FROM PROJ, LIVE SNAP, SAVE TO LIBRARY, RANDOMIZE (section 17) and MIDI MAP ([MIDI control](MIDI.md#the-midi-map-page)).
 - **MIDI CONFIG** holds SYNC (the clock, and PROGRAM for program changes), PORT CONFIG (later), CHANNELS, CONTROL CHANNELS, ECHO and MPE: see [MIDI control](MIDI.md).
-- **AUDIO ROUTING** holds OUTPUTS, SENDS (later) and TUNING: see [Tuning](TUNING.md).
+- **AUDIO ROUTING** holds OUTPUTS, SENDS (later), TUNING (see [Tuning](TUNING.md)) and USB AUDIO, how loud your computer plays through Chimera (see [USB MIDI and audio](MIDI.md#usb-midi-and-audio)).<!-- VERIFY after merge: USB AUDIO row (PR #937). -->
 - **PROJECT** also holds POOL (the project's memory) and PURGE UNUSED SRC, which frees the memory held by TAPE sources no Part uses (the files on the card stay). PERSONALIZE holds THEME, SCREENSAVER (OFF, or 5 seconds up to 10 minutes; 5 minutes is the default), CHAIN MAP (PAGES: ROW or STACK) and TEXT SIZE (SIZE: NORMAL or LARGE; LARGE sets the cells, the focus label, the hints, the SETTINGS lists and the Sound names a size up).
 
 ## 16. ORBIT, the ring sequencer

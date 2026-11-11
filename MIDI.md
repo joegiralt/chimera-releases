@@ -24,7 +24,6 @@ A binding's control can be:
 
 The master FX and ORBIT are shared by every Part, but a binding to them still lives in one Part's map and listens on that Part's channel: the Part you learned it on owns it. If two Parts bind the same cell, both move it, and the last message wins. A ring amount moves the playing scene and its saved slot, as a turn on its page does. A fader on HITS or ROTATE covers the ring as it is now, 0 to STEPS or 0 to STEPS − 1, once over its travel.
 
-<!-- VERIFY after merge: the NRPN chart page (nrpn-out, #926). -->
 Every stored parameter also has a fixed NRPN address of its own, which works with no binding at all: see the [NRPN chart](NRPN.md), which lists every address by engine and block. A binding on the same NRPN number wins over it.
 
 ## The mod wheel and aftertouch in the matrix
@@ -335,24 +334,25 @@ On SEQUENCER's channel these CCs drive ORBIT. PLAY/STOP and a ring's ON/OFF act 
 
 ## ECHO: values back to the controller
 
-SETTINGS › MIDI CONFIG › ECHO (after SYNC, PORT CONFIG, CHANNELS and CONTROL CHANNELS) is the switch for everything Chimera sends from its MIDI OUT.
+SETTINGS › MIDI CONFIG › ECHO (after SYNC, PORT CONFIG, CHANNELS and CONTROL CHANNELS) is the switch for everything Chimera sends from its MIDI OUT, and where PARAM OUT sends your edits.
 
 ![SETTINGS › MIDI CONFIG › ECHO, annotated](docs/img/midi-echo.png)
 
 1. **Breadcrumb:** `SETTINGS › MIDI › ECHO`.
-2. **ECHO:** `ON` (the default) or `OFF`. A turns it.
-3. **The hint:** `A-F EDIT · MENU BACK`.
+2. **The focused cell**, large: here PARAM OUT, its switch on.
+3. **ECHO** (A): `ON` (the default) or `OFF`.
+4. **PARAM OUT** (B): `OFF` (the default) or `NRPN`.
+5. **The hint:** `A-F EDIT · MENU BACK`.
 
 With ECHO on, each binding whose own ECHO is on sends its cell's value on the Part's channel, on its own control: a CC sends the value, a 14-bit pair both halves, an NRPN its full address and value, a button MIN or MAX as 0 or 127, and a relative encoder the absolute value on its CC, so its LED ring follows. Chimera sends a value when it changes, whatever changed it: Chimera's encoders, a Sound or project load, another binding, ORBIT. It holds a binding's echo for a quarter second after that binding's control last moved, so it never fights your hand. A Part change, a Sound load and a project load send the Part's values all at once.
 
 When two Parts share a channel and bind the same control, the lower-numbered Part echoes.
 
-With ECHO off, MIDI OUT stays silent.
+With ECHO off, MIDI OUT stays silent, PARAM OUT included.
 
-<!-- VERIFY after merge: PARAM OUT (nrpn-out, #913). Then swap docs/img/midi-echo.png for the page with the PARAM OUT cell and number its list: 1 breadcrumb, 2 the focused cell large (PARAM OUT), 3 ECHO (A), 4 PARAM OUT (B), 5 the hint. -->
 ### PARAM OUT: recording your edits
 
-On the same page, B is **PARAM OUT**: `OFF` (the default) or `NRPN`. With PARAM OUT at `NRPN`, every cell you turn on Chimera goes out of MIDI OUT and USB as its NRPN from the [NRPN chart](NRPN.md), on the Part's channel, so a sequencer or DAW can record your knob moves and play them back. A cell that is not on the chart (a jack, a mod route, a SETTINGS cell) sends nothing. With ECHO off, PARAM OUT sends nothing either.
+With PARAM OUT at `NRPN`, every cell you turn on Chimera goes out of MIDI OUT and USB as its NRPN from the [NRPN chart](NRPN.md), on the Part's channel, so a sequencer or DAW can record your knob moves and play them back. A cell that is not on the chart (a jack, a mod route, a SETTINGS cell) sends nothing.
 
 - Only your hands on the panel send: a value that came in over MIDI, a Sound or project load, ORBIT's playing and the modulation never go out, so a MIDI thru loop never feeds back.
 - A fast turn sends the latest value, as often as MIDI OUT has room, never a backlog: DIN carries about 300 NRPNs a second.
@@ -370,8 +370,22 @@ Over USB, Chimera is class compliant: it needs no driver on Linux, macOS or Wind
 
 - **Chimera**, one MIDI port both ways: every channel, as on DIN, each Part on its own channel. Clock, SysEx, the identity reply and ECHO use this port.
 - **Chimera**, an audio input: the main out in stereo, 24-bit, 48 kHz, exactly what the main out jacks play. Record it in your DAW like any interface's input; the jacks keep playing while it streams.
+<!-- VERIFY after merge: USB audio from the computer (PR #937). Then shoot docs/img/usb-audio.png (SETTINGS › AUDIO ROUTING › USB AUDIO) with numbered callouts and put it above the USB IN list. -->
+- **Chimera**, an audio output: stereo, 24-bit, 48 kHz from your computer, mixed into the main out jacks. Pick it as your DAW's or your system's output and Chimera plays it beside its own sound. Chimera sets the pace (the computer follows its clock), so it never drifts or clicks over a long session.
 
 DIN and USB work side by side. So far USB MIDI and audio have been tried on Linux only: see [KNOWN-ISSUES.md](KNOWN-ISSUES.md#usb).
+
+<!-- VERIFY after merge: USB audio from the computer (PR #937). -->
+### Playing your computer through Chimera
+
+Chimera plays your computer's sound at the computer's own scale: a full-scale sample is as loud as the synth at full scale. Your computer's output volume for Chimera still applies. On Linux, PipeWire may start the new Chimera output at 40 % (about −24 dB): set Chimera's output to 100 % in your sound settings.
+
+Your computer's sound is mixed in after the synth's, so the audio input never records it back: a DAW recording Chimera while it plays a backing track records only Chimera. If you monitor the input in your DAW while playing out through Chimera, you hear Chimera twice; turn the DAW's input monitoring off.
+
+**SETTINGS › AUDIO ROUTING › USB AUDIO** sets how loud your computer plays:
+
+1. **USB IN** (A): how loud your computer's sound joins the main out: `OFF`, `-24dB`, `-18dB`, `-12dB`, `-9dB`, `-6dB`, `-3dB` or `0dB` (the default). A change fades in over a few milliseconds, never with a click. `OFF` keeps the output there for your computer but silent.
+2. **MENU** goes back.
 
 ## Program change: Sounds from a sequencer
 
