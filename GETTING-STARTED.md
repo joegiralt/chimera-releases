@@ -33,20 +33,20 @@ FLT holds the filter (CLEAN, 2040, DIRTY, LADDER or SEM) and the voice's FX slot
 
 Chimera has 8 voices in all, shared by the six Parts. Each note costs a share of the processor that depends on its Sound: the engine, the model, the filter and the FX slot. A note gets a voice only if its cost fits in what is left, so a light Sound plays all 8 and a heavy one fewer.
 
-Voices one Part gets on its own, with the TAPE delay and the QUAD reverb:
+Voices one Part gets on its own on the rev V chip, beside the TAPE delay and the QUAD reverb, with ORBIT stopped:
 
 | Sound type | Example | Voices |
 |---|---|---|
-| ALGO, one or two operators | DRIFT ORGAN | 7 |
-| ALGO, typical | AIR RAID | 6 |
+| ALGO, one or two operators | DRIFT ORGAN | 8 |
+| ALGO, typical | AIR RAID | 7 |
 | ALGO, heaviest | SOFT HORNS | 3 |
-| ALGO with formants | NULL CHOIR | 3 |
-| VA on the 2040 | SOLO PORTA | 6 |
-| VA with FUZZ | INIT VA, FX FUZZ | 5 |
+| ALGO with formants | NULL CHOIR | 4 |
+| VA on the 2040 | SOLO PORTA | 7 |
+| VA with FUZZ | INIT VA, FX FUZZ | 6 |
 | VA on the LADDER with FOLD | GROWL BASS | 5 |
 | MODAL STRING | NYLON | 8 |
-| MODAL BOWED | CELLO SWELL | 7 |<!-- CELLO SWELL 7: derived from main's bills (MODAL BOWED 640 → 530 cycles), not read on the unit. -->
-| MODAL BANK | GAMELAN | 2 |
+| MODAL BOWED | CELLO SWELL | 8 |
+| MODAL BANK | GAMELAN | 3 |
 | TAPE one-shot or loop | HARP HIT, PAD LOOP | 8 |
 | TAPE STRETCH GRAIN | VOICE STRETCH | 5 |
 
