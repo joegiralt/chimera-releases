@@ -93,6 +93,7 @@ Every Part answers the General MIDI controllers on its own channel, with no bind
 
 To turn the built-in CCs off (when a controller sends CC 7 or CC 74 for something else and you'd rather not bind it), set **BUILT-IN** (D) to `OFF` on SETTINGS › MIDI CONFIG › CONTROL CHANNELS. It is kept with the rest of SETTINGS.
 
+## Learn
 
 1. Touch the cell you want to control (turn its encoder a notch), on a Part's page, a master FX page or an ORBIT page.
 2. Hold **MIX** and press **SEQ**. The value line reads `MOVE A KNOB · CUTOFF` (the cell's name).
