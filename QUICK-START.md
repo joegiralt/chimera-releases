@@ -1,10 +1,10 @@
 # Chimera quick start
 
-How to get around, fast, and a tour of every page. Install first with the [README](README.md); for "how do I…" questions see the [FAQ](FAQ.md).
+How to get around, fast, and a tour of every page. Install first with the [README](README.md); for "how do I…" questions see the [FAQ](FAQ.md). MIDI controllers, MPE and sequencers have their own guide, [MIDI control](MIDI.md), and so do microtunings, [Tuning](TUNING.md).
 
 The screenshots are rendered by the firmware's own screen code. Your values will differ. Where a page has no picture of its own, the band in the middle of the screen shows the live output's waveform: the screenshots show a test wave there.
 
-**Contents:** [1. The panel](#1-the-panel) · [2. The idea](#2-the-idea) · [3. Key combos](#3-key-combos) · [4. The screen](#4-the-screen) · [5. Sub-pages and hints](#5-sub-pages-and-hints) · [6. The chain map](#6-the-chain-map) · [7. The filter](#7-the-filter) · [8. AMP](#8-amp) · [9. PITCH](#9-pitch) · [10. VA](#10-va) · [11. TAPE](#11-tape) · [12. The MOD matrix and the LFOs](#12-the-mod-matrix-and-the-lfos) · [13. The mixer and the effects](#13-the-mixer-and-the-effects) · [14. The Sound browser](#14-the-sound-browser) · [15. SETTINGS](#15-settings) · [16. ORBIT, the ring sequencer](#16-orbit-the-ring-sequencer) · [17. First steps](#17-first-steps)
+**Contents:** [1. The panel](#1-the-panel) · [2. The idea](#2-the-idea) · [3. Key combos](#3-key-combos) · [4. The screen](#4-the-screen) · [5. Sub-pages and hints](#5-sub-pages-and-hints) · [6. The chain map](#6-the-chain-map) · [7. The filter](#7-the-filter) · [8. AMP](#8-amp) · [9. PITCH](#9-pitch) · [10. VA](#10-va) · [11. TAPE](#11-tape) · [12. The MOD matrix and the LFOs](#12-the-mod-matrix-and-the-lfos) · [13. The mixer and the effects](#13-the-mixer-and-the-effects) · [14. The Sound browser](#14-the-sound-browser) · [15. SETTINGS](#15-settings) · [16. ORBIT, the ring sequencer](#16-orbit-the-ring-sequencer) · [17. RANDOMIZE](#17-randomize) · [18. First steps](#18-first-steps)
 
 ## 1. The panel
 
@@ -52,7 +52,7 @@ The sub-pages of a page sit in a row at the bottom of the screen, each named in 
 | MIX + turn | Jump the value to its next landmark (minimum, default, maximum). On TAPE's START and END: the next onset in the source |
 | MIX + PLUS | On a parameter: prime it as a modulation destination. On TAPE's SOURCE: load the card source |
 | MIX + MINUS | On a route: delete it. In the browser: clear the slot |
-| MIX + SEQ | Learn a MIDI CC for the touched cell |
+| MIX + SEQ | Learn a MIDI control for the touched cell; press again to finish ([MIDI control](MIDI.md#learn)) |
 | MENU | Open SETTINGS; inside, step back a level |
 | EDIT / MENU or SEQ | In a dialog: OK / cancel. The hint reads `EDIT OK · MENU BACK` |
 | hold MENU | Quick-save the project to the card (a new project asks for a name first) |
@@ -191,7 +191,7 @@ Every engine has a PITCH sub-page: under ALG on ALGO, under RES on MODAL, under 
 
 ![The PITCH sub-page, annotated](docs/img/pit.png)
 
-1. **The tuner:** the note the Part's last note sounds at, and how far off it is in cents (A4 = 440 Hz). It follows PITCH and FINE as they turn, with no note held. It is lit while the Part sounds and dim between notes; before the first note it reads `REF C4`.
+1. **The tuner:** the note the Part's last note sounds at, and how far off it is in cents (A4 = 440 Hz). On a Part in another [tuning](TUNING.md), it reads the note as that tuning plays it. It follows PITCH and FINE as they turn, with no note held. It is lit while the Part sounds and dim between notes; before the first note it reads `REF C4`.
 2. That pitch in Hz.
 3. **PITCH** in semitones, **FINE** in cents.
 4. **STEAL:** CUT, or GLIDE (a note that takes over a voice glides from its pitch).
@@ -364,7 +364,7 @@ The MOD node's own page (MATRIX). Its sub-pages are the three envelopes (ENV1–
 ![The MOD matrix, annotated](docs/img/mod-matrix.png)
 
 1. **Columns.** The first four (FLT FREQ, FLT Q, OUT VCA and FX, the filter FX slot's first pot) are always there; after them come the destinations you have primed: on any page, touch a parameter and press MIX + PLUS. Encoder 4 scrolls them sideways.
-2. **Rows** are the sources: ENV1–3, LFO1–3, VELO, NOTE (and OP5, OP6 for ALGO's operator taps).
+2. **Rows** are the sources: ENV1–3, LFO1–3, VELO, NOTE, WHEEL (the mod wheel), PRESS (aftertouch) and SLIDE (CC 74, an MPE controller's slide), and OP5, OP6 for ALGO's operator taps. WHEEL, PRESS and SLIDE are explained in [MIDI control](MIDI.md#the-mod-wheel-and-aftertouch-in-the-matrix).
 3. **A route**, with its amount.
 4. **The cursor.** Encoder 1 moves it up and down, encoder 2 across; encoder 5 sets the amount.
 5. The route under the cursor, in full words.
@@ -381,6 +381,8 @@ The MOD node's own page (MATRIX). Its sub-pages are the three envelopes (ENV1–
 5. **RATE, SHAPE, SYNC** on the top row; **PHASE** (dimmed under SYNC FREE) and **DEPTH** below.
 6. **TYPE:** CLASSIC or FUNC. FUNC has its own controls (TILT, DELTA, SLEW and others) and its RATE goes up to 93.75 Hz.
 7. `<`: more sub-pages to the left (the envelopes and SPEED).
+
+Each LFO's DEPTH is a MOD matrix destination: on its LFO page, touch DEPTH and press **MIX + PLUS**. A new Sound comes with one such route: WHEEL into LFO 1's DEPTH, with LFO 1 into PITCH and its DEPTH at 0, so the mod wheel brings in vibrato.
 
 ## 13. The mixer and the effects
 
@@ -400,7 +402,7 @@ SND holds the Part's CHORUS, DELAY and REVERB sends, the same page as AMP › SE
 
 | Page | Cells | Sub-pages |
 |---|---|---|
-| CHR (chorus) | MODE (OFF, I, II, I+II), RATE, DEPTH, MIX | |
+| CHR (chorus) | TYPE (OFF, I, II, I+II, FLANGER, PHASER), RATE, DEPTH, MIX | |
 | DLY (delay) | TYPE (TAPE, GRAIN), TIME, FDBK, TONE, REV (delay into the reverb), MIX | CHARACTER, GRAIN |
 | REV (reverb) | TYPE (QUAD, ROOM, HALL, BLOOM, GATE, REVERSE), SIZE, TIME, DAMP, SMEAR, MIX | MORE, MORE 2: extra controls for the TYPE |
 | MST (master) | Compressor: THRESH, RATIO, ATK, REL, MAKEUP, MIX | LVL: VOL and PAN of the whole synth |
@@ -435,7 +437,7 @@ CHARACTER is heard under TAPE and GRAIN under GRAIN; under the other TYPE their 
 
 ## 14. The Sound browser
 
-EDIT + B*n*, or EDIT from the mixer. MINUS / PLUS switch Part; SEQ goes back up to the mixer.
+EDIT + B*n*, or EDIT from the mixer. It opens on the PROJECT tab, on the row of the Part's Sound (an INIT Part on its INIT row). MINUS / PLUS switch Part; SEQ goes back up to the mixer.
 
 ![The Sound browser, annotated](docs/img/sound-browser.png)
 
@@ -464,7 +466,12 @@ MENU opens it. EDIT opens a row (or runs it), SEQ or MENU goes back. MINUS / PLU
 5. The loaded project's name, then its state (`SAVED`, `* MODIFIED`).
 6. What the keys do here.
 
-The top list: PROJECT, PART, ORBIT, MIDI CONFIG, SYSEX DUMP (later), AUDIO ROUTING, PERSONALIZE, SYSTEM. PROJECT also holds POOL (the project's memory) and PURGE UNUSED SRC, which frees the memory held by TAPE sources no Part uses (the files on the card stay). PERSONALIZE holds THEME, SCREENSAVER (OFF, or 5 seconds up to 10 minutes; 5 minutes is the default), CHAIN MAP (PAGES: ROW or STACK) and TEXT SIZE (SIZE: NORMAL or LARGE; LARGE sets the cells, the focus label, the hints, the SETTINGS lists and the Sound names a size up).
+The top list: PROJECT, PART, ORBIT, MIDI CONFIG, SYSEX DUMP (later), AUDIO ROUTING, PERSONALIZE, SYSTEM.
+
+- **PART** holds RENAME, CLEAR, SAVE TO PROJ, RELOAD FROM PROJ, LIVE SNAP, SAVE TO LIBRARY, RANDOMIZE (section 17) and MIDI MAP ([MIDI control](MIDI.md#the-midi-map-page)).
+- **MIDI CONFIG** holds SYNC (the clock, and PROGRAM for program changes), PORT CONFIG (later), CHANNELS, CONTROL CHANNELS, ECHO and MPE: see [MIDI control](MIDI.md).
+- **AUDIO ROUTING** holds OUTPUTS, SENDS (later), TUNING (see [Tuning](TUNING.md)) and USB AUDIO, how loud your computer plays through Chimera (see [USB MIDI and audio](MIDI.md#usb-midi-and-audio)).
+- **PROJECT** also holds POOL (the project's memory) and PURGE UNUSED SRC, which frees the memory held by TAPE sources no Part uses (the files on the card stay). PERSONALIZE holds THEME, SCREENSAVER (OFF, or 5 seconds up to 10 minutes; 5 minutes is the default), CHAIN MAP (PAGES: ROW or STACK) and TEXT SIZE (SIZE: NORMAL or LARGE; LARGE sets the cells, the focus label, the hints, the SETTINGS lists and the Sound names a size up).
 
 ## 16. ORBIT, the ring sequencer
 
@@ -501,9 +508,33 @@ ORBIT plays Chimera by itself while you shape sounds. A chord progression turns 
 
 ORBIT follows its own clock, or a MIDI clock from your DAW: SETTINGS › MIDI CONFIG › SYNC.
 
-## 17. First steps
+## 17. RANDOMIZE
 
-1. Power on, with a MIDI keyboard on the DIN input. Part *n* listens on MIDI channel *n*.
+SETTINGS › PART › RANDOMIZE rolls a new Sound on the Part you are on. Each roll stays inside ranges that keep it musical: the note keeps its pitch, the envelopes come from a family you pick, modulation is bounded, and levels stay close to the engine's INIT. A roll is never silent and never blasts. The same seed and amounts on the same Sound always roll the same result, so a Sound you like is easy to find again.
+
+![RANDOMIZE, SEED turned to 42, annotated](docs/img/randomize.png)
+
+1. **Breadcrumb:** the Part being rolled.
+2. **The focused cell's value.**
+3. **The hint:** `TURN ROLLS THE SOUND`. Every cell on this page rolls when you turn it.
+4. **The amounts:** OSC (the oscillators or operators), ENV (the envelopes), TONE (brightness and depth) and MOD (movement). `OFF` leaves that part of the Sound as it is.
+5. **SEED**, 0 to 255. Each detent rolls a new Sound. Turn back to a seed and its Sound comes back.
+6. **The project reads `* MODIFIED`.** The Part's row in SETTINGS › PART reads `* EDITED`.
+
+| Cell | Values | What it rolls |
+|---|---|---|
+| OSC | `OFF` `PURE` `RICH` `WILD` | ALGO: the algorithm and each operator's ratio and wave. Carriers stay in octaves, so the note keeps its pitch. `WILD` can blend two algorithms with MORPH. VA: MODE, the waves and OSC 2's interval (octaves, then fifths and fourths), with detune, SUB, SHAPE and NOISE. MODAL: STRUCT and POS, and from `RICH` the MODEL. TAPE: nothing (the source's pitch is its own) |
+| ENV | `OFF` `PLUCK` `PAD` `ANY` | The amp envelope's family: `PLUCK` strikes and decays, `PAD` swells and holds, `ANY` can be either or between. ALGO: every operator's envelope. VA and TAPE: ENV 1. MODAL: DAMP, how long it rings |
+| TONE | `OFF` `SOFT` `BRIGHT` `WILD` | The filter's cutoff and resonance (its TYPE and MODE stay). ALGO: the modulators' depth, FEEDBACK and VEL. MODAL: BRIGHT, BODY, COLOR and BURST |
+| MOD | `OFF` `SUBTLE` `MOVING` `WILD` | LFO 2 and LFO 3's rate and shape, ENV 2, and how far ENV 2 and LFO 2 move the cutoff and LFO 3 the resonance. MODAL: the ensemble too |
+
+Each amount draws on its own, so changing one leaves what the others rolled. A roll never touches the Part's LEVEL, PITCH or sends, LFO 1 (the mod wheel's vibrato), or a TAPE Sound's source, MODEL and place.
+
+A roll is an edit like a turn of any knob: the Sound glides to it while you play. To get the Part's saved Sound back, use SETTINGS › PART › RELOAD FROM PROJ. Nothing is saved until you save the Part (SAVE TO PROJ or SAVE TO LIBRARY).
+
+## 18. First steps
+
+1. Power on, with a MIDI keyboard on the DIN input or connected over USB. Part *n* listens on MIDI channel *n*.
 2. Press **B1** and play. Turn the encoders; watch the focus band.
 3. Press **PLUS** a few times to walk the chain, then **SEQ** to step into a sub-page and **EDIT** to come back.
 4. Press **B1** again for its mixer. It opens on SND, the sends: turn REVERB to send Part 1 to the reverb. MINUS goes to PRT for LEVEL and PAN.
