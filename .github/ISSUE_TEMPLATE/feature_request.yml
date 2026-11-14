@@ -1,0 +1,40 @@
+name: Feature idea
+description: Something you'd like Chimera to do, or do differently.
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: Thanks for sharing. What you're trying to do helps more than how you'd build it, so start there.
+  - type: textarea
+    id: goal
+    attributes:
+      label: What are you trying to do?
+      description: The music or the moment, not the feature. What were you playing, and what got in the way?
+      placeholder: I want to bring a whole track down for a breakdown while ORBIT keeps playing, in one move.
+    validations:
+      required: true
+  - type: textarea
+    id: idea
+    attributes:
+      label: What would you like Chimera to do?
+      description: How you imagine it working on the unit. Pages, knobs and buttons if you have them in mind.
+      placeholder: A performance page where one knob closes the bass filter and raises the pad's reverb send.
+    validations:
+      required: true
+  - type: input
+    id: where
+    attributes:
+      label: Where does it belong?
+      description: The engine, page or part of Chimera it touches, if you know.
+      placeholder: ORBIT, the mixer, VA's filter page…
+  - type: textarea
+    id: elsewhere
+    attributes:
+      label: Seen it somewhere else? (optional)
+      description: Another instrument or app that does something like it, and what you like about how it does it.
+  - type: input
+    id: version
+    attributes:
+      label: Which build are you on? (optional)
+      description: SETTINGS › SYSTEM › ABOUT, or the boot splash.
+      placeholder: "0.3.0 a1b2c3d4"
