@@ -12,7 +12,7 @@ And if you decide Chimera isn't for you, you can switch back to the original Pre
 
 Chimera is still in development. Some features aren't finished, and you may run into bugs.
 
-[Download Chimera](../../releases) | [Getting Started](GETTING-STARTED.md) | [FAQ](FAQ.md)
+[Download Chimera](../../releases) | [Getting Started](GETTING-STARTED.md) | [FAQ](FAQ.md) | [Website](https://joegiralt.github.io/chimera-releases/)
 
 ---
 
