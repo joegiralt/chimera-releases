@@ -25,7 +25,7 @@ out += '\n\npartRefusal : String\npartRefusal =\n    ' + JSON.stringify(refusal)
 var engines = fs.readFileSync(path.join(__dirname, 'fixtures', 'engines.txt'), 'utf8').split('\n').filter(function (l) { return l !== ''; });
 out += '\n\nengines : List String\nengines =\n    [ ' + engines.map(function (l) { return JSON.stringify(l); }).join('\n    , ') + '\n    ]\n';
 // Each schema's hash as the unit's `ed schema` says it: FNV-1a 64 of describe's
-// bytes, the file's without each page's closing `OK` line (ADR 0289), here by
+// bytes, the file's without each page's closing `OK` line, here by
 // BigInt over the file's own bytes, for HashTest to hold Elm's against.
 function fnv(buf) {
   var h = 0xcbf29ce484222325n;

@@ -10,7 +10,7 @@ in: a feature turns on with a one-line change and a rebuild.
 
 {-| The browser editor (its page, its nav entry, its home card and
 `/editor/` itself): shown from 0.4, the first release that speaks its
-protocol (ADR 0317).
+protocol.
 -}
 type Editor
     = EditorHidden

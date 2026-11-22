@@ -687,7 +687,7 @@ valueAt p t =
 {-| The stored value at knob position `t`, 0 to 1, in range, kept to four
 decimals so it is always a plain number the unit reads. A stepped param
 lands on the multiple of its step the unit's `quantize` would store
-(rounded half away from zero, from zero, not from its bottom: #1055); a
+(rounded half away from zero, from zero, not from its bottom); a
 continuous one is never snapped (the box turns it by its step from
 wherever it is).
 -}

@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 # The browser editor (editor/) and the website (site/). GPLv3: LICENSING.md.
 
 # The firmware kit the editor is built and tested against: screen.wasm and

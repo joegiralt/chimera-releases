@@ -30,6 +30,7 @@ type Docs
         , tuning : Slot
         , knownIssues : Slot
         , license : Slot
+        , licensing : Slot
         }
 
 
@@ -45,6 +46,7 @@ empty =
         , tuning = Nothing
         , knownIssues = Nothing
         , license = Nothing
+        , licensing = Nothing
         }
 
 
@@ -78,6 +80,9 @@ get doc (Docs d) =
         GuideDoc License ->
             d.license
 
+        GuideDoc Licensing ->
+            d.licensing
+
 
 set : Doc -> Slot -> Docs -> Docs
 set doc slot (Docs d) =
@@ -109,6 +114,9 @@ set doc slot (Docs d) =
 
             GuideDoc License ->
                 { d | license = slot }
+
+            GuideDoc Licensing ->
+                { d | licensing = slot }
 
 
 {-| Never requested, or failed (a visit or RETRY tries again).

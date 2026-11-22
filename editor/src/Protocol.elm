@@ -217,7 +217,7 @@ type Kind
     | Toggle
 
 
-{-| What else may target a parameter, as the unit's rules say (ADR 0289):
+{-| What else may target a parameter, as the unit's rules say:
 a MIDI map (`m`), the mod matrix (`d`).
 -}
 type alias Flags =
@@ -1058,7 +1058,7 @@ type Line
     | Err_ String
       -- `ERR ed set <addr> <why>`: a set the unit would not take.
     | SetRefused Addr String
-      -- `ERR ed since too large` (ADR 0285): the unit's whole answer is past
+      -- `ERR ed since too large`: the unit's whole answer is past
       -- what one answer may carry. Asking again gets the same.
     | SinceTooLarge
     | Unknown

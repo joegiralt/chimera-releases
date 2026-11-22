@@ -58,6 +58,6 @@ view =
 );
 fs.writeFileSync(
   path.join(__dirname, "..", "public", "favicon.svg"),
-  `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${SIZE} ${SIZE}"><rect width="${SIZE}" height="${SIZE}" rx="12" fill="#f1e579"/><path fill="#0a0b0d" d="${d}"/></svg>\n`
+  `<!-- SPDX-License-Identifier: GPL-3.0-or-later -->\n<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${SIZE} ${SIZE}"><rect width="${SIZE}" height="${SIZE}" rx="12" fill="#f1e579"/><path fill="#0a0b0d" d="${d}"/></svg>\n`
 );
 console.log(`${rects.length} rects, ${d.length} bytes`);

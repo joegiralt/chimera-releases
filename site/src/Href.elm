@@ -42,7 +42,7 @@ root segments =
 
 
 {-| Ixox's stock PreenFM3 v1.03 release: `pfm3_firmware_1_03.zip` holds
-bootloader 1.09, `p3_boot_1_09.bin` (ADR 0314).
+bootloader 1.09, `p3_boot_1_09.bin`.
 -}
 stockBootloader : Href
 stockBootloader =

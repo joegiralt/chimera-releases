@@ -4,7 +4,7 @@
 port module Cache exposing (got, keep, recall)
 
 {-| The editor's schema cache: IndexedDB through `ports.js`, keyed by the
-protocol, the schema and its hash (ADR 0289). A miss, or any failure of
+protocol, the schema and its hash. A miss, or any failure of
 the browser's store, answers `Nothing`: the editor describes the schema
 again.
 -}

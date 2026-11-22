@@ -48,7 +48,7 @@ order sent, so the commands still unanswered are held in that order
 set `since` says was refused, and every line the editor can't read, is kept
 as a `Notice` until the user has seen it (`SeenNotices`): no later answer, success or link erases one.
 
-The schemas are the unit's own text (ADR 0289): on connect, and on an engine
+The schemas are the unit's own text: on connect, and on an engine
 the editor hasn't read, it asks `ed schema <S>` for its page count and hash,
 and uses its cached copy of that hash (IndexedDB, `Cache`) or describes every
 page and keeps them. A schema is the text its hash names: a cached copy whose

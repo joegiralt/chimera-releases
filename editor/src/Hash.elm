@@ -3,7 +3,7 @@
 
 module Hash exposing (Hash, fromHex, ofLines, toHex)
 
-{-| A schema's hash as the unit's `ed schema` says it (ADR 0289): the 64-bit
+{-| A schema's hash as the unit's `ed schema` says it: the 64-bit
 FNV-1a of every byte `ed describe` writes for it, in page order. Each line's
 bytes and its `\n` are in it; a page's closing `OK` is the command's, not
 describe's, and is not.

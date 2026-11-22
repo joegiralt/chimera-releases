@@ -104,7 +104,7 @@ type alias Group =
 {-| What a module holds besides its controls.
 -}
 type Extra
-    = -- TAPE's sample name: shown, never edited here (#1015).
+    = -- TAPE's sample name: shown, never edited here (the sample lives on the card).
       SourceText
     | Note String
       -- The routes a panel names that the unit doesn't describe yet.

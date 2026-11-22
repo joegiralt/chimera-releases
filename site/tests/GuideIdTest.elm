@@ -15,7 +15,7 @@ suite =
         [ test "all lists every guide once, in reading order" <|
             \_ ->
                 GuideId.all
-                    |> Expect.equal [ GettingStarted, QuickStart, Faq, Midi, Nrpn, Tuning, KnownIssues, License ]
+                    |> Expect.equal [ GettingStarted, QuickStart, Faq, Midi, Nrpn, Tuning, KnownIssues, License, Licensing ]
         , test "slugs are unique and round-trip" <|
             \_ ->
                 ( List.map GuideId.fromSlug (List.map GuideId.slug GuideId.all)

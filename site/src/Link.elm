@@ -59,7 +59,12 @@ fromRepo dest path =
         toDoc ("README.md" ++ path)
 
     else if String.startsWith "/blob/main/" path then
-        toDoc (String.dropLeft 11 path)
+        -- A guide is a page here; any other file (a LICENSE) stays on GitHub.
+        if String.endsWith ".md" (String.split "#" path |> List.head |> Maybe.withDefault path) then
+            toDoc (String.dropLeft 11 path)
+
+        else
+            Href.web (repo ++ path) |> Maybe.map External |> Maybe.withDefault (Unresolved dest)
 
     else if String.startsWith "/" path then
         Href.web (repo ++ path) |> Maybe.map External |> Maybe.withDefault (Unresolved dest)

@@ -124,7 +124,7 @@ var ChimeraPorts = (function () {
     });
   }
 
-  // The schema cache (ADR 0289): IndexedDB, one store, a schema's describe
+  // The schema cache: IndexedDB, one store, a schema's describe
   // lines under "<protocol>/<SCHEMA>/<hash>". Every failure is a miss: the
   // editor describes the schema again. Never a timer, never a guess.
   var DB = 'chimera-editor', STORE = 'schemas';

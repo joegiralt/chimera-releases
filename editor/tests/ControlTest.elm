@@ -237,7 +237,7 @@ suite =
                         ]
             , test "algos_fdbk_steps_in_tenths_as_the_schema_says" <|
                 \_ ->
-                    -- `param OP_A.FDBK "OP1" cont lin 0 7 0.1 0 m` (0.4, #1045).
+                    -- `param OP_A.FDBK "OP1" cont lin 0 7 0.1 0 m` (0.4: finer feedback).
                     [ "OP_A", "OP_B", "OP_C", "OP_D", "OP_E", "OP_F" ]
                         |> List.map (\o -> param (o ++ ".FDBK"))
                         |> List.map (\p -> ( ( p.min, p.max ), p.step ))

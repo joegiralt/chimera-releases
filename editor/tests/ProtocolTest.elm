@@ -65,7 +65,7 @@ suite =
             , p "param stepped" "param DELAY.NOTE \"TIME\" stepped lin 0 1 0.1 0.9 m" (Answer (Param { addr = addr "DELAY.NOTE", label = "TIME", kind = Stepped, scale = Linear, min = 0, max = 1, step = 0.1, default = 0.9, flags = { mappable = True, modulation = False } }))
             , p "param negative" "param ALGO.TRNSP \"TRNSP\" cont lin -24 24 1 0 d" (Answer (Param { addr = addr "ALGO.TRNSP", label = "TRNSP", kind = Cont, scale = Linear, min = -24, max = 24, step = 1, default = 0, flags = { mappable = False, modulation = True } }))
             , p "param octaves" "param FILTER.CUTOFF \"CUTOFF\" cont oct 20 20000 1 1000 md" (Answer (Param { addr = addr "FILTER.CUTOFF", label = "CUTOFF", kind = Cont, scale = Octaves, min = 20, max = 20000, step = 1, default = 1000, flags = { mappable = True, modulation = True } }))
-            , p "a stored value that is no number is no val line (#1039)" "val FILTER.CUTOFF 0.5 nan \"?\"" Unknown
+            , p "a stored value that is no number is no val line" "val FILTER.CUTOFF 0.5 nan \"?\"" Unknown
             , p "nor an infinity" "val FILTER.CUTOFF 0.5 -inf \"?\"" Unknown
             , p "nor inf" "val FILTER.CUTOFF 0.5 inf \"?\"" Unknown
             , p "a protocol 2 param line is not understood" "param OUT.LEVEL \"VOL\" cont 0 1 0.0078125 0.3515625" Unknown
@@ -701,7 +701,7 @@ add input kind a span =
     Maybe.map2 (\b s -> MapCmd (AddRow b (addr a) s)) (input |> Maybe.andThen (\i -> Protocol.binding i kind)) spanned
 
 
-{-| MAP's schema as the unit describes it (ADR 0289, slice 4).
+{-| MAP's schema as the unit describes it.
 -}
 mapSchemaLines : List String
 mapSchemaLines =

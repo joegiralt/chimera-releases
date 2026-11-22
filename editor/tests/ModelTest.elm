@@ -816,7 +816,7 @@ suite =
                     (following |> pick (addr "ENV1.HOLD") 0)
         , test "a_choice_name_with_a_space_is_sent_by_its_number" <|
             \_ ->
-                -- GATE EXT is two words: its number is one (#996).
+                -- GATE EXT is two words: its number is one (a label is not split on its space).
                 let
                     ( _, c ) =
                         Protocol.optIndex 2

@@ -17,6 +17,7 @@ type GuideId
     | Tuning
     | KnownIssues
     | License
+    | Licensing
 
 
 {-| The guide after this one in reading order. A new constructor fails to
@@ -47,6 +48,9 @@ next id =
             Just License
 
         License ->
+            Just Licensing
+
+        Licensing ->
             Nothing
 
 
@@ -87,6 +91,9 @@ slug id =
         License ->
             "license"
 
+        Licensing ->
+            "licensing"
+
 
 {-| The Markdown file's name in chimera-releases.
 -}
@@ -121,6 +128,9 @@ title id =
 
         License ->
             "Tester licence"
+
+        Licensing ->
+            "Licensing"
 
 
 fromSlug : String -> Maybe GuideId

@@ -4,7 +4,7 @@
 module Layout.Tape exposing (modules)
 
 {-| TAPE's page, in v6's order: SOURCE (read-only: the sample lives on the
-card, #1015), DECK (its MODEL in the title bar), MACHINE, PITCH, then the
+card), DECK (its MODEL in the title bar), MACHINE, PITCH, then the
 voice and MOD. The machine picks what DECK and MACHINE hold.
 -}
 

@@ -364,8 +364,10 @@ footer base =
             [ Html.text "Chimera is alternative firmware for the PreenFM3. The guides are kept in "
             , Html.a [ href (Href.repo []) ] [ Html.text "chimera-releases" ]
             , Html.text " on GitHub. "
+            , Html.a [ href (Route.href base (Guide GuideId.Licensing)) ] [ Html.text "Licensing (GPL)" ]
+            , Html.text " · "
             , Html.a [ href (Route.href base (Guide GuideId.License)) ] [ Html.text "Tester licence" ]
-            , Html.text "."
+            , Html.text " (before 0.4)."
             ]
         ]
 
@@ -776,7 +778,10 @@ summary id =
             "Check here before filing a bug."
 
         GuideId.License ->
-            "The terms for testers."
+            "The terms for testers, for releases before 0.4."
+
+        GuideId.Licensing ->
+            "GPL-3.0-or-later from 0.4: the editor, its kit, the site and the firmware source."
 
 
 {-| Whether a release's notes start open.
