@@ -1,0 +1,9 @@
+/node_modules
+/elm-stuff
+/review/elm-stuff
+/dist
+/gallery/
+/tests/FixtureData.elm
+# The firmware kit's, copied by `just kit`
+/tests/fixtures/
+/public/screen.wasm
