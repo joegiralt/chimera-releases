@@ -1,4 +1,5 @@
-/* Chimera site: the instrument's own look (chimera-core/src/ui/theme.rs).
+/* SPDX-License-Identifier: GPL-3.0-or-later */
+/* Chimera site: the instrument's own look (the firmware's theme).
    Dark ground, warm greys, teal for the active element, the Yellow Sign. */
 
 :root {

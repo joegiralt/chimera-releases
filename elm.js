@@ -5676,8 +5676,8 @@ var $author$project$Route$doc = function (route) {
 			return $elm$core$Maybe$Nothing;
 	}
 };
-var $author$project$Features$EditorHidden = 0;
-var $author$project$Features$editor = 0;
+var $author$project$Features$EditorShown = 1;
+var $author$project$Features$editor = 1;
 var $author$project$Main$GotDoc = F2(
 	function (a, b) {
 		return {$: 2, a: a, b: b};
@@ -6972,7 +6972,6 @@ var $author$project$Main$scrollTask = function (id) {
 		$elm$browser$Browser$Dom$getElement(
 			$author$project$Anchor$toString(id)));
 };
-var $author$project$Features$EditorShown = 1;
 var $author$project$Menu$shows = F2(
 	function (editor, route) {
 		switch (route.$) {
@@ -18104,7 +18103,7 @@ var $author$project$Main$editor = function (base) {
 			_List_Nil,
 			_List_fromArray(
 				[
-					$elm$html$Html$text('It edits ALGO Sounds. It needs firmware with the editor\'s protocol: when the unit\'s firmware is older, the editor says '),
+					$elm$html$Html$text('It edits the current Part\'s Sound on every engine, and reaches the mixer, the mod matrix, MIDI MAP, ORBIT and the settings. It needs Chimera 0.4 or later on the unit: when the unit\'s firmware is older, the editor says '),
 					A2(
 					$elm$html$Html$span,
 					_List_fromArray(
@@ -19084,6 +19083,286 @@ var $author$project$Main$downloads = function (model) {
 			}
 		}());
 };
+var $author$project$Href$homebrew = 'https://brew.sh';
+var $author$project$Href$stockBootloader = 'https://github.com/Ixox/preenfm3/releases/tag/v1.03';
+var $author$project$Main$fromZeroThree = function () {
+	var file = function (name) {
+		return A2(
+			$elm$html$Html$code,
+			_List_Nil,
+			_List_fromArray(
+				[
+					$elm$html$Html$text(name)
+				]));
+	};
+	var command = function (line) {
+		return A2(
+			$elm$html$Html$pre,
+			_List_Nil,
+			_List_fromArray(
+				[
+					A2(
+					$elm$html$Html$code,
+					_List_Nil,
+					_List_fromArray(
+						[
+							$elm$html$Html$text(line)
+						]))
+				]));
+	};
+	var bold = function (words) {
+		return A2(
+			$elm$html$Html$strong,
+			_List_Nil,
+			_List_fromArray(
+				[
+					$elm$html$Html$text(words)
+				]));
+	};
+	return _List_fromArray(
+		[
+			A2(
+			$elm$html$Html$h2,
+			_List_Nil,
+			_List_fromArray(
+				[
+					$elm$html$Html$text('Updating from 0.3 to 0.4 on a Mac')
+				])),
+			A2(
+			$elm$html$Html$p,
+			_List_Nil,
+			_List_fromArray(
+				[
+					$elm$html$Html$text('A PreenFM3 running Chimera 0.3 updates to 0.4 with Chimera\'s update tool, '),
+					file('chimera-usb.py'),
+					$elm$html$Html$text(', over the USB cable. You type two commands in Terminal, the Mac\'s command window, and the tool does the rest: it puts both halves of the firmware on the unit, and you see one install screen. The tool runs on macOS and Linux; on Windows, use the card steps under Installing Chimera below.')
+				])),
+			A2(
+			$elm$html$Html$h3,
+			_List_Nil,
+			_List_fromArray(
+				[
+					$elm$html$Html$text('You\'ll need')
+				])),
+			A2(
+			$elm$html$Html$ul,
+			_List_Nil,
+			_List_fromArray(
+				[
+					A2(
+					$elm$html$Html$li,
+					_List_Nil,
+					_List_fromArray(
+						[
+							$elm$html$Html$text('Your PreenFM3, running Chimera 0.3.')
+						])),
+					A2(
+					$elm$html$Html$li,
+					_List_Nil,
+					_List_fromArray(
+						[
+							$elm$html$Html$text('A USB cable that carries data (some only charge).')
+						])),
+					A2(
+					$elm$html$Html$li,
+					_List_Nil,
+					_List_fromArray(
+						[
+							$elm$html$Html$text('Three files from the 0.4 release: '),
+							file('CHIMERA.BIN'),
+							$elm$html$Html$text(', '),
+							file('CHIMERA.BK2'),
+							$elm$html$Html$text(' and '),
+							file('chimera-usb.py'),
+							$elm$html$Html$text('. Save them in your Downloads folder and keep their names exactly as they are.')
+						]))
+				])),
+			A2(
+			$elm$html$Html$h3,
+			_List_Nil,
+			_List_fromArray(
+				[
+					$elm$html$Html$text('Once: open Terminal and add two helpers')
+				])),
+			A2(
+			$elm$html$Html$ol,
+			_List_Nil,
+			_List_fromArray(
+				[
+					A2(
+					$elm$html$Html$li,
+					_List_Nil,
+					_List_fromArray(
+						[
+							$elm$html$Html$text('Open Terminal: press '),
+							bold('Command + Space'),
+							$elm$html$Html$text(', type '),
+							bold('Terminal'),
+							$elm$html$Html$text(' and press '),
+							bold('Return'),
+							$elm$html$Html$text('. A window opens with a line ending in '),
+							file('%'),
+							$elm$html$Html$text(' or '),
+							file('$'),
+							$elm$html$Html$text('. Each command below is typed (or pasted) on that line exactly as shown, then run with Return. When the line comes back, the command has finished.')
+						])),
+					A2(
+					$elm$html$Html$li,
+					_List_Nil,
+					_List_fromArray(
+						[
+							$elm$html$Html$text('If you don\'t have Homebrew yet, install it with the one command shown on '),
+							A2(
+							$elm$html$Html$a,
+							_List_fromArray(
+								[
+									$author$project$Main$href($author$project$Href$homebrew)
+								]),
+							_List_fromArray(
+								[
+									$elm$html$Html$text('brew.sh')
+								])),
+							$elm$html$Html$text('. When it asks for your password, type your Mac\'s password: nothing shows as you type, which is normal. Then press Return.')
+						])),
+					A2(
+					$elm$html$Html$li,
+					_List_Nil,
+					_List_fromArray(
+						[
+							$elm$html$Html$text('Install dfu-util, which the tool uses to write the firmware:'),
+							command('brew install dfu-util')
+						])),
+					A2(
+					$elm$html$Html$li,
+					_List_Nil,
+					_List_fromArray(
+						[
+							$elm$html$Html$text('Install pyserial, which the tool uses to find the PreenFM3:'),
+							command('python3 -m pip install --user pyserial'),
+							$elm$html$Html$text('If the Mac offers to install the command line developer tools, press Install, wait for it to finish, and run the command again.')
+						]))
+				])),
+			A2(
+			$elm$html$Html$h3,
+			_List_Nil,
+			_List_fromArray(
+				[
+					$elm$html$Html$text('The update')
+				])),
+			A2(
+			$elm$html$Html$ol,
+			_List_Nil,
+			_List_fromArray(
+				[
+					A2(
+					$elm$html$Html$li,
+					_List_Nil,
+					_List_fromArray(
+						[
+							$elm$html$Html$text('Save your project on the PreenFM3. The tool won\'t start while the project has unsaved changes: it says so and changes nothing.')
+						])),
+					A2(
+					$elm$html$Html$li,
+					_List_Nil,
+					_List_fromArray(
+						[
+							$elm$html$Html$text('Connect the PreenFM3 to the Mac with the USB cable and turn it on as usual, so it plays Chimera (not the bootloader screen).')
+						])),
+					A2(
+					$elm$html$Html$li,
+					_List_Nil,
+					_List_fromArray(
+						[
+							$elm$html$Html$text('In Terminal, go to your Downloads folder:'),
+							command('cd ~/Downloads')
+						])),
+					A2(
+					$elm$html$Html$li,
+					_List_Nil,
+					_List_fromArray(
+						[
+							$elm$html$Html$text('Run the update:'),
+							command('python3 chimera-usb.py update CHIMERA.BIN CHIMERA.BK2')
+						])),
+					A2(
+					$elm$html$Html$li,
+					_List_Nil,
+					_List_fromArray(
+						[
+							$elm$html$Html$text('Wait. The tool checks both files first, then writes the firmware. The PreenFM3 restarts and shows '),
+							bold('DON\'T POWER OFF'),
+							$elm$html$Html$text(' while it installs the second half. Leave the cable in, the power on and the Terminal window open until Terminal prints '),
+							file('OK updated'),
+							$elm$html$Html$text(' and the version. That can take a few minutes.')
+						]))
+				])),
+			A2(
+			$elm$html$Html$p,
+			_List_Nil,
+			_List_fromArray(
+				[
+					$elm$html$Html$text('That\'s the update. The tool updates the firmware only: to add 0.4\'s factory Sounds, copy '),
+					file('factory-v1.zip'),
+					$elm$html$Html$text('\'s folders onto the card as in Step 3 below.')
+				])),
+			A2(
+			$elm$html$Html$h3,
+			_List_Nil,
+			_List_fromArray(
+				[
+					$elm$html$Html$text('If it stops')
+				])),
+			A2(
+			$elm$html$Html$ul,
+			_List_Nil,
+			_List_fromArray(
+				[
+					A2(
+					$elm$html$Html$li,
+					_List_Nil,
+					_List_fromArray(
+						[
+							$elm$html$Html$text('Before the PreenFM3 restarts, nothing on the unit has changed. Read the tool\'s last line, fix what it names (an unsaved project, a missing file, the cable), and run the update again.')
+						])),
+					A2(
+					$elm$html$Html$li,
+					_List_Nil,
+					_List_fromArray(
+						[
+							$elm$html$Html$text('After the restart, the bootloader is untouched: Chimera never writes it. Turn the PreenFM3 off, hold MENU while you turn it on, and install 0.4 with the card steps below.')
+						]))
+				])),
+			A2(
+			$elm$html$Html$h3,
+			_List_Nil,
+			_List_fromArray(
+				[
+					$elm$html$Html$text('The bootloader')
+				])),
+			A2(
+			$elm$html$Html$p,
+			_List_Nil,
+			_List_fromArray(
+				[
+					$elm$html$Html$text('Chimera runs on the stock PreenFM3 bootloader 1.09, which a unit running 0.3 already has. The bootloader is Ixox\'s: if you ever need it, '),
+					file('p3_boot_1_09.bin'),
+					$elm$html$Html$text(' is inside '),
+					file('pfm3_firmware_1_03.zip'),
+					$elm$html$Html$text(' on '),
+					A2(
+					$elm$html$Html$a,
+					_List_fromArray(
+						[
+							$author$project$Main$href($author$project$Href$stockBootloader)
+						]),
+					_List_fromArray(
+						[
+							$elm$html$Html$text('the PreenFM3 v1.03 release')
+						])),
+					$elm$html$Html$text(', with Ixox\'s instructions.')
+				]))
+		]);
+}();
 var $author$project$Main$install = function (model) {
 	return _List_fromArray(
 		[
@@ -19100,7 +19379,12 @@ var $author$project$Main$install = function (model) {
 				[
 					$elm$html$Html$Attributes$class('doc')
 				]),
-			A2($author$project$Main$docView, model, $author$project$Doc$Readme))
+			_Utils_ap(
+				$author$project$Main$fromZeroThree,
+				A2(
+					$elm$core$List$cons,
+					A2($elm$html$Html$hr, _List_Nil, _List_Nil),
+					A2($author$project$Main$docView, model, $author$project$Doc$Readme))))
 		]);
 };
 var $author$project$Main$Folded = 1;
