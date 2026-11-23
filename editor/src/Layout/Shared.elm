@@ -127,7 +127,7 @@ type Extra
     | Note String
       -- The routes a panel names that the unit doesn't describe yet.
     | NextSlice
-      -- The Part's mod matrix: no protocol yet, so an empty bay.
+      -- The Part's mod matrix: `describe MTX`'s sources, `since`'s routes.
     | PartMatrix
       -- A DRUM pad's four routes, a live patch bay.
     | PadRoutes Pad

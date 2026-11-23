@@ -1,7 +1,7 @@
 -- SPDX-License-Identifier: GPL-3.0-or-later
 
 
-module View.EnginePage exposing (BayId(..), Layout, Msg(..), State, follow, init, layout, other, screenSpec, subscriptions, update, view)
+module View.EnginePage exposing (BayId(..), Layout, Msg(..), State, follow, init, layout, other, partBay, screenSpec, subscriptions, update, view)
 
 {-| An engine's page: the unit's schema, placed by the engine's layout,
 read from `Model`, drawn with the Ui components. What the unit describes and
@@ -229,7 +229,8 @@ update msg m s0 =
                 ( bay, effects ) =
                     PatchBay.update bm (bayOf id s)
             in
-            ( List.foldl (bayEffect m id) { s | bays = Dict.insert (bayKey id) ( id, bay ) s.bays } effects, [], Nothing )
+            List.foldl (\e ( st, asks ) -> bayEffect m id e st |> Tuple.mapSecond ((++) asks)) ( { s | bays = Dict.insert (bayKey id) ( id, bay ) s.bays }, [] ) effects
+                |> (\( st, asks ) -> ( st, asks, Nothing ))
 
         PadMsg (PadStrip.Select t) ->
             ( { s | tab = t }, [], Nothing )
@@ -272,21 +273,31 @@ bayOf id s =
     Dict.get (bayKey id) s.bays |> Maybe.map Tuple.second |> Maybe.withDefault PatchBay.init
 
 
-{-| A hand on a bay. The Part's has no routes yet, so only its own state
-moves; a pad's patches its routes: a new cable takes the first route with
-no amount, and unpatching sets the amount to nothing.
+{-| A hand on a bay. The Part's patches its matrix (`ed route`): a new cable
+at `newCable`, unpatching removes the route. A pad's patches its routes: a
+new cable takes the first route with no amount, and unpatching sets the
+amount to nothing.
 -}
-bayEffect : Model -> BayId -> PatchBay.Effect -> State -> State
+bayEffect : Model -> BayId -> PatchBay.Effect -> State -> ( State, List Model.Msg )
 bayEffect m id effect s =
     case ( id, effect ) of
         ( _, PatchBay.Handed h ) ->
-            hand m h s
+            ( hand m h s, [] )
 
-        ( PartBay, PatchBay.Patched _ _ ) ->
-            s
+        ( PartBay, PatchBay.Patched from to ) ->
+            if List.any (\c -> c.from == from && c.to == to) (Routes.cables (partBay m)) then
+                ( s, [] )
 
-        ( PartBay, PatchBay.Unpatched _ _ ) ->
-            s
+            else
+                ( s
+                , Maybe.map2 (\c a -> [ Model.EditRoute c (Protocol.RouteAmount a) ])
+                    (partCell m from to)
+                    (Protocol.amount (round (toFloat (Routes.amountValue (Routes.amountFromNorm newCable)) * 127 / 100)))
+                    |> Maybe.withDefault []
+                )
+
+        ( PartBay, PatchBay.Unpatched from to ) ->
+            ( s, partCell m from to |> Maybe.map (\c -> [ Model.EditRoute c Protocol.RouteOff ]) |> Maybe.withDefault [] )
 
         ( PadBay p, PatchBay.Patched from to ) ->
             let
@@ -294,10 +305,10 @@ bayEffect m id effect s =
                 routes =
                     routesNow m p
             in
-            if List.any (\r -> r.on && r.from == Just from && r.to == Just to) routes then
+            ( if List.any (\r -> r.on && r.from == Just from && r.to == Just to) routes then
                 s
 
-            else
+              else
                 case List.filter (.on >> not) routes |> List.head of
                     Just r ->
                         s
@@ -307,11 +318,15 @@ bayEffect m id effect s =
 
                     Nothing ->
                         s
+            , []
+            )
 
         ( PadBay p, PatchBay.Unpatched from to ) ->
-            routesNow m p
+            ( routesNow m p
                 |> List.filter (\r -> r.on && r.from == Just from && r.to == Just to)
                 |> List.foldl (\r -> want r.route.amount (Number 0)) s
+            , []
+            )
 
 
 {-| Where a new cable's attenuverter starts: half way up.
@@ -326,6 +341,111 @@ nothing.
 -}
 type alias RouteNow =
     { route : Shared.Route, on : Bool, from : Maybe Source, to : Maybe Dest, amount : Maybe Param }
+
+
+{-| The Part's mod matrix as the unit has it: the sources `describe MTX`
+lists, its fixed columns then each other destination a route names, and a
+cable for each route `since` reported. FM3 IN's and QM IN's jacks are FILTER
+MOD's knobs, not the bay's.
+-}
+partBay : Model -> Routes.Routes
+partBay m =
+    let
+        jacks : PartJacks
+        jacks =
+            partJacks m
+
+        cable : ( String, String, Int ) -> Maybe Routes.Cable
+        cable ( s, d, a ) =
+            Maybe.map3
+                (\from to key -> { from = from, to = to, amount = Routes.amount (round (toFloat a * 100 / 127)), addr = key })
+                (lookup s jacks.sources)
+                (lookup d jacks.dests)
+                -- The cable's key: its cell, which reads as an address no
+                -- param has, so a hand on its attenuverter moves nothing yet.
+                (Addr.fromWire (s ++ ":" ++ d))
+    in
+    List.foldl Routes.add (Routes.new (List.map Tuple.second jacks.sources) (List.map Tuple.second jacks.dests)) (List.filterMap cable jacks.routed)
+
+
+{-| The Part's bay's jacks, each by the unit's word for it (a source's
+`LFO1`, a destination's address), and its routes as (source, destination,
+amount −127..127).
+-}
+type alias PartJacks =
+    { sources : List ( String, Routes.Source )
+    , dests : List ( String, Routes.Dest )
+    , routed : List ( String, String, Int )
+    }
+
+
+partJacks : Model -> PartJacks
+partJacks m =
+    let
+        mtx : Schema.Matrix
+        mtx =
+            Schema.matrix m.matrix
+
+        routed : List ( String, String, Int )
+        routed =
+            Dict.toList m.routes
+                |> List.filterMap
+                    (\( k, r ) ->
+                        -- `<SRC>:<DEST>`; a jack's cell (FM3IN) has no colon.
+                        String.indexes ":" k |> List.head |> Maybe.map (\i -> ( String.left i k, String.dropLeft (i + 1) k, r.amount ))
+                    )
+
+        fixed : List ( String, String )
+        fixed =
+            List.map (\( tag, a ) -> ( Addr.key a, tag )) mtx.cols
+
+        named : List ( String, String )
+        named =
+            List.foldl
+                (\( _, d, _ ) acc ->
+                    if List.any (\( k, _ ) -> k == d) acc then
+                        acc
+
+                    else
+                        acc ++ [ ( d, d ) ]
+                )
+                fixed
+                routed
+
+        indexed : (( OptIndex, String ) -> jack) -> List ( String, String ) -> List ( String, jack )
+        indexed make =
+            List.indexedMap (\i ( k, name ) -> Protocol.optIndex i |> Maybe.map (\ix -> ( k, make ( ix, name ) )))
+                >> List.filterMap identity
+    in
+    { sources = indexed Routes.source mtx.sources
+    , dests = indexed Routes.dest named
+    , routed = routed
+    }
+
+
+lookup : String -> List ( String, a ) -> Maybe a
+lookup k =
+    List.filter (Tuple.first >> (==) k) >> List.head >> Maybe.map Tuple.second
+
+
+{-| The unit's word for a jack of the Part's bay.
+-}
+wordOf : a -> List ( String, a ) -> Maybe String
+wordOf jack =
+    List.filter (Tuple.second >> (==) jack) >> List.head >> Maybe.map Tuple.first
+
+
+{-| A patch between two of the Part's jacks: the route's cell.
+-}
+partCell : Model -> Routes.Source -> Routes.Dest -> Maybe Protocol.Cell
+partCell m from to =
+    let
+        jacks : PartJacks
+        jacks =
+            partJacks m
+    in
+    Maybe.map2 (\s d -> s ++ ":" ++ d) (wordOf from jacks.sources) (wordOf to jacks.dests)
+        |> Maybe.andThen Protocol.cell
 
 
 routesNow : Model -> Pad -> List RouteNow
@@ -962,9 +1082,7 @@ extra ctx x =
 
         PartMatrix ->
             div []
-                [ Html.map (BayMsg PartBay) (PatchBay.view (bayOf PartBay ctx.s) (Routes.new [] []))
-                , p [ class "pnote" ] [ text "THE UNIT DOESN'T DESCRIBE ITS MOD MATRIX YET" ]
-                ]
+                [ Html.map (BayMsg PartBay) (PatchBay.view (bayOf PartBay ctx.s) (partBay ctx.m)) ]
 
 
 {-| TAPE's sample name: the card's longest that fits the cell.

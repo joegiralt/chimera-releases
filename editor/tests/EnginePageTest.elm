@@ -70,7 +70,42 @@ one-page matrix schema, SETTINGS', a one-page MAP schema and ORBIT's read the
 way the model reads them (no cache), then one `since` answer: following Part 1.
 -}
 connected : List String -> String -> Model.Model
-connected answer engine =
+connected =
+    connectedWith [ "page 0 MTX of 1", "OK" ]
+
+
+{-| What a patch from source `from` to destination `to` on the Part's bay
+asks of the unit; and an unpatch.
+-}
+patchOn : Model.Model -> String -> String -> List Model.Msg
+patchOn =
+    onBay PatchBay.Connect
+
+
+unpatchOn : Model.Model -> String -> String -> List Model.Msg
+unpatchOn =
+    onBay PatchBay.Unpatch
+
+
+onBay : (Routes.Source -> Routes.Dest -> PatchBay.Msg) -> Model.Model -> String -> String -> List Model.Msg
+onBay msg unit from to =
+    let
+        routes : Routes.Routes
+        routes =
+            Page.partBay unit
+    in
+    case ( routes |> Routes.sources |> List.filter (Routes.sourceName >> (==) from) |> List.head, routes |> Routes.dests |> List.filter (Routes.destName >> (==) to) |> List.head ) of
+        ( Just s, Just d ) ->
+            Page.update (BayMsg PartBay (msg s d)) unit (Page.init Day) |> (\( _, out, _ ) -> out)
+
+        _ ->
+            []
+
+
+{-| `connected`, the engine's matrix described as `mtx`.
+-}
+connectedWith : List String -> List String -> String -> Model.Model
+connectedWith mtx answer engine =
     Model.init
         |> Model.step (Model.LinkChanged Open)
         |> Tuple.first
@@ -78,7 +113,7 @@ connected answer engine =
         |> feed [ "ed hello 4 b part 1 " ++ engine, "OK" ]
         |> readSchema 1 engine answer
         |> readSchema 2 "MIXER" FixtureData.mixer
-        |> readSchema 3 ("MTX-" ++ engine) [ "page 0 MTX of 1", "OK" ]
+        |> readSchema 3 ("MTX-" ++ engine) mtx
         |> readSchema 4 "SETTINGS" FixtureData.settings
         |> readSchema 5 "MAP" FixtureData.map
         |> readSchema 6 "ORBIT" FixtureData.orbit
@@ -483,6 +518,68 @@ suite =
                         |> Maybe.andThen .pad
                         |> Expect.equal (Just Pad.Pad7)
             ]
+        , describe "the Part's mod matrix"
+            (let
+                -- ALGO's matrix as firmware 0.4 describes it (`ed describe
+                -- MTX-ALGO 0`, console/ed/route.rs), cut to two sources,
+                -- and a `since` whose ROUTES section holds two routes.
+                routed : Model.Model
+                routed =
+                    connectedWith
+                        [ "page 0 MTX of 1"
+                        , "src LFO1 \"LFO1\""
+                        , "src ENV2 \"ENV2\""
+                        , "src OP5 \"OP5\""
+                        , "col FREQ FILTER.CUTOFF"
+                        , "col Q FILTER.RESO"
+                        , "amount -127 127"
+                        , "dests 16"
+                        , "OK"
+                        ]
+                        FixtureData.lines
+                        "ALGO"
+                        |> feed [ "routes 1", "route LFO1:FILTER.CUTOFF 64 \"+64\"", "route ENV2:OP_C.CRSE -127 \"-127\"", "OK 2" ]
+
+                bay : Query.Single Page.Msg
+                bay =
+                    Page.view routed (Page.init Day) |> Query.fromHtml |> Query.find [ Sel.class "bay" ]
+             in
+             [ test "the_units_routes_are_drawn_as_cables" <|
+                \_ ->
+                    bay
+                        |> Expect.all
+                            [ Query.findAll [ Sel.class "att" ] >> Query.count (Expect.equal 2)
+                            , Query.find [ Sel.class "att", Sel.class "adds" ] >> Query.has [ Sel.text "+50" ]
+                            , Query.find [ Sel.class "att", Sel.class "subtracts" ] >> Query.has [ Sel.text "-100" ]
+                            ]
+             , test "its_jacks_are_the_matrix_sources_and_the_routed_destinations" <|
+                \_ ->
+                    bay
+                        |> Expect.all
+                            [ Query.find [ Sel.class "srcs" ] >> Query.has [ Sel.text "LFO1", Sel.text "ENV2", Sel.text "OP5" ]
+                            , Query.find [ Sel.class "dsts" ] >> Query.has [ Sel.text "FREQ", Sel.text "Q", Sel.text "OP_C.CRSE" ]
+                            ]
+             , test "no_note_says_the_unit_doesnt_describe_it" <|
+                \_ ->
+                    Page.view routed (Page.init Day) |> Query.fromHtml |> Query.hasNot [ Sel.text "THE UNIT DOESN'T DESCRIBE ITS MOD MATRIX YET" ]
+             , test "patching_sends_the_route_and_unpatching_removes_it" <|
+                \_ ->
+                    case ( Protocol.cell "ENV2:FILTER.RESO", Protocol.cell "LFO1:FILTER.CUTOFF", Protocol.amount 64 ) of
+                        ( Just new, Just old, Just half ) ->
+                            Expect.all
+                                [ \_ ->
+                                    patchOn routed "ENV2" "Q"
+                                        |> Expect.equal [ Model.EditRoute new (Protocol.RouteAmount half) ]
+                                , \_ ->
+                                    unpatchOn routed "LFO1" "FREQ"
+                                        |> Expect.equal [ Model.EditRoute old Protocol.RouteOff ]
+                                ]
+                                ()
+
+                        _ ->
+                            Expect.fail "no cell"
+             ]
+            )
         , describe "the page"
             [ test "the_hero_cutoff_knob_grabs_with_the_hero_travel" <|
                 \_ ->
@@ -503,11 +600,6 @@ suite =
 
                         Nothing ->
                             Expect.fail "no part 3"
-            , test "the_mod_module_says_the_unit_does_not_describe_its_matrix" <|
-                \_ ->
-                    Page.view model (Page.init Day)
-                        |> Query.fromHtml
-                        |> Query.has [ Sel.text "THE UNIT DOESN'T DESCRIBE ITS MOD MATRIX YET" ]
             , test "the_screens_are_the_units_pages_by_number" <|
                 \_ ->
                     Page.screenSpec model Unit.Algo (Shared.tall Flt)
