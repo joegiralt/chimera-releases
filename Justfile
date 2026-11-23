@@ -33,6 +33,25 @@ editor-gallery: kit
 editor-e2e:
     node editor/e2e/sim.mjs
 
+# The editor against the firmware's simulator, in a browser: chimera-desktop
+# headless (CHIMERA_HEADLESS=1, no window, audio device or MIDI port) on a
+# card of its own. First the contract: every line kind the unit writes, read
+# by the editor's own parser. Then the built editor in headless Chrome, each
+# test checking the editor's page and the unit's own state and screen through
+# its console. The firmware is CHIMERA_DIR, else ./firmware, else ../chimera;
+# BUILD_WRAP runs its cargo build (a build-slot lock, nice); CHROME is the
+# browser (/opt/google/chrome/chrome). Nothing is downloaded. Needs a firmware
+# whose chimera-desktop takes CHIMERA_HEADLESS and CHIMERA_CONSOLE.
+e2e: editor-build
+    #!/usr/bin/env bash
+    set -euo pipefail
+    fw="${CHIMERA_DIR:-}"
+    if [ -z "$fw" ]; then if [ -d firmware ]; then fw=firmware; else fw=../chimera; fi; fi
+    export CHIMERA_DIR="$(cd "$fw" && pwd)"
+    (cd "$CHIMERA_DIR" && ${BUILD_WRAP:-} cargo build -q --profile utils -p chimera-desktop)
+    cd editor/e2e/contract && ../../node_modules/.bin/elm make Contract.elm --output=contract.js >/dev/null
+    cd ../.. && node --test --test-reporter=spec e2e/editor.test.mjs
+
 # Where the site is served from: "/" here, "/chimera-releases/" on GitHub Pages
 site_base := "/"
 
