@@ -70,5 +70,75 @@ suite =
                 Flow.expire (at 1000) 1000 busy
                     |> Tuple.first
                     |> Flow.expire (at 2000) 1000
-                    |> Expect.equal ( Flow.idle, GaveUp (Set a (Num 2)) Nothing )
+                    |> Tuple.mapFirst Flow.inFlight
+                    |> Expect.equal ( Nothing, GaveUp (Set a (Num 2)) Nothing )
+        , test "err_busy_shuts_the_window_and_the_latest_goes_when_it_opens" <|
+            \_ ->
+                let
+                    shut : Flow.Flow
+                    shut =
+                        Flow.busy (at 10) busy |> Tuple.first
+                in
+                ( ( Flow.inFlight shut, Flow.target (SetTo a (Num 0)) shut )
+                , Flow.expire (at 40) 1000 shut |> Tuple.second
+                , Flow.expire (at 60) 1000 shut |> Tuple.second
+                )
+                    |> Expect.equal ( ( Nothing, Just (SetTo a (Num 2)) ), Fresh, Reopened (Just (Set a (Num 2))) )
+        , test "a_want_while_shut_waits_for_the_window" <|
+            \_ ->
+                Flow.busy (at 10) busy
+                    |> Tuple.first
+                    |> Flow.want (at 20) (SetTo b (Num 1))
+                    |> Tuple.second
+                    |> Expect.equal Nothing
+        , test "busy_again_and_again_it_is_given_up" <|
+            \_ ->
+                let
+                    again : Int -> Flow.Flow -> ( Flow.Flow, Maybe Command )
+                    again n f =
+                        let
+                            ( f1, gave ) =
+                                Flow.busy (at (n * 2000)) f
+                        in
+                        case gave of
+                            Just c ->
+                                ( f1, Just c )
+
+                            Nothing ->
+                                case Flow.expire (at (n * 2000 + 1500)) 100000 f1 of
+                                    ( f2, Reopened _ ) ->
+                                        again (n + 1) f2
+
+                                    ( f2, _ ) ->
+                                        ( f2, Nothing )
+                in
+                again 1 (Flow.idle |> Flow.want (at 0) (SetTo a (Num 1)) |> Tuple.first)
+                    |> Tuple.second
+                    |> Expect.equal (Just (Set a (Num 1)))
+        , test "an_answer_lost_is_late_at_once" <|
+            \_ -> Expect.equal (Resent (Set a (Num 1)) (Set a (Num 2))) (Flow.expire (at 20) 1000 (Flow.answerLost busy) |> Tuple.second)
+        , test "waiting_wants_go_in_the_order_they_first_waited" <|
+            \_ ->
+                Flow.idle
+                    |> Flow.want (at 0) (SetTo a (Num 1))
+                    |> Tuple.first
+                    |> Flow.want (at 1) (SetTo b (Num 1))
+                    |> Tuple.first
+                    |> Flow.want (at 2) (SetTo (addr "ENV1.HOLD") (Num 1))
+                    |> Tuple.first
+                    |> Flow.acked (at 3)
+                    |> Tuple.second
+                    |> Expect.equal (Just (Set b (Num 1)))
+        , test "a_landed_edit_the_unit_never_spoke_of_is_untaken" <|
+            \_ ->
+                let
+                    landed : Flow.Flow
+                    landed =
+                        Flow.idle |> Flow.want (at 0) (SetTo a (Num 1)) |> Tuple.first |> Flow.acked (at 5) |> Tuple.first
+                in
+                ( Flow.untaken (at 1005) 1000 landed
+                , Flow.untaken (at 1005) 1000 (Flow.heard (SetTo a (Num 1)) (\_ -> False) landed)
+                , Flow.untaken (at 1005) 1000 (Flow.forget (SetTo a (Num 0)) landed)
+                )
+                    |> Expect.equal ( [ SetTo a (Num 1) ], [], [] )
         ]

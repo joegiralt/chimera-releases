@@ -86,7 +86,13 @@ test("contract: every describe and since line the unit writes, the editor reads"
   await unit.ok("ed part 1");
   let { gen } = await since(0);
   // A project saved is a file on the card: the simulator's own card only, never the unit's.
-  const diffs = ["ed set FILTER.CUTOFF 0.5", "ed route LFO3:FILTER.RESO 33", "ed route LFO3:FILTER.RESO off", ...(unit.real ? [] : ["ed project saveas E2E_CONTRACT"]), "ed projects"];
+  // Learn armed and off, ORBIT's transport and a scene queued (song, slot...), and on the simulator a map
+  // saved and listed (a file on its card): every kind of line a since diff can hold.
+  const diffs = [
+    "ed set FILTER.CUTOFF 0.5", "ed route LFO3:FILTER.RESO 33", "ed route LFO3:FILTER.RESO off",
+    ...(unit.real ? [] : ["ed project saveas E2E_CONTRACT", "ed map save E2EMAP", "ed maps"]), "ed projects",
+    "ed learn FILTER.CUTOFF", "ed learn off",
+  ];
   if (unit.real) t.diagnostic("the real unit: no project saved");
   for (const cmd of diffs) {
     await unit.ok(cmd);
@@ -98,6 +104,23 @@ test("contract: every describe and since line the unit writes, the editor reads"
       return r.lines.length > 1;
     });
   }
+  // ORBIT's transport and a scene: read whatever they change (a stopped ORBIT may change nothing).
+  for (const cmd of ["ed orbit play", "ed scene queue 1", "ed orbit stop"]) {
+    await unit.ask(cmd);
+    const r = await since(gen);
+    gen = r.gen;
+    await take(`since diff after ${cmd}`, r.lines);
+  }
+  // A set the box refuses at its turn: one FORMANT a side, so OP 2's after OP 1's is refused (`refused` in a diff).
+  await unit.ok("ed set OP_A.WAVE #16");
+  await unit.ok("ed set OP_B.WAVE #16");
+  await until("the formant refusal in a since diff", async () => {
+    const r = await since(gen);
+    gen = r.gen;
+    await take("since after a formant refusal", r.lines);
+    return r.lines.some((l) => l.startsWith("refused "));
+  }, 2000);
+  await unit.ok("ed set OP_A.WAVE #0");
   // Sets the DRUM pad's machine lacks: the unit's refusals, as `refused` or ERR.
   await unit.ok("ed part 5");
   ({ gen } = await since(0));
@@ -113,6 +136,9 @@ test("contract: every describe and since line the unit writes, the editor reads"
   const unseen = Object.keys(KINDS).filter((k) => !seen.has(k));
   t.diagnostic(`kinds seen: ${seen.size} of ${Object.keys(KINDS).length}; not written by the unit in this run: ${unseen.join(" ") || "none"}`);
   assert.deepEqual(failures, []);
+  // Every kind the editor reads, read here from the unit's own lines (the real unit saves no file: its card's kinds may go unseen).
+  const cardOnly = unit.real ? ["mapfile", "proj"] : [];
+  assert.deepEqual(unseen.filter((k) => !cardOnly.includes(k)), [], "kinds of line the unit never wrote in this run: the contract can't vouch for them");
 });
 
 // ---- the editor in the browser ----

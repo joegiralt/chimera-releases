@@ -65,10 +65,14 @@ function frame(op, body) {
 export async function startBridge(dist, unit) {
   const flow = {
     sent: [], // every line the editor sent, in order
+    sentAt: [], // when each was sent (ms)
+    got: [], // each answer the editor was given: { line, lines }
     setsInFlight: 0, // the editor's edits (`ed set`, `ed route`) sent and not yet answered
     maxSetsInFlight: 0,
     reset() {
       this.sent = [];
+      this.sentAt = [];
+      this.got = [];
       this.maxSetsInFlight = this.setsInFlight;
     },
     // Paused, the unit's answers wait here, in order: a unit slower than the hand.
@@ -86,7 +90,8 @@ export async function startBridge(dist, unit) {
     /** A fault on the editor's lines `match` takes (a RegExp or a function), `times` times (default once):
      * act `drop` (the unit takes the line, its answer never comes), `answer` (`lines` answer it, the unit
      * never sees it), `map` (the unit's answer through `map(lines, line)`), `hold` (the answer waits for
-     * `release()`) or `close` (the socket closes before the line goes on). */
+     * `release()`), `rewrite` (the line the unit gets is `map(line)`), `defer` (the line reaches the unit only at `release()`, after lines sent since) or
+     * `close` (the socket closes before the line goes on). */
     rule({ match, act, lines = [], map = (l) => l, times = 1 }) {
       const test = typeof match === "function" ? match : (l) => match.test(l);
       const r = {
@@ -139,6 +144,7 @@ export async function startBridge(dist, unit) {
         if (op !== 0x1) continue;
         const line = body.toString("utf8").replace(/[\r\n]+$/, "");
         flow.sent.push(line);
+        flow.sentAt.push(Date.now());
         const rule = flow.rules.find((r) => r.times > 0 && r.test(line));
         if (rule) {
           rule.times--;
@@ -154,13 +160,16 @@ export async function startBridge(dist, unit) {
           flow.setsInFlight++;
           flow.maxSetsInFlight = Math.max(flow.maxSetsInFlight, flow.setsInFlight);
         }
-        const answered = rule?.act === "answer" ? Promise.resolve({ lines: rule.lines }) : unit.con.ask(line, "editor");
+        const out = rule?.act === "rewrite" ? rule.map(line) : line;
+        const ask = () => (rule?.act === "answer" ? Promise.resolve({ lines: rule.lines }) : unit.con.ask(out, "editor"));
+        const answered = rule?.act === "defer" ? new Promise((r) => rule.held.push(() => ask().then(r))) : ask();
         answered.then((c) => {
           const deliver = () => {
             if (isSet) flow.setsInFlight--;
             if (rule?.act === "drop") return;
             if (sock !== socket || sock.destroyed) return;
             const lines = rule?.act === "map" ? rule.map(c.lines, line) : c.lines;
+            flow.got.push({ line, lines });
             for (const l of lines) sock.write(frame(0x1, Buffer.from(l, "utf8")));
           };
           if (rule?.act === "hold") rule.held.push(deliver);

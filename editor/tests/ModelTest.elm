@@ -312,6 +312,15 @@ isUnread n =
         NoAnswer _ ->
             False
 
+        BusyGaveUp _ ->
+            False
+
+        Untaken _ ->
+            False
+
+        Declined _ ->
+            False
+
         Refusal _ ->
             False
 
@@ -332,6 +341,15 @@ isRefusalOrUnread n =
             False
 
         NoAnswer _ ->
+            False
+
+        BusyGaveUp _ ->
+            False
+
+        Untaken _ ->
+            False
+
+        Declined _ ->
             False
 
 
@@ -1123,9 +1141,26 @@ suite =
                             |> feed [ "part 1 ALGO", "OK 4" ]
                             |> tick 297
                             |> Tuple.second
-                            |> Expect.equal [ Since (gen 4) ]
+                            -- Held, but asked again: the unit may have other firmware now.
+                            |> Expect.equal [ AskSchema (EngineSchema Algo) ]
                     ]
                     ()
+        , test "a_whole_answer_for_the_same_part_keeps_the_seat" <|
+            \_ ->
+                Model.seat (following |> tick 165 |> Tuple.first |> feed [ "part 1 ALGO", "OK 3" ])
+                    |> Expect.equal (Model.seat following)
+        , test "the_units_number_running_backwards_greets_it_again" <|
+            \_ ->
+                following
+                    |> tick 165
+                    |> Tuple.first
+                    |> feed [ "OK 500" ]
+                    |> tick 198
+                    |> Tuple.first
+                    |> feed [ "OK 2" ]
+                    |> tick 231
+                    |> Tuple.second
+                    |> Expect.equal [ Hello ]
         , test "ok_more_asks_again_at_once_with_its_number" <|
             \_ ->
                 let
@@ -1552,12 +1587,12 @@ suite =
                         ]
                         ()
 
-             -- What waits goes in address order, each address's latest value once.
+             -- What waits goes in the order it first waited, each address's latest value once.
              , test "the_latest_want_wins_and_nothing_is_lost_after_the_ok" <|
                 \_ ->
                     run [ Line "OK", Line "OK", Line "OK" ] (Tuple.first busy)
                         |> Tuple.second
-                        |> Expect.equal [ Set reso (Num 1), Set cutoff (Num 300) ]
+                        |> Expect.equal [ Set cutoff (Num 300), Set reso (Num 1) ]
              , test "each_ok_sends_one_more_and_keeps_one_in_flight" <|
                 \_ ->
                     let
@@ -1565,7 +1600,7 @@ suite =
                             run [ Line "OK" ] (Tuple.first busy)
                     in
                     Expect.all
-                        [ \_ -> Expect.equal [ Set reso (Num 1) ] sent
+                        [ \_ -> Expect.equal [ Set cutoff (Num 300) ] sent
                         , \_ -> Expect.equal 1 (inFlight m)
                         ]
                         ()
@@ -1573,7 +1608,7 @@ suite =
                 \_ ->
                     run [ Line "ERR ed set FILTER.CUTOFF out of range" ] (Tuple.first busy)
                         |> Tuple.second
-                        |> Expect.equal [ Set reso (Num 1) ]
+                        |> Expect.equal [ Set cutoff (Num 300) ]
              , test "a_hand_sees_where_it_asked_to_go" <|
                 \_ ->
                     ( Model.pending cutoff (Tuple.first busy), Model.pending reso (Tuple.first busy) )
@@ -1614,7 +1649,7 @@ suite =
                             Expect.all
                                 [ \_ -> Expect.equal [ SetRoute c (Protocol.RouteAmount ten) ] first
                                 , \_ -> Expect.equal (Just (Protocol.RouteAmount twenty)) (Model.pendingRoute c held)
-                                , \_ -> Expect.equal [ Set cutoff (Num 300), SetRoute c (Protocol.RouteAmount twenty) ] (go [ Line "OK", Line "OK", Line "OK" ] held |> Tuple.second)
+                                , \_ -> Expect.equal [ SetRoute c (Protocol.RouteAmount twenty), Set cutoff (Num 300) ] (go [ Line "OK", Line "OK", Line "OK" ] held |> Tuple.second)
                                 ]
                                 ()
 
@@ -1680,17 +1715,24 @@ suite =
 
                         _ ->
                             Expect.fail "a row and a control"
-            , test "err_busy_is_tied_to_the_set_it_answers_and_shown_at_its_control" <|
+            , test "err_busy_on_a_set_is_no_refusal_and_the_set_goes_again" <|
                 \_ ->
                     let
                         m : Model.Model
                         m =
                             following |> Model.step (Edit cutoff (Num 1000)) |> Tuple.first |> feed [ "ERR busy" ]
+
+                        after : Int -> Model.Model -> List Command
+                        after t mm =
+                            stepSends (Tick (Time.millisToPosix (Time.posixToMillis following.now + t))) mm |> Tuple.second
                     in
                     Expect.all
-                        [ \_ -> Expect.equal (Just { sent = Just (Set cutoff (Num 1000)), why = "busy" }) (Model.lastRefusal m)
-                        , \_ -> Expect.equal (Just "busy") (Model.refusal cutoff m)
-                        , \_ -> Expect.equal [ "THE UNIT REFUSED ed set FILTER.CUTOFF 1000: busy" ] (said m)
+                        [ \_ -> Expect.equal Nothing (Model.lastRefusal m)
+                        , \_ -> Expect.equal Nothing (Model.refusal cutoff m)
+                        , \_ -> Expect.equal [] (said m)
+                        , \_ -> Expect.equal (Just (Num 1000)) (Model.pending cutoff m)
+                        , \_ -> Expect.equal True (List.member (Set cutoff (Num 1000)) (after 60 m))
+                        , \_ -> Expect.equal False (List.member (Set cutoff (Num 1000)) (after 10 m))
                         ]
                         ()
             , test "a_load_over_unsaved_edits_is_kept_with_its_load" <|

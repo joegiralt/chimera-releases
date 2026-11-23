@@ -145,6 +145,7 @@ export function setup({ engines = ENGINES } = {}) {
 
   // H5: no test leaves a notice it did not expect, or a page error.
   afterEach(async () => {
+    bridge?.flow.clearRules();
     const want = expected;
     expected = [];
     const bad = [];
@@ -201,9 +202,6 @@ function fakeSerial(url) {
             } catch (e) {}
           };
         },
-        cancel() {
-          log.calls.push("reader.cancel");
-        },
       });
       const writable = new WritableStream({
         write(chunk) {
@@ -214,14 +212,17 @@ function fakeSerial(url) {
             ws.send(l);
           }
         },
-        close() {
-          log.calls.push("writer.close");
-        },
       });
       const logged = (stream, get, name) => {
         const orig = stream[get].bind(stream);
         stream[get] = () => {
           const r = orig();
+          const end = name === "reader" ? "cancel" : "close";
+          const fin = r[end].bind(r);
+          r[end] = (...a) => {
+            log.calls.push(`${name}.${end}`);
+            return fin(...a);
+          };
           const rel = r.releaseLock.bind(r);
           r.releaseLock = () => {
             log.calls.push(`${name}.releaseLock`);
@@ -269,7 +270,7 @@ function fakeSerial(url) {
 
 /** A page of its own on the built editor, linked to this run's bridge: its
  * simulator socket and its fake serial port both reach the bridge. */
-async function newEditorPage(ctx) {
+async function newEditorPage(ctx, ws = bridge.ws) {
   const p = await ctx.newPage();
   p.errors = [];
   p.on("pageerror", (e) => p.errors.push(String(e)));
@@ -283,8 +284,8 @@ async function newEditorPage(ctx) {
         super(u === "ws://127.0.0.1:7342" ? url : u, pr);
       }
     };
-  }, bridge.ws);
-  await p.addInitScript(fakeSerial, bridge.ws);
+  }, ws);
+  await p.addInitScript(fakeSerial, ws);
   pages.add(p);
   return p;
 }
@@ -305,13 +306,26 @@ export async function openEditor({ how = "socket" } = {}) {
   return page;
 }
 
-/** A second browser profile (H4) on the same bridge: its own page, its own cache. */
-export async function secondEditor() {
+/** A second browser profile (H4): its own page, its own cache; its links to
+ * this run's bridge, or to the WebSocket `ws`. `init` runs in it before the
+ * editor's own scripts. */
+export async function secondEditor({ ws, init } = {}) {
   await openEditor();
   const ctx = await browser.newContext({ viewport: { width: 1400, height: 1000 } });
-  const p = await newEditorPage(ctx);
+  const p = await newEditorPage(ctx, ws);
+  if (init) await p.addInitScript(init);
   await p.goto(bridge.url);
   return p;
+}
+
+/** Connected afresh `how`: a link that is up is dropped first (the connect page's buttons show only off a link). */
+export async function reconnect(how = "socket", p = page) {
+  if (!(await p.getByRole("button", { name: "CONNECT SIMULATOR" }).count())) {
+    if (how === "serial") await p.evaluate(() => window.__serial.unplug());
+    else bridge.hangUp();
+    await p.getByRole("button", { name: "CONNECT SIMULATOR" }).waitFor();
+  }
+  await connect(how, p);
 }
 
 /** CONNECT SIMULATOR (`socket`) or CONNECT UNIT (`serial`, the fake port) on `p`. */
@@ -327,13 +341,22 @@ export async function statusText(p = page) {
 
 /** Whatever the page says instead of the editor (a link's or a halt's text), on the connect page. */
 export async function connectSays(p = page) {
-  return (await p.locator(".pnl").filter({ hasText: "CONNECT UNIT" }).innerText().catch(() => "")).trim();
+  if (!(await p.getByRole("button", { name: "CONNECT SIMULATOR" }).count())) return "";
+  return (await p.locator(".ui.page").innerText().catch(() => "")).trim();
 }
+
+/** What the connect page says when no link is up, or a halt stopped it. */
+const DOWN = /DISCONNECTED|NOT RUNNING|NOT CONNECTED|STOPPED ANSWERING|THE UNIT REFUSED|UPDATE THE|TOO LARGE|CAN'T READ|NOT THE TEXT|IN USE|USE CHROME|THE UNIT NAMED/;
 
 /** The editor on Part `n` (its tab), the unit's engine `e` described and read. */
 export async function followPart(n, e) {
   await openEditor();
   const want = `${via} · PART ${n} · ${e}`;
+  // A test before this one may have left the link down or halted: connect again.
+  const following = () => until("following", async () => new RegExp(`^${via} · PART \\d+ · \\S+$`).test(await statusText()), 3000).then(() => true, () => false);
+  if (!(await following()) && DOWN.test(await connectSays())) {
+    await page.getByRole("button", { name: via === "UNIT" ? "CONNECT UNIT" : "CONNECT SIMULATOR" }).click({ timeout: 2000 }).catch(() => {});
+  }
   // Connected, following some Part, before a tab is clicked.
   await until("the editor to follow the unit", async () => new RegExp(`^${via} · PART \\d+ · \\S+$`).test(await statusText()), 30000).catch(async (err) => {
     throw new Error(`${err.message}; the page says ${JSON.stringify(await connectSays())}`);
@@ -347,6 +370,16 @@ export async function followPart(n, e) {
     throw new Error(`${err.message}; the editor says ${JSON.stringify(last)}`);
   });
   await page.locator(".ptop .tab", { hasText: `P${n}` }).waitFor();
+  await settled();
+}
+
+/** The editor done reading: its last few lines out all `ed since` polls (no schema asked, no edit). */
+export async function settled(p = page) {
+  if (p !== page) return;
+  await until("the editor to settle into its polls", () => {
+    const s = bridge.flow.sent.slice(-4);
+    return s.length === 4 && s.every((l) => l.startsWith("ed since"));
+  }, 10000, 10);
 }
 
 /** The editor on its ENGINE page (not the MIXER), on Part `n`. */
@@ -523,3 +556,142 @@ export async function tryGet(addr) {
 }
 
 export { SLOW, tokens, UNIT, until };
+
+/** The unit let go and taken again around `f` (the real unit's tty, so a browser of its own can open it). */
+export async function withoutUnit(f) {
+  await unit.stop();
+  try {
+    return await f();
+  } finally {
+    unit = await startUnit(root);
+  }
+}
+
+/** The browser, to launch another (a headed one) beside it. */
+export { chromium };
+
+/** FNV-1a 64 of describe's pages as the unit hashes them (`ed schema`). */
+export function schemaHash(pages) {
+  let h = 0xcbf29ce484222325n;
+  for (const b of Buffer.from(pages.map((lines) => lines.map((l) => l + "\n").join("")).join(""), "utf8")) h = BigInt.asUintN(64, (h ^ BigInt(b)) * 0x100000001b3n);
+  return h.toString(16).padStart(16, "0");
+}
+
+/** The editor's schema cache (IndexedDB `chimera-editor/schemas`) on `p`: its keys, or one entry set. */
+export function cacheKeys(p = page) {
+  return p.evaluate(
+    () =>
+      new Promise((res) => {
+        const r = indexedDB.open("chimera-editor", 1);
+        r.onupgradeneeded = () => r.result.createObjectStore("schemas");
+        r.onsuccess = () => {
+          const g = r.result.transaction("schemas", "readonly").objectStore("schemas").getAllKeys();
+          g.onsuccess = () => {
+            r.result.close();
+            res(g.result.map(String));
+          };
+        };
+      }),
+  );
+}
+
+export function cachePut(key, value, p = page) {
+  return p.evaluate(
+    ([key, value]) =>
+      new Promise((res, rej) => {
+        const r = indexedDB.open("chimera-editor", 1);
+        r.onupgradeneeded = () => r.result.createObjectStore("schemas");
+        r.onsuccess = () => {
+          const t = r.result.transaction("schemas", "readwrite");
+          t.objectStore("schemas").put(value, key);
+          t.oncomplete = () => {
+            r.result.close();
+            res();
+          };
+          t.onerror = () => rej(t.error);
+        };
+      }),
+    [key, value],
+  );
+}
+
+export function cacheGet(key, p = page) {
+  return p.evaluate(
+    (key) =>
+      new Promise((res) => {
+        const r = indexedDB.open("chimera-editor", 1);
+        r.onupgradeneeded = () => r.result.createObjectStore("schemas");
+        r.onsuccess = () => {
+          const g = r.result.transaction("schemas", "readonly").objectStore("schemas").get(key);
+          g.onsuccess = () => {
+            r.result.close();
+            res(g.result ?? null);
+          };
+        };
+      }),
+    key,
+  );
+}
+
+/** Every slider the editor shows a value for (cables aside) against the unit's `ed get`: the mismatches. */
+export async function slidersAgainstUnit(limit = 40) {
+  const shown = await page.$$eval('[data-addr][role="slider"]', (els) =>
+    els.filter((e) => !e.dataset.addr.includes(":")).map((e) => [e.dataset.addr, e.getAttribute("aria-valuetext")]),
+  );
+  const seen = new Set();
+  const bad = [];
+  for (const [a, text] of shown) {
+    if (seen.has(a) || seen.size >= limit) continue;
+    seen.add(a);
+    const v = await tryGet(a);
+    if (v && v.text !== text) bad.push(`${a}: the editor ${text}, the unit ${v.text}`);
+  }
+  return bad;
+}
+
+/** The option named `name` of choice `addr`, picked by the editor's hand: from its menu, or its radio. */
+export async function pick(addr, name, p = page) {
+  const c = choice(addr, p);
+  await c.waitFor();
+  const menu = c.locator('[aria-haspopup="listbox"]');
+  if (await menu.count()) {
+    await menu.first().click();
+    const opt = c.getByRole("option", { name, exact: true });
+    await opt.waitFor({ timeout: 3000 }).catch(async () => {
+      throw new Error(`${addr}'s menu has no option ${name}: ${await c.getByRole("option").allInnerTexts()}`);
+    });
+    await opt.click();
+  } else {
+    await c.getByRole("radio", { name, exact: true }).click();
+  }
+}
+
+/** `schema`'s describe: each param's options ({ index: name }), and each panel variant's params. */
+export async function describeMap(schema) {
+  const { pages: ps } = await describeAll(unit, schema);
+  const options = {};
+  const variants = {}; // "PANEL VARIANT" -> [addr]
+  let panel = "";
+  for (const l of ps.flatMap((p) => p.lines)) {
+    const w = tokens(l);
+    if (w[0] === "panel") panel = `${w[1]} ${w[2] ?? "-"}`;
+    if (w[0] === "param") (variants[panel] ??= []).push(w[1]);
+    if (w[0] === "opt") (options[w[1]] ??= {})[w[2]] = w[3];
+  }
+  return { options, variants };
+}
+
+/** The unit's panels now (`ed since 0`'s `panel` lines) as { NAME: VARIANT }. */
+export async function unitPanels() {
+  const out = {};
+  for (const l of await unit.ask("ed since 0")) {
+    const w = tokens(l);
+    if (w[0] === "panel") out[w[1]] = w[2];
+  }
+  return out;
+}
+
+/** The addresses the page draws a control for (sliders, choices). */
+export async function drawnAddrs(p = page) {
+  return new Set(await p.$$eval("[data-addr], [data-choice]", (els) => els.map((e) => e.dataset.choice ?? e.dataset.addr)));
+}

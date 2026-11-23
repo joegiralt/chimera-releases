@@ -70,7 +70,8 @@ suite =
                         |> Control.want (addr "FILTER.RESO") (Number 0.6)
                         |> Control.flush
                         |> Tuple.first
-                        |> Expect.equal [ ( addr "FILTER.CUTOFF", Number 300 ), ( addr "FILTER.RESO", Number 0.6 ) ]
+                        -- In the order first wanted, each control's latest.
+                        |> Expect.equal [ ( addr "FILTER.RESO", Number 0.6 ), ( addr "FILTER.CUTOFF", Number 300 ) ]
             , test "a_flush_empties_so_the_next_frame_sends_nothing" <|
                 \_ ->
                     Control.empty

@@ -71,7 +71,7 @@ suite =
             \_ ->
                 Menu.view alg opened (Control.chosen (opt 0))
                     |> Query.fromHtml
-                    |> Query.find [ Sel.attribute (Control.ariaRole "listbox") ]
+                    -- On the menu's own box (the query's root), where its button, which keeps the focus a click leaves, is.
                     |> Event.simulate (Event.custom "keydown" (Encode.object [ ( "key", Encode.string "Escape" ) ]))
                     |> Event.expect Close
         , test "a_choice_shuts_it_and_says_a_pick" <|

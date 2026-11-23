@@ -67,6 +67,7 @@ import Flow exposing (Flow)
 import Hash exposing (Hash)
 import Protocol exposing (AnswerLine(..), Cell, Command(..), Degree, Edits, Fault(..), Generation, Health, Learn, Line(..), MapCommand(..), MapInput, MapKind, MapRow(..), Note, NotePool, OnOff, OrbitCommand, Outgoing, OverEdits, PageNo, ProjectFile, ProjectId, ProjectName, Protocol(..), RouteTo, RowStatus, ScaleMask, SchemaId(..), Slot, Song, SoundStatus, SpanPlace, Value, VariantName, cellKey, encode, parse, ringNoToInt, rowIndexToInt, sceneNoToInt, schemaToken, segmentToInt, stepNoToInt)
 import Schema exposing (Schema)
+import Set exposing (Set)
 import Time
 import Transport exposing (Link(..))
 import Unit exposing (Engine, Gen, Part)
@@ -192,6 +193,14 @@ type Notice
     | Unsent String
       -- A set the unit never answered, though sent twice: given up.
     | NoAnswer Command
+      -- A set the unit answered `ERR busy` to, again and again: given up.
+    | BusyGaveUp Command
+      -- A set the unit took to its queue and then never said a word of
+      -- (neither the value nor a refusal: it names only its newest
+      -- refusals), its value not the one asked for.
+    | Untaken Command
+      -- A hand the editor itself can't carry out, and why (a pad's four routes all in use).
+    | Declined String
 
 
 {-| A notice kept for the user, and how many times the unit said it.
@@ -218,6 +227,15 @@ type alias Model =
     , orbit : Schema
     , routes : Dict String RouteReading
     , held : Dict String Held
+
+    -- The schemas whose hash the unit has said since the link opened, the
+    -- engine last changed, or the unit restarted: a held schema is used
+    -- again only once `ed schema` has said it is still the unit's.
+    , checked : Set String
+
+    -- The unit's number ran backwards (a restart behind the link, or the
+    -- count wrapped): read it afresh from `ed hello` once nothing is owed.
+    , restarted : Bool
     , incoming : Schema
 
     -- The schema being described, as the unit wrote it (last first), for the cache.
@@ -317,6 +335,8 @@ type Msg
     | OrbitAct OrbitCommand
       -- The user has seen the notices: they go.
     | SeenNotices
+      -- A hand the page can't carry out, and why: said as a notice.
+    | Decline String
 
 
 {-| A schema's cache key: the protocol, the schema and its hash.
@@ -362,6 +382,8 @@ init =
     , orbit = Schema.empty
     , routes = Dict.empty
     , held = Dict.empty
+    , checked = Set.empty
+    , restarted = False
     , incoming = Schema.empty
     , incomingLines = []
     , values = Dict.empty
@@ -484,6 +506,9 @@ opening msg =
         SeenNotices ->
             Cmd.none
 
+        Decline _ ->
+            Cmd.none
+
 
 run : Effect -> Cmd msg
 run e =
@@ -502,7 +527,9 @@ run e =
 -}
 status : Model -> Maybe String
 status m =
-    if m.link == Just Open && m.stage == Following then
+    -- Only once the page drawn is the engine's it names: during an engine
+    -- change the old engine's page stays up, and says it is reading.
+    if m.link == Just Open && m.stage == Following && m.described == m.engine then
         Maybe.map2
             (\p e ->
                 String.join " · "
@@ -681,6 +708,15 @@ lastRefusal m =
 
                     NoAnswer _ ->
                         Nothing
+
+                    BusyGaveUp _ ->
+                        Nothing
+
+                    Untaken _ ->
+                        Nothing
+
+                    Declined _ ->
+                        Nothing
             )
         |> List.head
 
@@ -710,6 +746,15 @@ noticeText n =
 
         NoAnswer c ->
             "THE UNIT DID NOT ANSWER " ++ Protocol.sketch c ++ ", SENT TWICE: GIVEN UP"
+
+        BusyGaveUp c ->
+            "THE UNIT WAS BUSY FOR " ++ Protocol.sketch c ++ ", ASKED " ++ String.fromInt Flow.busyTries ++ " TIMES: GIVEN UP"
+
+        Untaken c ->
+            "THE UNIT DID NOT TAKE " ++ Protocol.sketch c ++ ": IT KEPT ITS VALUE, AND NAMED NO REFUSAL (IT NAMES ONLY ITS NEWEST)"
+
+        Declined why ->
+            why
 
 
 {-| At most this many distinct notices are kept; past it one falls off and
@@ -763,6 +808,15 @@ evict all =
 
                 NoAnswer _ ->
                     True
+
+                BusyGaveUp _ ->
+                    True
+
+                Untaken _ ->
+                    False
+
+                Declined _ ->
+                    False
 
                 Refusal _ ->
                     False
@@ -964,6 +1018,9 @@ stepIn msg m =
 
         SeenNotices ->
             ( { m | kept = [], lost = 0 }, [] )
+
+        Decline why ->
+            ( keep (Declined why) m, [] )
 
         Tick t ->
             tick t m |> Tuple.mapSecond (List.map Say)
@@ -1210,8 +1267,12 @@ tick t m0 =
 awaited, and is sent again once, or given up (and said) for the next.
 -}
 expire : Model -> ( Model, List Command )
-expire m =
+expire m0 =
     let
+        m : Model
+        m =
+            List.foldl untakenSet m0 (Flow.untaken m0.now answerTimeoutMs m0.flow)
+
         ( flow, ex ) =
             Flow.expire m.now answerTimeoutMs m.flow
 
@@ -1228,6 +1289,50 @@ expire m =
 
         Flow.GaveUp old next ->
             ( keep (NoAnswer old) (dropped old), maybeList next )
+
+        Flow.Reopened next ->
+            ( { m | flow = flow }, maybeList next )
+
+
+{-| A set the unit queued and never said a word of since: where the unit's
+value is not the one asked for (beyond half the param's step, as the unit
+rounds), the unit did not take it, and the control and a notice say so.
+The unit names only its newest refusals in a read; this is how the rest are
+still marked.
+-}
+untakenSet : Flow.Edit -> Model -> Model
+untakenSet e m =
+    case e of
+        Flow.SetTo a v ->
+            let
+                kept : Bool
+                kept =
+                    case ( v, shown a m ) of
+                        ( Protocol.Num x, Just r ) ->
+                            let
+                                stepOf : Float
+                                stepOf =
+                                    Schema.param a (schemaOf a m) |> Maybe.map .step |> Maybe.withDefault 0
+                            in
+                            abs (x - r.stored) > max (stepOf / 2) (0.0001 * max 1 (abs x))
+
+                        ( Protocol.Index i, Just r ) ->
+                            toFloat (Protocol.optIndexToInt i) /= r.stored
+
+                        ( Protocol.Name _, _ ) ->
+                            False
+
+                        ( _, Nothing ) ->
+                            False
+            in
+            if kept && not (Dict.member (Addr.key a) m.refusals) then
+                keep (Untaken (Set a v)) { m | refusals = Dict.insert (Addr.key a) "NOT TAKEN: THE UNIT KEPT ITS VALUE" m.refusals }
+
+            else
+                m
+
+        Flow.RouteOf _ _ ->
+            m
 
 
 removeFirst : a -> List a -> List a
@@ -1428,20 +1533,37 @@ their answers (the unit answers in order). With none waiting, nothing moves.
 answered : (Asked -> Bool) -> Model -> Model
 answered fits m =
     let
-        after : List Command -> List Command
-        after cs =
+        split : List Command -> List Command -> Maybe ( List Command, List Command )
+        split skipped cs =
             case cs of
                 c :: rest ->
                     if fits (askedBy c) then
-                        rest
+                        Just ( skipped, rest )
 
                     else
-                        after rest
+                        split (c :: skipped) rest
 
                 [] ->
-                    m.awaiting
+                    Nothing
     in
-    { m | awaiting = after m.awaiting }
+    case split [] m.awaiting of
+        Just ( skipped, rest ) ->
+            case Flow.inFlight m.flow of
+                -- The edit on the wire lost its answer: it is no more taken
+                -- than unanswered. It waits on, timed out, to be sent once
+                -- more (then given up), as a timeout would.
+                Just c ->
+                    if List.member c skipped then
+                        { m | awaiting = rest ++ [ c ], flow = Flow.answerLost m.flow }
+
+                    else
+                        { m | awaiting = rest }
+
+                Nothing ->
+                    { m | awaiting = rest }
+
+        Nothing ->
+            m
 
 
 lineIn : String -> Line -> Model -> ( Model, List Wish )
@@ -1491,7 +1613,7 @@ lineIn raw l m =
                 sent =
                     m.awaiting |> List.filter (\c -> askedBy c == AskedSet a) |> List.head
             in
-            ( answered (\k -> k == AskedSet a) { m | refusals = Dict.insert (Addr.key a) why m.refusals }
+            ( answered (\k -> k == AskedSet a) { m | refusals = Dict.insert (Addr.key a) why m.refusals, flow = Flow.forget (Flow.SetTo a (Protocol.Num 0)) m.flow }
                 |> setRefused sent a why
             , []
             )
@@ -1512,6 +1634,30 @@ waiting, whatever it is. Kept with it; a set's is shown at its control too.
 -}
 refusedCommand : String -> Model -> Model
 refusedCommand why m =
+    if why == "busy" && Flow.inFlight m.flow /= Nothing && Flow.inFlight m.flow == List.head m.awaiting then
+        -- Not a refusal: the unit couldn't take it now. The window shuts a
+        -- while, and the hand's latest goes again when it opens.
+        let
+            ( flow, gaveUp ) =
+                Flow.busy m.now m.flow
+
+            m1 : Model
+            m1 =
+                { m | flow = flow, awaiting = List.drop 1 m.awaiting }
+        in
+        case gaveUp of
+            Just c ->
+                keep (BusyGaveUp c) m1
+
+            Nothing ->
+                m1
+
+    else
+        refusedCommandOf why m
+
+
+refusedCommandOf : String -> Model -> Model
+refusedCommandOf why m =
     let
         rest : Model
         rest =
@@ -1590,9 +1736,23 @@ answer a m =
                 mixerOnly
                     { m
                         | part = Just p
+                        , checked =
+                            if m.engine /= Just e then
+                                m.checked |> Set.remove (schemaToken (EngineSchema e)) |> Set.remove (schemaToken (MatrixSchema e))
+
+                            else
+                                m.checked
                         , engine = Just e
                         , partEngines = Dict.insert (Unit.partNumber p) e m.partEngines
-                        , seat = nextSeat m.seat
+
+                        -- A whole answer repeats the Part it follows: only another Part or
+                        -- engine is a new seat (a hand on a control lets go, a menu shuts).
+                        , seat =
+                            if m.part == Just p && m.engine == Just e then
+                                m.seat
+
+                            else
+                                nextSeat m.seat
                         , routes = Dict.empty
                         , refusals = Dict.empty
                         , whole = True
@@ -1638,7 +1798,7 @@ answer a m =
                 m
 
             else
-                setRefused Nothing at why { m | refusals = Dict.insert (Addr.key at) why m.refusals }
+                setRefused Nothing at why { m | refusals = Dict.insert (Addr.key at) why m.refusals, flow = Flow.forget (Flow.SetTo at (Protocol.Num 0)) m.flow }
 
         Source text ->
             if m.stage == Following then
@@ -1971,12 +2131,48 @@ has its schemas read (held, cached or described), then is read from nothing;
 the old page stays up meanwhile.
 -}
 following : Gen -> Int -> Bool -> Model -> Model
-following g owed more m =
-    if owed == 0 && not more && List.isEmpty m.awaiting && m.engine /= Nothing && m.engine /= m.described then
+following g owed more m0 =
+    let
+        -- The unit's number only moves forward: one below the last is a
+        -- unit started again behind the link (or a count that wrapped).
+        m : Model
+        m =
+            { m0 | restarted = m0.restarted || (m0.gen |> Maybe.map (\h -> Unit.genToInt g < Unit.genToInt h) |> Maybe.withDefault False) }
+
+        -- Nothing owed: every `since` still listed lost its answer.
+        m1 : Model
+        m1 =
+            if owed == 0 then
+                { m | awaiting = List.filter (\c -> askedBy c /= AskedSince) m.awaiting }
+
+            else
+                m
+
+        quiet : Bool
+        quiet =
+            owed == 0 && not more && List.isEmpty m1.awaiting
+    in
+    if quiet && m.restarted then
+        -- Its firmware may not be the one read: from `ed hello` again, every
+        -- schema's hash asked again (a held one used where it still is the
+        -- unit's), then read whole. The page stays up meanwhile.
+        { m1
+            | stage = Greeting
+            , restarted = False
+            , checked = Set.empty
+            , gen = Nothing
+            , owed = 0
+            , leftover = False
+            , asked = Nothing
+            , seat = nextSeat m.seat
+            , refusals = Dict.empty
+        }
+
+    else if quiet && m.engine /= Nothing && (m.engine /= m.described || unchecked m) then
         readNext
             (adopt
                 (mixerOnly
-                    { m
+                    { m1
                         | refusals = Dict.empty
                         , routes = Dict.empty
                         , gen = Nothing
@@ -1988,7 +2184,7 @@ following g owed more m =
             )
 
     else
-        { m
+        { m1
             | gen = Just g
             , owed = owed
             , leftover = owed > 0
@@ -1999,6 +2195,19 @@ following g owed more m =
                 else
                     Nothing
         }
+
+
+{-| The followed engine's schema or its matrix's hash not yet asked since
+the engine changed: held from before, it may not be the unit's now.
+-}
+unchecked : Model -> Bool
+unchecked m =
+    case m.engine of
+        Just e ->
+            not (Set.member (schemaToken (EngineSchema e)) m.checked && Set.member (schemaToken (MatrixSchema e)) m.checked)
+
+        Nothing ->
+            False
 
 
 {-| The followed engine's schemas, where this connection already read them.
@@ -2108,7 +2317,7 @@ install s h m =
     let
         m1 : Model
         m1 =
-            { m | held = Dict.insert (schemaToken s) h m.held }
+            { m | held = Dict.insert (schemaToken s) h m.held, checked = Set.insert (schemaToken s) m.checked }
     in
     case s of
         MixerSchema ->
@@ -2147,7 +2356,7 @@ readNext m =
     let
         lacks : SchemaId -> Bool
         lacks s =
-            not (Dict.member (schemaToken s) m.held)
+            not (Set.member (schemaToken s) m.checked)
 
         go : Stage -> Model
         go st =

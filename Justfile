@@ -69,7 +69,7 @@ _e2e files:
         fw="${CHIMERA_DIR:-}"
         if [ -z "$fw" ]; then if [ -d firmware ]; then fw=firmware; else fw=../chimera; fi; fi
         export CHIMERA_DIR="$(cd "$fw" && pwd)"
-        (cd "$CHIMERA_DIR" && ${BUILD_WRAP:-} cargo build -q --profile utils -p chimera-desktop)
+        (cd "$CHIMERA_DIR" && ${BUILD_WRAP:-} cargo build -q --profile utils -p chimera-desktop -p chimera-utils)
     fi
     cd editor/e2e/contract && ../../node_modules/.bin/elm make Contract.elm --output=contract.js >/dev/null
     # One unit has one console: on the real unit the files run one at a time.

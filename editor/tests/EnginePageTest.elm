@@ -921,10 +921,11 @@ suite =
             , test "patching_takes_the_first_free_route" <|
                 \_ ->
                     runOn drum [ BayMsg (PadBay Pad.Pad1) (PatchBay.Connect (Routes.source ( opt 2, "VEL" )) (Routes.dest ( opt 2, "VOLUME" ))), Frame ]
+                        -- Source and destination first: the amount never lands on the route's old pair.
                         |> Expect.equal
-                            (Model.Edit (addr "PAD1_RT2.AMOUNT") (Num (Control.atNorm (Fixture.paramIn drumSchema "PAD1_RT2.AMOUNT") 0.75))
-                                :: pick "PAD1_RT2.DEST" 2
-                                ++ pick "PAD1_RT2.SOURCE" 2
+                            (pick "PAD1_RT2.SOURCE" 2
+                                ++ pick "PAD1_RT2.DEST" 2
+                                ++ [ Model.Edit (addr "PAD1_RT2.AMOUNT") (Num (Control.atNorm (Fixture.paramIn drumSchema "PAD1_RT2.AMOUNT") 0.75)) ]
                             )
             , test "unpatching_sets_the_amount_to_nothing" <|
                 \_ ->

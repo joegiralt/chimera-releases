@@ -25,8 +25,8 @@ module Ui.Control exposing
     , atNorm
     , cell
     , choice
-    , choiceText
     , choiceAddr
+    , choiceText
     , chosen
     , chosenMark
     , current
@@ -652,33 +652,41 @@ type Want
     | Option OptIndex
 
 
+{-| Each control's last want this frame, in the order the controls were
+first wanted (a pad route's source and destination before its amount).
+-}
 type Wanted
-    = Wanted (Dict String ( Addr, Want ))
+    = Wanted { next : Int, wants : Dict String ( Int, ( Addr, Want ) ) }
 
 
 empty : Wanted
 empty =
-    Wanted Dict.empty
+    Wanted { next = 0, wants = Dict.empty }
 
 
 want : Addr -> Want -> Wanted -> Wanted
 want a w (Wanted d) =
-    Wanted (Dict.insert (Addr.key a) ( a, w ) d)
+    let
+        first : Int
+        first =
+            Dict.get (Addr.key a) d.wants |> Maybe.map Tuple.first |> Maybe.withDefault d.next
+    in
+    Wanted { next = d.next + 1, wants = Dict.insert (Addr.key a) ( first, ( a, w ) ) d.wants }
 
 
 {-| This frame's want of `a`, if a hand made one.
 -}
 wanted : Addr -> Wanted -> Maybe Want
 wanted a (Wanted d) =
-    Dict.get (Addr.key a) d |> Maybe.map Tuple.second
+    Dict.get (Addr.key a) d.wants |> Maybe.map (Tuple.second >> Tuple.second)
 
 
-{-| The wants to send this frame, one per control in address order, and what
-is left (nothing).
+{-| The wants to send this frame, one per control in the order they were
+first wanted, and what is left (nothing).
 -}
 flush : Wanted -> ( List ( Addr, Want ), Wanted )
 flush (Wanted d) =
-    ( Dict.values d, empty )
+    ( Dict.values d.wants |> List.sortBy Tuple.first |> List.map Tuple.second, empty )
 
 
 
@@ -853,4 +861,4 @@ wheelNorm p =
 
 isEmpty : Wanted -> Bool
 isEmpty (Wanted d) =
-    Dict.isEmpty d
+    Dict.isEmpty d.wants

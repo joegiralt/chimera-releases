@@ -81,6 +81,7 @@ export class Console {
 
   /** `line`'s answer: its lines up to and including the OK or ERR. `who` is told when it goes out. */
   ask(line, who = "test") {
+    if (this.dead) return Promise.resolve({ line, who, lines: [], body: null });
     const no = this.guard && refusedOnUnit(line);
     if (no) {
       console.error(`e2e: refused on the unit, never sent: ${line}`);
@@ -94,6 +95,7 @@ export class Console {
 
   /** The console gone (its unit restarted): every request waiting is answered with nothing. */
   fail() {
+    this.dead = true;
     const all = [this.current, ...this.queue].filter(Boolean);
     this.current = null;
     this.queue = [];
@@ -241,8 +243,22 @@ async function startSimulator(root) {
   let sock;
   let exited = null;
 
+  let port;
+  /** The console's client, on a socket of its own. */
+  const dial = async () => {
+    sock = await until("the simulator's console", () =>
+      exited
+        ? Promise.reject(new Error(`chimera-desktop ${exited}: ${log.join("")}`))
+        : new Promise((res) => {
+            const s = net.connect(port, "127.0.0.1");
+            s.once("connect", () => res(s));
+            s.once("error", () => res(null));
+          }),
+      20000, 50);
+    return new Console(sock);
+  };
   const boot = async () => {
-    const port = await freePort();
+    port = await freePort();
     exited = null;
     proc = spawn(bin, [], {
       cwd: card,
@@ -259,16 +275,7 @@ async function startSimulator(root) {
     proc.on("exit", (code, sig) => {
       if (me === proc) exited = `exited ${code ?? sig}`;
     });
-    sock = await until("the simulator's console", () =>
-      exited
-        ? Promise.reject(new Error(`chimera-desktop ${exited}: ${log.join("")}`))
-        : new Promise((res) => {
-            const s = net.connect(port, "127.0.0.1");
-            s.once("connect", () => res(s));
-            s.once("error", () => res(null));
-          }),
-      20000, 50);
-    const con = new Console(sock);
+    const con = await dial();
     // The console answers once the boot is done.
     const hello = await con.ask("ed hello");
     if (!/^ed hello \d+ /.test(hello.lines[0] ?? "")) throw new Error(`ed hello: ${hello.lines.join(" | ")}`);
@@ -283,6 +290,20 @@ async function startSimulator(root) {
 
   const unit = withAsks(await boot(), log, {
     real: false,
+    // The simulator's card: a test may plant files on it (never on a real unit's).
+    card,
+    /** The console's address, for another client (the firmware's ed-bridge) while `hangUp()` has let it go. */
+    consoleAddr: () => `127.0.0.1:${port}`,
+    /** The test's client off the console (it takes one client at a time). */
+    async hangUp() {
+      sock.destroy();
+      unit.con.fail();
+    },
+    /** The test's client back on the console. */
+    async redial() {
+      unit.con = await dial();
+      await unit.con.ask("ed hello");
+    },
     async restart() {
       const old = unit.con;
       await kill();

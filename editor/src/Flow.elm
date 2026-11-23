@@ -1,7 +1,7 @@
 -- SPDX-License-Identifier: GPL-3.0-or-later
 
 
-module Flow exposing (Edit(..), Expiry(..), Flow, acked, expire, heard, idle, inFlight, target, want)
+module Flow exposing (Edit(..), Expiry(..), Flow, acked, answerLost, busy, busyTries, expire, forget, heard, idle, inFlight, target, untaken, want)
 
 {-| The edits' window: one edit on the wire at a time (an `ed set`, or an
 `ed route` of a matrix cell). A hand moves faster than the unit answers, so
@@ -14,6 +14,12 @@ An edit unanswered for too long is sent once more; unanswered again, it is
 given up (the model says so) and the next goes, so a lost answer never stops
 the window. An answered edit stays the base a hand counts from until the
 unit reports taking it (an `OK queued` is not yet applied), or the timeout.
+
+A unit too busy to take an edit (`ERR busy`: card work, a full queue) has
+the window shut a while, longer each time, and the latest want of what that
+edit edited goes when it opens again: a busy answer is never a refusal, and
+never drops where the hand let go. Busy past `busyTries` in a row, the edit
+is given up (the model says so).
 
 -}
 
@@ -55,12 +61,26 @@ command e =
 type Flow
     = Flow
         { wire : Maybe Sent
-        , pending : Dict String Edit
+
+        -- Each waiting want, by what it edits, with when it first waited:
+        -- they go oldest first (a pad route's source and destination before
+        -- its amount), the latest want of each in its first one's place.
+        , pending : Dict String ( Int, Edit )
+        , seq : Int
 
         -- Answered edits the unit has not yet reported taking (`OK queued`
-        -- is taken, not applied): still where a hand last asked each to go.
-        , landed : Dict String ( Edit, Time.Posix )
+        -- is taken, not applied): still where a hand last asked each to go,
+        -- when, and whether the unit has since said anything of it.
+        , landed : Dict String Landed
+
+        -- Shut after `ERR busy` until this time, and how many busy answers in a row.
+        , shut : Maybe Time.Posix
+        , busyRun : Int
         }
+
+
+type alias Landed =
+    { edit : Edit, at : Time.Posix, heard : Bool }
 
 
 {-| The edit on the wire, when it went, and whether it was sent again.
@@ -71,7 +91,7 @@ type alias Sent =
 
 idle : Flow
 idle =
-    Flow { wire = Nothing, pending = Dict.empty, landed = Dict.empty }
+    Flow { wire = Nothing, pending = Dict.empty, seq = 0, landed = Dict.empty, shut = Nothing, busyRun = 0 }
 
 
 {-| A hand wants `e`: sent now if nothing is on the wire, else held (over
@@ -81,7 +101,11 @@ want : Time.Posix -> Edit -> Flow -> ( Flow, Maybe Command )
 want now e (Flow f) =
     case f.wire of
         Nothing ->
-            ( Flow { f | wire = Just (sent now e) }, Just (command e) )
+            if f.shut == Nothing then
+                ( Flow { f | wire = Just (sent now e) }, Just (command e) )
+
+            else
+                ( Flow (wait e f), Nothing )
 
         Just s ->
             if s.edit == e then
@@ -89,7 +113,19 @@ want now e (Flow f) =
                 ( Flow { f | pending = Dict.remove (keyOf e) f.pending }, Nothing )
 
             else
-                ( Flow { f | pending = Dict.insert (keyOf e) e f.pending }, Nothing )
+                ( Flow (wait e f), Nothing )
+
+
+{-| `e` waiting, after the wants before it (or in place of an older want of what it edits).
+-}
+wait : Edit -> { a | pending : Dict String ( Int, Edit ), seq : Int } -> { a | pending : Dict String ( Int, Edit ), seq : Int }
+wait e f =
+    let
+        at : Int
+        at =
+            Dict.get (keyOf e) f.pending |> Maybe.map Tuple.first |> Maybe.withDefault f.seq
+    in
+    { f | pending = Dict.insert (keyOf e) ( at, e ) f.pending, seq = f.seq + 1 }
 
 
 sent : Time.Posix -> Edit -> Sent
@@ -107,12 +143,75 @@ acked now (Flow f) =
             ( Flow f, Nothing )
 
         Just s ->
-            next now (Flow { f | wire = Nothing, landed = Dict.insert (keyOf s.edit) ( s.edit, now ) f.landed })
+            next now (Flow { f | wire = Nothing, busyRun = 0, landed = Dict.insert (keyOf s.edit) { edit = s.edit, at = now, heard = False } f.landed })
+
+
+{-| How many `ERR busy` answers in a row before an edit is given up.
+-}
+busyTries : Int
+busyTries =
+    8
+
+
+{-| The window shut after the `n`th busy answer in a row: 50 ms, doubling, at most a second.
+-}
+busyWaitMs : Int -> Int
+busyWaitMs n =
+    min 1000 (50 * 2 ^ (n - 1))
+
+
+{-| The edit on the wire was answered `ERR busy`: the window shuts a while,
+and the edit waits to go again (unless a later want of what it edits waits
+already: that one goes). Past `busyTries` in a row it is given up instead
+(the command given up), and the window opens on the next tick.
+-}
+busy : Time.Posix -> Flow -> ( Flow, Maybe Command )
+busy now (Flow f) =
+    case f.wire of
+        Nothing ->
+            ( Flow f, Nothing )
+
+        Just s ->
+            let
+                run : Int
+                run =
+                    f.busyRun + 1
+            in
+            if run >= busyTries then
+                ( Flow { f | wire = Nothing, busyRun = 0, shut = Just now, pending = Dict.remove (keyOf s.edit) f.pending }
+                , Just (command s.edit)
+                )
+
+            else
+                ( Flow
+                    { f
+                        | wire = Nothing
+                        , busyRun = run
+                        , shut = Just (Time.millisToPosix (Time.posixToMillis now + busyWaitMs run))
+                        , pending =
+                            if Dict.member (keyOf s.edit) f.pending then
+                                f.pending
+
+                            else
+                                -- First to go when the window opens.
+                                Dict.insert (keyOf s.edit) ( -1, s.edit ) f.pending
+                    }
+                , Nothing
+                )
+
+
+{-| The edit on the wire lost its answer (a later one came first): timed out
+now, so the next clock sends it once more, or gives it up.
+-}
+answerLost : Flow -> Flow
+answerLost (Flow f) =
+    -- Sent "long ago": late for any clock.
+    Flow { f | wire = f.wire |> Maybe.map (\s -> { s | at = Time.millisToPosix -1000000000000 }) }
 
 
 next : Time.Posix -> Flow -> ( Flow, Maybe Command )
 next now (Flow f) =
-    case Dict.toList f.pending of
+    case Dict.toList f.pending |> List.sortBy (Tuple.second >> Tuple.first) |> List.map (Tuple.mapSecond Tuple.second) of
         ( k, e ) :: _ ->
             ( Flow { f | wire = Just (sent now e), pending = Dict.remove k f.pending }, Just (command e) )
 
@@ -127,15 +226,34 @@ the unit's value is the base again.
 heard : Edit -> (Edit -> Bool) -> Flow -> Flow
 heard like took (Flow f) =
     case Dict.get (keyOf like) f.landed of
-        Just ( e, _ ) ->
-            if took e then
+        Just l ->
+            if took l.edit then
                 Flow { f | landed = Dict.remove (keyOf like) f.landed }
 
             else
-                Flow f
+                Flow { f | landed = Dict.insert (keyOf like) { l | heard = True } f.landed }
 
         Nothing ->
             Flow f
+
+
+{-| The unit refused what `like` edits: the landed edit is said, and goes.
+-}
+forget : Edit -> Flow -> Flow
+forget like (Flow f) =
+    Flow { f | landed = Dict.remove (keyOf like) f.landed }
+
+
+{-| The landed edits past `ms` that the unit never said a word of, not a
+value nor a refusal: `expire` drops them; the model checks each against
+the unit's value (the unit names only its newest refusals).
+-}
+untaken : Time.Posix -> Int -> Flow -> List Edit
+untaken now ms (Flow f) =
+    f.landed
+        |> Dict.values
+        |> List.filter (\l -> not l.heard && Time.posixToMillis now - Time.posixToMillis l.at >= ms)
+        |> List.map .edit
 
 
 {-| What a clock found of the edit on the wire: still in time; sent again
@@ -146,6 +264,8 @@ type Expiry
     = Fresh
     | Resent Command Command
     | GaveUp Command (Maybe Command)
+      -- The window open again after `ERR busy`: this goes.
+    | Reopened (Maybe Command)
 
 
 {-| The window after `ms` milliseconds without an answer.
@@ -159,13 +279,22 @@ expire now ms (Flow f0) =
 
         -- A landed edit the unit never reports is given up quietly: the
         -- unit's value is the base again.
-        f : { wire : Maybe Sent, pending : Dict String Edit, landed : Dict String ( Edit, Time.Posix ) }
+        f : { wire : Maybe Sent, pending : Dict String ( Int, Edit ), seq : Int, landed : Dict String Landed, shut : Maybe Time.Posix, busyRun : Int }
         f =
-            { f0 | landed = Dict.filter (\_ ( _, at ) -> not (late at)) f0.landed }
+            { f0 | landed = Dict.filter (\_ l -> not (late l.at)) f0.landed }
     in
     case f.wire of
         Nothing ->
-            ( Flow f, Fresh )
+            case f.shut of
+                Just until ->
+                    if Time.posixToMillis now >= Time.posixToMillis until then
+                        next now (Flow { f | shut = Nothing }) |> Tuple.mapSecond Reopened
+
+                    else
+                        ( Flow f, Fresh )
+
+                Nothing ->
+                    ( Flow f, Fresh )
 
         Just s ->
             if not (late s.at) then
@@ -175,7 +304,7 @@ expire now ms (Flow f0) =
                 let
                     e : Edit
                     e =
-                        Dict.get (keyOf s.edit) f.pending |> Maybe.withDefault s.edit
+                        Dict.get (keyOf s.edit) f.pending |> Maybe.map Tuple.second |> Maybe.withDefault s.edit
                 in
                 ( Flow { f | wire = Just { s | edit = e, at = now, resent = True }, pending = Dict.remove (keyOf s.edit) f.pending }
                 , Resent (command s.edit) (command e)
@@ -209,7 +338,7 @@ target like (Flow f) =
             keyOf like
     in
     case Dict.get k f.pending of
-        Just e ->
+        Just ( _, e ) ->
             Just e
 
         Nothing ->
@@ -229,4 +358,4 @@ target like (Flow f) =
                     Just e
 
                 Nothing ->
-                    Dict.get k f.landed |> Maybe.map Tuple.first
+                    Dict.get k f.landed |> Maybe.map .edit

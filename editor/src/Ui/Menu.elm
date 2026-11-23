@@ -136,7 +136,6 @@ view ((Config c) as config) state ch =
                     [ class "pop"
                     , Control.ariaRole "listbox"
                     , Control.ariaLabel c.label
-                    , Events.on "keydown" (Decode.field "key" Decode.string |> Decode.andThen escape)
                     ]
                     (List.map
                         (\( i, w ) ->
@@ -160,18 +159,28 @@ view ((Config c) as config) state ch =
             else
                 text ""
 
+        -- Escape shuts it wherever the focus is in it: its button (where a
+        -- click leaves it) or an option.
+        onEscape : Html.Attribute Msg
+        onEscape =
+            if open then
+                Events.on "keydown" (Decode.field "key" Decode.string |> Decode.andThen escape)
+
+            else
+                class ""
+
         popupAttrs : List (Html.Attribute Msg)
         popupAttrs =
             [ attribute "aria-haspopup" "listbox", attribute "aria-expanded" (ariaBool open), toggle ]
     in
     case c.place of
         InPanel ->
-            Control.cell (class "mnc" :: Control.choiceAddr c.addr :: Control.widthStyle (width config) :: Control.markAttrs (Control.chosenMark ch))
+            Control.cell (class "mnc" :: Control.choiceAddr c.addr :: onEscape :: Control.widthStyle (width config) :: Control.markAttrs (Control.chosenMark ch))
                 c.label
                 [ button (class "mn" :: popupAttrs) [ text name ], popup ]
 
         InHeader ->
-            div (class "hmn" :: Control.choiceAddr c.addr :: Control.widthStyle (width config) :: Control.markAttrs (Control.chosenMark ch))
+            div (class "hmn" :: Control.choiceAddr c.addr :: onEscape :: Control.widthStyle (width config) :: Control.markAttrs (Control.chosenMark ch))
                 [ button (class "hbtn" :: popupAttrs)
                     [ b [] [ text c.label ], span [ style "width" (String.fromInt (Tokens.charsCount (widest c.options)) ++ "ch") ] [ text name ] ]
                 , popup

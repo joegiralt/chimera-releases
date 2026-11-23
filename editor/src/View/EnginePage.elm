@@ -321,8 +321,8 @@ bayOf id s =
 
 {-| A hand on a bay. The Part's patches its matrix (`ed route`): a new cable
 at `newCable`, unpatching removes the route. A pad's patches its routes: a
-new cable takes the first route with no amount, and unpatching sets the
-amount to nothing.
+new cable takes the first route with no amount (none left: a notice says so),
+and unpatching sets the amount to nothing.
 -}
 bayEffect : Model -> BayId -> PatchBay.Effect -> State -> ( State, List Model.Msg )
 bayEffect m id effect s =
@@ -351,21 +351,22 @@ bayEffect m id effect s =
                 routes =
                     routesNow m p
             in
-            ( if List.any (\r -> r.on && r.from == Just from && r.to == Just to) routes then
-                s
+            if List.any (\r -> r.on && r.from == Just from && r.to == Just to) routes then
+                ( s, [] )
 
-              else
+            else
                 case List.filter (.on >> not) routes |> List.head of
                     Just r ->
-                        s
+                        ( s
                             |> want r.route.source (Option (Routes.sourceOption from))
                             |> want r.route.dest (Option (Routes.destOption to))
                             |> (\st -> paramOf m r.route.amount |> Maybe.map (\ap -> want ap.addr (Number (Control.atNorm ap newCable)) st) |> Maybe.withDefault st)
+                        , []
+                        )
 
+                    -- Every route in use: no cable, and the page says why.
                     Nothing ->
-                        s
-            , []
-            )
+                        ( s, [ Model.Decline ("PAD " ++ Pad.label p ++ "'S " ++ String.fromInt (List.length routes) ++ " ROUTES ARE ALL IN USE: UNPATCH ONE FIRST") ] )
 
         ( PadBay p, PatchBay.Unpatched from to ) ->
             ( routesNow m p
