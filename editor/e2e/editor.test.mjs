@@ -504,3 +504,70 @@ for (const engine of ENGINES) {
     });
   });
 }
+
+// ---- the unit's MIXER ----
+
+/** The screen kit (screen.wasm) draws an engine's pages; the MIXER's are none of them yet. */
+const GLYPH_TODO = "screen.wasm (kit 0.4) draws no MIXER page: the effect's picture needs a MIXER engine in chimera-screen";
+
+describe("MIXER", () => {
+  /** The editor on its MIXER tab, the Part 1 strip drawn. */
+  async function onMixer() {
+    await followPart(1, "ALGO");
+    await page.locator(".ptop .tab", { hasText: "MIXER" }).click();
+    await page.locator('[data-strip="PART1"]').waitFor({ timeout: 5000 * SLOW });
+  }
+
+  test("a fader moves the unit's Part level", async () => {
+    await onMixer();
+    const fader = page.locator('[data-strip="PART1"] [data-addr="PART1.LEVEL"][role="slider"]');
+    const was = await unit.get("PART1.LEVEL");
+    await until("the editor to read PART1.LEVEL", async () => (await fader.getAttribute("aria-valuetext")) === was.text);
+    await wheel(fader, was.norm > 0.5 ? -6 : 6);
+    const now = await until("PART1.LEVEL to move on the unit", async () => {
+      const v = await unit.get("PART1.LEVEL");
+      return v.stored !== was.stored && v;
+    });
+    await until("the editor to show the unit's level", async () => (await fader.getAttribute("aria-valuetext")) === (await unit.get("PART1.LEVEL")).text);
+    assert.notEqual(now.stored, was.stored);
+  });
+
+  test("a send knob moves its send, and picks its effect's tab", async () => {
+    await onMixer();
+    const send = page.locator('[data-strip="PART1"] .send').nth(1);
+    const knob = send.locator('[role="slider"]');
+    const addr = await knob.getAttribute("data-addr");
+    const was = await unit.get(addr);
+    await until(`the editor to read ${addr}`, async () => (await knob.getAttribute("aria-valuetext")) === was.text);
+    await wheel(knob, was.norm > 0.5 ? -6 : 6);
+    await until(`${addr} to move on the unit`, async () => (await unit.get(addr)).stored !== was.stored);
+    await send.click();
+    await until("the send's effect tab picked", async () => ((await page.locator(".fxtab.on").innerText()).trim()).endsWith("DELAY"));
+  });
+
+  test("an effect tab shows that effect's controls", async () => {
+    await onMixer();
+    await page.locator(".fxtab", { hasText: "REVERB" }).click();
+    await until("REVERB's controls", async () => (await page.locator('.fxbar [data-addr^="REVERB."]').count()) > 0 && (await page.locator('.fxbar [data-addr^="CHORUS."]').count()) === 0);
+    await page.locator(".fxtab", { hasText: "OUT" }).click();
+    await until("OUT's controls", async () => (await page.locator('.fxbar [data-addr^="COMP."]').count()) > 0);
+  });
+
+  test("the unit's own screen redraws when the editor moves a level on its MIXER", { todo: REDRAW_TODO }, async () => {
+    await onMixer();
+    await unit.ok("key MIX+B1");
+    await until("the unit on its MIXER", async () => (await unit.at()).startsWith("MIXER 1"));
+    const before = await settledShot();
+    const fader = page.locator('[data-addr="PART1.LEVEL"][role="slider"]');
+    const was = await unit.get("PART1.LEVEL");
+    await wheel(fader, was.norm > 0.5 ? -6 : 6);
+    await until("PART1.LEVEL to move on the unit", async () => (await unit.get("PART1.LEVEL")).stored !== was.stored);
+    await until("the unit's screen to change", async () => !(await unit.shot()).equals(before), 2000);
+  });
+
+  test("the picked effect's picture paints more than a flat line", { todo: GLYPH_TODO }, async () => {
+    await onMixer();
+    const canvas = page.locator(".mixer .glyph canvas");
+    await canvas.waitFor({ timeout: 2000 });
+  });
+});

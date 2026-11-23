@@ -1,7 +1,7 @@
 -- SPDX-License-Identifier: GPL-3.0-or-later
 
 
-module View.EnginePage exposing (BayId(..), Layout, Msg(..), State, follow, framed, init, layout, other, partBay, screenSpec, subscriptions, update, view)
+module View.EnginePage exposing (BayId(..), Layout, Msg(..), Showing(..), State, follow, framed, init, layout, other, partBay, screenSpec, subscriptions, update, view)
 
 {-| An engine's page: the unit's schema, placed by the engine's layout,
 read from `Model`, drawn with the Ui components. What the unit describes and
@@ -17,10 +17,11 @@ import Addr exposing (Addr, PadBlock(..))
 import Browser.Events
 import Dict exposing (Dict)
 import Html exposing (Html, button, div, p, text)
-import Html.Attributes exposing (class)
+import Html.Attributes exposing (attribute, class, classList)
 import Html.Events exposing (onClick)
 import Layout.Algo
 import Layout.Drum
+import Layout.Mixer as Mixer
 import Layout.Modal
 import Layout.Page as UnitPage exposing (PadScoped(..), ScopedPage(..), UnitPage(..))
 import Layout.Shared as Shared exposing (As(..), Extra(..), Item, Module, Placement(..))
@@ -46,7 +47,7 @@ import Ui.Screen as Screen
 import Ui.Selector as Selector
 import Ui.Toggle as Toggle
 import Ui.Tokens exposing (Theme)
-import Unit exposing (Engine(..))
+import Unit exposing (Engine(..), Part)
 
 
 
@@ -72,6 +73,12 @@ type alias State =
     , bays : Dict String ( BayId, PatchBay.Bay )
     , tab : Tab
     , seat : Maybe Seat
+
+    -- The page shown: the followed Part's engine, or one of the unit's own.
+    , showing : Showing
+
+    -- The MIXER's effect tab (its block, `DELAY`); none picked: the first.
+    , fx : Maybe String
     }
 
 
@@ -83,6 +90,20 @@ type Msg
     | PadMsg PadStrip.Msg
     | Frame
     | Unit Model.Msg
+      -- A UNIT tab: the unit's own page.
+    | Show Showing
+      -- A Part's tab: that Part's engine, the box following it.
+    | GoPart Part
+      -- The MIXER's effect tab, by its block (a send's click picks its effect's).
+    | MixFx String
+
+
+{-| What the page shows: the followed Part's engine page, or the unit's
+MIXER (from its own `describe MIXER`).
+-}
+type Showing
+    = EngineScreen
+    | MixerScreen
 
 
 init : Theme -> State
@@ -95,6 +116,8 @@ init t =
     , bays = Dict.empty
     , tab = Kit
     , seat = Nothing
+    , showing = EngineScreen
+    , fx = Nothing
     }
 
 
@@ -270,6 +293,15 @@ update msg m s0 =
 
         Unit um ->
             ( s, [ um ], Nothing )
+
+        Show v ->
+            ( { s | showing = v }, [], Nothing )
+
+        GoPart p ->
+            ( { s | showing = EngineScreen }, [ Model.FollowPart p ], Nothing )
+
+        MixFx k ->
+            ( { s | fx = Just k }, [], Nothing )
 
 
 bayKey : BayId -> String
@@ -518,9 +550,17 @@ hand m h s =
     List.foldl (intend m) { s | drag = drag } intents
 
 
+{-| The param as the panels now showing describe it: the engine's, else
+the MIXER's.
+-}
 paramOf : Model -> Addr -> Maybe Param
 paramOf m a =
-    Schema.paramIn m.variants a m.schema
+    case Schema.paramIn m.variants a m.schema of
+        Just p ->
+            Just p
+
+        Nothing ->
+            Schema.paramIn m.variants a m.mixer
 
 
 isChoice : Param -> Bool
@@ -984,6 +1024,16 @@ saidModule m =
 
 enginePage : Model -> State -> String -> Engine -> Html Msg
 enginePage m s status e =
+    case s.showing of
+        MixerScreen ->
+            mixerPage m s status e
+
+        EngineScreen ->
+            engineOwn m s status e
+
+
+engineOwn : Model -> State -> String -> Engine -> Html Msg
+engineOwn m s status e =
     let
         lay : Layout
         lay =
@@ -1013,7 +1063,8 @@ enginePage m s status e =
         s.page
         (Page.new title
             |> Page.meta status
-            |> Page.parts (partTabs m)
+            |> Page.parts (partTabs m s)
+            |> Page.units (unitTabs m s)
             |> Page.link (Page.Linked status)
             |> (case e of
                     Drum ->
@@ -1051,8 +1102,8 @@ padName m p =
     machineOf p |> Result.toMaybe |> Maybe.andThen (\a -> Model.shown a m) |> Maybe.map .text |> Maybe.withDefault "--"
 
 
-partTabs : Model -> List (Page.Tab Msg)
-partTabs m =
+partTabs : Model -> State -> List (Page.Tab Msg)
+partTabs m s =
     List.map
         (\pt ->
             { kicker = "P" ++ String.fromInt (Unit.partNumber pt)
@@ -1067,15 +1118,194 @@ partTabs m =
                     ( False, _ ) ->
                         "PART"
             , current =
-                if m.part == Just pt then
+                if m.part == Just pt && s.showing == EngineScreen then
                     Here
 
                 else
                     Elsewhere
-            , go = Unit (Model.FollowPart pt)
+            , go = GoPart pt
             }
         )
         Unit.allParts
+
+
+{-| The unit's own pages it describes: MIXER, for now.
+-}
+unitTabs : Model -> State -> List (Page.Tab Msg)
+unitTabs m s =
+    if List.isEmpty (Schema.pages m.mixer) then
+        []
+
+    else
+        [ { kicker = "UNIT"
+          , name = "MIXER"
+          , current =
+                if s.showing == MixerScreen then
+                    Here
+
+                else
+                    Elsewhere
+          , go = Show MixerScreen
+          }
+        ]
+
+
+{-| The unit's MIXER as a desk (`Layout.Mixer`, from its `describe MIXER`):
+a channel strip per Part and the OUT strip, then the effects' chain as tabs
+with the picked one's controls, and its picture beside them.
+-}
+mixerPage : Model -> State -> String -> Engine -> Html Msg
+mixerPage m s status e =
+    let
+        ctx : Ctx
+        ctx =
+            { m = m
+            , s = s
+            , engine = e
+            , items = Shared.index (Shared.active m.mixer m.variants)
+            }
+
+        d : Mixer.Desk
+        d =
+            Mixer.desk m.mixer
+
+        picked : Maybe Mixer.Effect
+        picked =
+            case List.filter (\fx -> Just fx.key == s.fx) d.effects of
+                fx :: _ ->
+                    Just fx
+
+                [] ->
+                    List.head d.effects
+    in
+    Page.view PageMsg
+        s.page
+        (Page.new "MIXER"
+            |> Page.meta status
+            |> Page.parts (partTabs m s)
+            |> Page.units (unitTabs m s)
+            |> Page.link (Page.Linked status)
+            |> Page.modules (saidModule m)
+            |> Page.body
+                [ div [ class "mixer" ]
+                    [ div [ class "desk" ] (List.map (stripView ctx) d.strips ++ (d.master |> Maybe.map (stripView ctx >> List.singleton) |> Maybe.withDefault []))
+                    , div [ class "fxrow" ]
+                        [ Html.section [ class "sec fxbar" ]
+                            [ Html.header []
+                                [ div [ class "fxtabs", attribute "role" "tablist" ]
+                                    (List.indexedMap (fxTab picked) d.effects)
+                                ]
+                            , div [ class "body" ]
+                                [ Module.panel
+                                    (picked
+                                        |> Maybe.map
+                                            (\fx ->
+                                                List.indexedMap
+                                                    (\i ( title, addrs ) ->
+                                                        Module.group
+                                                            (if i == 0 then
+                                                                ""
+
+                                                             else
+                                                                title
+                                                            )
+                                                            (cells ctx Auto addrs)
+                                                    )
+                                                    fx.pages
+                                            )
+                                        |> Maybe.withDefault []
+                                    )
+                                ]
+                            ]
+                        , Html.section [ class "sec glyph" ]
+                            [ Html.header [] [ Html.h2 [] [ text (picked |> Maybe.map .title |> Maybe.withDefault "") ] ]
+                            , div [ class "body" ]
+                                -- The firmware's screen kit (screen.wasm) draws an engine's
+                                -- pages; the MIXER's are none of them yet.
+                                [ p [ class "pnote" ] [ text "THE UNIT'S PICTURE OF THIS EFFECT: NOT IN THIS SCREEN KIT YET" ] ]
+                            ]
+                        ]
+                    ]
+                ]
+        )
+
+
+{-| An effect's tab in the chain's bar: CHORUS → DELAY → REVERB → OUT.
+-}
+fxTab : Maybe Mixer.Effect -> Int -> Mixer.Effect -> Html Msg
+fxTab picked i fx =
+    button
+        [ classList [ ( "fxtab", True ), ( "on", Just fx == picked ) ]
+        , attribute "role" "tab"
+        , attribute "aria-selected" (boolText (Just fx == picked))
+        , onClick (MixFx fx.key)
+        ]
+        [ text
+            ((if i == 0 then
+                ""
+
+              else
+                "→ "
+             )
+                ++ fx.title
+            )
+        ]
+
+
+{-| A strip: its EQ, sends (a click on one picks its effect's tab), PAN,
+the fader, then the rest. A Part the unit has no Sound for is dim.
+-}
+stripView : Ctx -> Mixer.Strip -> Html Msg
+stripView ctx st =
+    let
+        sound : Maybe { name : String, status : Protocol.SoundStatus }
+        sound =
+            st.part |> Maybe.andThen (\n -> Dict.get n ctx.m.sounds)
+
+        section : String -> List (Html Msg) -> List (Html Msg)
+        section title xs =
+            if List.isEmpty xs then
+                []
+
+            else
+                [ Module.group title xs ]
+
+        send : Mixer.Send -> Maybe (Html Msg)
+        send snd =
+            Dict.get (Addr.key snd.addr) ctx.items
+                |> Maybe.map
+                    (\i ->
+                        div
+                            (class "send" :: (snd.effect |> Maybe.map (\k -> [ onClick (MixFx k) ]) |> Maybe.withDefault []))
+                            [ control ctx ( i, AsKnob ) ]
+                    )
+    in
+    Html.section [ classList [ ( "sec", True ), ( "strip", True ), ( "dim", st.part /= Nothing && sound == Nothing ) ], attribute "data-strip" st.key ]
+        [ Html.header [] [ Html.h2 [] [ text st.title, Html.small [] [ text (sound |> Maybe.map .name |> Maybe.withDefault "") ] ] ]
+        , div [ class "body" ]
+            (section "EQ" (cells ctx AsKnob st.eq)
+                ++ section "SENDS" (List.filterMap send st.sends)
+                ++ section "" (cells ctx AsKnob (List.filterMap identity [ st.pan ]))
+                ++ section "" (cells ctx AsHeroFader (List.filterMap identity [ st.level ]))
+                ++ section "" (cells ctx Auto st.rest)
+            )
+        ]
+
+
+{-| The controls of the addresses the Sound shows now, as `as_`.
+-}
+cells : Ctx -> As -> List Addr -> List (Html Msg)
+cells ctx as_ =
+    List.filterMap (\a -> Dict.get (Addr.key a) ctx.items |> Maybe.map (\i -> control ctx ( i, as_ )))
+
+
+boolText : Bool -> String
+boolText b =
+    if b then
+        "true"
+
+    else
+        "false"
 
 
 moduleOf : Ctx -> Module -> Module.Config Msg

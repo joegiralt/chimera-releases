@@ -1,7 +1,7 @@
 -- SPDX-License-Identifier: GPL-3.0-or-later
 
 
-module Fixture exposing (initVariants, orbit, param, paramIn, schema, schemaFor)
+module Fixture exposing (initVariants, mixerSchema, orbit, param, paramIn, schema, schemaFor)
 
 import Dict exposing (Dict)
 import FixtureData
@@ -23,6 +23,13 @@ schema =
 orbit : Schema
 orbit =
     read FixtureData.orbit
+
+
+{-| What the unit's `ed describe MIXER` answers (fixtures/mixer-schema.txt).
+-}
+mixerSchema : Schema
+mixerSchema =
+    read FixtureData.mixer
 
 
 {-| Each engine's `ed describe` answer.

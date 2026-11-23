@@ -7,6 +7,7 @@ import Addr
 import Dict exposing (Dict)
 import Expect
 import Fixture
+import Layout.Mixer as Mixer
 import Layout.Page
 import Layout.Shared as Shared exposing (Module)
 import Protocol exposing (VariantName)
@@ -212,6 +213,27 @@ suite =
                 , (EnginePage.layout Drum (PadTab Pad.Pad3)).shown |> List.filter (Shared.extras >> List.member Shared.PartMatrix) |> List.length
                 )
                     |> Expect.equal ( 1, 1 )
+        , test "the_mixer_desk_is_the_units_description" <|
+            \_ ->
+                let
+                    d : Mixer.Desk
+                    d =
+                        Mixer.desk Fixture.mixerSchema
+
+                    p1 : List Mixer.Strip
+                    p1 =
+                        List.filter (\st -> st.key == "PART1") d.strips
+                in
+                Expect.all
+                    [ \_ -> Expect.equal [ "P1", "P2", "P3", "P4", "P5", "P6" ] (List.map .title d.strips)
+                    , \_ -> Expect.equal [ "CHORUS", "DELAY", "REVERB", "OUT" ] (List.map .title d.effects)
+                    , \_ -> Expect.equal [ Just "PART1.LEVEL" ] (List.map (.level >> Maybe.map Addr.key) p1)
+                    , \_ -> Expect.equal [ Just "PART1.PAN" ] (List.map (.pan >> Maybe.map Addr.key) p1)
+                    , \_ -> Expect.equal [ [ ( "PART1_SND.SEND1", Just "CHORUS" ), ( "PART1_SND.SEND2", Just "DELAY" ), ( "PART1_SND.SEND3", Just "REVERB" ) ] ] (List.map (.sends >> List.map (\x -> ( Addr.key x.addr, x.effect ))) p1)
+                    , \_ -> Expect.equal [ [ "PART1.TILT", "PART1.LO_CUT", "PART1.ROLE" ] ] (List.map (.eq >> List.map Addr.key) p1)
+                    , \_ -> Expect.equal (Just (Just "COMP.VOL")) (d.master |> Maybe.map (.level >> Maybe.map Addr.key))
+                    ]
+                    ()
         , test "a_layout_never_names_an_address_no_engine_describes" <|
             \_ ->
                 let

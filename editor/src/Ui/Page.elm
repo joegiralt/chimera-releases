@@ -9,6 +9,7 @@ module Ui.Page exposing
     , Msg(..)
     , State
     , Tab
+    , body
     , init
     , link
     , meta
@@ -61,12 +62,13 @@ type Config msg
         , link : Link
         , strip : List (Html msg)
         , modules : List (Module.Config msg)
+        , body : List (Html msg)
         }
 
 
 new : String -> Config msg
 new title =
-    Config { title = title, meta = "", parts = [], units = [], link = Offline, strip = [], modules = [] }
+    Config { title = title, meta = "", parts = [], units = [], link = Offline, strip = [], modules = [], body = [] }
 
 
 meta : String -> Config msg -> Config msg
@@ -96,6 +98,14 @@ link l (Config c) =
 strip : Html msg -> Config msg -> Config msg
 strip s (Config c) =
     Config { c | strip = [ s ] }
+
+
+{-| A page of its own making (the MIXER's desk) under the head, in place
+of the rows of modules.
+-}
+body : List (Html msg) -> Config msg -> Config msg
+body b (Config c) =
+    Config { c | body = b }
 
 
 modules : List (Module.Config msg) -> Config msg -> Config msg
@@ -220,9 +230,20 @@ view toMsg (State s) (Config c) =
                 ++ List.map (\x -> div [ class "row" ] [ x ]) c.strip
             )
         , main_ []
-            [ div [ class "pagehead" ] [ h1 [] [ text c.title ], span [ class "meta" ] [ text c.meta ] ]
-            , div [ class "prows" ] (List.map (Row.view (Folding >> toMsg) s.folds) (Row.pairUp shown))
-            ]
+            (div [ class "pagehead" ] [ h1 [] [ text c.title ], span [ class "meta" ] [ text c.meta ] ]
+                :: (if List.isEmpty c.body || not (List.isEmpty shown) then
+                        [ div [ class "prows" ] (List.map (Row.view (Folding >> toMsg) s.folds) (Row.pairUp shown)) ]
+
+                    else
+                        []
+                   )
+                ++ (if List.isEmpty c.body then
+                        []
+
+                    else
+                        [ div [ class "pbody" ] c.body ]
+                   )
+            )
         ]
 
 

@@ -648,6 +648,107 @@ suite =
                             Expect.fail "no cell"
              ]
             )
+        , describe "the MIXER"
+            (let
+                mixed : Model.Model
+                mixed =
+                    model |> feed [ "mixer", "val PART1.LEVEL 0.5 0.5 \"50\"", "val PART1.PAN 0.5 0 \"C\"", "OK 2" ]
+
+                onMixer : Page.State
+                onMixer =
+                    Page.update (Show Page.MixerScreen) mixed (Page.init Day) |> (\( st, _, _ ) -> st)
+
+                level : Addr
+                level =
+                    addr "PART1.LEVEL"
+             in
+             [ test "the_unit_tab_row_has_mixer_when_the_unit_describes_it" <|
+                \_ ->
+                    Page.view mixed (Page.init Day)
+                        |> Query.fromHtml
+                        |> Query.findAll [ Sel.class "tab", Sel.containing [ Sel.text "MIXER" ] ]
+                        |> Query.count (Expect.equal 1)
+             , test "no_mixer_tab_without_its_description" <|
+                \_ ->
+                    Page.view { mixed | mixer = Schema.empty } (Page.init Day)
+                        |> Query.fromHtml
+                        |> Query.findAll [ Sel.class "tab", Sel.containing [ Sel.text "MIXER" ] ]
+                        |> Query.count (Expect.equal 0)
+             , test "the_mixer_is_a_desk_a_strip_a_part_and_out" <|
+                \_ ->
+                    Page.view mixed onMixer
+                        |> Query.fromHtml
+                        |> Expect.all
+                            [ Query.find [ Sel.tag "h1" ] >> Query.has [ Sel.text "MIXER" ]
+                            , Query.findAll [ Sel.class "strip" ] >> Query.count (Expect.equal 7)
+                            , Query.find [ Sel.attribute (attribute "data-strip" "PART3") ] >> Query.findAll [ Sel.attribute (attribute "data-addr" "PART3.LEVEL"), Sel.attribute (attribute "role" "slider") ] >> Query.count (Expect.equal 1)
+                            , Query.find [ Sel.attribute (attribute "data-strip" "PART3") ] >> Query.findAll [ Sel.class "send" ] >> Query.count (Expect.equal 3)
+                            , Query.find [ Sel.attribute (attribute "data-strip" "OUT") ] >> Query.findAll [ Sel.attribute (attribute "data-addr" "COMP.VOL") ] >> Query.count (Expect.equal 1)
+                            ]
+             , test "the_effects_chain_is_a_tab_bar_its_first_open" <|
+                \_ ->
+                    Page.view mixed onMixer
+                        |> Query.fromHtml
+                        |> Expect.all
+                            [ Query.findAll [ Sel.class "fxtab" ] >> Query.count (Expect.equal 4)
+                            , Query.find [ Sel.class "fxtab", Sel.class "on" ] >> Query.has [ Sel.text "CHORUS" ]
+                            , Query.find [ Sel.class "fxbar" ] >> Query.findAll [ Sel.attribute (attribute "data-addr" "CHORUS.RATE") ] >> Query.count (Expect.equal 1)
+                            ]
+             , test "a_tab_shows_that_effects_controls" <|
+                \_ ->
+                    Page.view mixed (Page.update (MixFx "DELAY") mixed onMixer |> (\( st, _, _ ) -> st))
+                        |> Query.fromHtml
+                        |> Query.find [ Sel.class "fxbar" ]
+                        |> Expect.all
+                            [ Query.findAll [ Sel.attribute (attribute "data-addr" "DELAY.FDBK") ] >> Query.count (Expect.equal 1)
+                            , Query.findAll [ Sel.attribute (attribute "data-addr" "CHORUS.RATE") ] >> Query.count (Expect.equal 0)
+                            ]
+             , test "a_send_picks_its_effects_tab" <|
+                \_ ->
+                    Page.view mixed onMixer
+                        |> Query.fromHtml
+                        |> Query.find [ Sel.attribute (attribute "data-strip" "PART2") ]
+                        |> Query.findAll [ Sel.class "send" ]
+                        |> Query.index 2
+                        |> Event.simulate Event.click
+                        |> Event.expect (MixFx "REVERB")
+             , test "its_values_are_the_units_from_since" <|
+                \_ ->
+                    Page.view mixed onMixer
+                        |> Query.fromHtml
+                        |> Query.find [ Sel.attribute (attribute "data-addr" "PART1.LEVEL"), Sel.attribute (attribute "role" "slider") ]
+                        |> Query.has [ Sel.attribute (attribute "aria-valuetext" "50") ]
+             , test "a_hand_on_a_mixer_control_sends_its_ed_set_through_the_window" <|
+                \_ ->
+                    let
+                        ( unit, asks ) =
+                            live [ Show Page.MixerScreen, Hand (Control.Step level Up), Frame ] mixed
+
+                        lp : Schema.Param
+                        lp =
+                            Fixture.paramIn unit.mixer "PART1.LEVEL"
+
+                        want : Float
+                        want =
+                            Control.nudged lp { from = 0.5, by = 1, wheel = Control.wheelNorm lp }
+                    in
+                    Expect.all
+                        [ \_ -> Expect.equal [ Model.Edit level (Num want) ] asks
+                        , \_ -> Expect.equal (Just (Num want)) (Model.pending level unit)
+                        ]
+                        ()
+             , test "a_part_tab_goes_back_to_the_parts_engine" <|
+                \_ ->
+                    case Unit.partFromInt 1 of
+                        Just p1 ->
+                            Page.update (GoPart p1) mixed onMixer
+                                |> (\( st, out, _ ) -> ( Page.view mixed st |> Query.fromHtml |> Query.find [ Sel.tag "h1" ] |> Query.has [ Sel.text "ALGO" ], out ))
+                                |> (\( has, out ) -> Expect.all [ \_ -> has, \_ -> Expect.equal [ Model.FollowPart p1 ] out ] ())
+
+                        Nothing ->
+                            Expect.fail "no part 1"
+             ]
+            )
         , describe "the page"
             [ test "the_hero_cutoff_knob_grabs_with_the_hero_travel" <|
                 \_ ->
@@ -664,7 +765,7 @@ suite =
                                 |> Query.fromHtml
                                 |> Query.find [ Sel.tag "button", Sel.containing [ Sel.text "P3" ] ]
                                 |> Event.simulate Event.click
-                                |> Event.expect (Unit (Model.FollowPart p3))
+                                |> Event.expect (GoPart p3)
 
                         Nothing ->
                             Expect.fail "no part 3"
