@@ -1,7 +1,7 @@
 -- SPDX-License-Identifier: GPL-3.0-or-later
 
 
-module View.EnginePage exposing (BayId(..), Layout, Msg(..), Showing(..), State, follow, framed, init, layout, other, partBay, screenSpec, subscriptions, update, view)
+module View.EnginePage exposing (BayId(..), Layout, Msg(..), Showing(..), State, follow, framed, init, layout, mixerGlyph, other, partBay, screenSpec, subscriptions, update, view)
 
 {-| An engine's page: the unit's schema, placed by the engine's layout,
 read from `Model`, drawn with the Ui components. What the unit describes and
@@ -29,7 +29,7 @@ import Layout.Tape
 import Layout.Va
 import Model exposing (Model, Seat)
 import Protocol exposing (Kind(..), OptIndex, PageNo, Scale(..), Value(..))
-import Schema exposing (Param)
+import Schema exposing (Param, Schema)
 import Set exposing (Set)
 import Transport
 import Ui.Chip as Chip
@@ -876,15 +876,22 @@ off the page its art reads (`reads`: VA's WAVE morph reads SHAPE), in
 elsewhere never repaints it.
 -}
 screenVals : Model -> PageNo -> List Addr -> List ( Addr, Float )
-screenVals m n reads =
+screenVals m =
+    pageVals m.schema m
+
+
+{-| `screenVals` on schema `sch`'s page `n` (an engine's, the MIXER's).
+-}
+pageVals : Schema -> Model -> PageNo -> List Addr -> List ( Addr, Float )
+pageVals sch m n reads =
     let
         own : List Addr
         own =
-            Schema.pageAddresses n m.schema
+            Schema.pageAddresses n sch
 
         selectors : List Addr
         selectors =
-            Schema.pages m.schema
+            Schema.pages sch
                 |> List.filter (\pg -> pg.n == n)
                 |> List.concatMap .panels
                 |> List.filter (\pn -> pn.variant /= Nothing)
@@ -894,7 +901,7 @@ screenVals m n reads =
         wanted =
             Set.fromList (List.map Addr.key (own ++ selectors ++ reads))
     in
-    Schema.addresses m.schema
+    Schema.addresses sch
         |> List.filter (\a -> Set.member (Addr.key a) wanted)
         |> List.filterMap (\a -> Model.shown a m |> Maybe.map (\v -> ( a, v.stored )))
 
@@ -1224,14 +1231,54 @@ mixerPage m s status e =
                         , Html.section [ class "sec glyph" ]
                             [ Html.header [] [ Html.h2 [] [ text (picked |> Maybe.map .title |> Maybe.withDefault "") ] ]
                             , div [ class "body" ]
-                                -- The firmware's screen kit (screen.wasm) draws an engine's
-                                -- pages; the MIXER's are none of them yet.
-                                [ p [ class "pnote" ] [ text "THE UNIT'S PICTURE OF THIS EFFECT: NOT IN THIS SCREEN KIT YET" ] ]
+                                (case mixerGlyph m s of
+                                    Just sc ->
+                                        [ Screen.view sc ]
+
+                                    Nothing ->
+                                        [ p [ class "pnote" ] [ text "NO PICTURE OF THIS EFFECT IN THIS SCREEN KIT" ] ]
+                                )
                             ]
                         ]
                     ]
                 ]
         )
+
+
+{-| The picked effect's picture as the screen kit draws it (its MIXER
+page's gauge or art), animated, from that page's values.
+-}
+mixerGlyph : Model -> State -> Maybe Screen.Config
+mixerGlyph m s =
+    let
+        effects : List Mixer.Effect
+        effects =
+            (Mixer.desk m.mixer).effects
+
+        picked : Maybe Mixer.Effect
+        picked =
+            case List.filter (\fx -> Just fx.key == s.fx) effects of
+                fx :: _ ->
+                    Just fx
+
+                [] ->
+                    List.head effects
+
+        at : String -> (PageNo -> Screen.Config) -> Maybe Screen.Config
+        at label make =
+            Schema.pageNumber label m.mixer |> Maybe.map (\n -> make n |> Screen.values (pageVals m.mixer m n []))
+    in
+    picked
+        |> Maybe.andThen .picture
+        |> Maybe.andThen
+            (\pic ->
+                case pic of
+                    Mixer.GaugeOn label f ->
+                        at label (\n -> Screen.mixerGauge n f)
+
+                    Mixer.ArtOn label ->
+                        at label (\n -> Screen.mixerArt n Screen.Tall)
+            )
 
 
 {-| An effect's tab in the chain's bar: CHORUS → DELAY → REVERB → OUT.

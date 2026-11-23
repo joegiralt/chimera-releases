@@ -652,7 +652,7 @@ suite =
             (let
                 mixed : Model.Model
                 mixed =
-                    model |> feed [ "mixer", "val PART1.LEVEL 0.5 0.5 \"50\"", "val PART1.PAN 0.5 0 \"C\"", "OK 2" ]
+                    model |> feed [ "mixer", "val PART1.LEVEL 0.5 0.5 \"50\"", "val PART1.PAN 0.5 0 \"C\"", "val CHORUS.MODE 0.2 1 \"I\"", "OK 2" ]
 
                 onMixer : Page.State
                 onMixer =
@@ -788,6 +788,28 @@ suite =
                         |> .partEngines
                         |> Dict.toList
                         |> Expect.equal [ ( 1, Unit.Algo ), ( 2, Unit.Va ) ]
+             , describe "the picked effect's picture is the kit's MIXER page, animated"
+                (List.map
+                    (\( key, want ) ->
+                        test key <|
+                            \_ ->
+                                Page.mixerGlyph mixed (Page.update (MixFx key) mixed onMixer |> (\( st, _, _ ) -> st))
+                                    |> Maybe.andThen Screen.spec
+                                    |> Maybe.map (\sp -> ( Protocol.pageNoToInt sp.page, Encode.encode 0 (Screen.encodeSpec { sp | vals = [] }) ))
+                                    |> Expect.equal (Just want)
+                    )
+                    [ ( "CHORUS", ( 0, "{\"engine\":\"MIXER\",\"page\":0,\"region\":\"gauge\",\"focus\":0,\"pad\":null,\"vals\":[],\"animate\":true}" ) )
+                    , ( "DELAY", ( 1, "{\"engine\":\"MIXER\",\"page\":1,\"region\":\"gauge\",\"focus\":2,\"pad\":null,\"vals\":[],\"animate\":true}" ) )
+                    , ( "REVERB", ( 4, "{\"engine\":\"MIXER\",\"page\":4,\"region\":\"gauge\",\"focus\":5,\"pad\":null,\"vals\":[],\"animate\":true}" ) )
+                    , ( "COMP", ( 8, "{\"engine\":\"MIXER\",\"page\":8,\"region\":\"screen\",\"focus\":null,\"pad\":null,\"vals\":[],\"animate\":true}" ) )
+                    ]
+                )
+             , test "the_picture_carries_its_pages_values" <|
+                \_ ->
+                    Page.mixerGlyph mixed onMixer
+                        |> Maybe.andThen Screen.spec
+                        |> Maybe.map (.vals >> List.map (Tuple.first >> Addr.key) >> List.member "CHORUS.MODE")
+                        |> Expect.equal (Just True)
              , test "a_part_tab_goes_back_to_the_parts_engine" <|
                 \_ ->
                     case Unit.partFromInt 1 of

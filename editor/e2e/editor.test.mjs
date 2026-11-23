@@ -446,14 +446,23 @@ for (const engine of ENGINES) {
       await att.waitFor();
       // The cable's amount, dragged up.
       const from = (await unitRoutes())[patched].amount;
-      const [ax, ay] = await centre(att);
-      await page.mouse.move(ax, ay);
-      await page.mouse.down();
-      await page.mouse.move(ax, ay - 75, { steps: 6 });
-      await page.mouse.up();
-      await until(`${patched}'s amount to move`, async () => {
+      // A drag on the attenuverter where it holds still; the page may still be
+      // laying out as answers arrive, so a drag that moved nothing is made again.
+      const drag = async () => {
+        const [ax, ay] = await centre(att);
+        await page.mouse.move(ax, ay);
+        await page.mouse.down();
+        await page.mouse.move(ax, ay - 75, { steps: 6 });
+        await page.mouse.up();
+      };
+      const moves = async () => {
         const r = (await unitRoutes())[patched];
         return r && r.amount !== from;
+      };
+      await drag();
+      await until(`${patched}'s amount to move`, moves, 3000).catch(async () => {
+        await drag();
+        await until(`${patched}'s amount to move, dragged again`, moves);
       });
       // The unit glides a route a step a pass: the amount it lands on, not one on the way.
       const moved = await settledRoute(patched);
@@ -537,9 +546,6 @@ test("a Part the editor isn't following shows the engine the unit loads onto it"
 
 // ---- the unit's MIXER ----
 
-/** The screen kit (screen.wasm) draws an engine's pages; the MIXER's are none of them yet. */
-const GLYPH_TODO = "screen.wasm (kit 0.4) draws no MIXER page: the effect's picture needs a MIXER engine in chimera-screen";
-
 describe("MIXER", () => {
   /** The editor on its MIXER tab, the Part 1 strip drawn. */
   async function onMixer() {
@@ -595,9 +601,57 @@ describe("MIXER", () => {
     await until("the unit's screen to change", async () => !(await unit.shot()).equals(before), 2000);
   });
 
-  test("the picked effect's picture paints more than a flat line", { todo: GLYPH_TODO }, async () => {
+  /** The glyph's canvas: its pixels as a data URL, and its rows of ink (a flat line is one or two). */
+  const glyph = () => page.locator(".mixer .glyph canvas");
+  const glyphUrl = () => glyph().evaluate((c) => c.toDataURL());
+  const glyphRows = () =>
+    glyph().evaluate((c) => {
+      const g = c.getContext("2d").getImageData(0, 0, c.width, c.height).data;
+      const bg = [g[0], g[1], g[2]];
+      let rows = 0;
+      for (let y = 0; y < c.height; y++) {
+        for (let x = 0; x < c.width; x++) {
+          const o = (y * c.width + x) * 4;
+          if (g[o] !== bg[0] || g[o + 1] !== bg[1] || g[o + 2] !== bg[2]) { rows++; break; }
+        }
+      }
+      return rows;
+    });
+
+  test("each effect's picture paints more than a flat line, and moves", async () => {
     await onMixer();
-    const canvas = page.locator(".mixer .glyph canvas");
-    await canvas.waitFor({ timeout: 2000 });
+    for (const fx of ["CHORUS", "DELAY", "REVERB", "OUT"]) {
+      await page.locator(".fxtab", { hasText: fx }).click();
+      await until(`${fx}'s picture painted`, async () => (await page.locator('.mixer .glyph chimera-screen[data-painted]').count()) === 1 && (await glyphRows()) > 2);
+    }
+    await page.locator(".fxtab", { hasText: "CHORUS" }).click();
+    await until("the chorus painted", async () => (await glyphRows()) > 2);
+    const first = await glyphUrl();
+    await until("the chorus's picture to move on its own", async () => (await glyphUrl()) !== first);
+  });
+
+  test("turning an effect's knob changes its picture", async () => {
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    try {
+      await onMixer();
+      // A still picture: reduced motion draws one frame, so a change is the knob's.
+      await page.reload();
+      await page.getByRole("button", { name: "CONNECT SIMULATOR" }).click();
+      await onMixer();
+      await page.locator(".fxtab", { hasText: "CHORUS" }).click();
+      // TYPE picks the chorus's picture (braid, moire, ray gun): one notch, another picture.
+      const knob = page.locator('.fxbar [data-addr="CHORUS.MODE"]').first();
+      const was = await unit.get("CHORUS.MODE");
+      await until("the chorus painted", async () => (await glyphRows()) > 2);
+      const before = await glyphUrl();
+      await wheel(knob, was.stored >= 5 ? -1 : 1);
+      await until("CHORUS.MODE to move on the unit", async () => (await unit.get("CHORUS.MODE")).stored !== was.stored);
+      const el = page.locator(".mixer .glyph chimera-screen");
+      await until("the chorus's picture to follow its TYPE", async () => (await glyphUrl()) !== before).catch(async (e) => {
+        throw new Error(`${e.message}; the unit holds ${(await unit.get("CHORUS.MODE")).text}; spec ${await el.getAttribute("spec")}; error ${await el.getAttribute("data-error")}`);
+      });
+    } finally {
+      await page.emulateMedia({ reducedMotion: null });
+    }
   });
 });

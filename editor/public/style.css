@@ -255,3 +255,4 @@ html, body { margin: 0; background: #121212; }
 .ui .mixer .strip .setup[open] > summary::before { content: "▾ "; }
 .ui .mixer .strip .setup > .grp { justify-content: center; border: 0; padding: 6px 0 0; }
 .ui .mixer .strip .body { flex: 1; }
+.ui .mixer .glyph .body .screen { width: 100% !important; max-width: 360px; }

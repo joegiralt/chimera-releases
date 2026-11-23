@@ -50,7 +50,8 @@ function schema(name) {
 S.load(fs.readFileSync(path.join(__dirname, 'screen.wasm'))).then(function (x) {
   var names = S.engines(x);
   var fixture = fs.readFileSync(path.join(__dirname, '../tests/fixtures/engines.txt'), 'utf8').trim().split('\n');
-  if (JSON.stringify(names) !== JSON.stringify(fixture)) fail('engines ' + names + ' are not engines.txt\'s ' + fixture);
+  // The kit's engines: the playable ones (engines.txt), then the MIXER's FX pages.
+  if (JSON.stringify(names) !== JSON.stringify(fixture.concat(['MIXER']))) fail('engines ' + names + ' are not engines.txt\'s ' + fixture + ' and MIXER');
   var reset = function (e) { if (x.reset(names.indexOf(e)) !== 0) fail('reset ' + e); };
   var paint = function (o) { return S.paintSpec(x, names, spec(o)); };
 
@@ -154,6 +155,27 @@ S.load(fs.readFileSync(path.join(__dirname, 'screen.wasm'))).then(function (x) {
       ' ms), ' + Math.round(before.writes / before.paints) + ' values written each; live ' + live.paints + ' paint(s), ' + (live.ms / live.paints).toFixed(2) + ' ms each, ' +
       live.writes + ' value(s) written');
   }
+  // The MIXER's effects: each picture more than a line, moving from frame to
+  // frame, and with its cell's value; a still spec drawn the same at any frame.
+  var mixer = schema('mixer');
+  var pageOf = function (label) {
+    var text = fs.readFileSync(path.join(__dirname, '../tests/fixtures/mixer-schema.txt'), 'utf8');
+    var m = new RegExp('^page (\\d+) ' + label + ' of', 'm').exec(text);
+    return Number(m[1]);
+  };
+  var fxAt = function (label, region, focus, frame, vals) {
+    x.reset(names.indexOf('MIXER'));
+    return S.paintSpec(x, names, spec({ engine: 'MIXER', page: pageOf(label), region: region, focus: focus, vals: vals || mixer.sound }), frame);
+  };
+  // (The reverb's cube moves with MIX, its tail with TIME: either will do.)
+  [['CHR', 'gauge', 0, ['CHORUS.MIX']], ['DLY', 'gauge', 2, ['DELAY.FDBK']], ['REV', 'gauge', 5, ['REVERB.MIX', 'REVERB.TIME']], ['MST', 'screen', null, ['COMP.THRESH']]].forEach(function (c) {
+    var a = fxAt(c[0], c[1], c[2], 0), b = fxAt(c[0], c[1], c[2], 37);
+    if (!a.rgba) fail('MIXER ' + c[0] + ': ' + JSON.stringify(a.error || a));
+    var with_ = function (addr) { return mixer.sound.map(function (v) { return v[0] === addr ? [v[0], Math.fround(v[1] > 0.5 ? 0.1 : 0.9)] : v; }); };
+    if (!c[3].some(function (addr) { return differ(a, fxAt(c[0], c[1], c[2], 0, with_(addr))) > 0; })) fail('MIXER ' + c[0] + ' ignores ' + c[3].join(' and '));
+    console.log('screen.check: MIXER ' + c[0] + ' ' + c[1] + ' ' + a.rect.w + 'x' + a.rect.h + ', frame 0 vs 37: ' + differ(a, b) + ' channels moved');
+  });
+
   cost('ALGO', 'algo', 'ALGO.MORPH', 64);
   cost('DRUM', 'drum', 'PAD3.LEVEL', 40);
   console.log('screen.check: ok');

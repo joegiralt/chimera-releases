@@ -1,7 +1,7 @@
 -- SPDX-License-Identifier: GPL-3.0-or-later
 
 
-module Layout.Mixer exposing (Desk, Effect, Send, Strip, desk)
+module Layout.Mixer exposing (Desk, Effect, Picture(..), Send, Strip, desk)
 
 {-| The unit's MIXER as a desk, from its `describe MIXER` alone, never a
 fixed list:
@@ -23,6 +23,7 @@ order. A page with nothing on it (a Part's VOICES) adds nothing.
 import Addr exposing (Addr)
 import Protocol
 import Schema exposing (Schema)
+import Ui.Screen exposing (Focus(..))
 
 
 type alias Desk =
@@ -54,7 +55,35 @@ type alias Send =
 pages' cells.
 -}
 type alias Effect =
-    { key : String, title : String, pages : List ( String, List Addr ) }
+    { key : String, title : String, pages : List ( String, List Addr ), picture : Maybe Picture }
+
+
+{-| Where the screen kit draws an effect's picture, as the unit's focus band
+shows it: a page's gauge with a cell in focus (the chorus's TYPE picks
+braid, moire or ray gun; the delay's FDBK; the reverb's MIX, a cube for
+QUAD), or a page's art (the master's compressor curve). By the page's label.
+-}
+type Picture
+    = GaugeOn String Focus
+    | ArtOn String
+
+
+{-| The kit's pictures, by the page that holds each.
+-}
+pictures : List ( String, Picture )
+pictures =
+    [ ( "CHR", GaugeOn "CHR" CellA )
+    , ( "DLY", GaugeOn "DLY" CellC )
+    , ( "REV", GaugeOn "REV" CellF )
+    , ( "MST", ArtOn "MST" )
+    ]
+
+
+pictureOf : List ( String, List Addr ) -> Maybe Picture
+pictureOf pages =
+    pages
+        |> List.filterMap (\( label, _ ) -> pictures |> List.filter (Tuple.first >> (==) label) |> List.head |> Maybe.map Tuple.second)
+        |> List.head
 
 
 type alias Seen =
@@ -104,6 +133,7 @@ desk sch =
                             else
                                 k
                         , pages = pagesOf k |> List.map (\p -> ( p.sub, List.map Tuple.first p.cells ))
+                        , picture = pagesOf k |> List.map (\p -> ( p.sub, [] )) |> pictureOf
                         }
                     )
 

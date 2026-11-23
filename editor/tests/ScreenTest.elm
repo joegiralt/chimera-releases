@@ -33,7 +33,14 @@ specOf c =
 suite : Test
 suite =
     describe "Ui.Screen"
-        [ test "a_gauge_names_its_region_and_each_of_the_six_cells_by_its_knob" <|
+        [ test "the_mixers_pictures_are_the_kits_mixer_engine_and_animate" <|
+            \_ ->
+                ( specOf (Screen.mixerGauge (page 1) CellC), specOf (Screen.mixerArt (page 8) Strip) )
+                    |> Expect.equal
+                        ( "{\"engine\":\"MIXER\",\"page\":1,\"region\":\"gauge\",\"focus\":2,\"pad\":null,\"vals\":[],\"animate\":true}"
+                        , "{\"engine\":\"MIXER\",\"page\":8,\"region\":\"screen\",\"focus\":null,\"pad\":null,\"vals\":[],\"animate\":true}"
+                        )
+        , test "a_gauge_names_its_region_and_each_of_the_six_cells_by_its_knob" <|
             \_ ->
                 [ CellA, CellB, CellC, CellD, CellE, CellF ]
                     |> List.map (\f -> specOf (Screen.gauge Va (page 0) f))

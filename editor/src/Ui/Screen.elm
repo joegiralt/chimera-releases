@@ -8,12 +8,15 @@ module Ui.Screen exposing
     , Region
     , Shape(..)
     , Spec
+    , Target
     , caption
     , drawn
     , encodeSpec
     , fallback
     , focus
     , gauge
+    , mixerArt
+    , mixerGauge
     , new
     , onPad
     , padIcon
@@ -105,17 +108,36 @@ focusIndex f =
             5
 
 
+{-| Whose pages the kit draws: an engine's, or the MIXER's (its FX pages,
+animated by the frame the element counts).
+-}
+type Target
+    = OnEngine Engine
+    | OnMixer
+
+
+targetName : Target -> String
+targetName t =
+    case t of
+        OnEngine e ->
+            Unit.engineName e
+
+        OnMixer ->
+            "MIXER"
+
+
 {-| What `<chimera-screen>` is told: the engine and page, the region, the
 focused cell, the DRUM pad it draws for, and the stored values it draws, in
 `describe` order.
 -}
 type alias Spec =
-    { engine : Engine
+    { engine : Target
     , page : PageNo
     , region : Region
     , focus : Maybe Focus
     , pad : Maybe Pad
     , vals : List ( Addr, Float )
+    , animate : Bool
     }
 
 
@@ -126,11 +148,12 @@ type Art
 
 type Config
     = Config
-        { engine : Engine
+        { engine : Target
         , art : Art
         , fallback : Maybe Glyph
         , caption : String
         , values : List ( Addr, Float )
+        , animate : Bool
         }
 
 
@@ -138,14 +161,14 @@ type Config
 -}
 new : Engine -> Glyph -> Config
 new e g =
-    Config { engine = e, art = Crop g, fallback = Nothing, caption = "", values = [] }
+    Config { engine = OnEngine e, art = Crop g, fallback = Nothing, caption = "", values = [], animate = False }
 
 
 {-| The firmware's art for `ed describe`'s page `n`.
 -}
 drawn : Engine -> PageNo -> Shape -> Config
 drawn e n s =
-    Config { engine = e, art = Drawn { page = n, region = ScreenArt, shape = s, focus = Nothing, pad = Nothing }, fallback = Nothing, caption = "", values = [] }
+    Config { engine = OnEngine e, art = Drawn { page = n, region = ScreenArt, shape = s, focus = Nothing, pad = Nothing }, fallback = Nothing, caption = "", values = [], animate = False }
 
 
 {-| The focus band's gauge on page `n`, cell `f` focused: the picture the
@@ -153,7 +176,23 @@ unit draws for that cell (VA's WAVE morph, a knob's arc, a machine).
 -}
 gauge : Engine -> PageNo -> Focus -> Config
 gauge e n f =
-    Config { engine = e, art = Drawn { page = n, region = Gauge, shape = Strip, focus = Just f, pad = Nothing }, fallback = Nothing, caption = "", values = [] }
+    Config { engine = OnEngine e, art = Drawn { page = n, region = Gauge, shape = Strip, focus = Just f, pad = Nothing }, fallback = Nothing, caption = "", values = [], animate = False }
+
+
+{-| The MIXER's FX page `n`'s gauge, cell `f` in focus, animated: the
+effect's own picture (a chorus's braid, a reverb's cube).
+-}
+mixerGauge : PageNo -> Focus -> Config
+mixerGauge n f =
+    Config { engine = OnMixer, art = Drawn { page = n, region = Gauge, shape = Strip, focus = Just f, pad = Nothing }, fallback = Nothing, caption = "", values = [], animate = True }
+
+
+{-| The MIXER's FX page `n`'s art band (the master's compressor curve),
+animated.
+-}
+mixerArt : PageNo -> Shape -> Config
+mixerArt n sh =
+    Config { engine = OnMixer, art = Drawn { page = n, region = ScreenArt, shape = sh, focus = Nothing, pad = Nothing }, fallback = Nothing, caption = "", values = [], animate = True }
 
 
 {-| Pad `p`'s machine icon, from its MACHINE value on page `n` (its MACHINE
@@ -161,7 +200,7 @@ page), the crop of it under it until the WASM draws.
 -}
 padIcon : PageNo -> Pad -> Config
 padIcon n p =
-    Config { engine = Unit.Drum, art = Drawn { page = n, region = PadIconOf p, shape = Strip, focus = Nothing, pad = Just p }, fallback = Just (PadIcon p), caption = "", values = [] }
+    Config { engine = OnEngine Unit.Drum, art = Drawn { page = n, region = PadIconOf p, shape = Strip, focus = Nothing, pad = Just p }, fallback = Just (PadIcon p), caption = "", values = [], animate = False }
 
 
 {-| The cell the unit's focus band is on while it draws this page.
@@ -212,7 +251,7 @@ spec : Config -> Maybe Spec
 spec (Config c) =
     case c.art of
         Drawn d ->
-            Just { engine = c.engine, page = d.page, region = d.region, focus = d.focus, pad = d.pad, vals = c.values }
+            Just { engine = c.engine, page = d.page, region = d.region, focus = d.focus, pad = d.pad, vals = c.values, animate = c.animate }
 
         Crop _ ->
             Nothing
@@ -221,13 +260,21 @@ spec (Config c) =
 encodeSpec : Spec -> Encode.Value
 encodeSpec s =
     Encode.object
-        [ ( "engine", Encode.string (Unit.engineName s.engine) )
-        , ( "page", Encode.int (Protocol.pageNoToInt s.page) )
-        , ( "region", Encode.string (regionName s.region) )
-        , ( "focus", s.focus |> Maybe.map (focusIndex >> Encode.int) |> Maybe.withDefault Encode.null )
-        , ( "pad", s.pad |> Maybe.map (Pad.number >> Encode.int) |> Maybe.withDefault Encode.null )
-        , ( "vals", Encode.list (\( a, v ) -> Encode.list identity [ Encode.string (Addr.key a), Encode.float v ]) s.vals )
-        ]
+        ([ ( "engine", Encode.string (targetName s.engine) )
+         , ( "page", Encode.int (Protocol.pageNoToInt s.page) )
+         , ( "region", Encode.string (regionName s.region) )
+         , ( "focus", s.focus |> Maybe.map (focusIndex >> Encode.int) |> Maybe.withDefault Encode.null )
+         , ( "pad", s.pad |> Maybe.map (Pad.number >> Encode.int) |> Maybe.withDefault Encode.null )
+         , ( "vals", Encode.list (\( a, v ) -> Encode.list identity [ Encode.string (Addr.key a), Encode.float v ]) s.vals )
+         ]
+            -- A still picture says nothing of frames.
+            ++ (if s.animate then
+                    [ ( "animate", Encode.bool True ) ]
+
+                else
+                    []
+               )
+        )
 
 
 regionName : Region -> String
