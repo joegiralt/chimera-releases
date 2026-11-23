@@ -166,12 +166,12 @@ view ((Config c) as config) state ch =
     in
     case c.place of
         InPanel ->
-            Control.cell (class "mnc" :: Control.widthStyle (width config) :: Control.markAttrs (Control.chosenMark ch))
+            Control.cell (class "mnc" :: Control.choiceAddr c.addr :: Control.widthStyle (width config) :: Control.markAttrs (Control.chosenMark ch))
                 c.label
                 [ button (class "mn" :: popupAttrs) [ text name ], popup ]
 
         InHeader ->
-            div (class "hmn" :: Control.widthStyle (width config) :: Control.markAttrs (Control.chosenMark ch))
+            div (class "hmn" :: Control.choiceAddr c.addr :: Control.widthStyle (width config) :: Control.markAttrs (Control.chosenMark ch))
                 [ button (class "hbtn" :: popupAttrs)
                     [ b [] [ text c.label ], span [ style "width" (String.fromInt (Tokens.charsCount (widest c.options)) ++ "ch") ] [ text name ] ]
                 , popup

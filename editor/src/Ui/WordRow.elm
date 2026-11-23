@@ -48,7 +48,7 @@ width (Config c) =
 
 view : Config -> Chosen -> Html Msg
 view ((Config c) as config) ch =
-    Control.cell (class "wrc" :: Control.widthStyle (width config) :: Control.markAttrs (Control.chosenMark ch))
+    Control.cell (class "wrc" :: Control.choiceAddr c.addr :: Control.widthStyle (width config) :: Control.markAttrs (Control.chosenMark ch))
         c.label
         [ div [ class "words", Control.ariaRole "radiogroup", Control.ariaLabel c.label ]
             (List.map

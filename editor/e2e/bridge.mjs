@@ -4,6 +4,12 @@
 // the firmware's ed-bridge speaks it. The editor's lines join the test's in
 // the console client's queue, so both are answered, in order, and the bridge
 // sees every `ed set` the editor sends and when its answer comes back.
+//
+// Faults, for the tests that need a worse unit than the simulator: a rule
+// (`flow.rule`) matches the editor's lines and drops the answer, answers in
+// the unit's place (`ERR busy`), rewrites the answer, holds it, or closes the
+// socket mid-burst; `inject` says a line the unit never sent, `hangUp` drops
+// the link.
 
 import crypto from "node:crypto";
 import fs from "node:fs";
@@ -59,7 +65,7 @@ function frame(op, body) {
 export async function startBridge(dist, unit) {
   const flow = {
     sent: [], // every line the editor sent, in order
-    setsInFlight: 0, // the editor's `ed set`s sent and not yet answered
+    setsInFlight: 0, // the editor's edits (`ed set`, `ed route`) sent and not yet answered
     maxSetsInFlight: 0,
     reset() {
       this.sent = [];
@@ -74,6 +80,33 @@ export async function startBridge(dist, unit) {
       const held = this.paused ?? [];
       this.paused = null;
       for (const f of held) f();
+    },
+    // The faults, first match first: { match(line), act, lines, map, times, hits, held }.
+    rules: [],
+    /** A fault on the editor's lines `match` takes (a RegExp or a function), `times` times (default once):
+     * act `drop` (the unit takes the line, its answer never comes), `answer` (`lines` answer it, the unit
+     * never sees it), `map` (the unit's answer through `map(lines, line)`), `hold` (the answer waits for
+     * `release()`) or `close` (the socket closes before the line goes on). */
+    rule({ match, act, lines = [], map = (l) => l, times = 1 }) {
+      const test = typeof match === "function" ? match : (l) => match.test(l);
+      const r = {
+        test, act, lines, map, times, hits: 0, held: [],
+        release() {
+          const h = this.held;
+          this.held = [];
+          this.times = 0;
+          for (const f of h) f();
+        },
+        off: () => {
+          this.rules = this.rules.filter((x) => x !== r);
+        },
+      };
+      this.rules.push(r);
+      return r;
+    },
+    clearRules() {
+      for (const r of this.rules) r.release();
+      this.rules = [];
     },
   };
   let socket = null;
@@ -106,18 +139,32 @@ export async function startBridge(dist, unit) {
         if (op !== 0x1) continue;
         const line = body.toString("utf8").replace(/[\r\n]+$/, "");
         flow.sent.push(line);
-        const isSet = /^ed set /.test(line);
+        const rule = flow.rules.find((r) => r.times > 0 && r.test(line));
+        if (rule) {
+          rule.times--;
+          rule.hits++;
+        }
+        if (rule?.act === "close") {
+          sock.destroy();
+          return;
+        }
+        // Sets and routes share the editor's window: both are edits on the wire.
+        const isSet = /^ed (set|route) /.test(line);
         if (isSet) {
           flow.setsInFlight++;
           flow.maxSetsInFlight = Math.max(flow.maxSetsInFlight, flow.setsInFlight);
         }
-        unit.con.ask(line, "editor").then((c) => {
+        const answered = rule?.act === "answer" ? Promise.resolve({ lines: rule.lines }) : unit.con.ask(line, "editor");
+        answered.then((c) => {
           const deliver = () => {
             if (isSet) flow.setsInFlight--;
+            if (rule?.act === "drop") return;
             if (sock !== socket || sock.destroyed) return;
-            for (const l of c.lines) sock.write(frame(0x1, Buffer.from(l, "utf8")));
+            const lines = rule?.act === "map" ? rule.map(c.lines, line) : c.lines;
+            for (const l of lines) sock.write(frame(0x1, Buffer.from(l, "utf8")));
           };
-          if (flow.paused) flow.paused.push(deliver);
+          if (rule?.act === "hold") rule.held.push(deliver);
+          else if (flow.paused) flow.paused.push(deliver);
           else deliver();
         });
       }
@@ -131,6 +178,16 @@ export async function startBridge(dist, unit) {
     url: `http://127.0.0.1:${port}/`,
     ws: `ws://127.0.0.1:${port}/`,
     flow,
+    /** Whether a browser is linked now. */
+    linked: () => !!socket && !socket.destroyed,
+    /** A line to the linked browser that the unit never said. */
+    inject(line) {
+      if (socket && !socket.destroyed) socket.write(frame(0x1, Buffer.from(line, "utf8")));
+    },
+    /** The link dropped, as an unplugged cable or a killed bridge drops it. */
+    hangUp() {
+      socket?.destroy();
+    },
     close: () => {
       socket?.destroy();
       return new Promise((r) => server.close(r));

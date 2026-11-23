@@ -26,6 +26,7 @@ module Ui.Control exposing
     , cell
     , choice
     , choiceText
+    , choiceAddr
     , chosen
     , chosenMark
     , current
@@ -587,6 +588,13 @@ arrow keys step, a double click resets.
 grab : Addr -> Travel -> List (Html.Attribute Msg)
 grab a t =
     Events.onDoubleClick (Reset a) :: drag a t
+
+
+{-| The address a choice control sets, for the end-to-end tests to find it by.
+-}
+choiceAddr : Addr -> Html.Attribute msg
+choiceAddr a =
+    attribute "data-choice" (Addr.key a)
 
 
 {-| A drag, the wheel and the arrows, without the reset (a cable's

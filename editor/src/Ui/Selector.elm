@@ -113,7 +113,7 @@ view ((Config c) as config) ch =
         px v =
             String.fromFloat v ++ "px"
     in
-    Control.cell (classList [ ( "slc", True ), ( "unlisted", Control.choice ch == Control.NotInList ), ( "missing", Control.choice ch == Control.NoValue ) ] :: Control.widthStyle (width config) :: Control.markAttrs (Control.chosenMark ch))
+    Control.cell (classList [ ( "slc", True ), ( "unlisted", Control.choice ch == Control.NotInList ), ( "missing", Control.choice ch == Control.NoValue ) ] :: Control.choiceAddr c.addr :: Control.widthStyle (width config) :: Control.markAttrs (Control.chosenMark ch))
         c.label
         [ div [ class "sl", style "width" (px g.w), style "height" (px g.h), Control.ariaRole "radiogroup", Control.ariaLabel c.label ]
             (div

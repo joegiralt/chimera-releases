@@ -5,112 +5,25 @@
 // sides: the editor's DOM, and the unit's values, routes and screen through
 // its console. On the real unit: INIT on Parts 1-5, values and routes set and
 // removed, never a project saved, nothing written to its flash (unit.mjs's
-// guard).
+// guard). This file is the quick tier: every engine's page, a knob, the
+// screen, the MOD bay, the flow and the MIXER. The other *.test.mjs files are
+// the full tier (`just e2e-full`).
 //
 // CHROME: the browser (default /opt/google/chrome/chrome). Nothing is
 // downloaded; pages may reach 127.0.0.1 only.
 
 import assert from "node:assert/strict";
 import path from "node:path";
-import { after, before, describe, test } from "node:test";
-import { fileURLToPath } from "node:url";
-import { chromium } from "playwright-core";
-import { startBridge } from "./bridge.mjs";
+import { describe, test } from "node:test";
 import { check, describeAll, editorReader, KINDS } from "./contract.mjs";
-import { Console, refusedOnUnit, SLOW, startUnit, tokens, until } from "./unit.mjs";
+import {
+  bridge, cableText, ENGINES, firstKnob, followPart, loadInit, onMixer, page, partOf, settledRoute, settledShot, setup, showCell, unit, unitRoutes, wheel,
+} from "./harness.mjs";
+import { Console, refusedOnUnit, SLOW, tokens, until } from "./unit.mjs";
 
-const here = path.dirname(fileURLToPath(import.meta.url));
-const editorDir = path.resolve(here, "..");
-const root = path.resolve(editorDir, "..");
+const here = path.dirname(new URL(import.meta.url).pathname);
 
-/** Each engine on its own Part, INIT loaded there through the browser keys. */
-const ENGINES = ["ALGO", "MODAL", "VA", "TAPE", "DRUM"]; // EngineType::PLAYABLE's order: the INIT rows'
-const partOf = (e) => ENGINES.indexOf(e) + 1;
-
-let unit;
-let bridge;
-let browser;
-let page;
-
-/** `status`'s `state` word: NEW (no edits since a new project), SAVED, MODIFIED... */
-async function projectState() {
-  return ((await unit.ask("status")).find((l) => l.startsWith("state ")) ?? "").slice(6);
-}
-
-/** A new project, by the panel's own path: SETTINGS > PROJECT > LOAD,
- * its last row (+ CREATE NEW), EDIT. Over unsaved edits the unit asks
- * START A NEW PROJECT? with SAVE THEN LOAD, LOAD ANYWAY, CANCEL, opening on
- * SAVE THEN LOAD: the pick is clamped, so all the way left then one right
- * is LOAD ANYWAY, never a save. Nothing is written to the card. Each step's
- * place is checked before the next key; anything else up fails at once. */
-async function newProject() {
-  const at = async (want) => {
-    const now = await unit.at();
-    if (now !== want) throw new Error(`new project: the unit is at ${JSON.stringify(now)}, not ${JSON.stringify(want)}: a screen or prompt the suite doesn't know`);
-  };
-  const edited = (await projectState()) === "MODIFIED";
-  // MENU (a tap, never the hold's quick save) until SETTINGS' top: it cancels a
-  // prompt a stopped run left up (its safe answer), climbs out of a deeper
-  // list, or opens SETTINGS.
-  for (let i = 0; i < 6 && (await unit.at()) !== "SETTINGS"; i++) {
-    const was = await unit.at();
-    await unit.ok("key MENU");
-    await until("MENU to land", async () => (await unit.at()) !== was, 1000).catch(() => {});
-  }
-  await at("SETTINGS");
-  // The bar opens on the top list's first row, PROJECT; and PROJECT's on LOAD PROJECT.
-  await unit.ok("key EDIT");
-  await until("SETTINGS > PROJECT", async () => (await unit.at()) === "SETTINGS > PROJECT");
-  await unit.ok("key EDIT");
-  await until("SETTINGS > PROJECT > LOAD", async () => (await unit.at()) === "SETTINGS > PROJECT > LOAD");
-  // LOAD's rows wrap: one up from the first is the last, + CREATE NEW.
-  await unit.ok("turn 1 -1");
-  await at("SETTINGS > PROJECT > LOAD");
-  await unit.ok("key EDIT");
-  if (edited) {
-    await unit.ok("turn 1 -64");
-    await unit.ok("turn 1 1");
-    await unit.ok("key EDIT");
-  }
-  await until("a new project (state NEW)", async () => (await projectState()) === "NEW", 5000).catch(async (e) => {
-    throw new Error(`${e.message}; the unit is at ${JSON.stringify(await unit.at())}, state ${await projectState()}: a prompt the suite doesn't know may be up`);
-  });
-  // Out of SETTINGS to Part 1's pages.
-  await unit.ok("key B1");
-  await until("Part 1's pages", async () => (await unit.at()).startsWith("PART 1 > "));
-}
-
-/** Part `n` to the INIT Sound on browser row `row`: EDIT+B<n>, the list's top, down `row`, EDIT.
- * Only over a clean Part: an edited one would ask REPLACE? and wait for a hand. */
-async function loadInit(n, engine) {
-  const sound = (await unit.ask("ed since 0")).find((l) => l.startsWith(`sound ${n} `)) ?? "";
-  if (!sound.endsWith(" clean")) throw new Error(`Part ${n} is not clean (${JSON.stringify(sound)}): loading over it would ask REPLACE? and wait for a hand`);
-  await unit.ok(`key EDIT+B${n}`);
-  await until(`the unit's SOUND ${n} browser`, async () => (await unit.at()) === `SOUND ${n}`);
-  await unit.ok("turn 1 -64");
-  const row = ENGINES.indexOf(engine);
-  if (row > 0) await unit.ok(`turn 1 ${row}`);
-  await unit.ok("key EDIT");
-  await until(`INIT ${engine} on Part ${n}`, async () => {
-    const all = await unit.ask("ed since 0");
-    return all.includes(`part ${n} ${engine}`) && all.includes(`sound ${n} "INIT" clean`);
-  }, 15000);
-}
-
-before(async () => {
-  unit = await startUnit(root);
-  // The simulator boots on a new project: an edit first, so its run takes the prompt's path too.
-  if (!unit.real) await unit.ok("ed set FILTER.CUTOFF 0.3");
-  await until("the edit to land", async () => unit.real || (await projectState()) === "MODIFIED");
-  await newProject();
-  for (const e of ENGINES) await loadInit(partOf(e), e);
-});
-
-after(async () => {
-  await browser?.close();
-  await bridge?.close();
-  await unit?.stop();
-});
+setup();
 
 // ---- the real unit's guard ----
 
@@ -203,123 +116,6 @@ test("contract: every describe and since line the unit writes, the editor reads"
 });
 
 // ---- the editor in the browser ----
-
-async function openEditor() {
-  if (page) return page;
-  bridge = await startBridge(path.join(editorDir, "dist"), unit);
-  browser = await chromium.launch({ executablePath: process.env.CHROME ?? "/opt/google/chrome/chrome", headless: true });
-  page = await browser.newPage({ viewport: { width: 1400, height: 1000 } });
-  page.errors = [];
-  page.on("pageerror", (e) => page.errors.push(String(e)));
-  // Offline: fonts and anything else not on this machine fail fast.
-  await page.route(/^https?:\/\/(?!127\.0\.0\.1[:/])/, (r) => r.abort());
-  // The editor's simulator link is ws://127.0.0.1:7342: this run's bridge instead.
-  await page.addInitScript((url) => {
-    const Native = window.WebSocket;
-    window.WebSocket = class extends Native {
-      constructor(u, p) {
-        super(u === "ws://127.0.0.1:7342" ? url : u, p);
-      }
-    };
-  }, bridge.ws);
-  await page.goto(bridge.url);
-  await page.getByRole("button", { name: "CONNECT SIMULATOR" }).click();
-  return page;
-}
-
-/** The editor on Part `n` (its tab), the unit's engine `e` described and read. */
-async function followPart(n, e) {
-  await openEditor();
-  const said = async () => (await page.locator(".unit").innerText()).trim();
-  const want = `SIMULATOR · PART ${n} · ${e}`;
-  // Connected, following some Part, before a tab is clicked.
-  await until("the editor to follow the unit", async () => /^SIMULATOR · PART \d+ · \S+$/.test(await said()), 30000);
-  if ((await said()) !== want) await page.locator(".ptop .tab", { hasText: `P${n}` }).click();
-  let last = "";
-  await until(`the editor on Part ${n} ${e}`, async () => {
-    last = await said();
-    return last === want && (await page.locator("[data-addr]").count()) > 0;
-  }, 30000).catch((err) => {
-    throw new Error(`${err.message}; the editor says ${JSON.stringify(last)}`);
-  });
-}
-
-/** The unit on `addr`'s page, that cell focused: `ed learn <addr>` takes
- * the box there, `ed learn off` leaves learn. False where learn refuses the
- * cell (the unit stays where it is). */
-async function showCell(addr) {
-  const was = await unit.at();
-  const got = await unit.ask(`ed learn ${addr}`);
-  if (!got.at(-1).startsWith("OK")) return false;
-  await unit.ok("ed learn off");
-  // Already on that page, `at` stays: the wait is only for a move.
-  await until(`the unit on ${addr}'s page`, async () => (await unit.at()) !== was, 2000).catch(() => {});
-  return true;
-}
-
-/** The unit's screen, settled: two shots alike. */
-async function settledShot() {
-  let last = await unit.shot();
-  return until("the unit's screen to settle", async () => {
-    const now = await unit.shot();
-    const same = now.equals(last);
-    last = now;
-    return same && now;
-  });
-}
-
-/** The page's first knob of `engine` the unit shows and the editor draws: a
- * stepped or continuous param of describe page 0 with a [data-addr] in the DOM. */
-async function firstKnob(engine) {
-  const { pages } = await describeAll(unit, engine);
-  const params = pages[0].lines.map(tokens).filter((w) => w[0] === "param" && (w[3] === "cont" || w[3] === "stepped"));
-  // The page may still be drawing the Part's controls: wait for one of them.
-  const w = await until(`a knob of ${engine}'s describe page 0 in the editor`, async () => {
-    for (const p of params) if (await page.locator(`[data-addr="${p[1]}"][role="slider"]`).count()) return p;
-    return null;
-  });
-  const knob = page.locator(`[data-addr="${w[1]}"][role="slider"]`).first();
-  // A control the unit has not reported takes no hand: wait for its reading.
-  const v = await unit.get(w[1]);
-  await until(`the editor to read ${w[1]}`, async () => (await knob.getAttribute("aria-valuetext")) === v.text);
-  return { addr: w[1], knob, kind: w[3], min: Number(w[5]), max: Number(w[6]) };
-}
-
-/** `n` wheel notches on `el` in one task: a burst no hand can beat. */
-function wheel(el, n) {
-  return el.evaluate((node, n) => {
-    for (let i = 0; i < Math.abs(n); i++) {
-      node.dispatchEvent(new WheelEvent("wheel", { deltaY: n > 0 ? -100 : 100, bubbles: true, cancelable: true }));
-    }
-  }, n);
-}
-
-/** A cable's amount as the bay writes it: the unit's −127..127 as −100..100. */
-const cableText = (a) => {
-  const p = Math.round((a * 100) / 127);
-  return p > 0 ? `+${p}` : String(p);
-};
-
-/** The unit's routes of the followed Part: `ed since 0`'s route lines, as { cell: { amount, text } }. */
-async function unitRoutes() {
-  const out = {};
-  for (const l of await unit.ask("ed since 0")) {
-    const w = tokens(l);
-    if (w[0] === "route" && /^-?\d+$/.test(w[2])) out[w[1]] = { amount: Number(w[2]), text: w[3] };
-  }
-  return out;
-}
-
-/** Route `cell` once the unit has stopped gliding it: the same amount on two reads in a row. */
-async function settledRoute(cell) {
-  let last = null;
-  return until(`${cell} to settle on the unit`, async () => {
-    const r = (await unitRoutes())[cell];
-    const same = r && last && r.amount === last.amount;
-    last = r;
-    return same && r;
-  }, 10000, 150);
-}
 
 for (const engine of ENGINES) {
   const n = partOf(engine);
@@ -539,13 +335,6 @@ test("a Part the editor isn't following shows the engine the unit loads onto it"
 // ---- the unit's MIXER ----
 
 describe("MIXER", () => {
-  /** The editor on its MIXER tab, the Part 1 strip drawn. */
-  async function onMixer() {
-    await followPart(1, "ALGO");
-    await page.locator(".ptop .tab", { hasText: "MIXER" }).click();
-    await page.locator('[data-strip="PART1"]').waitFor({ timeout: 5000 * SLOW });
-  }
-
   test("a fader moves the unit's Part level", async () => {
     await onMixer();
     const fader = page.locator('[data-strip="PART1"] [data-addr="PART1.LEVEL"][role="slider"]');

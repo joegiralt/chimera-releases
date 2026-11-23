@@ -48,7 +48,21 @@ editor-e2e:
 # and removes values and routes, saves no project, and refuses every verb that
 # writes the unit's flash or card files (dfu, rm, put, bank2, sweep, flash,
 # card clean...).
+#
+# Two tiers: `e2e` is the quick one (e2e/editor.test.mjs: each engine's page,
+# a knob, the screens, the MOD bay, the flow, the MIXER); `e2e-full` runs
+# every e2e/*.test.mjs, each file its own simulator and browser, three at a
+# time. A test only the real unit can run is skipped on the simulator, and
+# one only the simulator can run (a reboot, a fault the bridge makes, a
+# project saved on its card) is skipped on the unit: either way the skip and
+# its reason are in the run's output. E2E_FILES runs just those files.
 e2e: editor-build
+    @just _e2e "${E2E_FILES:-e2e/editor.test.mjs}"
+
+e2e-full: editor-build
+    @just _e2e "${E2E_FILES:-e2e/*.test.mjs}"
+
+_e2e files:
     #!/usr/bin/env bash
     set -euo pipefail
     if [ -z "${UNIT:-}" ]; then
@@ -58,7 +72,9 @@ e2e: editor-build
         (cd "$CHIMERA_DIR" && ${BUILD_WRAP:-} cargo build -q --profile utils -p chimera-desktop)
     fi
     cd editor/e2e/contract && ../../node_modules/.bin/elm make Contract.elm --output=contract.js >/dev/null
-    cd ../.. && node --test --test-reporter=spec e2e/editor.test.mjs
+    # One unit has one console: on the real unit the files run one at a time.
+    jobs=3; if [ -n "${UNIT:-}" ]; then jobs=1; fi
+    cd ../.. && node --test --test-concurrency=$jobs --test-reporter=spec {{files}}
 
 # Where the site is served from: "/" here, "/chimera-releases/" on GitHub Pages
 site_base := "/"

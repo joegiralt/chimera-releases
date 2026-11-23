@@ -92,6 +92,14 @@ export class Console {
     });
   }
 
+  /** The console gone (its unit restarted): every request waiting is answered with nothing. */
+  fail() {
+    const all = [this.current, ...this.queue].filter(Boolean);
+    this.current = null;
+    this.queue = [];
+    for (const c of all) c.done({ ...c, lines: [], body: null });
+  }
+
   next() {
     if (this.current || !this.queue.length) return;
     this.current = this.queue.shift();
@@ -219,52 +227,75 @@ export function startUnit(root) {
   return UNIT ? startRealUnit() : startSimulator(root);
 }
 
-/** chimera-desktop headless, and its console's client. `stop()` ends both and removes the card. */
+/** chimera-desktop headless, and its console's client. `stop()` ends both
+ * and removes the card; `restart()` kills it and boots it again on the same
+ * card, a new console behind the same `unit` (a reboot behind a live link). */
 async function startSimulator(root) {
   const fw = firmwareDir(root);
   // `just e2e` builds it in the firmware's utils profile (release, no LTO); E2E_PROFILE picks another.
   const bin = path.join(fw, "target", process.env.E2E_PROFILE ?? "utils", "chimera-desktop");
   if (!fs.existsSync(bin)) throw new Error(`no ${bin}: \`just e2e\` builds it`);
-  const port = await freePort();
   const card = fs.mkdtempSync(path.join(os.tmpdir(), "chimera-e2e-card-"));
   const log = [];
-  const proc = spawn(bin, [], {
-    cwd: card,
-    env: {
-      ...process.env,
-      CHIMERA_HEADLESS: "1",
-      CHIMERA_CONSOLE: `127.0.0.1:${port}`,
-      CHIMERA_CARD: card,
-    },
-    stdio: ["ignore", "pipe", "pipe"],
-  });
-  for (const s of [proc.stdout, proc.stderr]) s.on("data", (d) => log.push(String(d)));
+  let proc;
+  let sock;
   let exited = null;
-  proc.on("exit", (code, sig) => (exited = `exited ${code ?? sig}`));
 
-  const sock = await until("the simulator's console", () =>
-    exited
-      ? Promise.reject(new Error(`chimera-desktop ${exited}: ${log.join("")}`))
-      : new Promise((res) => {
-          const s = net.connect(port, "127.0.0.1");
-          s.once("connect", () => res(s));
-          s.once("error", () => res(null));
-        }),
-    20000, 50);
-  const con = new Console(sock);
-  // The console answers once the boot is done.
-  const hello = await con.ask("ed hello");
-  if (!/^ed hello \d+ /.test(hello.lines[0] ?? "")) throw new Error(`ed hello: ${hello.lines.join(" | ")}`);
+  const boot = async () => {
+    const port = await freePort();
+    exited = null;
+    proc = spawn(bin, [], {
+      cwd: card,
+      env: {
+        ...process.env,
+        CHIMERA_HEADLESS: "1",
+        CHIMERA_CONSOLE: `127.0.0.1:${port}`,
+        CHIMERA_CARD: card,
+      },
+      stdio: ["ignore", "pipe", "pipe"],
+    });
+    for (const s of [proc.stdout, proc.stderr]) s.on("data", (d) => log.push(String(d)));
+    const me = proc;
+    proc.on("exit", (code, sig) => {
+      if (me === proc) exited = `exited ${code ?? sig}`;
+    });
+    sock = await until("the simulator's console", () =>
+      exited
+        ? Promise.reject(new Error(`chimera-desktop ${exited}: ${log.join("")}`))
+        : new Promise((res) => {
+            const s = net.connect(port, "127.0.0.1");
+            s.once("connect", () => res(s));
+            s.once("error", () => res(null));
+          }),
+      20000, 50);
+    const con = new Console(sock);
+    // The console answers once the boot is done.
+    const hello = await con.ask("ed hello");
+    if (!/^ed hello \d+ /.test(hello.lines[0] ?? "")) throw new Error(`ed hello: ${hello.lines.join(" | ")}`);
+    return con;
+  };
+  const kill = async () => {
+    const p = proc;
+    sock.destroy();
+    p.kill("SIGKILL");
+    await new Promise((r) => (p.exitCode !== null || p.signalCode !== null ? r() : p.once("exit", r)));
+  };
 
-  return withAsks(con, log, {
+  const unit = withAsks(await boot(), log, {
     real: false,
+    async restart() {
+      const old = unit.con;
+      await kill();
+      old.fail();
+      unit.con = await boot();
+    },
     async stop() {
-      sock.destroy();
-      proc.kill("SIGKILL");
-      await new Promise((r) => (exited ? r() : proc.once("exit", r)));
+      await kill();
+      unit.con.fail();
       fs.rmSync(card, { recursive: true, force: true });
     },
   });
+  return unit;
 }
 
 /** The tests' requests on `con`, and `own` (`real`, `stop`). */
@@ -277,7 +308,7 @@ function withAsks(con, log, own) {
     async ask(line) {
       let lines;
       await until(`${line} answered but busy`, async () => {
-        lines = (await con.ask(line)).lines;
+        lines = (await unit.con.ask(line)).lines;
         return lines.at(-1) !== "ERR busy";
       }, 20000, 200);
       return lines;
@@ -290,7 +321,7 @@ function withAsks(con, log, own) {
     },
     /** The screen's framebuffer, RGB565 big-endian, as the panel holds it (`shot raw`). */
     async shot() {
-      const c = await con.ask("shot raw");
+      const c = await unit.con.ask("shot raw");
       if (!c.body || c.lines.at(-1) !== "OK") throw new Error(`shot raw: ${c.lines.join(" | ")}`);
       return Buffer.from(c.body);
     },

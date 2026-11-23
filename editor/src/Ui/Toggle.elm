@@ -133,7 +133,7 @@ view ((Config c) as config) ch =
                 ( Three _ _ _, Just _ ) ->
                     "b"
     in
-    Control.cell (class "tgc" :: Control.widthStyle (width config) :: Control.markAttrs (Control.chosenMark ch))
+    Control.cell (class "tgc" :: Control.choiceAddr c.addr :: Control.widthStyle (width config) :: Control.markAttrs (Control.chosenMark ch))
         c.label
         [ div [ classList [ ( "tg", True ), ( "n3", n == 3 ) ], Control.ariaRole "radiogroup", Control.ariaLabel c.label ]
             [ button
