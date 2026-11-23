@@ -74,6 +74,30 @@ connected =
     connectedWith [ "page 0 MTX of 1", "OK" ]
 
 
+{-| LFO1's route into FREQ, keyed as its cable is: by its cell.
+-}
+lfoCell : Addr
+lfoCell =
+    addr "LFO1:FILTER.CUTOFF"
+
+
+{-| A route amount's place on the attenuverter, −127 at 0, and back.
+-}
+normOfBox : Int -> Float
+normOfBox n =
+    (toFloat n / 127 + 1) / 2
+
+
+boxAt : Float -> Int
+boxAt t =
+    clamp -127 127 (round ((clamp 0 1 t * 2 - 1) * 127))
+
+
+routeTo : String -> Int -> List Model.Msg
+routeTo cell n =
+    Maybe.map2 (\c a -> [ Model.EditRoute c (Protocol.RouteAmount a) ]) (Protocol.cell cell) (Protocol.amount n) |> Maybe.withDefault []
+
+
 {-| What a patch from source `from` to destination `to` on the Part's bay
 asks of the unit; and an unpatch.
 -}
@@ -562,6 +586,44 @@ suite =
              , test "no_note_says_the_unit_doesnt_describe_it" <|
                 \_ ->
                     Page.view routed (Page.init Day) |> Query.fromHtml |> Query.hasNot [ Sel.text "THE UNIT DOESN'T DESCRIBE ITS MOD MATRIX YET" ]
+             , test "dragging_a_cables_attenuverter_sets_its_amount" <|
+                \_ ->
+                    live
+                        [ BayMsg PartBay (PatchBay.Hand (Control.Grab lfoCell Control.Attenuverter 300))
+                        , BayMsg PartBay (PatchBay.Hand (Control.Moved 276))
+                        , Frame
+                        ]
+                        routed
+                        |> Tuple.second
+                        |> Expect.equal (routeTo "LFO1:FILTER.CUTOFF" (boxAt (normOfBox 64 + 24 / 240)))
+             , test "notches_on_an_attenuverter_accumulate_from_the_pending_amount" <|
+                \_ ->
+                    let
+                        ( unit, asks ) =
+                            live
+                                [ BayMsg PartBay (PatchBay.Hand (Control.Step lfoCell Up))
+                                , Frame
+                                , BayMsg PartBay (PatchBay.Hand (Control.Step lfoCell Up))
+                                , Frame
+                                ]
+                                routed
+
+                        once : Int
+                        once =
+                            boxAt (normOfBox 64 + 1 / 64)
+
+                        twice : Int
+                        twice =
+                            boxAt (normOfBox once + 1 / 64)
+                    in
+                    Expect.all
+                        [ \_ -> Expect.equal (routeTo "LFO1:FILTER.CUTOFF" once ++ routeTo "LFO1:FILTER.CUTOFF" twice) asks
+                        , \_ ->
+                            Expect.equal
+                                (Protocol.cell "LFO1:FILTER.CUTOFF" |> Maybe.andThen (\c -> Model.pendingRoute c unit))
+                                (Protocol.amount twice |> Maybe.map Protocol.RouteAmount)
+                        ]
+                        ()
              , test "patching_sends_the_route_and_unpatching_removes_it" <|
                 \_ ->
                     case ( Protocol.cell "ENV2:FILTER.RESO", Protocol.cell "LFO1:FILTER.CUTOFF", Protocol.amount 64 ) of

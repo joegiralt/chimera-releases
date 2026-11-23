@@ -1595,6 +1595,31 @@ suite =
                         , \_ -> Expect.equal [ NoAnswer (Set cutoff (Num 300)) ] (Model.notices gaveUp |> List.map .notice |> List.filter (not << isRefusalOrUnread))
                         ]
                         ()
+             , test "a_routes_amount_goes_through_the_same_window_latest_wins" <|
+                \_ ->
+                    case ( Protocol.cell "LFO1:FILTER.CUTOFF", Protocol.amount 10, Protocol.amount 20 ) of
+                        ( Just c, Just ten, Just twenty ) ->
+                            let
+                                wire : List Command -> List Command
+                                wire =
+                                    List.filter (Protocol.sketch >> (\l -> String.startsWith "ed set " l || String.startsWith "ed route " l))
+
+                                go : List Msg -> Model.Model -> ( Model.Model, List Command )
+                                go msgs m0 =
+                                    List.foldl (\msg ( m, out ) -> stepSends msg m |> Tuple.mapSecond (\cs -> out ++ wire cs)) ( m0, [] ) msgs
+
+                                ( held, first ) =
+                                    go [ EditRoute c (Protocol.RouteAmount ten), EditRoute c (Protocol.RouteAmount twenty), Edit cutoff (Num 300) ] following
+                            in
+                            Expect.all
+                                [ \_ -> Expect.equal [ SetRoute c (Protocol.RouteAmount ten) ] first
+                                , \_ -> Expect.equal (Just (Protocol.RouteAmount twenty)) (Model.pendingRoute c held)
+                                , \_ -> Expect.equal [ Set cutoff (Num 300), SetRoute c (Protocol.RouteAmount twenty) ] (go [ Line "OK", Line "OK", Line "OK" ] held |> Tuple.second)
+                                ]
+                                ()
+
+                        _ ->
+                            Expect.fail "no cell"
              , test "a_set_the_unit_cant_read_is_said_never_sent" <|
                 \_ ->
                     let

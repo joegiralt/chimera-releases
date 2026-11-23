@@ -26,6 +26,7 @@ module Model exposing
     , notices
     , noticesLost
     , pending
+    , pendingRoute
     , refusal
     , seat
     , sensingRow
@@ -617,7 +618,31 @@ a want waiting for the window, else the set on the wire.
 -}
 pending : Addr -> Model -> Maybe Value
 pending a m =
-    Flow.target a m.flow
+    case Flow.target (Flow.SetTo a (Protocol.Num 0)) m.flow of
+        Just (Flow.SetTo _ v) ->
+            Just v
+
+        Just (Flow.RouteOf _ _) ->
+            Nothing
+
+        Nothing ->
+            Nothing
+
+
+{-| Where the editor last asked matrix cell `c` to go that the unit has not
+yet said: a route waiting for the window, else the one on the wire.
+-}
+pendingRoute : Cell -> Model -> Maybe RouteTo
+pendingRoute c m =
+    case Flow.target (Flow.RouteOf c Protocol.RouteOff) m.flow of
+        Just (Flow.RouteOf _ to) ->
+            Just to
+
+        Just (Flow.SetTo _ _) ->
+            Nothing
+
+        Nothing ->
+            Nothing
 
 
 {-| How many notices fell off the end of `notices` unseen.
@@ -973,11 +998,11 @@ stepIn msg m =
         WriteFailed l ->
             ( keep (Unsent l) m, [] )
 
-        -- A route's amount or its removal: the unit glides it a turn's step a
-        -- pass, and `since` says where it is.
+        -- A route's amount or its removal, through the edits' window: the
+        -- unit glides it a turn's step a pass, and `since` says where it is.
         EditRoute c to ->
             if takesEdits m then
-                ( m, [ Say (SetRoute c to) ] )
+                Flow.want m.now (Flow.RouteOf c to) m.flow |> Tuple.mapBoth (\flow -> { m | flow = flow }) (maybeList >> List.map Say)
 
             else
                 ( m, [] )
@@ -1239,7 +1264,7 @@ edit a v m =
     if takesEdits m && isDescribed a m then
         case Protocol.outgoing (Set a v) of
             Just _ ->
-                Flow.want m.now a v m.flow |> Tuple.mapBoth (\flow -> { m | flow = flow }) maybeList
+                Flow.want m.now (Flow.SetTo a v) m.flow |> Tuple.mapBoth (\flow -> { m | flow = flow }) maybeList
 
             Nothing ->
                 ( keep (Unsendable (Set a v)) m, [] )

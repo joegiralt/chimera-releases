@@ -1,15 +1,16 @@
 -- SPDX-License-Identifier: GPL-3.0-or-later
 
 
-module Flow exposing (Expiry(..), Flow, acked, expire, idle, inFlight, target, want)
+module Flow exposing (Edit(..), Expiry(..), Flow, acked, expire, idle, inFlight, target, want)
 
-{-| The edits' window: one `ed set` on the wire at a time. A hand moves
-faster than the unit answers, so what it wants meanwhile waits here, the
-latest want of each address winning, until the set on the wire is answered
-(`OK` or `ERR`); then the next goes. The unit never gets a burst, and the
-last place a hand let go is always the last thing sent.
+{-| The edits' window: one edit on the wire at a time (an `ed set`, or an
+`ed route` of a matrix cell). A hand moves faster than the unit answers, so
+what it wants meanwhile waits here, keyed by what it edits (an address, a
+cell), the latest want of each winning, until the edit on the wire is
+answered (`OK` or `ERR`); then the next goes. The unit never gets a burst,
+and the last place a hand let go is always the last thing sent.
 
-A set unanswered for too long is sent once more; unanswered again, it is
+An edit unanswered for too long is sent once more; unanswered again, it is
 given up (the model says so) and the next goes, so a lost answer never stops
 the window.
 
@@ -17,8 +18,37 @@ the window.
 
 import Addr exposing (Addr)
 import Dict exposing (Dict)
-import Protocol exposing (Command(..), Value)
+import Protocol exposing (Cell, Command(..), RouteTo, Value)
 import Time
+
+
+{-| What a hand edits: a parameter's value, or a matrix cell's route.
+-}
+type Edit
+    = SetTo Addr Value
+    | RouteOf Cell RouteTo
+
+
+{-| What the edit edits: its address, or its cell (never an address).
+-}
+keyOf : Edit -> String
+keyOf e =
+    case e of
+        SetTo a _ ->
+            Addr.key a
+
+        RouteOf c _ ->
+            "route " ++ Protocol.cellKey c
+
+
+command : Edit -> Command
+command e =
+    case e of
+        SetTo a v ->
+            Set a v
+
+        RouteOf c to ->
+            SetRoute c to
 
 
 type Flow
@@ -26,16 +56,17 @@ type Flow
     | Waiting Sent Pending
 
 
-{-| The set on the wire: when it went, and whether it was sent again.
+{-| The edit on the wire, what it edits, when it went, and whether it was
+sent again.
 -}
 type alias Sent =
-    { addr : Addr, value : Value, at : Time.Posix, resent : Bool }
+    { edit : Edit, at : Time.Posix, resent : Bool }
 
 
-{-| What waits, one value an address: the latest want wins.
+{-| What waits, one edit a key: the latest want wins.
 -}
 type Pending
-    = Pending (Dict String ( Addr, Value ))
+    = Pending (Dict String Edit)
 
 
 idle : Flow
@@ -43,30 +74,30 @@ idle =
     Idle
 
 
-{-| A hand wants `a` at `v`: sent now if nothing is on the wire, else held
-(over any older want of `a`).
+{-| A hand wants `e`: sent now if nothing is on the wire, else held (over
+any older want of what it edits).
 -}
-want : Time.Posix -> Addr -> Value -> Flow -> ( Flow, Maybe Command )
-want now a v f =
+want : Time.Posix -> Edit -> Flow -> ( Flow, Maybe Command )
+want now e f =
     case f of
         Idle ->
-            ( Waiting (sent now a v) (Pending Dict.empty), Just (Set a v) )
+            ( Waiting (sent now e) (Pending Dict.empty), Just (command e) )
 
         Waiting s (Pending d) ->
-            if s.addr == a && s.value == v then
+            if s.edit == e then
                 -- What is on the wire is the latest.
-                ( Waiting s (Pending (Dict.remove (Addr.key a) d)), Nothing )
+                ( Waiting s (Pending (Dict.remove (keyOf e) d)), Nothing )
 
             else
-                ( Waiting s (Pending (Dict.insert (Addr.key a) ( a, v ) d)), Nothing )
+                ( Waiting s (Pending (Dict.insert (keyOf e) e d)), Nothing )
 
 
-sent : Time.Posix -> Addr -> Value -> Sent
-sent now a v =
-    { addr = a, value = v, at = now, resent = False }
+sent : Time.Posix -> Edit -> Sent
+sent now e =
+    { edit = e, at = now, resent = False }
 
 
-{-| The set on the wire was answered: the next waiting one goes.
+{-| The edit on the wire was answered: the next waiting one goes.
 -}
 acked : Time.Posix -> Flow -> ( Flow, Maybe Command )
 acked now f =
@@ -81,16 +112,16 @@ acked now f =
 next : Time.Posix -> Pending -> ( Flow, Maybe Command )
 next now (Pending d) =
     case Dict.toList d of
-        ( k, ( a, v ) ) :: _ ->
-            ( Waiting (sent now a v) (Pending (Dict.remove k d)), Just (Set a v) )
+        ( k, e ) :: _ ->
+            ( Waiting (sent now e) (Pending (Dict.remove k d)), Just (command e) )
 
         [] ->
             ( Idle, Nothing )
 
 
-{-| What a clock found of the set on the wire: still in time; sent again
-(the set given up, and the one sent in its place: the latest want of its
-address, else itself); or given up for good, and the next set sent.
+{-| What a clock found of the edit on the wire: still in time; sent again
+(the edit given up, and the one sent in its place: the latest want of its
+key, else itself); or given up for good, and the next edit sent.
 -}
 type Expiry
     = Fresh
@@ -112,16 +143,12 @@ expire now ms f =
 
             else if not s.resent then
                 let
-                    k : String
-                    k =
-                        Addr.key s.addr
-
-                    v : Value
-                    v =
-                        Dict.get k d |> Maybe.map Tuple.second |> Maybe.withDefault s.value
+                    e : Edit
+                    e =
+                        Dict.get (keyOf s.edit) d |> Maybe.withDefault s.edit
                 in
-                ( Waiting { s | value = v, at = now, resent = True } (Pending (Dict.remove k d))
-                , Resent (Set s.addr s.value) (Set s.addr v)
+                ( Waiting { s | edit = e, at = now, resent = True } (Pending (Dict.remove (keyOf s.edit) d))
+                , Resent (command s.edit) (command e)
                 )
 
             else
@@ -129,10 +156,10 @@ expire now ms f =
                     ( after, n ) =
                         next now (Pending d)
                 in
-                ( after, GaveUp (Set s.addr s.value) n )
+                ( after, GaveUp (command s.edit) n )
 
 
-{-| The set on the wire, if one is.
+{-| The edit on the wire, if one is.
 -}
 inFlight : Flow -> Maybe Command
 inFlight f =
@@ -141,27 +168,28 @@ inFlight f =
             Nothing
 
         Waiting s _ ->
-            Just (Set s.addr s.value)
+            Just (command s.edit)
 
 
-{-| Where the editor last asked `a` to go and the unit has not yet said it
-went: the waiting want, else the set on the wire. A wheel's notch starts
-from here, so notches faster than the answers all count.
+{-| The last edit of what `like` edits (its value ignored) that the editor
+asked for and the unit has not yet said it took: the waiting want, else the
+edit on the wire. A wheel's notch starts from here, so notches faster than
+the answers all count.
 -}
-target : Addr -> Flow -> Maybe Value
-target a f =
+target : Edit -> Flow -> Maybe Edit
+target like f =
     case f of
         Idle ->
             Nothing
 
         Waiting s (Pending d) ->
-            case Dict.get (Addr.key a) d of
-                Just ( _, v ) ->
-                    Just v
+            case Dict.get (keyOf like) d of
+                Just e ->
+                    Just e
 
                 Nothing ->
-                    if s.addr == a then
-                        Just s.value
+                    if keyOf s.edit == keyOf like then
+                        Just s.edit
 
                     else
                         Nothing

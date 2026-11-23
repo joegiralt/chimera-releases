@@ -65,6 +65,7 @@ module Protocol exposing
     , Value(..)
     , VariantName
     , amount
+    , amountToInt
     , binding
     , cell
     , cellKey
@@ -304,6 +305,11 @@ cellKey (Cell c) =
 -}
 type Amount
     = Amount Int
+
+
+amountToInt : Amount -> Int
+amountToInt (Amount n) =
+    n
 
 
 amount : Int -> Maybe Amount

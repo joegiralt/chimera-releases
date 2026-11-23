@@ -64,6 +64,10 @@ type alias State =
     { page : Page.State
     , drag : Control.Drag
     , wanted : Control.Wanted
+
+    -- This frame's last amount for each of the Part's routes a hand moved,
+    -- by its cell, −127..127.
+    , routeWanted : Dict String ( Protocol.Cell, Int )
     , menu : Menu.State
     , bays : Dict String ( BayId, PatchBay.Bay )
     , tab : Tab
@@ -86,6 +90,7 @@ init t =
     { page = Page.init t
     , drag = Control.idle
     , wanted = Control.empty
+    , routeWanted = Dict.empty
     , menu = Menu.shut
     , bays = Dict.empty
     , tab = Kit
@@ -116,7 +121,7 @@ follow m s =
         s
 
     else
-        { s | drag = Control.idle, wanted = Control.empty, menu = Menu.shut, seat = Just (Model.seat m) }
+        { s | drag = Control.idle, wanted = Control.empty, routeWanted = Dict.empty, menu = Menu.shut, seat = Just (Model.seat m) }
 
 
 
@@ -240,7 +245,7 @@ update msg m s0 =
                 ( wants, rest ) =
                     Control.flush s.wanted
             in
-            ( { s | wanted = rest }
+            ( { s | wanted = rest, routeWanted = Dict.empty }
             , List.map
                 (\( a, w ) ->
                     case w of
@@ -251,6 +256,7 @@ update msg m s0 =
                             Model.Pick a i
                 )
                 wants
+                ++ List.filterMap (\( c, n ) -> Protocol.amount n |> Maybe.map (Model.EditRoute c << Protocol.RouteAmount)) (Dict.values s.routeWanted)
             , Nothing
             )
 
@@ -533,6 +539,61 @@ taken hold of.
 -}
 target : Model -> State -> Addr -> Maybe Target
 target m s a =
+    case partRoute m s a of
+        Just ( _, n ) ->
+            Just (Continuous { norm = normOfBox n, wheel = routeWheel })
+
+        Nothing ->
+            paramTarget m s a
+
+
+{-| The Part's route a cable's key names (its cell, which the bay keys it
+by), and its amount: where a hand last asked it to go and the unit has not
+yet said (this frame's, else the window's), else the unit's.
+-}
+partRoute : Model -> State -> Addr -> Maybe ( Protocol.Cell, Int )
+partRoute m s a =
+    Maybe.map2 Tuple.pair (Protocol.cell (Addr.key a)) (Dict.get (Addr.key a) m.routes)
+        |> Maybe.map
+            (\( c, r ) ->
+                case Dict.get (Addr.key a) s.routeWanted of
+                    Just ( _, n ) ->
+                        ( c, n )
+
+                    Nothing ->
+                        case Model.pendingRoute c m of
+                            Just (Protocol.RouteAmount x) ->
+                                ( c, Protocol.amountToInt x )
+
+                            Just Protocol.RouteOff ->
+                                ( c, r.amount )
+
+                            Nothing ->
+                                ( c, r.amount )
+            )
+
+
+{-| A route amount's place on its attenuverter, −127 at 0; and back.
+-}
+normOfBox : Int -> Float
+normOfBox n =
+    (toFloat n / 127 + 1) / 2
+
+
+boxAt : Float -> Int
+boxAt t =
+    clamp -127 127 (round ((clamp 0 1 t * 2 - 1) * 127))
+
+
+{-| A notch on a route's attenuverter: a knob's least.
+-}
+routeWheel : Float
+routeWheel =
+    1 / 64
+
+
+paramTarget : Model -> State -> Addr -> Maybe Target
+paramTarget m s a =
     paramOf m a
         |> Maybe.andThen
             (\p ->
@@ -597,6 +658,49 @@ wantOf v =
 
 intend : Model -> Intent -> State -> State
 intend m intent s =
+    case partRoute m s (intentAddr intent) of
+        Just ( c, _ ) ->
+            case intent of
+                SetNorm _ t ->
+                    wantRoute c (boxAt t) s
+
+                Nudge _ n ->
+                    wantRoute c (boxAt (n.from + toFloat n.by * n.wheel)) s
+
+                -- A route has no default but none: removing it is unpatching.
+                SetOption _ _ ->
+                    s
+
+                Restore _ ->
+                    s
+
+        Nothing ->
+            intendParam m intent s
+
+
+intentAddr : Intent -> Addr
+intentAddr intent =
+    case intent of
+        SetNorm a _ ->
+            a
+
+        Nudge a _ ->
+            a
+
+        SetOption a _ ->
+            a
+
+        Restore a ->
+            a
+
+
+wantRoute : Protocol.Cell -> Int -> State -> State
+wantRoute c n s =
+    { s | routeWanted = Dict.insert (Protocol.cellKey c) ( c, n ) s.routeWanted }
+
+
+intendParam : Model -> Intent -> State -> State
+intendParam m intent s =
     let
         on : Addr -> (Param -> State) -> State
         on a f =
