@@ -1215,7 +1215,7 @@ expire m =
     in
     case ex of
         Flow.Fresh ->
-            ( m, [] )
+            ( { m | flow = flow }, [] )
 
         Flow.Resent old new ->
             ( dropped old, [ new ] )
@@ -1620,6 +1620,7 @@ answer a m =
                 { m
                     | values = Dict.insert (Addr.key v.addr) { norm = v.norm, stored = v.stored, text = v.text } m.values
                     , refusals = Dict.remove (Addr.key v.addr) m.refusals
+                    , flow = Flow.heard (Flow.SetTo v.addr (Protocol.Num v.stored)) (tookValue v.stored) m.flow
                 }
 
         -- The followed Part's, in a diff: a whole answer (a new Part, or
@@ -1667,10 +1668,13 @@ answer a m =
             { m | routes = Dict.empty }
 
         RouteIs r ->
-            { m | routes = Dict.insert (cellKey r.cell) { amount = r.amount, text = r.text } m.routes }
+            { m
+                | routes = Dict.insert (cellKey r.cell) { amount = r.amount, text = r.text } m.routes
+                , flow = Flow.heard (Flow.RouteOf r.cell Protocol.RouteOff) (tookRoute (Just r.amount)) m.flow
+            }
 
         Unroute c ->
-            { m | routes = Dict.remove (cellKey c) m.routes }
+            { m | routes = Dict.remove (cellKey c) m.routes, flow = Flow.heard (Flow.RouteOf c Protocol.RouteOff) (tookRoute Nothing) m.flow }
 
         Crumb _ ->
             describing a m
@@ -2169,3 +2173,37 @@ readNext m =
 maybeList : Maybe a -> List a
 maybeList =
     Maybe.map List.singleton >> Maybe.withDefault []
+
+
+{-| A landed edit the unit reports as stored `x`: a number within the
+four decimals the editor sends, or a choice by its number.
+-}
+tookValue : Float -> Flow.Edit -> Bool
+tookValue x e =
+    case e of
+        Flow.SetTo _ (Protocol.Num v) ->
+            abs (v - x) <= 0.0001 * max 1 (abs v)
+
+        Flow.SetTo _ (Protocol.Index i) ->
+            toFloat (Protocol.optIndexToInt i) == x
+
+        Flow.SetTo _ (Protocol.Name _) ->
+            False
+
+        Flow.RouteOf _ _ ->
+            False
+
+
+{-| A landed route the unit reports at `amount` (`Nothing`: gone).
+-}
+tookRoute : Maybe Int -> Flow.Edit -> Bool
+tookRoute amount e =
+    case e of
+        Flow.RouteOf _ (Protocol.RouteAmount a) ->
+            amount == Just (Protocol.amountToInt a)
+
+        Flow.RouteOf _ Protocol.RouteOff ->
+            amount == Nothing
+
+        Flow.SetTo _ _ ->
+            False

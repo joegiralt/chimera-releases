@@ -86,6 +86,7 @@ module Protocol exposing
     , noteToInt
     , nrpnNo
     , optIndex
+    , optIndexToInt
     , outgoing
     , outgoingCommand
     , outgoingLine
@@ -245,6 +246,11 @@ type OptIndex
 firstOption : OptIndex
 firstOption =
     OptIndex 0
+
+
+optIndexToInt : OptIndex -> Int
+optIndexToInt (OptIndex i) =
+    i
 
 
 optIndex : Int -> Maybe OptIndex

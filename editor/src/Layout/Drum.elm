@@ -5,7 +5,7 @@ module Layout.Drum exposing (every, kit, pad)
 
 {-| DRUM as the box has it, Analog Rytm Overbridge-style: the KIT view
 (the twelve pads at a glance, then the whole kit's voice: VOICE FX, OUT,
-FILTER MOD, ENV 1–3, LFO 1–3) and a PAD view per pad (PAD, MACHINE, FILTER,
+FILTER MOD, ENV 1–3, LFO 1–3, and the Part's MOD matrix) and a PAD view per pad (PAD, MACHINE, FILTER,
 AMP, PITCH ENV, PITCH LFO, its four routes as a patch bay, then MOD). What
 is per pad on the box is per pad here.
 
@@ -35,6 +35,7 @@ kit =
     [ pads ( Pad1, [ Pad2, Pad3, Pad4, Pad5, Pad6 ] ), pads ( Pad7, [ Pad8, Pad9, Pad10, Pad11, Pad12 ] ), wholeKit (Shared.voiceFx (PadDrawn Pad1 PadFx)), out, wholeKit filterMod ]
         ++ List.map (Shared.envelope >> wholeKit) Addr.envs
         ++ List.map (Shared.lfo >> wholeKit) Addr.lfos
+        ++ [ Shared.mod ]
 
 
 wholeKit : Module -> Module

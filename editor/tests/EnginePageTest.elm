@@ -213,15 +213,21 @@ notches n =
 
 
 {-| The page and the model together, as `Main` runs them, the unit saying
-nothing back: the model after, and the edits the page asked for.
+nothing back: the model after, and the edits the page asked for. A `Frame`
+comes only when the page's subscriptions would deliver one (`framed`).
 -}
 live : List Page.Msg -> Model.Model -> ( Model.Model, List Model.Msg )
 live msgs unit0 =
     List.foldl
         (\msg ( unit, s, out ) ->
             let
+                -- A frame arrives only while the page's subscriptions ask for one.
                 ( s1, asks, _ ) =
-                    Page.update msg unit s
+                    if msg == Frame && not (Page.framed s) then
+                        ( s, [], Nothing )
+
+                    else
+                        Page.update msg unit s
             in
             ( List.foldl (\e u -> Model.step e u |> Tuple.first) unit asks, s1, out ++ asks )
         )
