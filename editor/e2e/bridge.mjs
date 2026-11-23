@@ -16,6 +16,10 @@ import fs from "node:fs";
 import http from "node:http";
 import path from "node:path";
 
+/** E2E_LAG: every answer this many ms late, as the real unit's USB console
+ * is next to the simulator's socket (a timing the simulator never shows). */
+const LAG = Number(process.env.E2E_LAG ?? 0);
+
 const TYPES = { ".html": "text/html", ".js": "text/javascript", ".css": "text/css", ".wasm": "application/wasm", ".png": "image/png" };
 
 /** Text frames only, as a browser sends them: masked, maybe extended length. */
@@ -174,6 +178,7 @@ export async function startBridge(dist, unit) {
           };
           if (rule?.act === "hold") rule.held.push(deliver);
           else if (flow.paused) flow.paused.push(deliver);
+          else if (LAG) setTimeout(deliver, LAG);
           else deliver();
         });
       }

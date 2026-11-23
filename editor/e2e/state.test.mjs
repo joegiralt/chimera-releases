@@ -11,7 +11,7 @@
 import assert from "node:assert/strict";
 import { describe, test } from "node:test";
 import {
-  bridge, choice, expectNotice, firstKnob, followPart, loadInit, newProject, noticesOn, onEngine, onMixer, page, polled, setup, showCell, simOnly, slider, sliderFollows, slidersAgainstUnit,
+  bridge, choice, expectNotice, settled, firstKnob, followPart, loadInit, newProject, noticesOn, onEngine, onMixer, page, polled, setup, showCell, simOnly, slider, sliderFollows, slidersAgainstUnit,
   statusText, tokens, tryGet, unit, unitRoutes, until, wheel,
 } from "./harness.mjs";
 
@@ -54,12 +54,44 @@ describe("the box's own hands", () => {
     const p1 = await tryGet(addr);
     await unit.ok("key B2");
     await until("the editor on Part 2 again", async () => (await statusText()) === "SIMULATOR · PART 2 · MODAL", 10000);
+    await settled();
     await wheel(knob, was.norm > 0.5 ? -2 : 2);
     await until(`${addr} on Part 2 to move`, async () => (await unit.get(addr)).stored !== was.stored);
     await sliderFollows(addr);
     await unit.ok("key B1");
     await followPart(1, "ALGO");
     assert.equal((await tryGet(addr))?.stored, p1?.stored, `Part 1's ${addr} moved`);
+  });
+
+  test("G4: back on an engine it read before, the editor names the Part only once that engine's schema is asked again: a hand meanwhile waits", async () => {
+    await onEngine(2, "MODAL");
+    await unit.ok("key B1");
+    await followPart(1, "ALGO");
+    // The answer that says the box is on Part 2 again comes without its OK: the editor waits on it (and asks again
+    // after its timeout). All that while it must not claim Part 2 MODAL: it has not yet asked the unit for
+    // MODAL's schema, so it takes no hand.
+    let cut = 0;
+    bridge.flow.rule({
+      match: /^ed since /,
+      act: "map",
+      times: Infinity,
+      map: (lines) => {
+        if (cut || !lines.includes("part 2 MODAL")) return lines;
+        cut = bridge.flow.sent.length;
+        return lines.slice(0, -1);
+      },
+    });
+    await unit.ok("key B2");
+    const claimed = [];
+    await until("the editor to ask again after the missing OK", async () => {
+      if ((await statusText()) === "SIMULATOR · PART 2 · MODAL" && !bridge.flow.sent.slice(cut).includes("ed schema MODAL")) claimed.push(Date.now());
+      return cut && bridge.flow.sent.slice(cut).some((l) => l.startsWith("ed since") || l === "ed schema MODAL");
+    }, 5000, 5);
+    assert.deepEqual(claimed, [], "the editor said PART 2 · MODAL before asking MODAL's schema again");
+    bridge.flow.clearRules();
+    await followPart(2, "MODAL");
+    await unit.ok("key B1");
+    await followPart(1, "ALGO");
   });
 
   test("G5: a level moved for a Part the editor doesn't follow: its MIXER strip follows", async () => {

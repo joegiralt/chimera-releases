@@ -115,6 +115,16 @@ suite =
                 again 1 (Flow.idle |> Flow.want (at 0) (SetTo a (Num 1)) |> Tuple.first)
                     |> Tuple.second
                     |> Expect.equal (Just (Set a (Num 1)))
+        , test "a_want_the_unit_has_answered_and_not_yet_reported_is_not_sent_again" <|
+            \_ ->
+                Flow.idle
+                    |> Flow.want (at 0) (SetTo a (Num 1))
+                    |> Tuple.first
+                    |> Flow.acked (at 5)
+                    |> Tuple.first
+                    |> Flow.want (at 6) (SetTo a (Num 1))
+                    |> Tuple.second
+                    |> Expect.equal Nothing
         , test "an_answer_lost_is_late_at_once" <|
             \_ -> Expect.equal (Resent (Set a (Num 1)) (Set a (Num 2))) (Flow.expire (at 20) 1000 (Flow.answerLost busy) |> Tuple.second)
         , test "waiting_wants_go_in_the_order_they_first_waited" <|

@@ -101,7 +101,11 @@ want : Time.Posix -> Edit -> Flow -> ( Flow, Maybe Command )
 want now e (Flow f) =
     case f.wire of
         Nothing ->
-            if f.shut == Nothing then
+            if (Dict.get (keyOf e) f.landed |> Maybe.map .edit) == Just e && not (Dict.member (keyOf e) f.pending) then
+                -- Answered already, and not yet reported: asking again says nothing new.
+                ( Flow f, Nothing )
+
+            else if f.shut == Nothing then
                 ( Flow { f | wire = Just (sent now e) }, Just (command e) )
 
             else

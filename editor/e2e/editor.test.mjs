@@ -43,6 +43,7 @@ test("contract: every describe and since line the unit writes, the editor reads"
   const read = editorReader(path.join(here, "contract"));
   const seen = new Set();
   const failures = [];
+  const unbuilt = []; // schemas of 0 pages in this build
   const take = async (kind, lines) => {
     const r = await check(read, kind, lines, seen);
     failures.push(...r.failures);
@@ -67,6 +68,7 @@ test("contract: every describe and since line the unit writes, the editor reads"
     await take(`schema ${s}`, [head]);
     if (!pages.length) {
       t.diagnostic(`${s}: 0 pages in this build`);
+      unbuilt.push(s);
       continue;
     }
     const lines = pages.flatMap((p) => p.lines);
@@ -136,9 +138,15 @@ test("contract: every describe and since line the unit writes, the editor reads"
   const unseen = Object.keys(KINDS).filter((k) => !seen.has(k));
   t.diagnostic(`kinds seen: ${seen.size} of ${Object.keys(KINDS).length}; not written by the unit in this run: ${unseen.join(" ") || "none"}`);
   assert.deepEqual(failures, []);
-  // Every kind the editor reads, read here from the unit's own lines (the real unit saves no file: its card's kinds may go unseen).
-  const cardOnly = unit.real ? ["mapfile", "proj"] : [];
-  assert.deepEqual(unseen.filter((k) => !cardOnly.includes(k)), [], "kinds of line the unit never wrote in this run: the contract can't vouch for them");
+  // Every kind the editor reads, read here from the unit's own lines. Not required: what this build
+  // lacks (ORBIT or MIDI MAP of 0 pages) and, on the real unit (which saves no file), its card's kinds.
+  const absent = {
+    ORBIT: ["act", "orbit", "song", "slot", "chord", "scale", "step", "pool"],
+    MAP: ["input", "kind", "ccs", "msbs", "span", "rows", "maprows", "map", "row", "learn", "mapfile"],
+  };
+  const exempt = [...(unit.real ? ["mapfile", "proj"] : []), ...unbuilt.flatMap((s) => absent[s] ?? [])];
+  if (exempt.length) t.diagnostic(`not required in this run: ${exempt.join(" ")}`);
+  assert.deepEqual(unseen.filter((k) => !exempt.includes(k)), [], "kinds of line the unit never wrote in this run: the contract can't vouch for them");
 });
 
 // ---- the editor in the browser ----

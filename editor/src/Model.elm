@@ -527,9 +527,10 @@ run e =
 -}
 status : Model -> Maybe String
 status m =
-    -- Only once the page drawn is the engine's it names: during an engine
-    -- change the old engine's page stays up, and says it is reading.
-    if m.link == Just Open && m.stage == Following && m.described == m.engine then
+    -- Only once the page drawn is the engine's it names, and its schema is
+    -- the unit's (asked again since the engine changed): until then the page
+    -- says it is reading, and takes no hand.
+    if m.link == Just Open && m.stage == Following && m.described == m.engine && not (unchecked m) then
         Maybe.map2
             (\p e ->
                 String.join " · "
@@ -751,11 +752,7 @@ noticeText n =
             "THE UNIT WAS BUSY FOR " ++ Protocol.sketch c ++ ", ASKED " ++ String.fromInt Flow.busyTries ++ " TIMES: GIVEN UP"
 
         Untaken c ->
-            if String.startsWith "ed route " (Protocol.sketch c) then
-                "THE UNIT DID NOT TAKE " ++ Protocol.sketch c ++ ": THE ROUTE IS AS IT WAS (THE MATRIX MAY BE FULL)"
-
-            else
-                "THE UNIT DID NOT TAKE " ++ Protocol.sketch c ++ ": IT KEPT ITS VALUE, AND NAMED NO REFUSAL (IT NAMES ONLY ITS NEWEST)"
+            "THE UNIT DID NOT TAKE " ++ Protocol.sketch c ++ ": IT KEPT ITS VALUE, AND NAMED NO REFUSAL (IT NAMES ONLY ITS NEWEST)"
 
         Declined why ->
             why
@@ -1335,28 +1332,11 @@ untakenSet e m =
             else
                 m
 
-        -- A route the box didn't make (or didn't remove) at its turn: it
-        -- says no refusal for routes, so this is the only word of it.
-        Flow.RouteOf c to ->
-            let
-                made : Bool
-                made =
-                    Dict.member (cellKey c) m.routes
-            in
-            case to of
-                Protocol.RouteAmount _ ->
-                    if made then
-                        m
-
-                    else
-                        keep (Untaken (SetRoute c to)) m
-
-                Protocol.RouteOff ->
-                    if made then
-                        keep (Untaken (SetRoute c to)) m
-
-                    else
-                        m
+        -- The box says nothing of a route it drops at its turn (a full
+        -- matrix), but a hand can only patch to a column the box takes:
+        -- nothing to tell here.
+        Flow.RouteOf _ _ ->
+            m
 
 
 removeFirst : a -> List a -> List a

@@ -312,10 +312,9 @@ describe("the Part's MOD bay", () => {
         throw new Error(`the unit has ${kept} routes, the editor ${await cables()} cables`);
       });
       // One more from the editor's hand, to a fixed column (VCA): the box takes routes to its fixed
-      // columns past the limit; were it dropped, the editor says so. Either way no phantom cable.
-      expectNotice(/^THE UNIT DID NOT TAKE ed route VEL:OUT\.VCA /);
+      // columns past the limit (and a hand can patch to no other kind of column a full matrix lacks).
       await patchTo("VELO", 2);
-      await until("the route made, or its loss said", async () => !!(await unitRoutes())["VEL:OUT.VCA"] || (await noticesOn()).some((n) => n.startsWith("THE UNIT DID NOT TAKE ed route VEL:OUT.VCA")), 5000);
+      await until("the route made", async () => !!(await unitRoutes())["VEL:OUT.VCA"], 5000);
       await until("the editor still draws only the unit's", async () => (await cables()) === Object.keys(await unitRoutes()).length, 5000);
       made.push("VEL:OUT.VCA");
       t.diagnostic(`${made.length} routes asked, the unit kept ${kept}${full ? `, then said ${full}` : ""}`);
