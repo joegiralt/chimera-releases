@@ -2,7 +2,8 @@
 
 
 module Ui.Screen exposing
-    ( Config
+    ( Box
+    , Config
     , Focus(..)
     , Glyph(..)
     , Region
@@ -138,7 +139,14 @@ type alias Spec =
     , pad : Maybe Pad
     , vals : List ( Addr, Float )
     , animate : Bool
+    , crop : Maybe Box
     }
+
+
+{-| A box of the region's own pixels (from its top left) drawn alone.
+-}
+type alias Box =
+    { x : Int, y : Int, w : Int, h : Int }
 
 
 type Art
@@ -154,6 +162,8 @@ type Config
         , caption : String
         , values : List ( Addr, Float )
         , animate : Bool
+        , crop : Maybe Box
+        , zoom : Int
         }
 
 
@@ -161,14 +171,14 @@ type Config
 -}
 new : Engine -> Glyph -> Config
 new e g =
-    Config { engine = OnEngine e, art = Crop g, fallback = Nothing, caption = "", values = [], animate = False }
+    Config { engine = OnEngine e, art = Crop g, fallback = Nothing, caption = "", values = [], animate = False, crop = Nothing, zoom = 1 }
 
 
 {-| The firmware's art for `ed describe`'s page `n`.
 -}
 drawn : Engine -> PageNo -> Shape -> Config
 drawn e n s =
-    Config { engine = OnEngine e, art = Drawn { page = n, region = ScreenArt, shape = s, focus = Nothing, pad = Nothing }, fallback = Nothing, caption = "", values = [], animate = False }
+    Config { engine = OnEngine e, art = Drawn { page = n, region = ScreenArt, shape = s, focus = Nothing, pad = Nothing }, fallback = Nothing, caption = "", values = [], animate = False, crop = Nothing, zoom = 1 }
 
 
 {-| The focus band's gauge on page `n`, cell `f` focused: the picture the
@@ -176,15 +186,16 @@ unit draws for that cell (VA's WAVE morph, a knob's arc, a machine).
 -}
 gauge : Engine -> PageNo -> Focus -> Config
 gauge e n f =
-    Config { engine = OnEngine e, art = Drawn { page = n, region = Gauge, shape = Strip, focus = Just f, pad = Nothing }, fallback = Nothing, caption = "", values = [], animate = False }
+    Config { engine = OnEngine e, art = Drawn { page = n, region = Gauge, shape = Strip, focus = Just f, pad = Nothing }, fallback = Nothing, caption = "", values = [], animate = False, crop = Nothing, zoom = 1 }
 
 
 {-| The MIXER's FX page `n`'s gauge, cell `f` in focus, animated: the
-effect's own picture (a chorus's braid, a reverb's cube).
+effect's own picture (a chorus's braid, a reverb's cube), `box` of the
+region alone, four times the unit's pixels.
 -}
-mixerGauge : PageNo -> Focus -> Config
-mixerGauge n f =
-    Config { engine = OnMixer, art = Drawn { page = n, region = Gauge, shape = Strip, focus = Just f, pad = Nothing }, fallback = Nothing, caption = "", values = [], animate = True }
+mixerGauge : PageNo -> Focus -> Box -> Config
+mixerGauge n f box =
+    Config { engine = OnMixer, art = Drawn { page = n, region = Gauge, shape = Strip, focus = Just f, pad = Nothing }, fallback = Nothing, caption = "", values = [], animate = True, crop = Just box, zoom = 4 }
 
 
 {-| The MIXER's FX page `n`'s art band (the master's compressor curve),
@@ -192,7 +203,7 @@ animated.
 -}
 mixerArt : PageNo -> Shape -> Config
 mixerArt n sh =
-    Config { engine = OnMixer, art = Drawn { page = n, region = ScreenArt, shape = sh, focus = Nothing, pad = Nothing }, fallback = Nothing, caption = "", values = [], animate = True }
+    Config { engine = OnMixer, art = Drawn { page = n, region = ScreenArt, shape = sh, focus = Nothing, pad = Nothing }, fallback = Nothing, caption = "", values = [], animate = True, crop = Nothing, zoom = 1 }
 
 
 {-| Pad `p`'s machine icon, from its MACHINE value on page `n` (its MACHINE
@@ -200,7 +211,7 @@ page), the crop of it under it until the WASM draws.
 -}
 padIcon : PageNo -> Pad -> Config
 padIcon n p =
-    Config { engine = OnEngine Unit.Drum, art = Drawn { page = n, region = PadIconOf p, shape = Strip, focus = Nothing, pad = Just p }, fallback = Just (PadIcon p), caption = "", values = [], animate = False }
+    Config { engine = OnEngine Unit.Drum, art = Drawn { page = n, region = PadIconOf p, shape = Strip, focus = Nothing, pad = Just p }, fallback = Just (PadIcon p), caption = "", values = [], animate = False, crop = Nothing, zoom = 1 }
 
 
 {-| The cell the unit's focus band is on while it draws this page.
@@ -251,7 +262,7 @@ spec : Config -> Maybe Spec
 spec (Config c) =
     case c.art of
         Drawn d ->
-            Just { engine = c.engine, page = d.page, region = d.region, focus = d.focus, pad = d.pad, vals = c.values, animate = c.animate }
+            Just { engine = c.engine, page = d.page, region = d.region, focus = d.focus, pad = d.pad, vals = c.values, animate = c.animate, crop = c.crop }
 
         Crop _ ->
             Nothing
@@ -267,13 +278,14 @@ encodeSpec s =
          , ( "pad", s.pad |> Maybe.map (Pad.number >> Encode.int) |> Maybe.withDefault Encode.null )
          , ( "vals", Encode.list (\( a, v ) -> Encode.list identity [ Encode.string (Addr.key a), Encode.float v ]) s.vals )
          ]
-            -- A still picture says nothing of frames.
+            -- A still picture says nothing of frames, a whole one of crops.
             ++ (if s.animate then
                     [ ( "animate", Encode.bool True ) ]
 
                 else
                     []
                )
+            ++ (s.crop |> Maybe.map (\b -> [ ( "crop", Encode.list Encode.int [ b.x, b.y, b.w, b.h ] ) ]) |> Maybe.withDefault [])
         )
 
 
@@ -348,7 +360,14 @@ size art =
 
 width : Config -> Width
 width (Config c) =
-    Control.pxWidth (Tuple.first (size c.art))
+    Control.pxWidth (Tuple.first (shown (Config c)) * c.zoom)
+
+
+{-| The box drawn, the unit's pixels: the art's, or its crop's.
+-}
+shown : Config -> ( Int, Int )
+shown (Config c) =
+    c.crop |> Maybe.map (\b -> ( b.w, b.h )) |> Maybe.withDefault (size c.art)
 
 
 image : String -> Glyph -> Html msg
@@ -363,7 +382,7 @@ view : Config -> Html msg
 view ((Config c) as config) =
     let
         ( w, h ) =
-            size c.art
+            shown config
     in
     div [ class "screen", Control.widthStyle (width config), style "aspect-ratio" (String.fromInt w ++ " / " ++ String.fromInt h) ]
         [ case spec config of

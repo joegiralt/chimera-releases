@@ -23,11 +23,6 @@ const here = path.dirname(fileURLToPath(import.meta.url));
 const editorDir = path.resolve(here, "..");
 const root = path.resolve(editorDir, "..");
 
-/** The firmware's screen doesn't yet redraw for a set from the editor:
- * until it does, that check is a TODO, reported and not failing.
- * REDRAW_FIXED=1 makes it a plain test. */
-const REDRAW_TODO = process.env.REDRAW_FIXED === "1" ? false : "the unit's screen doesn't redraw on `ed set` yet (a firmware fix is on its way)";
-
 /** Each engine on its own Part, INIT loaded there through the browser keys. */
 const ENGINES = ["ALGO", "MODAL", "VA", "TAPE", "DRUM"]; // EngineType::PLAYABLE's order: the INIT rows'
 const partOf = (e) => ENGINES.indexOf(e) + 1;
@@ -387,7 +382,7 @@ for (const engine of ENGINES) {
       await until("the editor to show the unit's value", async () => (await knob.getAttribute("aria-valuetext")) === now.text);
     });
 
-    test("the unit's own screen redraws when the editor sets a cell its page shows", { todo: REDRAW_TODO }, async () => {
+    test("the unit's own screen redraws when the editor sets a cell its page shows", async () => {
       await followPart(n, engine);
       const at = await unit.at();
       assert.match(at, new RegExp(`^PART ${n} > `), "the unit shows the Part's page");
@@ -446,23 +441,20 @@ for (const engine of ENGINES) {
       await att.waitFor();
       // The cable's amount, dragged up.
       const from = (await unitRoutes())[patched].amount;
-      // A drag on the attenuverter where it holds still; the page may still be
-      // laying out as answers arrive, so a drag that moved nothing is made again.
-      const drag = async () => {
-        const [ax, ay] = await centre(att);
-        await page.mouse.move(ax, ay);
-        await page.mouse.down();
-        await page.mouse.move(ax, ay - 75, { steps: 6 });
-        await page.mouse.up();
-      };
-      const moves = async () => {
+      // The drag: pressed where the attenuverter holds still and is the
+      // element under the pointer (nothing laid over it), then moved only once
+      // the page has taken the press (its drag listens from the next frame).
+      const [ax, ay] = await centre(att);
+      await until("the attenuverter under the pointer", () =>
+        page.evaluate(([x, y, label]) => document.elementFromPoint(x, y)?.closest(".att")?.getAttribute("aria-label") === label, [ax, ay, `${srcName} to ${dstName}`]));
+      await page.mouse.move(ax, ay);
+      await page.mouse.down();
+      await page.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))));
+      await page.mouse.move(ax, ay - 75, { steps: 6 });
+      await page.mouse.up();
+      await until(`${patched}'s amount to move`, async () => {
         const r = (await unitRoutes())[patched];
         return r && r.amount !== from;
-      };
-      await drag();
-      await until(`${patched}'s amount to move`, moves, 3000).catch(async () => {
-        await drag();
-        await until(`${patched}'s amount to move, dragged again`, moves);
       });
       // The unit glides a route a step a pass: the amount it lands on, not one on the way.
       const moved = await settledRoute(patched);
@@ -589,7 +581,7 @@ describe("MIXER", () => {
     await until("OUT's controls", async () => (await page.locator('.fxbar [data-addr^="COMP."]').count()) > 0);
   });
 
-  test("the unit's own screen redraws when the editor moves a level on its MIXER", { todo: REDRAW_TODO }, async () => {
+  test("the unit's own screen redraws when the editor moves a level on its MIXER", async () => {
     await onMixer();
     if (!(await showCell("PART1.LEVEL"))) await unit.ok("key MIX+B1");
     await until("the unit on its MIXER", async () => (await unit.at()).startsWith("MIXER 1"));

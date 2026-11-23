@@ -19,6 +19,8 @@
 // animate true: the picture moves (the MIXER's effects): repainted at the
 //         unit's 20 frames a second, each paint the next frame, while the
 //         element is on the page; one still frame under reduced motion
+// crop    [x, y, w, h]: that box of the region's own pixels alone (an FX
+//         gauge's picture without its value's edge and hint row)
 //
 // One live mirror per engine keeps every value it was sent: a paint writes
 // only the values the mirror doesn't hold, so a spec with the page's own
@@ -68,7 +70,11 @@ var ChimeraScreen = (function () {
       }
     }
     if (s.animate != null && typeof s.animate !== 'boolean') return { error: 'animate ' + JSON.stringify(s.animate) };
-    return { spec: { engine: engine, page: s.page, region: REGIONS[s.region], focus: focus, pad: pad, vals: s.vals, animate: s.animate === true } };
+    var crop = s.crop == null ? null : s.crop;
+    if (crop !== null && !(Array.isArray(crop) && crop.length === 4 && int(crop[0], 0, W) && int(crop[1], 0, H) && int(crop[2], 1, W) && int(crop[3], 1, H))) {
+      return { error: 'crop ' + JSON.stringify(s.crop) };
+    }
+    return { spec: { engine: engine, page: s.page, region: REGIONS[s.region], focus: focus, pad: pad, vals: s.vals, animate: s.animate === true, crop: crop } };
   }
 
   // RGB565 pixels `px` (row-major, `stride` wide) cropped to `r` into RGBA,
@@ -118,6 +124,11 @@ var ChimeraScreen = (function () {
     var rp = x.rect_ptr(), bp = x.buf_ptr();
     var q = new Uint16Array(x.memory.buffer, rp, 4);
     var rect = { x: q[0], y: q[1], w: q[2], h: q[3] };
+    if (s.crop) {
+      var c = s.crop;
+      if (c[0] + c[2] > rect.w || c[1] + c[3] > rect.h) return { error: 'crop ' + JSON.stringify(c) + ' past the region ' + rect.w + 'x' + rect.h };
+      rect = { x: rect.x + c[0], y: rect.y + c[1], w: c[2], h: c[3] };
+    }
     var px = new Uint16Array(x.memory.buffer, bp, W * H);
     return { rect: rect, rgba: toRgba(px, W, rect, new Uint8ClampedArray(rect.w * rect.h * 4)), refused: refused };
   }

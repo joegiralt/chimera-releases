@@ -23,7 +23,7 @@ order. A page with nothing on it (a Part's VOICES) adds nothing.
 import Addr exposing (Addr)
 import Protocol
 import Schema exposing (Schema)
-import Ui.Screen exposing (Focus(..))
+import Ui.Screen exposing (Box, Focus(..))
 
 
 type alias Desk =
@@ -64,17 +64,24 @@ braid, moire or ray gun; the delay's FDBK; the reverb's MIX, a cube for
 QUAD), or a page's art (the master's compressor curve). By the page's label.
 -}
 type Picture
-    = GaugeOn String Focus
+    = GaugeOn String Focus Box
     | ArtOn String
 
 
-{-| The kit's pictures, by the page that holds each.
+{-| The kit's pictures, by the page that holds each, a gauge's with the box
+of the gauge region its picture alone takes. The region is the screen's
+x 120..240, y 28..118. Each picture sits flush with the right margin
+(x 228) on the arc's centre line (y 80), in the firmware's own box: the
+chorus braid 80 wide from x 148, the delay rings 60 from x 168, the reverb
+cube 64 from x 164, 56 tall from y 52. Cropped to x 148/168/164..228, y
+46..106: the big value's edge on the left and the hint row (y 106..118)
+left out.
 -}
 pictures : List ( String, Picture )
 pictures =
-    [ ( "CHR", GaugeOn "CHR" CellA )
-    , ( "DLY", GaugeOn "DLY" CellC )
-    , ( "REV", GaugeOn "REV" CellF )
+    [ ( "CHR", GaugeOn "CHR" CellA { x = 28, y = 18, w = 80, h = 60 } )
+    , ( "DLY", GaugeOn "DLY" CellC { x = 48, y = 18, w = 60, h = 60 } )
+    , ( "REV", GaugeOn "REV" CellF { x = 44, y = 18, w = 64, h = 60 } )
     , ( "MST", ArtOn "MST" )
     ]
 

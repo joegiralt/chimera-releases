@@ -1273,8 +1273,8 @@ mixerGlyph m s =
         |> Maybe.andThen
             (\pic ->
                 case pic of
-                    Mixer.GaugeOn label f ->
-                        at label (\n -> Screen.mixerGauge n f)
+                    Mixer.GaugeOn label f box ->
+                        at label (\n -> Screen.mixerGauge n f box)
 
                     Mixer.ArtOn label ->
                         at label (\n -> Screen.mixerArt n Screen.Tall)

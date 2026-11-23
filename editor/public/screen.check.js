@@ -83,6 +83,15 @@ S.load(fs.readFileSync(path.join(__dirname, 'screen.wasm'))).then(function (x) {
   st = S.state({ error: 'x' });
   if (st['data-error'] !== 'x' || st['data-painted'] !== null || !st.mark) fail('an error\'s state ' + JSON.stringify(st));
 
+  // A crop is that box of the region alone, and one past the region says so.
+  var whole = paint({ engine: 'VA', page: 0, region: 'gauge', focus: 0 });
+  var part = S.paintSpec(x, names, JSON.stringify({ engine: 'VA', page: 0, region: 'gauge', focus: 0, pad: null, vals: [], crop: [28, 20, 80, 60] }));
+  if (!part.rect || part.rect.w !== 80 || part.rect.h !== 60) fail('crop rect ' + JSON.stringify(part.rect));
+  for (var cy = 0; cy < 60; cy++) for (var cx = 0; cx < 80; cx++) for (var ch = 0; ch < 4; ch++) {
+    if (part.rgba[(cy * 80 + cx) * 4 + ch] !== whole.rgba[((cy + 20) * whole.rect.w + cx + 28) * 4 + ch]) fail('crop pixel ' + cx + ',' + cy);
+  }
+  if (!/past the region/.test(S.paintSpec(x, names, JSON.stringify({ engine: 'VA', page: 0, region: 'gauge', focus: 0, pad: null, vals: [], crop: [100, 0, 80, 60] })).error || '')) fail('a crop past the region');
+
   // ALGO's algorithm page morphs its chart with MORPH focused (2), as Elm
   // sends it; on ALG A (no focus) it shows ALG A.
   var at = function (morph, focus, region) {

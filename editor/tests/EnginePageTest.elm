@@ -798,9 +798,9 @@ suite =
                                     |> Maybe.map (\sp -> ( Protocol.pageNoToInt sp.page, Encode.encode 0 (Screen.encodeSpec { sp | vals = [] }) ))
                                     |> Expect.equal (Just want)
                     )
-                    [ ( "CHORUS", ( 0, "{\"engine\":\"MIXER\",\"page\":0,\"region\":\"gauge\",\"focus\":0,\"pad\":null,\"vals\":[],\"animate\":true}" ) )
-                    , ( "DELAY", ( 1, "{\"engine\":\"MIXER\",\"page\":1,\"region\":\"gauge\",\"focus\":2,\"pad\":null,\"vals\":[],\"animate\":true}" ) )
-                    , ( "REVERB", ( 4, "{\"engine\":\"MIXER\",\"page\":4,\"region\":\"gauge\",\"focus\":5,\"pad\":null,\"vals\":[],\"animate\":true}" ) )
+                    [ ( "CHORUS", ( 0, "{\"engine\":\"MIXER\",\"page\":0,\"region\":\"gauge\",\"focus\":0,\"pad\":null,\"vals\":[],\"animate\":true,\"crop\":[28,18,80,60]}" ) )
+                    , ( "DELAY", ( 1, "{\"engine\":\"MIXER\",\"page\":1,\"region\":\"gauge\",\"focus\":2,\"pad\":null,\"vals\":[],\"animate\":true,\"crop\":[48,18,60,60]}" ) )
+                    , ( "REVERB", ( 4, "{\"engine\":\"MIXER\",\"page\":4,\"region\":\"gauge\",\"focus\":5,\"pad\":null,\"vals\":[],\"animate\":true,\"crop\":[44,18,64,60]}" ) )
                     , ( "COMP", ( 8, "{\"engine\":\"MIXER\",\"page\":8,\"region\":\"screen\",\"focus\":null,\"pad\":null,\"vals\":[],\"animate\":true}" ) )
                     ]
                 )

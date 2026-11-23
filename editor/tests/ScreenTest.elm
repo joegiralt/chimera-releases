@@ -35,11 +35,13 @@ suite =
     describe "Ui.Screen"
         [ test "the_mixers_pictures_are_the_kits_mixer_engine_and_animate" <|
             \_ ->
-                ( specOf (Screen.mixerGauge (page 1) CellC), specOf (Screen.mixerArt (page 8) Strip) )
+                ( specOf (Screen.mixerGauge (page 1) CellC { x = 28, y = 20, w = 80, h = 60 }), specOf (Screen.mixerArt (page 8) Strip) )
                     |> Expect.equal
-                        ( "{\"engine\":\"MIXER\",\"page\":1,\"region\":\"gauge\",\"focus\":2,\"pad\":null,\"vals\":[],\"animate\":true}"
+                        ( "{\"engine\":\"MIXER\",\"page\":1,\"region\":\"gauge\",\"focus\":2,\"pad\":null,\"vals\":[],\"animate\":true,\"crop\":[28,20,80,60]}"
                         , "{\"engine\":\"MIXER\",\"page\":8,\"region\":\"screen\",\"focus\":null,\"pad\":null,\"vals\":[],\"animate\":true}"
                         )
+        , test "an_effects_picture_is_its_art_alone_four_times_the_units_pixels" <|
+            \_ -> Expect.equal (Control.pxWidth 320) (Screen.width (Screen.mixerGauge (page 0) CellA { x = 28, y = 18, w = 80, h = 60 }))
         , test "a_gauge_names_its_region_and_each_of_the_six_cells_by_its_knob" <|
             \_ ->
                 [ CellA, CellB, CellC, CellD, CellE, CellF ]
