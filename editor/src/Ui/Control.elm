@@ -595,6 +595,9 @@ attenuverter unpatches on a double click instead).
 drag : Addr -> Travel -> List (Html.Attribute Msg)
 drag a t =
     [ tabindex 0
+
+    -- The address it sets, for the end-to-end tests to find it by.
+    , attribute "data-addr" (Addr.key a)
     , Events.preventDefaultOn "mousedown" (Decode.map (\y -> ( Grab a t y, True )) (Decode.field "clientY" Decode.float))
     , Events.preventDefaultOn "wheel" (Decode.andThen (wheel a) (Decode.field "deltaY" Decode.float))
     , Events.preventDefaultOn "keydown" (Decode.andThen (arrow a) (Decode.field "key" Decode.string))

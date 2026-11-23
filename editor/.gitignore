@@ -9,3 +9,5 @@
 /public/screen.wasm
 /screens/elm-stuff
 /screens/layout-screens.js
+/e2e/contract/contract.js
+/e2e/contract/elm-stuff/
