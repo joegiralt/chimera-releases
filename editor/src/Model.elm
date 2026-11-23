@@ -227,6 +227,11 @@ type alias Model =
     , whole : Bool
     , part : Maybe Part
     , engine : Maybe Engine
+
+    -- Each Part's engine as the unit last said it (`part <n> <ENGINE>`, `ed
+    -- hello`), by the Part's number: the unit names only the followed Part's,
+    -- so another's is the one it had when the editor last followed it.
+    , partEngines : Dict Int Engine
     , described : Maybe Engine
     , seat : Seat
     , variants : Dict String VariantName
@@ -364,6 +369,7 @@ init =
     , whole = False
     , part = Nothing
     , engine = Nothing
+    , partEngines = Dict.empty
     , described = Nothing
     , seat = Seat 0
     , variants = Dict.empty
@@ -1534,7 +1540,7 @@ answer : AnswerLine -> Model -> Model
 answer a m =
     case a of
         HelloIs (Speaks h) ->
-            { m | part = Just h.part, engine = Just h.engine }
+            { m | part = Just h.part, engine = Just h.engine, partEngines = Dict.insert (Unit.partNumber h.part) h.engine m.partEngines }
 
         HelloIs (TooNew n) ->
             { m | stage = Halted (OtherProtocol n) }
@@ -1585,6 +1591,7 @@ answer a m =
                     { m
                         | part = Just p
                         , engine = Just e
+                        , partEngines = Dict.insert (Unit.partNumber p) e m.partEngines
                         , seat = nextSeat m.seat
                         , routes = Dict.empty
                         , refusals = Dict.empty

@@ -249,3 +249,9 @@ html, body { margin: 0; background: #121212; }
 .ui .mixer .glyph .body { display: flex; align-items: center; justify-content: center; min-height: 160px; border: 2px solid var(--screen-border); margin: 10px; background: var(--ground); }
 @media (max-width: 900px) { .ui .mixer .fxrow { grid-template-columns: minmax(0, 1fr); } .ui .mixer .fxrow > * + * { border-left: 0; border-top: 1px solid var(--rule); } }
 .ui .mixer .strip .c.hero .fd { height: 200px; }
+.ui .mixer .strip .setup { width: 100%; border-top: 1px solid var(--slot); padding-top: 6px; margin-top: auto; }
+.ui .mixer .strip .setup > summary { cursor: pointer; text-align: center; font: 700 11px/1 var(--sans); letter-spacing: .16em; color: var(--mid); list-style: none; padding: 4px 0; }
+.ui .mixer .strip .setup > summary::before { content: "▸ "; }
+.ui .mixer .strip .setup[open] > summary::before { content: "▾ "; }
+.ui .mixer .strip .setup > .grp { justify-content: center; border: 0; padding: 6px 0 0; }
+.ui .mixer .strip .body { flex: 1; }

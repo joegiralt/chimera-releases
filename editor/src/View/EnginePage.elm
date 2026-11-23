@@ -1107,16 +1107,7 @@ partTabs m s =
     List.map
         (\pt ->
             { kicker = "P" ++ String.fromInt (Unit.partNumber pt)
-            , name =
-                case ( m.part == Just pt, m.engine ) of
-                    ( True, Just e ) ->
-                        Unit.engineName e
-
-                    ( True, Nothing ) ->
-                        "PART"
-
-                    ( False, _ ) ->
-                        "PART"
+            , name = partName m pt
             , current =
                 if m.part == Just pt && s.showing == EngineScreen then
                     Here
@@ -1127,6 +1118,19 @@ partTabs m s =
             }
         )
         Unit.allParts
+
+
+{-| A Part's tab's name: its engine as the unit last said it, else its
+Sound's name, else PART.
+-}
+partName : Model -> Part -> String
+partName m pt =
+    case Dict.get (Unit.partNumber pt) m.partEngines of
+        Just e ->
+            Unit.engineName e
+
+        Nothing ->
+            Dict.get (Unit.partNumber pt) m.sounds |> Maybe.map .name |> Maybe.withDefault "PART"
 
 
 {-| The unit's own pages it describes: MIXER, for now.
@@ -1262,6 +1266,15 @@ stripView ctx st =
         sound =
             st.part |> Maybe.andThen (\n -> Dict.get n ctx.m.sounds)
 
+        -- The Part's setup (channel, voices, bend...), folded at the strip's foot.
+        setup : List (Html Msg) -> List (Html Msg)
+        setup xs =
+            if List.isEmpty xs then
+                []
+
+            else
+                [ Html.node "details" [ class "setup" ] [ Html.node "summary" [] [ text "SETUP" ], Module.group "" xs ] ]
+
         section : String -> List (Html Msg) -> List (Html Msg)
         section title xs =
             if List.isEmpty xs then
@@ -1287,7 +1300,7 @@ stripView ctx st =
                 ++ section "SENDS" (List.filterMap send st.sends)
                 ++ section "" (cells ctx AsKnob (List.filterMap identity [ st.pan ]))
                 ++ section "" (cells ctx AsHeroFader (List.filterMap identity [ st.level ]))
-                ++ section "" (cells ctx Auto st.rest)
+                ++ setup (cells ctx Auto st.rest)
             )
         ]
 

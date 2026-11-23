@@ -737,6 +737,37 @@ suite =
                         , \_ -> Expect.equal (Just (Num want)) (Model.pending level unit)
                         ]
                         ()
+             , test "a_strips_setup_cells_fold_into_a_closed_setup_row_at_its_foot" <|
+                \_ ->
+                    Page.view mixed onMixer
+                        |> Query.fromHtml
+                        |> Query.find [ Sel.attribute (attribute "data-strip" "PART1") ]
+                        |> Expect.all
+                            [ Query.find [ Sel.tag "details", Sel.class "setup" ] >> Query.findAll [ Sel.attribute (attribute "data-addr" "PART1.CH") ] >> Query.count (Expect.equal 1)
+                            , Query.find [ Sel.tag "details", Sel.class "setup" ] >> Query.hasNot [ Sel.attribute (attribute "open" "") ]
+                            , Query.find [ Sel.tag "details", Sel.class "setup" ] >> Query.find [ Sel.tag "summary" ] >> Query.has [ Sel.text "SETUP" ]
+                            , Query.find [ Sel.tag "details", Sel.class "setup" ] >> Query.findAll [ Sel.attribute (attribute "data-addr" "PART1.LEVEL") ] >> Query.count (Expect.equal 0)
+                            ]
+             , test "each_part_tab_names_the_engine_the_unit_last_said_it_has" <|
+                \_ ->
+                    model
+                        |> feed [ "part 2 ALGO", "OK 3", "part 1 ALGO", "OK 4", "settings", "sound 4 \"TX BELL\" clean", "OK 5" ]
+                        |> (\m -> Page.view m (Page.init Day))
+                        |> Query.fromHtml
+                        |> Query.findAll [ Sel.class "tab" ]
+                        |> Expect.all
+                            [ Query.index 0 >> Query.has [ Sel.text "ALGO" ]
+                            , Query.index 1 >> Query.has [ Sel.text "ALGO" ]
+                            , Query.index 2 >> Query.has [ Sel.text "PART" ]
+                            , Query.index 3 >> Query.has [ Sel.text "TX BELL" ]
+                            ]
+             , test "a_parts_engine_is_kept_once_the_unit_names_it" <|
+                \_ ->
+                    model
+                        |> feed [ "part 2 VA" ]
+                        |> .partEngines
+                        |> Dict.toList
+                        |> Expect.equal [ ( 1, Unit.Algo ), ( 2, Unit.Va ) ]
              , test "a_part_tab_goes_back_to_the_parts_engine" <|
                 \_ ->
                     case Unit.partFromInt 1 of
