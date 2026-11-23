@@ -37,8 +37,59 @@ let bridge;
 let browser;
 let page;
 
-/** Part `n` to the INIT Sound on browser row `row`: EDIT+B<n>, the list's top, down `row`, EDIT. */
+/** `status`'s `state` word: NEW (no edits since a new project), SAVED, MODIFIED... */
+async function projectState() {
+  return ((await unit.ask("status")).find((l) => l.startsWith("state ")) ?? "").slice(6);
+}
+
+/** A new project, by the panel's own path: SETTINGS > PROJECT > LOAD,
+ * its last row (+ CREATE NEW), EDIT. Over unsaved edits the unit asks
+ * START A NEW PROJECT? with SAVE THEN LOAD, LOAD ANYWAY, CANCEL, opening on
+ * SAVE THEN LOAD: the pick is clamped, so all the way left then one right
+ * is LOAD ANYWAY, never a save. Nothing is written to the card. Each step's
+ * place is checked before the next key; anything else up fails at once. */
+async function newProject() {
+  const at = async (want) => {
+    const now = await unit.at();
+    if (now !== want) throw new Error(`new project: the unit is at ${JSON.stringify(now)}, not ${JSON.stringify(want)}: a screen or prompt the suite doesn't know`);
+  };
+  const edited = (await projectState()) === "MODIFIED";
+  // MENU (a tap, never the hold's quick save) until SETTINGS' top: it cancels a
+  // prompt a stopped run left up (its safe answer), climbs out of a deeper
+  // list, or opens SETTINGS.
+  for (let i = 0; i < 6 && (await unit.at()) !== "SETTINGS"; i++) {
+    const was = await unit.at();
+    await unit.ok("key MENU");
+    await until("MENU to land", async () => (await unit.at()) !== was, 1000).catch(() => {});
+  }
+  await at("SETTINGS");
+  // The bar opens on the top list's first row, PROJECT; and PROJECT's on LOAD PROJECT.
+  await unit.ok("key EDIT");
+  await until("SETTINGS > PROJECT", async () => (await unit.at()) === "SETTINGS > PROJECT");
+  await unit.ok("key EDIT");
+  await until("SETTINGS > PROJECT > LOAD", async () => (await unit.at()) === "SETTINGS > PROJECT > LOAD");
+  // LOAD's rows wrap: one up from the first is the last, + CREATE NEW.
+  await unit.ok("turn 1 -1");
+  await at("SETTINGS > PROJECT > LOAD");
+  await unit.ok("key EDIT");
+  if (edited) {
+    await unit.ok("turn 1 -64");
+    await unit.ok("turn 1 1");
+    await unit.ok("key EDIT");
+  }
+  await until("a new project (state NEW)", async () => (await projectState()) === "NEW", 5000).catch(async (e) => {
+    throw new Error(`${e.message}; the unit is at ${JSON.stringify(await unit.at())}, state ${await projectState()}: a prompt the suite doesn't know may be up`);
+  });
+  // Out of SETTINGS to Part 1's pages.
+  await unit.ok("key B1");
+  await until("Part 1's pages", async () => (await unit.at()).startsWith("PART 1 > "));
+}
+
+/** Part `n` to the INIT Sound on browser row `row`: EDIT+B<n>, the list's top, down `row`, EDIT.
+ * Only over a clean Part: an edited one would ask REPLACE? and wait for a hand. */
 async function loadInit(n, engine) {
+  const sound = (await unit.ask("ed since 0")).find((l) => l.startsWith(`sound ${n} `)) ?? "";
+  if (!sound.endsWith(" clean")) throw new Error(`Part ${n} is not clean (${JSON.stringify(sound)}): loading over it would ask REPLACE? and wait for a hand`);
   await unit.ok(`key EDIT+B${n}`);
   await until(`the unit's SOUND ${n} browser`, async () => (await unit.at()) === `SOUND ${n}`);
   await unit.ok("turn 1 -64");
@@ -53,6 +104,10 @@ async function loadInit(n, engine) {
 
 before(async () => {
   unit = await startUnit(root);
+  // The simulator boots on a new project: an edit first, so its run takes the prompt's path too.
+  if (!unit.real) await unit.ok("ed set FILTER.CUTOFF 0.3");
+  await until("the edit to land", async () => unit.real || (await projectState()) === "MODIFIED");
+  await newProject();
   for (const e of ENGINES) await loadInit(partOf(e), e);
 });
 
@@ -247,6 +302,17 @@ async function unitRoutes() {
   return out;
 }
 
+/** Route `cell` once the unit has stopped gliding it: the same amount on two reads in a row. */
+async function settledRoute(cell) {
+  let last = null;
+  return until(`${cell} to settle on the unit`, async () => {
+    const r = (await unitRoutes())[cell];
+    const same = r && last && r.amount === last.amount;
+    last = r;
+    return same && r;
+  }, 10000, 150);
+}
+
 for (const engine of ENGINES) {
   const n = partOf(engine);
   describe(`${engine} on Part ${n}`, () => {
@@ -370,10 +436,12 @@ for (const engine of ENGINES) {
       await page.mouse.down();
       await page.mouse.move(ax, ay - 75, { steps: 6 });
       await page.mouse.up();
-      const moved = await until(`${patched}'s amount to move`, async () => {
+      await until(`${patched}'s amount to move`, async () => {
         const r = (await unitRoutes())[patched];
-        return r && r.amount !== from && r;
+        return r && r.amount !== from;
       });
+      // The unit glides a route a step a pass: the amount it lands on, not one on the way.
+      const moved = await settledRoute(patched);
       await until(`the cable to show the unit's amount ${moved.amount} as ${cableText(moved.amount)}`, async () => (await att.getAttribute("aria-valuetext")) === cableText(moved.amount));
       // Unpatch: a double click.
       await att.dblclick();

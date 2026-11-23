@@ -25,7 +25,7 @@ export const SLOW = UNIT ? 4 : 1;
 
 /** Console verbs that write the unit's flash or its card's files, or reboot it:
  * never sent to a real unit. `card` only with `clean`. */
-const NEVER_ON_UNIT = ["dfu", "rm", "put", "bank2", "sweep", "flash", "update", "format", "reboot", "reset"];
+const NEVER_ON_UNIT = ["dfu", "rm", "put", "bank2", "sweep", "flash", "update", "format", "reboot", "reset", "fault"];
 
 /** The verb `line` would run that the guard refuses on a real unit, or null. */
 export function refusedOnUnit(line) {
