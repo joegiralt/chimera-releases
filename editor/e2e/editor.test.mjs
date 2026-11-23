@@ -1,8 +1,11 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// The editor end to end against the simulated unit: `just e2e`. The built
-// editor (editor/dist) in headless Chrome, chimera-desktop headless behind
-// it, and every assertion made on both sides: the editor's DOM, and the
-// unit's values, routes and screen through its console.
+// The editor end to end against the simulated unit (`just e2e`), or the real
+// one over USB (`UNIT=auto just e2e`). The built editor (editor/dist) in
+// headless Chrome, the unit behind it, and every assertion made on both
+// sides: the editor's DOM, and the unit's values, routes and screen through
+// its console. On the real unit: INIT on Parts 1-5, values and routes set and
+// removed, never a project saved, nothing written to its flash (unit.mjs's
+// guard).
 //
 // CHROME: the browser (default /opt/google/chrome/chrome). Nothing is
 // downloaded; pages may reach 127.0.0.1 only.
@@ -14,7 +17,7 @@ import { fileURLToPath } from "node:url";
 import { chromium } from "playwright-core";
 import { startBridge } from "./bridge.mjs";
 import { check, describeAll, editorReader, KINDS } from "./contract.mjs";
-import { startUnit, tokens, until } from "./unit.mjs";
+import { Console, refusedOnUnit, SLOW, startUnit, tokens, until } from "./unit.mjs";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const editorDir = path.resolve(here, "..");
@@ -57,6 +60,18 @@ after(async () => {
   await browser?.close();
   await bridge?.close();
   await unit?.stop();
+});
+
+// ---- the real unit's guard ----
+
+test("on a real unit, the verbs that write its flash or card files are refused, never sent", async () => {
+  for (const l of ["dfu", "rm SOUNDS/X.SND", "put a b", "bank2 x", "sweep", "flash", "card clean", "Card  Clean"]) assert.ok(refusedOnUnit(l), l);
+  for (const l of ["ed set FILTER.CUTOFF 0.5", "ed route LFO3:FILTER.RESO off", "key EDIT", "turn 1 -64", "shot raw", "status", "card", "ed hello"]) assert.equal(refusedOnUnit(l), null, l);
+  const wrote = [];
+  const fake = { on() {}, write: (s) => wrote.push(s) };
+  const got = await new Console(fake, true).ask("dfu");
+  assert.equal(got.lines.at(-1), "ERR e2e refuses dfu on a real unit");
+  assert.deepEqual(wrote, []);
 });
 
 // ---- the contract: the unit's lines, read by the editor's own parser ----
@@ -107,7 +122,10 @@ test("contract: every describe and since line the unit writes, the editor reads"
   }
   await unit.ok("ed part 1");
   let { gen } = await since(0);
-  for (const cmd of ["ed set FILTER.CUTOFF 0.5", "ed route LFO3:FILTER.RESO 33", "ed route LFO3:FILTER.RESO off", "ed project saveas E2E_CONTRACT", "ed projects"]) {
+  // A project saved is a file on the card: the simulator's own card only, never the unit's.
+  const diffs = ["ed set FILTER.CUTOFF 0.5", "ed route LFO3:FILTER.RESO 33", "ed route LFO3:FILTER.RESO off", ...(unit.real ? [] : ["ed project saveas E2E_CONTRACT"]), "ed projects"];
+  if (unit.real) t.diagnostic("the real unit: no project saved");
+  for (const cmd of diffs) {
     await unit.ok(cmd);
     // Its effect lands within a frame or two: the next answers until one says more than OK.
     await until(`a since diff after ${cmd}`, async () => {
@@ -191,17 +209,17 @@ async function settledShot() {
  * stepped or continuous param of describe page 0 with a [data-addr] in the DOM. */
 async function firstKnob(engine) {
   const { pages } = await describeAll(unit, engine);
-  for (const l of pages[0].lines) {
-    const w = tokens(l);
-    if (w[0] !== "param" || (w[3] !== "cont" && w[3] !== "stepped")) continue;
-    const knob = page.locator(`[data-addr="${w[1]}"][role="slider"]`).first();
-    if (!(await knob.count())) continue;
-    // A control the unit has not reported takes no hand: wait for its reading.
-    const v = await unit.get(w[1]);
-    await until(`the editor to read ${w[1]}`, async () => (await knob.getAttribute("aria-valuetext")) === v.text);
-    return { addr: w[1], knob, kind: w[3], min: Number(w[5]), max: Number(w[6]) };
-  }
-  throw new Error(`${engine}: no knob of describe page 0 in the editor`);
+  const params = pages[0].lines.map(tokens).filter((w) => w[0] === "param" && (w[3] === "cont" || w[3] === "stepped"));
+  // The page may still be drawing the Part's controls: wait for one of them.
+  const w = await until(`a knob of ${engine}'s describe page 0 in the editor`, async () => {
+    for (const p of params) if (await page.locator(`[data-addr="${p[1]}"][role="slider"]`).count()) return p;
+    return null;
+  });
+  const knob = page.locator(`[data-addr="${w[1]}"][role="slider"]`).first();
+  // A control the unit has not reported takes no hand: wait for its reading.
+  const v = await unit.get(w[1]);
+  await until(`the editor to read ${w[1]}`, async () => (await knob.getAttribute("aria-valuetext")) === v.text);
+  return { addr: w[1], knob, kind: w[3], min: Number(w[5]), max: Number(w[6]) };
 }
 
 /** `n` wheel notches on `el` in one task: a burst no hand can beat. */
@@ -307,7 +325,7 @@ for (const engine of ENGINES) {
       const bay = page.locator(".bay");
       const unitHas = (await unit.ask("ed since 0")).some((l) => l.startsWith(`routes ${n}`));
       assert.ok(unitHas, `the unit reports no routes for Part ${n}`);
-      await bay.first().waitFor({ timeout: 5000 }).catch(() => {});
+      await bay.first().waitFor({ timeout: 5000 * SLOW }).catch(() => {});
       assert.equal(await bay.count(), 1, "the unit reports the Part's routes: the editor draws one MOD bay for them");
       const srcName = "LFO3";
       const src = bay.locator(".jcol.srcs > *", { hasText: srcName }).first();
