@@ -520,6 +520,21 @@ for (const engine of ENGINES) {
   });
 }
 
+// ---- the Part tabs ----
+
+test("a Part the editor isn't following shows the engine the unit loads onto it", async () => {
+  await followPart(1, "ALGO");
+  const tab = page.locator(".ptop .tab", { hasText: "P6" });
+  // Another engine than Part 6 has: VA, else (it has VA) MODAL.
+  const now = (await tab.innerText()).trim();
+  const to = now.endsWith("VA") ? "MODAL" : "VA";
+  await loadInit(6, to);
+  // Back to Part 1's pages: the editor follows Part 1 again.
+  await unit.ok("key B1");
+  await until("the unit back on Part 1", async () => (await unit.at()).startsWith("PART 1 > "));
+  await until(`P6's tab to read ${to}`, async () => (await tab.innerText()).trim().endsWith(to), 10000);
+});
+
 // ---- the unit's MIXER ----
 
 /** The screen kit (screen.wasm) draws an engine's pages; the MIXER's are none of them yet. */

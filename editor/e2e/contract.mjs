@@ -14,7 +14,7 @@ export const KINDS = {
   ed: ["HelloIs"], schema: ["SchemaIs"], page: ["Page"], panel: ["Panel"], param: ["Param"], opt: ["Opt"],
   route: ["Route", "RouteIs"], source: ["Source"], src: ["Src"], col: ["Col"], amount: ["AmountRange"],
   dests: ["Dests"], routes: ["RoutesIs"], unroute: ["Unroute"], val: ["Val"], part: ["PartIs"], mixer: ["MixerIs"],
-  refused: ["Refused"], crumb: ["Crumb"], settings: ["SettingsIs"], project: ["ProjectIs"], sound: ["SoundIs"],
+  refused: ["Refused"], crumb: ["Crumb"], settings: ["SettingsIs"], project: ["ProjectIs"], sound: ["SoundIs"], engine: ["EngineIs"],
   toast: ["ToastIs"], projects: ["ProjectsIs"], proj: ["Proj"], input: ["InputIs"], kind: ["KindIs"],
   ccs: ["CcsAre"], msbs: ["MsbsAre"], span: ["SpanIs"], rows: ["RowsAre"], maprows: ["MapRowsAre"], map: ["MapIs"],
   row: ["RowIs"], learn: ["LearnIs"], mapfile: ["MapFileIs"], act: ["Act"], orbit: ["OrbitIs"], song: ["SongIs"],

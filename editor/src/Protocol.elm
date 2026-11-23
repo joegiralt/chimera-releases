@@ -1084,6 +1084,8 @@ type AnswerLine
     | SettingsIs
     | ProjectIs { name : String, file : ProjectFile, edits : Edits, generation : Maybe Generation }
     | SoundIs { part : Part, name : String, status : SoundStatus }
+      -- A Part's engine, every Part's (the followed one's `part` line aside).
+    | EngineIs Part Engine
       -- The box's toast, when a new one goes up.
     | ToastIs String
       -- The listing, whole: its count, and whether the card has more.
@@ -1742,6 +1744,9 @@ answer ts =
 
         [ "sound", n, name, status ] ->
             soundStatusOf status |> Maybe.map (\st -> faulty (partOf n |> Result.map (\p -> SoundIs { part = p, name = name, status = st })))
+
+        [ "engine", n, engine ] ->
+            Just (faulty (Result.map2 EngineIs (partOf n) (engineOf engine)))
 
         [ "toast", text ] ->
             Just (ToastIs text)

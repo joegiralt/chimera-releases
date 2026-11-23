@@ -228,9 +228,9 @@ type alias Model =
     , part : Maybe Part
     , engine : Maybe Engine
 
-    -- Each Part's engine as the unit last said it (`part <n> <ENGINE>`, `ed
-    -- hello`), by the Part's number: the unit names only the followed Part's,
-    -- so another's is the one it had when the editor last followed it.
+    -- Each Part's engine as the unit last said it (SETTINGS' `engine <n>
+    -- <ENGINE>`, every Part's; `part <n> <ENGINE>` and `ed hello`, the
+    -- followed one's), by the Part's number.
     , partEngines : Dict Int Engine
     , described : Maybe Engine
     , seat : Seat
@@ -1694,6 +1694,9 @@ answer a m =
 
         ProjectIs p ->
             { m | project = Just p }
+
+        EngineIs p e ->
+            { m | partEngines = Dict.insert (Unit.partNumber p) e m.partEngines }
 
         SoundIs snd ->
             { m | sounds = Dict.insert (Unit.partNumber snd.part) { name = snd.name, status = snd.status } m.sounds }

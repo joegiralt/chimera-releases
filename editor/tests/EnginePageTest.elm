@@ -761,6 +761,26 @@ suite =
                             , Query.index 2 >> Query.has [ Sel.text "PART" ]
                             , Query.index 3 >> Query.has [ Sel.text "TX BELL" ]
                             ]
+             , test "settings_engine_lines_name_every_parts_engine_on_its_tab" <|
+                \_ ->
+                    model
+                        |> feed [ "settings", "engine 1 ALGO", "engine 2 VA", "engine 3 DRUM", "engine 4 TAPE", "engine 5 MODAL", "engine 6 ALGO", "OK 3" ]
+                        |> (\m -> Page.view m (Page.init Day))
+                        |> Query.fromHtml
+                        |> Query.findAll [ Sel.class "tab" ]
+                        |> Expect.all
+                            [ Query.index 1 >> Query.has [ Sel.text "VA" ]
+                            , Query.index 2 >> Query.has [ Sel.text "DRUM" ]
+                            , Query.index 3 >> Query.has [ Sel.text "TAPE" ]
+                            , Query.index 4 >> Query.has [ Sel.text "MODAL" ]
+                            ]
+             , test "an_engine_lines_diff_moves_one_parts_tab" <|
+                \_ ->
+                    model
+                        |> feed [ "settings", "engine 2 VA", "OK 3", "engine 2 TAPE", "OK 4" ]
+                        |> .partEngines
+                        |> Dict.get 2
+                        |> Expect.equal (Just Unit.Tape)
              , test "a_parts_engine_is_kept_once_the_unit_names_it" <|
                 \_ ->
                     model

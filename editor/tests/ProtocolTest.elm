@@ -65,6 +65,9 @@ suite =
             , p "part 7 is faulty" "part 7 VA" (Answer (Faulty (NoSuchPart "7")))
             , p "a part that is no number is faulty" "part x VA" (Answer (Faulty (NoSuchPart "x")))
             , p "a part line naming an unknown engine is faulty" "part 2 GRANULAR" (Answer (Faulty (NoSuchEngine "GRANULAR")))
+            , p "engine" "engine 3 MODAL" (Unit.partFromInt 3 |> Maybe.map (\pt -> Answer (EngineIs pt Unit.Modal)) |> Maybe.withDefault Unknown)
+            , p "an engine line naming part 7 is faulty" "engine 7 VA" (Answer (Faulty (NoSuchPart "7")))
+            , p "an engine line naming an unknown engine is faulty" "engine 2 GRANULAR" (Answer (Faulty (NoSuchEngine "GRANULAR")))
             , p "a sound line naming part 9 is faulty" "sound 9 \"BASS\" stale" (Answer (Faulty (NoSuchPart "9")))
             , p "a sound line with no status is unread" "sound 2 \"BASS\" sideways" Unknown
             , p "page" "page 22 FLT of 36" (Protocol.pageLabelFrom "FLT" |> Maybe.map (\l -> Answer (Page { n = page 22, label = l, count = 36 })) |> Maybe.withDefault Unknown)

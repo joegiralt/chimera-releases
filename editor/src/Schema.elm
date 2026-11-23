@@ -365,6 +365,9 @@ add line (Schema s) =
         Protocol.Faulty _ ->
             Schema s
 
+        Protocol.EngineIs _ _ ->
+            Schema s
+
         Protocol.HelloIs _ ->
             Schema s
 
