@@ -43,7 +43,20 @@ suite =
                     |> Flow.want (at 9) (SetTo a (Num 1))
                     |> Tuple.first
                     |> Flow.acked (at 10)
-                    |> Expect.equal ( Flow.idle, Nothing )
+                    |> Tuple.mapFirst Flow.inFlight
+                    |> Expect.equal ( Nothing, Nothing )
+        , test "an_answered_edit_is_the_target_until_the_unit_reports_it" <|
+            \_ ->
+                let
+                    landed : Flow.Flow
+                    landed =
+                        Flow.idle |> Flow.want (at 0) (SetTo a (Num 1)) |> Tuple.first |> Flow.acked (at 5) |> Tuple.first
+                in
+                ( Flow.target (SetTo a (Num 0)) landed
+                , Flow.target (SetTo a (Num 0)) (Flow.heard (SetTo a (Num 1)) ((==) (SetTo a (Num 1))) landed)
+                , Flow.target (SetTo a (Num 0)) (Flow.expire (at 1005) 1000 landed |> Tuple.first)
+                )
+                    |> Expect.equal ( Just (SetTo a (Num 1)), Nothing, Nothing )
         , test "the_target_is_the_waiting_want_then_the_wire" <|
             \_ ->
                 ( Flow.target (SetTo a (Num 0)) busy, Flow.target (SetTo a (Num 0)) (Flow.acked (at 10) busy |> Tuple.first), Flow.target (SetTo b (Num 0)) busy )

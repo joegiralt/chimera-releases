@@ -1620,6 +1620,22 @@ suite =
 
                         _ ->
                             Expect.fail "no cell"
+             , describe "an answered set stays the base until the unit reports it"
+                (let
+                    queued : Model.Model
+                    queued =
+                        run [ Edit cutoff (Num 300), Line "OK queued" ] following |> Tuple.first
+                 in
+                 [ test "after_ok_queued_the_hand_still_counts_from_what_it_asked" <|
+                    \_ -> Expect.equal (Just (Num 300)) (Model.pending cutoff queued)
+                 , test "a_stale_report_keeps_it" <|
+                    \_ -> Expect.equal (Just (Num 300)) (Model.pending cutoff (feed [ cutoffLine "1000", "OK 3" ] queued))
+                 , test "the_report_of_it_ends_it" <|
+                    \_ -> Expect.equal Nothing (Model.pending cutoff (feed [ cutoffLine "300", "OK 3" ] queued))
+                 , test "a_timeout_ends_it" <|
+                    \_ -> Expect.equal Nothing (Model.pending cutoff (run [ Tick (at (now + 1000)) ] queued |> Tuple.first))
+                 ]
+                )
              , test "a_set_the_unit_cant_read_is_said_never_sent" <|
                 \_ ->
                     let

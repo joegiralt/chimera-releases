@@ -206,6 +206,12 @@ suite =
                     |> Shared.withGroups [ Shared.group "" [ Shared.knob (Addr.named Addr.Kit "TONAL"), Shared.knob (Addr.named Addr.Kit "A B") ] ]
                     |> (\m -> ( Shared.unbuilt m, List.map Addr.key (Shared.addresses m) ))
                     |> Expect.equal ( [ "KIT.kind", "KIT.A B" ], [ "KIT.TONAL" ] )
+        , test "drums_kit_view_holds_the_parts_mod_matrix_as_each_pad_view_does" <|
+            \_ ->
+                ( (EnginePage.layout Drum Kit).shown |> List.filter (Shared.extras >> List.member Shared.PartMatrix) |> List.length
+                , (EnginePage.layout Drum (PadTab Pad.Pad3)).shown |> List.filter (Shared.extras >> List.member Shared.PartMatrix) |> List.length
+                )
+                    |> Expect.equal ( 1, 1 )
         , test "a_layout_never_names_an_address_no_engine_describes" <|
             \_ ->
                 let
@@ -368,7 +374,7 @@ suite =
                 \_ ->
                     (EnginePage.layout Drum Kit).shown
                         |> List.map Shared.title
-                        |> Expect.equal [ "PADS 1–6", "PADS 7–12", "VOICE FX", "OUT", "FILTER MOD", "ENVELOPE 1", "ENVELOPE 2", "ENVELOPE 3", "LFO 1", "LFO 2", "LFO 3" ]
+                        |> Expect.equal [ "PADS 1–6", "PADS 7–12", "VOICE FX", "OUT", "FILTER MOD", "ENVELOPE 1", "ENVELOPE 2", "ENVELOPE 3", "LFO 1", "LFO 2", "LFO 3", "MOD" ]
             , test "a_pad_view_is_that_pads_voice_then_mod" <|
                 \_ ->
                     (EnginePage.layout Drum (PadTab Pad.Pad3)).shown

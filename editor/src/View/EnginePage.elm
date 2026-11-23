@@ -1,7 +1,7 @@
 -- SPDX-License-Identifier: GPL-3.0-or-later
 
 
-module View.EnginePage exposing (BayId(..), Layout, Msg(..), State, follow, init, layout, other, partBay, screenSpec, subscriptions, update, view)
+module View.EnginePage exposing (BayId(..), Layout, Msg(..), State, follow, framed, init, layout, other, partBay, screenSpec, subscriptions, update, view)
 
 {-| An engine's page: the unit's schema, placed by the engine's layout,
 read from `Model`, drawn with the Ui components. What the unit describes and
@@ -102,13 +102,21 @@ subscriptions : State -> Sub Msg
 subscriptions s =
     Sub.batch
         [ Sub.map Hand (Control.subscriptions s.drag)
-        , if Control.isEmpty s.wanted then
-            Sub.none
+        , if framed s then
+            Browser.Events.onAnimationFrame (\_ -> Frame)
 
           else
-            Browser.Events.onAnimationFrame (\_ -> Frame)
+            Sub.none
         , Sub.batch (List.map (\( id, bay ) -> Sub.map (BayMsg id) (PatchBay.subscriptions bay)) (Dict.values s.bays))
         ]
+
+
+{-| Whether the page asks for the next animation frame: while a hand's
+wants (a value's, or a route amount's) wait to be sent.
+-}
+framed : State -> Bool
+framed s =
+    not (Control.isEmpty s.wanted && Dict.isEmpty s.routeWanted)
 
 
 {-| The page follows the box: when the box takes another Part (a new
