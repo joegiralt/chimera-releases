@@ -364,7 +364,11 @@ for (const engine of ENGINES) {
       // And a route made on the unit shows as a cable.
       await unit.ok(`ed route ${patched} 50`);
       await att.waitFor();
-      const set = (await unitRoutes())[patched];
+      // The unit glides a route a step a pass: wait for it to land, not a value on the way.
+      const set = await until(`${patched} at 50 on the unit`, async () => {
+        const r = (await unitRoutes())[patched];
+        return r && r.amount === 50 && r;
+      });
       await until(`the unit's amount ${set.amount} on the cable`, async () => (await att.getAttribute("aria-valuetext")) === cableText(set.amount));
       await unit.ok(`ed route ${patched} off`);
       await att.waitFor({ state: "detached" });
