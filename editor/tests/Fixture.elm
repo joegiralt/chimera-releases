@@ -5,7 +5,7 @@ module Fixture exposing (initVariants, orbit, param, paramIn, schema, schemaFor)
 
 import Dict exposing (Dict)
 import FixtureData
-import Protocol exposing (Line(..))
+import Protocol exposing (Line(..), VariantName)
 import Schema exposing (Schema)
 import Unit exposing (Engine(..))
 import Wire exposing (addr)
@@ -49,7 +49,7 @@ schemaFor e =
 {-| The panel variants each engine's INIT Sound shows, as the sim reports
 them with `ed since 0` (fixtures/<engine>-init.txt).
 -}
-initVariants : Engine -> Dict String String
+initVariants : Engine -> Dict String VariantName
 initVariants e =
     (case e of
         Algo ->
@@ -71,7 +71,7 @@ initVariants e =
             (\l ->
                 case String.words l of
                     [ "panel", name, variant ] ->
-                        Just ( name, variant )
+                        Protocol.variantName variant |> Maybe.map (Tuple.pair name)
 
                     _ ->
                         Nothing

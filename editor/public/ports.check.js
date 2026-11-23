@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// node public/ports.check.js: the serial teardown order, and the link lifecycle, against fakes.
+// node public/ports.check.js: the serial teardown order, the link lifecycle,
+// the writes' order and pace, and the cache's failures, against fakes.
 var P = require('./ports.js');
 
 function fail(msg) { console.error('FAIL ' + msg); process.exit(1); }
@@ -37,6 +38,7 @@ function fakeApp() {
       connectSerial: port('connectSerial'), connectSocket: port('connectSocket'), send: port('send'),
       linkState: { send: function (s) { states.push(s); } },
       lineIn: { send: function () {} },
+      writeFailed: { send: function (l) { (subs.failedLog = subs.failedLog || []).push(l); } },
       recall: port('recall'), keep: port('keep'),
       got: { send: function (g) { (subs.gotLog = subs.gotLog || []).push(g); } },
     },
@@ -45,13 +47,22 @@ function fakeApp() {
 
 function fakeSerial(opts) {
   var log = [];
+  var writes = []; // each write: { line, done() }
   var pending = null; // resolves the current read
   var port = {
     log: log,
     open: function () { return opts.open ? opts.open() : Promise.resolve(); },
     close: function () { log.push('port.close'); return Promise.resolve(); },
+    writes: writes,
     writable: { getWriter: function () { return {
-      write: function () { return opts.failWrite ? Promise.reject(new Error('gone')) : Promise.resolve(); },
+      get ready() { log.push('ready'); return opts.ready ? opts.ready() : Promise.resolve(); },
+      write: function (bytes) {
+        if (opts.failWrite) return Promise.reject(new Error('gone'));
+        var line = new TextDecoder().decode(bytes);
+        log.push('write ' + line.trim());
+        if (!opts.slow) return Promise.resolve();
+        return new Promise(function (res) { writes.push({ line: line, done: res }); });
+      },
       close: function () { return Promise.resolve(); }, releaseLock: function () {} }; } },
     readable: { getReader: function () { return {
       read: function () { return new Promise(function (res, rej) { pending = { res: res, rej: rej }; }); },
@@ -81,7 +92,69 @@ async function failedWriteReleases() {
   app.subs.connectSerial(); await tick();
   app.subs.send('ed hello'); await tick();
   eq(app.states.join(), 'open,lost', 'failed write: lost');
-  eq(s.port.log.join(), 'port.close', 'failed write: the port is released');
+  eq(s.port.log.filter(function (l) { return l !== 'ready'; }).join(), 'port.close', 'failed write: the port is released');
+  eq(JSON.stringify(app.subs.failedLog), JSON.stringify(['ed hello']), 'failed write: said to Elm');
+}
+
+// Lines go out one at a time, each after the writer is ready and the line
+// before it written: a slow link never gets two writes at once.
+async function writesWaitTheirTurn() {
+  var app = fakeApp(); P.attach(app);
+  var s = fakeSerial({ slow: true });
+  app.subs.connectSerial(); await tick();
+  app.subs.send('ed set A.B 1'); app.subs.send('ed set A.B 2'); app.subs.send('ed since 4');
+  await tick();
+  eq(s.port.writes.length, 1, 'one write at a time');
+  eq(s.port.log.join(), 'ready,write ed set A.B 1', 'ready awaited before the write');
+  s.port.writes[0].done(); await tick();
+  eq(s.port.writes.length, 2, 'the next after the first is written');
+  s.port.writes[1].done(); await tick();
+  s.port.writes[2].done(); await tick();
+  eq(s.port.log.filter(function (l) { return l !== 'ready'; }).join(), 'write ed set A.B 1,write ed set A.B 2,write ed since 4', 'in order');
+  eq(app.subs.failedLog, undefined, 'nothing failed');
+}
+
+// A writer not ready holds the line back.
+async function writerNotReadyWaits() {
+  var app = fakeApp(); P.attach(app);
+  var open = null;
+  var s = fakeSerial({ ready: function () { return new Promise(function (r) { open = r; }); } });
+  app.subs.connectSerial(); await tick();
+  app.subs.send('ed hello'); await tick();
+  eq(s.port.log.indexOf('write ed hello'), -1, 'not written while the writer is not ready');
+  open(); await tick();
+  eq(s.port.log.indexOf('write ed hello') >= 0, true, 'written once ready');
+}
+
+// A fake WebSocket: open at once, sent lines kept, `bufferedAmount` set by the test.
+function fakeSocket() {
+  var made = [];
+  globalThis.WebSocket = function () {
+    var ws = this;
+    ws.readyState = 1; ws.bufferedAmount = 0; ws.sent = [];
+    ws.send = function (l) { ws.sent.push(l); };
+    ws.close = function () { ws.readyState = 3; if (ws.onclose) ws.onclose(); };
+    made.push(ws);
+    setTimeout(function () { if (ws.onopen) ws.onopen(); }, 0);
+  };
+  return made;
+}
+
+// A socket with too much unsent waits before the next line; a closed one fails it.
+async function socketRespectsItsBuffer() {
+  var app = fakeApp(); P.attach(app);
+  var made = fakeSocket();
+  app.subs.connectSocket('ws://x'); await tick();
+  var ws = made[0];
+  ws.bufferedAmount = 1 << 20;
+  app.subs.send('ed set A.B 1'); await tick();
+  eq(ws.sent.length, 0, 'held while the socket is full');
+  ws.bufferedAmount = 0; await tick(); await tick();
+  eq(ws.sent.join(), 'ed set A.B 1', 'sent once drained');
+  ws.readyState = 3;
+  app.subs.send('ed set A.B 2'); await tick();
+  eq(JSON.stringify(app.subs.failedLog), JSON.stringify(['ed set A.B 2']), 'a closed socket: said to Elm');
+  delete globalThis.WebSocket;
 }
 
 async function quickClicksDoNotInterleave() {
@@ -116,6 +189,15 @@ async function noStoreIsAMiss() {
   eq(JSON.stringify(app.subs.gotLog), JSON.stringify([{ key: '4/ALGO/0123456789abcdef', lines: null }]), 'no store: a miss');
 }
 
+// A store another tab blocks is a miss, never a wait.
+async function blockedStoreIsAMiss() {
+  var app = fakeApp(); P.attach(app);
+  globalThis.indexedDB = { open: function () { var r = {}; setTimeout(function () { r.onblocked && r.onblocked(); }, 0); return r; } };
+  await P.recall('4/ALGO/0123456789abcdef');
+  eq(JSON.stringify(app.subs.gotLog), JSON.stringify([{ key: '4/ALGO/0123456789abcdef', lines: null }]), 'blocked: a miss');
+  delete globalThis.indexedDB;
+}
+
 // What is kept under a key is recalled under it, and nothing under another.
 async function keptIsRecalled() {
   var app = fakeApp(); P.attach(app);
@@ -130,13 +212,20 @@ async function keptIsRecalled() {
   delete globalThis.indexedDB;
 }
 
+// A check that never finishes (a promise nobody settles) fails, never exits quietly.
+setTimeout(function () { fail('a check never finished'); }, 5000);
+
 (async function () {
   await teardownOrder();
   await noStoreIsAMiss();
   await keptIsRecalled();
   fragmentThenFullAnswer();
   await serialEnds();
+  await blockedStoreIsAMiss();
   await failedWriteReleases();
+  await writesWaitTheirTurn();
+  await writerNotReadyWaits();
+  await socketRespectsItsBuffer();
   await quickClicksDoNotInterleave();
   console.log('ok');
   process.exit(0);

@@ -11,7 +11,6 @@ module Addr exposing
     , Osc(..)
     , PadBlock(..)
     , RouteSlot
-    , at
     , envNumber
     , envs
     , field
@@ -19,12 +18,13 @@ module Addr exposing
     , key
     , lfoNumber
     , lfos
+    , named
     , onWire
     , operatorNumber
     , operators
     , oscNumber
     , routeSlots
-    , vaOsc
+    , vaNamed
     )
 
 {-| A parameter's address, `OP_C.CRSE`. Only two things make one: the unit's
@@ -56,8 +56,8 @@ plain c =
     Char.toCode c > 32 && Char.toCode c /= 127 && c /= '"'
 
 
-{-| The address is one the unit could write: a builder given a word the
-unit has none of makes one that is not.
+{-| The address is one the unit could write. Every builder makes one (a
+word the unit has none of builds nothing); `Protocol.encode` checks anyway.
 -}
 onWire : Addr -> Bool
 onWire (Addr a) =
@@ -82,16 +82,31 @@ type Field
 
 
 {-| The unit's words are capitals, digits, `_` and inner dots. Anything else
-is a field the unit has none of: its address is never a wire address, so
-`Protocol.encode` sends nothing for it.
+is a field the unit has none of: no field.
 -}
-field : String -> Field
+field : String -> Maybe Field
 field w =
     if w /= "" && not (String.startsWith "." w) && not (String.endsWith "." w) && String.all unitChar w then
-        Field w
+        Just (Field w)
 
     else
-        Field " "
+        Nothing
+
+
+{-| Block `b`'s field by the unit's word, or what was asked for where the
+unit has no such word.
+-}
+named : Block -> String -> Result String Addr
+named b w =
+    field w |> Maybe.map (at b) |> Result.fromMaybe (blockName b ++ "." ++ w)
+
+
+{-| A VA oscillator's field by the unit's word (`vaOsc`'s), or what was
+asked for.
+-}
+vaNamed : Osc -> String -> Result String Addr
+vaNamed o w =
+    field w |> Maybe.map (vaOsc o) |> Result.fromMaybe ("VA." ++ w ++ String.fromInt (oscNumber o))
 
 
 unitChar : Char -> Bool

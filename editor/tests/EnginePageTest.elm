@@ -13,7 +13,7 @@ import Hash
 import Html.Attributes exposing (attribute)
 import Json.Encode as Encode
 import Layout.Algo
-import Layout.Page exposing (PadPage(..), UnitPage(..))
+import Layout.Page exposing (DrawnPage(..), PadDrawn(..))
 import Layout.Shared as Shared
 import Model
 import Protocol exposing (Value(..))
@@ -140,6 +140,37 @@ runOn unit =
         >> Tuple.second
 
 
+{-| Cutoff `n` wheel notches up from where the unit has it, each notch from
+where the last one asked it to go.
+-}
+notches : Int -> Float
+notches n =
+    let
+        notch : Float -> Float
+        notch from =
+            Control.nudged cutoffParam { from = from, by = 1, wheel = Control.wheelNorm cutoffParam }
+    in
+    List.foldl (\_ v -> notch (Control.normOf cutoffParam v)) (notch 0.5) (List.range 2 n)
+
+
+{-| The page and the model together, as `Main` runs them, the unit saying
+nothing back: the model after, and the edits the page asked for.
+-}
+live : List Page.Msg -> Model.Model -> ( Model.Model, List Model.Msg )
+live msgs unit0 =
+    List.foldl
+        (\msg ( unit, s, out ) ->
+            let
+                ( s1, asks, _ ) =
+                    Page.update msg unit s
+            in
+            ( List.foldl (\e u -> Model.step e u |> Tuple.first) unit asks, s1, out ++ asks )
+        )
+        ( unit0, Page.init Day, [] )
+        msgs
+        |> (\( u, _, out ) -> ( u, out ))
+
+
 {-| Each engine followed, every param at its default, as the unit reports
 it after loading INIT.
 -}
@@ -227,6 +258,25 @@ suite =
                 \_ ->
                     run [ Hand (Control.Step cutoff Up), Frame ]
                         |> Expect.equal [ Model.Edit cutoff (Num (Control.atNorm cutoffParam (0.5 + Control.wheelNorm cutoffParam))) ]
+            , test "two_notches_in_a_frame_count_twice" <|
+                \_ ->
+                    run [ Hand (Control.Step cutoff Up), Hand (Control.Step cutoff Up), Frame ]
+                        |> Expect.equal [ Model.Edit cutoff (Num (notches 2)) ]
+            , test "notches_faster_than_the_units_answers_accumulate" <|
+                \_ ->
+                    let
+                        ( unit, edits ) =
+                            live [ Hand (Control.Step cutoff Up), Frame, Hand (Control.Step cutoff Up), Frame, Hand (Control.Step cutoff Up), Frame ] model
+
+                        third : Model.Msg
+                        third =
+                            Model.Edit cutoff (Num (notches 3))
+                    in
+                    Expect.all
+                        [ \_ -> Expect.equal (Just third) (List.head (List.reverse edits))
+                        , \_ -> Expect.equal (Just (Num (notches 3))) (Model.pending cutoff unit)
+                        ]
+                        ()
             , test "a_double_click_restores_the_units_default" <|
                 \_ ->
                     run [ Hand (Control.Reset cutoff), Frame ]
@@ -384,15 +434,15 @@ suite =
                         |> Maybe.andThen Screen.spec
                         |> Maybe.map (.vals >> List.map (Tuple.first >> Addr.key) >> List.member "FILTER.KIND")
                         |> Expect.equal (Just True)
-            , describe "every engine's screens hold nothing from another page"
+            , describe "every engine's screens hold nothing from another page but what their art reads"
                 (List.map
                     (\( name, unit ) ->
                         test name <|
                             \_ ->
                                 (Page.layout (engineOf name) Kit).every
                                     |> List.filterMap Shared.screen
-                                    |> List.filterMap (Page.screenSpec unit (engineOf name) >> Maybe.andThen Screen.spec)
-                                    |> List.concatMap (\sp -> List.filter (\( a, _ ) -> not (onPage unit sp.page a)) sp.vals)
+                                    |> List.filterMap (\sc -> Page.screenSpec unit (engineOf name) sc |> Maybe.andThen Screen.spec |> Maybe.map (Tuple.pair (Shared.screenReads sc)))
+                                    |> List.concatMap (\( reads, sp ) -> List.filter (\( a, _ ) -> not (onPage unit sp.page a || List.member a reads)) sp.vals)
                                     |> List.map (Tuple.first >> Addr.key)
                                     |> Expect.equal []
                     )
@@ -406,9 +456,29 @@ suite =
                         |> Query.findAll [ Sel.tag "chimera-screen" ]
                         |> Query.index 2
                         |> Query.has [ Sel.attribute (attribute "spec" "{\"engine\":\"DRUM\",\"page\":37,\"region\":\"padicon\",\"focus\":null,\"pad\":3,\"vals\":[[\"PAD3.MACHINE\",4]]}") ]
+            , describe "VA's oscillators draw the VA page's WAVE morph gauge, with their SHAPE"
+                (List.map
+                    (\( title, cell, shape ) ->
+                        test title <|
+                            \_ ->
+                                let
+                                    va : Model.Model
+                                    va =
+                                        engines |> List.filter (\( n, _ ) -> n == "VA") |> List.head |> Maybe.map Tuple.second |> Maybe.withDefault model
+                                in
+                                Page.layout Unit.Va Kit
+                                    |> .every
+                                    |> List.filter (\md -> Shared.title md == title)
+                                    |> List.filterMap Shared.screen
+                                    |> List.filterMap (Page.screenSpec va Unit.Va >> Maybe.andThen Screen.spec)
+                                    |> List.map (\sp -> ( Encode.encode 0 (Screen.encodeSpec { sp | vals = [] }), List.member shape (List.map (Tuple.first >> Addr.key) sp.vals) ))
+                                    |> Expect.equal [ ( "{\"engine\":\"VA\",\"page\":0,\"region\":\"gauge\",\"focus\":" ++ cell ++ ",\"pad\":null,\"vals\":[]}", True ) ]
+                    )
+                    [ ( "OSC 1", "0", "VA.SHAPE1" ), ( "OSC 2", "1", "VA.SHAPE2" ) ]
+                )
             , test "a_kit_screen_draws_for_its_own_pad" <|
                 \_ ->
-                    Page.screenSpec drum Unit.Drum (Shared.strip (PadPage Pad.Pad7 PadKit))
+                    Page.screenSpec drum Unit.Drum (Shared.strip (PadDrawn Pad.Pad7 PadKit))
                         |> Maybe.andThen Screen.spec
                         |> Maybe.andThen .pad
                         |> Expect.equal (Just Pad.Pad7)

@@ -33,7 +33,14 @@ specOf c =
 suite : Test
 suite =
     describe "Ui.Screen"
-        [ test "it_is_the_chimera_screen_element_with_one_spec_attribute" <|
+        [ test "a_gauge_names_its_region_and_each_of_the_six_cells_by_its_knob" <|
+            \_ ->
+                [ CellA, CellB, CellC, CellD, CellE, CellF ]
+                    |> List.map (\f -> specOf (Screen.gauge Va (page 0) f))
+                    |> Expect.equal (List.map (\i -> "{\"engine\":\"VA\",\"page\":0,\"region\":\"gauge\",\"focus\":" ++ String.fromInt i ++ ",\"pad\":null,\"vals\":[]}") (List.range 0 5))
+        , test "a_gauge_is_the_units_120_by_90" <|
+            \_ -> Expect.equal (Control.pxWidth 120) (Screen.width (Screen.gauge Va (page 0) CellA))
+        , test "it_is_the_chimera_screen_element_with_one_spec_attribute" <|
             \_ ->
                 Screen.view (Screen.drawn Algo (page 22) Tall)
                     |> Query.fromHtml

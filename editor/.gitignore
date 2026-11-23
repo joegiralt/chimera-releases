@@ -7,3 +7,5 @@
 # The firmware kit's, copied by `just kit`
 /tests/fixtures/
 /public/screen.wasm
+/screens/elm-stuff
+/screens/layout-screens.js

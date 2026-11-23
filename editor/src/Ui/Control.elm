@@ -45,6 +45,7 @@ module Ui.Control exposing
     , noValue
     , nonEmpty
     , norm
+    , normOf
     , notInList
     , nudged
     , optionList
@@ -62,6 +63,7 @@ module Ui.Control exposing
     , text
     , update
     , want
+    , wanted
     , wheelNorm
     , width
     , widthStyle
@@ -653,6 +655,13 @@ want a w (Wanted d) =
     Wanted (Dict.insert (Addr.key a) ( a, w ) d)
 
 
+{-| This frame's want of `a`, if a hand made one.
+-}
+wanted : Addr -> Wanted -> Maybe Want
+wanted a (Wanted d) =
+    Dict.get (Addr.key a) d |> Maybe.map Tuple.second
+
+
 {-| The wants to send this frame, one per control in address order, and what
 is left (nothing).
 -}
@@ -682,6 +691,29 @@ valueAt p t =
 
         Octaves ->
             p.min * (2 ^ (t * logBase 2 (p.max / p.min)))
+
+
+{-| The knob position, 0 to 1, of stored value `v`: `valueAt` undone.
+-}
+normOf : Param -> Float -> Float
+normOf p v =
+    clamp 0
+        1
+        (case scaleOf p of
+            Linear ->
+                if p.max == p.min then
+                    0
+
+                else
+                    (v - p.min) / (p.max - p.min)
+
+            Octaves ->
+                if p.min <= 0 || v <= 0 || p.max == p.min then
+                    0
+
+                else
+                    logBase 2 (v / p.min) / logBase 2 (p.max / p.min)
+        )
 
 
 {-| The stored value at knob position `t`, 0 to 1, in range, kept to four

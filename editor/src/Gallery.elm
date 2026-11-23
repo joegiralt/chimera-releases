@@ -190,10 +190,16 @@ blankRoutes =
 
 
 {-| A demo address: the gallery's controls stand for no real parameter.
+Its words are all the unit's form; one that isn't stands as KIT.DEMO.
 -}
 demo : String -> Addr
-demo =
-    Addr.field >> Addr.at Addr.Kit
+demo w =
+    case Addr.fromWire ("KIT." ++ w) of
+        Just a ->
+            a
+
+        Nothing ->
+            demo "DEMO"
 
 
 named : String -> List Option -> List Option

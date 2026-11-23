@@ -8,13 +8,19 @@ module Layout.Drum exposing (every, kit, pad)
 FILTER MOD, ENV 1–3, LFO 1–3) and a PAD view per pad (PAD, MACHINE, FILTER,
 AMP, PITCH ENV, PITCH LFO, its four routes as a patch bay, then MOD). What
 is per pad on the box is per pad here.
+
+A pad's MACHINE and PITCH LFO pages are scoped (their band is the live
+scope): their screens are the gauge of the module's first hand, knob A's arc
+and SPEED's.
+
 -}
 
-import Addr exposing (Addr, Block(..), PadBlock(..))
-import Layout.Page exposing (PadPage(..), UnitPage(..))
-import Layout.Shared as Shared exposing (Extra(..), Module, auto, fader, group, hero, heroFader, knob, menu, module_, strip, tall)
+import Addr exposing (Block(..), PadBlock(..))
+import Layout.Page exposing (DrawnPage(..), PadDrawn(..), PadScoped(..), ScopedPage(..), UnitPage(..))
+import Layout.Shared as Shared exposing (Built, Extra(..), Module, auto, fader, gauge, group, hero, heroFader, knob, menu, module_, strip, tall)
 import Ui.Chip as Chip
 import Ui.Pad as Pad exposing (Pad(..))
+import Ui.Screen exposing (Focus(..))
 
 
 {-| Every module of every view.
@@ -26,7 +32,7 @@ every =
 
 kit : List Module
 kit =
-    [ pads ( Pad1, [ Pad2, Pad3, Pad4, Pad5, Pad6 ] ), pads ( Pad7, [ Pad8, Pad9, Pad10, Pad11, Pad12 ] ), wholeKit (Shared.voiceFx (PadPage Pad1 PadFx)), out, wholeKit filterMod ]
+    [ pads ( Pad1, [ Pad2, Pad3, Pad4, Pad5, Pad6 ] ), pads ( Pad7, [ Pad8, Pad9, Pad10, Pad11, Pad12 ] ), wholeKit (Shared.voiceFx (PadDrawn Pad1 PadFx)), out, wholeKit filterMod ]
         ++ List.map (Shared.envelope >> wholeKit) Addr.envs
         ++ List.map (Shared.lfo >> wholeKit) Addr.lfos
 
@@ -45,9 +51,9 @@ pads ( first, rest ) =
         row : Pad -> Shared.Group
         row p =
             let
-                a : String -> Addr
+                a : String -> Built
                 a =
-                    Addr.field >> Addr.at (Pad p Voice)
+                    Addr.named (Pad p Voice)
             in
             group ("PAD " ++ Pad.label p) [ knob (a "LEVEL"), knob (a "PAN"), menu (a "CHOKE"), auto (a "RETRIG") ]
 
@@ -56,10 +62,10 @@ pads ( first, rest ) =
             List.foldl always first rest
     in
     module_ Chip.Kit ("PADS " ++ String.fromInt (Pad.number first) ++ "–" ++ String.fromInt (Pad.number last))
-        |> Shared.withScreen (strip (PadPage first PadKit))
+        |> Shared.withScreen (strip (PadDrawn first PadKit))
         |> Shared.withGroups
             ((if first == Pad1 then
-                [ group "" [ menu (Addr.at Kit (Addr.field "TONAL")) ] ]
+                [ group "" [ menu (Addr.named Kit "TONAL") ] ]
 
               else
                 []
@@ -71,9 +77,9 @@ pads ( first, rest ) =
 out : Module
 out =
     let
-        a : String -> Addr
+        a : String -> Built
         a =
-            Addr.field >> Addr.at Out
+            Addr.named Out
     in
     module_ Chip.Out "OUT"
         |> Shared.withNote "SENDS · WIDTH · WHOLE KIT"
@@ -85,23 +91,23 @@ out =
 -}
 filterMod : Module
 filterMod =
-    Shared.filterMod |> Shared.addGroups [ group "" [ fader (Addr.at Filter (Addr.field "STAB")) ] ]
+    Shared.filterMod |> Shared.addGroups [ group "" [ fader (Addr.named Filter "STAB") ] ]
 
 
 pad : Pad -> List Module
 pad p =
     let
-        a : PadBlock -> String -> Addr
+        a : PadBlock -> String -> Built
         a block =
-            Addr.field >> Addr.at (Pad p block)
+            Addr.named (Pad p block)
 
         this : Module -> Module
         this =
             Shared.withNote ("PAD " ++ Pad.label p) >> Shared.withChip Chip.Pad
 
-        on : PadPage -> UnitPage
+        on : PadDrawn -> DrawnPage
         on =
-            PadPage p
+            PadDrawn p
     in
     List.map this
         [ module_ Chip.Pad "PAD"
@@ -109,7 +115,7 @@ pad p =
             |> Shared.withGroups [ group "" [ heroFader (a Voice "LEVEL"), knob (a Voice "PAN") ], group "KEYS" [ auto (a Voice "CHOKE"), auto (a Voice "RETRIG") ] ]
         , module_ Chip.Pad "MACHINE"
             |> Shared.withHeader [ a Voice "MACHINE" ]
-            |> Shared.withScreen (strip (on PadMch))
+            |> Shared.withScreen (gauge (Scoped (PadScoped p PadMch)) CellA)
             |> Shared.withGroups
                 [ group "A–F" [ hero (a Voice "KNOB_A"), knob (a Voice "KNOB_B"), knob (a Voice "KNOB_C"), knob (a Voice "KNOB_D"), knob (a Voice "KNOB_E"), knob (a Voice "KNOB_F") ]
                 , group "MORE" [ knob (a Voice "KNOB_G"), knob (a Voice "KNOB_H") ]
@@ -126,7 +132,7 @@ pad p =
             |> Shared.withScreen (tall (on PadPenv))
             |> Shared.withGroups [ group "" [ fader (a PitchEnv "ATTACK"), fader (a PitchEnv "HOLD"), fader (a PitchEnv "DECAY") ], group "" [ auto (a PitchEnv "SPEED") ] ]
         , module_ Chip.Pad "PITCH LFO"
-            |> Shared.withScreen (strip (on PadPlfo))
+            |> Shared.withScreen (gauge (Scoped (PadScoped p PadPlfo)) CellB)
             |> Shared.withGroups [ group "" [ hero (a PitchLfo "SPEED"), auto (a PitchLfo "WAVE") ], group "" [ fader (a PitchLfo "DEPTH"), knob (a PitchLfo "PHASE"), auto (a PitchLfo "MODE") ] ]
 
         -- Half a row, beside nothing: whether it takes the whole row waits on the owner.

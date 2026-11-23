@@ -1,9 +1,17 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Web Serial and WebSocket for the Elm editor: lines in, lines out, link state.
-// One link at a time; both kinds look the same to Elm.
+// One link at a time; both kinds look the same to Elm. Lines go out one at a
+// time: each write waits for the one before it and for the link to take more
+// (a serial writer's `ready`, a socket's `bufferedAmount`), so nothing piles
+// up and reaches the unit in a burst. A line that can't be written is said to
+// Elm (`writeFailed`), and the link is dropped.
 var ChimeraPorts = (function () {
   var link = null; // { write(line) -> Promise, close() }
   var app = null;
+  var queue = Promise.resolve(); // the last write: the next waits for it
+
+  // A socket holding more than this unsent waits before the next line.
+  var SOCKET_HIGH = 4096;
 
   function state(s) { app.ports.linkState.send(s); }
 
@@ -71,7 +79,10 @@ var ChimeraPorts = (function () {
     var dec = new TextDecoder('utf-8');
     var feed = liner(function (l) { app.ports.lineIn.send(l); });
     var mine = {
-      write: function (line) { return writer.write(enc.encode(line + '\n')); },
+      write: async function (line) {
+        await writer.ready;
+        await writer.write(enc.encode(line + '\n'));
+      },
       close: function () { return release(port, reader, writer); },
     };
     link = mine;
@@ -96,7 +107,7 @@ var ChimeraPorts = (function () {
     var ws;
     try { ws = new WebSocket(url); } catch (e) { state('absent'); return null; }
     var mine = {
-      write: function (line) { ws.send(line); return Promise.resolve(); },
+      write: function (line) { return drained(ws).then(function () { ws.send(line); }); },
       close: function () { ws.close(); },
     };
     var opened = false;
@@ -116,12 +127,33 @@ var ChimeraPorts = (function () {
 
   function connectSocket(url) { return connect(function () { return openSocket(url); }); }
 
+  // Resolves once the socket's unsent bytes are under SOCKET_HIGH; rejects
+  // once it is no longer open.
+  function drained(ws) {
+    return new Promise(function (res, rej) {
+      (function check() {
+        if (ws.readyState !== 1) rej(new Error('socket not open'));
+        else if (ws.bufferedAmount <= SOCKET_HIGH) res();
+        else setTimeout(check, 5);
+      })();
+    });
+  }
+
+  // The line goes out after every line before it. One that can't is said
+  // to Elm, and the link is dropped and released, so a reconnect can open
+  // the same port; the lines queued behind it on that link are said too.
   function send(line) {
     var l = link;
-    if (l) l.write(line).catch(function () {
-      // A write that fails ends the link; release it so a reconnect can open the same port.
-      if (link === l) { link = null; state('lost'); Promise.resolve(l.close()).catch(function () {}); }
-    });
+    var failed = function () {
+      app.ports.writeFailed.send(line);
+      if (l && link === l) { link = null; state('lost'); Promise.resolve(l.close()).catch(function () {}); }
+    };
+    if (!l) { failed(); return queue; }
+    queue = queue.then(function () {
+      if (link !== l) throw new Error('link gone');
+      return l.write(line);
+    }).catch(failed);
+    return queue;
   }
 
   // The schema cache: IndexedDB, one store, a schema's describe
@@ -135,6 +167,8 @@ var ChimeraPorts = (function () {
       r.onupgradeneeded = function () { r.result.createObjectStore(STORE); };
       r.onsuccess = function () { res(r.result); };
       r.onerror = function () { rej(r.error); };
+      // Another tab holds an older version open: a miss, never a wait.
+      r.onblocked = function () { rej(new Error('blocked')); };
     });
   }
 
@@ -174,6 +208,7 @@ var ChimeraPorts = (function () {
 
   return {
     release: release,
+    send: send,
     liner: liner,
     recall: recall,
     keep: keep,

@@ -25,6 +25,7 @@ module Model exposing
     , noticeText
     , notices
     , noticesLost
+    , pending
     , refusal
     , seat
     , sensingRow
@@ -61,8 +62,9 @@ engine's matrix, SETTINGS', MIDI MAP's and ORBIT's.
 import Addr exposing (Addr)
 import Cache
 import Dict exposing (Dict)
+import Flow exposing (Flow)
 import Hash exposing (Hash)
-import Protocol exposing (AnswerLine(..), Cell, Command(..), Degree, Edits, Generation, Health, Learn, Line(..), MapCommand(..), MapInput, MapKind, MapRow(..), Note, NotePool, OnOff, OrbitCommand, OverEdits, PageNo, ProjectFile, ProjectId, ProjectName, RouteTo, RowStatus, ScaleMask, SchemaId(..), Slot, Song, SoundStatus, SpanPlace, Value, cellKey, encode, parse, ringNoToInt, rowIndexToInt, sceneNoToInt, schemaToken, segmentToInt, stepNoToInt)
+import Protocol exposing (AnswerLine(..), Cell, Command(..), Degree, Edits, Fault(..), Generation, Health, Learn, Line(..), MapCommand(..), MapInput, MapKind, MapRow(..), Note, NotePool, OnOff, OrbitCommand, Outgoing, OverEdits, PageNo, ProjectFile, ProjectId, ProjectName, Protocol(..), RouteTo, RowStatus, ScaleMask, SchemaId(..), Slot, Song, SoundStatus, SpanPlace, Value, VariantName, cellKey, encode, parse, ringNoToInt, rowIndexToInt, sceneNoToInt, schemaToken, segmentToInt, stepNoToInt)
 import Schema exposing (Schema)
 import Time
 import Transport exposing (Link(..))
@@ -139,20 +141,33 @@ type alias Held =
 
 
 {-| What `step` asks of the world: a line to the unit, or the schema cache.
+A line is only ever one `encode` wrote (`Outgoing`): a command it can't write
+is a notice instead.
 -}
 type Effect
-    = Send Command
+    = Send Outgoing
     | Recall String
     | Keep String (List String)
+
+
+{-| What `stepIn` asks for, before `step` makes lines of its commands.
+-}
+type Wish
+    = Say Command
+    | Remember String
+    | Store String (List String)
 
 
 type Why
     = UpdateEditor
     | UpdateUnit
+      -- The unit speaks a protocol newer or older than this editor's.
+    | OtherProtocol Int
     | RefusedBy String
     | Silent
     | TooLarge
     | BadSchema SchemaId SchemaFault
+    | Faulted Fault
 
 
 {-| Why a schema's text can't be used: a line of it the editor can't read,
@@ -170,6 +185,12 @@ the unit wrote it.
 type Notice
     = Refusal { sent : Maybe Command, why : String }
     | Unread String
+      -- A command the editor could not write as a line the unit reads.
+    | Unsendable Command
+      -- A line the browser could not write to the link.
+    | Unsent String
+      -- A set the unit never answered, though sent twice: given up.
+    | NoAnswer Command
 
 
 {-| A notice kept for the user, and how many times the unit said it.
@@ -207,7 +228,7 @@ type alias Model =
     , engine : Maybe Engine
     , described : Maybe Engine
     , seat : Seat
-    , variants : Dict String String
+    , variants : Dict String VariantName
     , source : Maybe String
     , gen : Maybe Gen
     , stage : Stage
@@ -219,6 +240,9 @@ type alias Model =
     -- The commands sent while following that the unit has not answered,
     -- oldest first: it answers in the order sent.
     , awaiting : List Command
+
+    -- The edits' window: the one set on the wire, and the wants waiting.
+    , flow : Flow
 
     -- What the unit refused or the editor couldn't read, newest first, each
     -- distinct one once; and how many fell off the end unseen.
@@ -268,6 +292,10 @@ type Msg
     | FollowPart Part
     | Connect Via
     | Recalled { key : String, lines : Maybe (List String) }
+      -- The cache answered something that is no answer: a miss.
+    | RecallGarbled
+      -- The browser could not write this line to the link.
+    | WriteFailed String
     | EditRoute Cell RouteTo
       -- The card's projects listed again.
     | AskProjects
@@ -285,18 +313,11 @@ type Msg
     | SeenNotices
 
 
-{-| The console protocol this editor speaks.
--}
-supported : Int
-supported =
-    4
-
-
 {-| A schema's cache key: the protocol, the schema and its hash.
 -}
 cacheKey : SchemaId -> Hash -> String
 cacheKey s h =
-    String.join "/" [ String.fromInt supported, schemaToken s, Hash.toHex h ]
+    String.join "/" [ String.fromInt Protocol.supported, schemaToken s, Hash.toHex h ]
 
 
 {-| A request unanswered this long has timed out. While connecting, that
@@ -308,6 +329,10 @@ are true, as the number only moves forward. An `OK` that leaves answers owed
 restarts the clock (`leftover`): if the rest never come, the next timeout
 counts them lost and asks afresh, as does a re-ask that is lost too. The unit
 heals a lost answer on the next ask.
+
+A recall from the cache gets the same clock: a store that never answers is
+a miss, and the schema is described. So does the edits' window (`Flow`).
+
 -}
 answerTimeoutMs : Int
 answerTimeoutMs =
@@ -349,6 +374,7 @@ init =
     , leftover = False
     , now = Time.millisToPosix 0
     , awaiting = []
+    , flow = Flow.idle
     , kept = []
     , lost = 0
     , project = Nothing
@@ -374,7 +400,8 @@ subscriptions =
     Sub.batch
         [ Transport.lineIn Line
         , Transport.linkState (Transport.parseLink >> LinkChanged)
-        , Cache.got Recalled
+        , Cache.got (Cache.decode >> Maybe.map Recalled >> Maybe.withDefault RecallGarbled)
+        , Transport.writeFailed WriteFailed
         , Time.every pollMs Tick
         ]
 
@@ -420,6 +447,12 @@ opening msg =
         Recalled _ ->
             Cmd.none
 
+        RecallGarbled ->
+            Cmd.none
+
+        WriteFailed _ ->
+            Cmd.none
+
         EditRoute _ _ ->
             Cmd.none
 
@@ -448,8 +481,8 @@ opening msg =
 run : Effect -> Cmd msg
 run e =
     case e of
-        Send c ->
-            encode c |> Maybe.map Transport.send |> Maybe.withDefault Cmd.none
+        Send o ->
+            Transport.send (Protocol.outgoingLine o)
 
         Recall key ->
             Cache.recall key
@@ -507,6 +540,20 @@ stageNotice m =
         Halted UpdateUnit ->
             Just "UPDATE THE UNIT"
 
+        Halted (OtherProtocol n) ->
+            Just
+                ((if n > Protocol.supported then
+                    "UPDATE THE EDITOR"
+
+                  else
+                    "UPDATE THE UNIT"
+                 )
+                    ++ ": THE UNIT SPEAKS PROTOCOL "
+                    ++ String.fromInt n
+                    ++ ", THIS EDITOR "
+                    ++ String.fromInt Protocol.supported
+                )
+
         Halted (RefusedBy t) ->
             Just ("THE UNIT REFUSED: " ++ t)
 
@@ -521,6 +568,12 @@ stageNotice m =
 
         Halted (BadSchema s (WrongHash said read_)) ->
             Just ("THE UNIT'S " ++ schemaToken s ++ " SCHEMA IS NOT THE TEXT ITS HASH NAMES: " ++ Hash.toHex said ++ ", READ " ++ Hash.toHex read_)
+
+        Halted (Faulted (NoSuchPart n)) ->
+            Just ("THE UNIT NAMED PART " ++ n ++ ": THIS EDITOR KNOWS PARTS 1 TO 6")
+
+        Halted (Faulted (NoSuchEngine e)) ->
+            Just ("THE UNIT NAMED AN ENGINE THIS EDITOR DOESN'T KNOW: " ++ e ++ ". UPDATE THE EDITOR")
 
         Greeting ->
             Nothing
@@ -559,6 +612,14 @@ notices m =
     m.kept
 
 
+{-| Where the editor last asked `a` to go that the unit has not yet said:
+a want waiting for the window, else the set on the wire.
+-}
+pending : Addr -> Model -> Maybe Value
+pending a m =
+    Flow.target a m.flow
+
+
 {-| How many notices fell off the end of `notices` unseen.
 -}
 noticesLost : Model -> Int
@@ -580,6 +641,15 @@ lastRefusal m =
 
                     Unread _ ->
                         Nothing
+
+                    Unsendable _ ->
+                        Nothing
+
+                    Unsent _ ->
+                        Nothing
+
+                    NoAnswer _ ->
+                        Nothing
             )
         |> List.head
 
@@ -600,6 +670,15 @@ noticeText n =
 
         Unread raw ->
             "THE UNIT SAID A LINE THIS EDITOR CAN'T READ: " ++ raw
+
+        Unsendable c ->
+            "THE EDITOR COULD NOT WRITE " ++ Protocol.sketch c ++ " AS A LINE THE UNIT READS: NOT SENT"
+
+        Unsent l ->
+            "THE LINK DROPPED A LINE: " ++ l
+
+        NoAnswer c ->
+            "THE UNIT DID NOT ANSWER " ++ Protocol.sketch c ++ ", SENT TWICE: GIVEN UP"
 
 
 {-| At most this many distinct notices are kept; past it one falls off and
@@ -632,8 +711,9 @@ keep n m =
         { m | kept = all }
 
 
-{-| A full list less one, newest first: its oldest unread line, or with
-none its oldest refusal. A refusal answers something the user did.
+{-| A full list less one, newest first: its oldest notice that is not a
+refusal, or with none its oldest refusal. A refusal answers something the
+user did.
 -}
 evict : List Kept -> List Kept
 evict all =
@@ -642,6 +722,15 @@ evict all =
         isUnread k =
             case k.notice of
                 Unread _ ->
+                    True
+
+                Unsendable _ ->
+                    True
+
+                Unsent _ ->
+                    True
+
+                NoAnswer _ ->
                     True
 
                 Refusal _ ->
@@ -744,26 +833,88 @@ takesEdits m =
 step : Msg -> Model -> ( Model, List Effect )
 step msg m =
     let
-        ( m1, effects ) =
+        ( m1, wishes ) =
             stepIn msg m
+
+        ( m2, effects ) =
+            effectsOf wishes m1
     in
-    ( if m.stage == Following then
-        { m1 | awaiting = m1.awaiting ++ List.filterMap sentBy effects }
-
-      else
-        m1
-    , effects
-    )
+    released (sending m m2 effects)
 
 
-{-| The command an effect puts on the wire, if it does (`run` sends only
-what `encode` makes a line of).
+{-| Each wish as an effect: a command as its line, or, where `encode` can't
+write one, a notice saying so; nothing is dropped unsaid.
+-}
+effectsOf : List Wish -> Model -> ( Model, List Effect )
+effectsOf wishes m =
+    List.foldl
+        (\w ( acc, es ) ->
+            case w of
+                Say c ->
+                    case Protocol.outgoing c of
+                        Just o ->
+                            ( acc, es ++ [ Send o ] )
+
+                        Nothing ->
+                            ( keep (Unsendable c) acc, es )
+
+                Remember k ->
+                    ( acc, es ++ [ Recall k ] )
+
+                Store k ls ->
+                    ( acc, es ++ [ Keep k ls ] )
+        )
+        ( m, [] )
+        wishes
+
+
+{-| While following (as `before` was), the commands sent await their answers.
+-}
+sending : Model -> Model -> List Effect -> ( Model, List Effect )
+sending before m effects =
+    if before.stage == Following then
+        ( { m | awaiting = m.awaiting ++ List.filterMap sentBy effects }, effects )
+
+    else
+        ( m, effects )
+
+
+{-| The window, after a step: its set no longer awaits an answer (answered,
+or counted lost), so the next waiting one goes. Off following, nothing
+waits: an edit is only ever for the engine the box is on.
+-}
+released : ( Model, List Effect ) -> ( Model, List Effect )
+released ( m, effects ) =
+    if m.stage /= Following then
+        ( { m | flow = Flow.idle }, effects )
+
+    else
+        case Flow.inFlight m.flow of
+            Just c ->
+                if List.member c m.awaiting then
+                    ( m, effects )
+
+                else
+                    let
+                        ( flow, next ) =
+                            Flow.acked m.now m.flow
+
+                        ( m1, more ) =
+                            effectsOf (List.map Say (maybeList next)) { m | flow = flow }
+                    in
+                    sending m1 m1 more |> Tuple.mapSecond ((++) effects)
+
+            Nothing ->
+                ( m, effects )
+
+
+{-| The command an effect puts on the wire, if it does.
 -}
 sentBy : Effect -> Maybe Command
 sentBy e =
     case e of
-        Send c ->
-            encode c |> Maybe.map (\_ -> c)
+        Send o ->
+            Just (Protocol.outgoingCommand o)
 
         Recall _ ->
             Nothing
@@ -772,7 +923,7 @@ sentBy e =
             Nothing
 
 
-stepIn : Msg -> Model -> ( Model, List Effect )
+stepIn : Msg -> Model -> ( Model, List Wish )
 stepIn msg m =
     case msg of
         LinkChanged l ->
@@ -784,19 +935,19 @@ stepIn msg m =
             ( { m | kept = [], lost = 0 }, [] )
 
         Tick t ->
-            tick t m |> Tuple.mapSecond (List.map Send)
+            tick t m |> Tuple.mapSecond (List.map Say)
 
         Line raw ->
             line raw (parse raw) m
 
         Edit a v ->
-            edit a v m |> Tuple.mapSecond (List.map Send)
+            edit a v m |> Tuple.mapSecond (List.map Say)
 
         -- By its number: a name with a space (GATE EXT) is one word so.
         Pick a i ->
             case Schema.optionName m.variants a i (schemaOf a m) of
                 Just _ ->
-                    edit a (Protocol.Index i) m |> Tuple.mapSecond (List.map Send)
+                    edit a (Protocol.Index i) m |> Tuple.mapSecond (List.map Say)
 
                 Nothing ->
                     ( m, [] )
@@ -804,7 +955,7 @@ stepIn msg m =
         -- The box moves; the mark follows when `since` says so.
         FollowPart p ->
             if m.stage == Following then
-                ( m, [ Send (Follow p) ] )
+                ( m, [ Say (Follow p) ] )
 
             else
                 ( m, [] )
@@ -816,11 +967,17 @@ stepIn msg m =
         Recalled r ->
             ( recalled r m, [] )
 
+        RecallGarbled ->
+            ( recallMissed m, [] )
+
+        WriteFailed l ->
+            ( keep (Unsent l) m, [] )
+
         -- A route's amount or its removal: the unit glides it a turn's step a
         -- pass, and `since` says where it is.
         EditRoute c to ->
             if takesEdits m then
-                ( m, [ Send (SetRoute c to) ] )
+                ( m, [ Say (SetRoute c to) ] )
 
             else
                 ( m, [] )
@@ -850,7 +1007,7 @@ stepIn msg m =
 {-| A MIDI MAP command goes out while following; one naming a cell only
 against the engine the box is on, as an edit does.
 -}
-mapCommand : MapCommand -> Model -> ( Model, List Effect )
+mapCommand : MapCommand -> Model -> ( Model, List Wish )
 mapCommand c m =
     let
         names : Bool
@@ -895,10 +1052,10 @@ mapCommand c m =
 
 {-| A project command goes out while following: it reads no engine's schema.
 -}
-projectCommand : Command -> Model -> ( Model, List Effect )
+projectCommand : Command -> Model -> ( Model, List Wish )
 projectCommand c m =
     if m.stage == Following then
-        ( m, [ Send c ] )
+        ( m, [ Say c ] )
 
     else
         ( m, [] )
@@ -979,22 +1136,26 @@ tick t m0 =
                 ( m, [] )
 
             Following ->
-                if m.owed == 0 then
-                    ask (Since m.gen)
+                let
+                    ( mf, window ) =
+                        expire m
 
-                else if timedOut && m.owed == 1 && not m.leftover then
-                    ask (Since m.gen)
+                    again : ( Model, List Command )
+                    again =
+                        ( { mf | asked = Just t, owed = mf.owed + 1, leftover = False }, window ++ [ Since mf.gen ] )
+                in
+                if mf.owed == 0 then
+                    again
+
+                else if timedOut && mf.owed == 1 && not mf.leftover then
+                    again
 
                 else if timedOut then
                     -- Answers still owed after a re-ask: count them lost and ask afresh.
-                    let
-                        ( fresh, cs ) =
-                            ask (Since m.gen)
-                    in
-                    ( { fresh | owed = 1, awaiting = [] }, cs )
+                    Tuple.mapFirst (\fresh -> { fresh | owed = 1, awaiting = [] }) again
 
                 else
-                    ( m, [] )
+                    ( mf, window )
 
             Greeting ->
                 connecting timedOut silent (ask Hello) m
@@ -1002,13 +1163,54 @@ tick t m0 =
             Checking s _ ->
                 connecting timedOut silent (ask (AskSchema s)) m
 
-            -- The browser's store always answers, a miss or a failure as
-            -- `Nothing`: no clock.
+            -- A store that never answers is a miss.
             Recalling _ _ ->
-                ( m, [] )
+                if timedOut then
+                    ( recallMissed m, [] )
+
+                else
+                    ( m, [] )
 
             Describing s _ n ->
                 connecting timedOut silent (ask (Describe s n)) m
+
+
+{-| The window's clock: a set unanswered past the timeout is no longer
+awaited, and is sent again once, or given up (and said) for the next.
+-}
+expire : Model -> ( Model, List Command )
+expire m =
+    let
+        ( flow, ex ) =
+            Flow.expire m.now answerTimeoutMs m.flow
+
+        dropped : Command -> Model
+        dropped c =
+            { m | flow = flow, awaiting = removeFirst c m.awaiting }
+    in
+    case ex of
+        Flow.Fresh ->
+            ( m, [] )
+
+        Flow.Resent old new ->
+            ( dropped old, [ new ] )
+
+        Flow.GaveUp old next ->
+            ( keep (NoAnswer old) (dropped old), maybeList next )
+
+
+removeFirst : a -> List a -> List a
+removeFirst x xs =
+    case xs of
+        y :: rest ->
+            if y == x then
+                rest
+
+            else
+                y :: removeFirst x rest
+
+        [] ->
+            []
 
 
 connecting : Bool -> ( Model, List Command ) -> ( Model, List Command ) -> Model -> ( Model, List Command )
@@ -1028,21 +1230,25 @@ ms =
     Time.posixToMillis
 
 
+{-| An edit goes through the window (`Flow`): sent now if no set is on the
+wire, else held, the latest of each address winning. One `encode` can't
+write is said, never sent.
+-}
 edit : Addr -> Value -> Model -> ( Model, List Command )
 edit a v m =
-    let
-        c : Command
-        c =
-            Set a v
-    in
-    if takesEdits m && isDescribed a m && encode c /= Nothing then
-        ( m, [ c ] )
+    if takesEdits m && isDescribed a m then
+        case Protocol.outgoing (Set a v) of
+            Just _ ->
+                Flow.want m.now a v m.flow |> Tuple.mapBoth (\flow -> { m | flow = flow }) maybeList
+
+            Nothing ->
+                ( keep (Unsendable (Set a v)) m, [] )
 
     else
         ( m, [] )
 
 
-line : String -> Line -> Model -> ( Model, List Effect )
+line : String -> Line -> Model -> ( Model, List Wish )
 line raw l m =
     case m.stage of
         -- Nothing more is read, but nothing said is dropped.
@@ -1207,7 +1413,7 @@ answered fits m =
     { m | awaiting = after m.awaiting }
 
 
-lineIn : String -> Line -> Model -> ( Model, List Effect )
+lineIn : String -> Line -> Model -> ( Model, List Wish )
 lineIn raw l m =
     case l of
         Answer a ->
@@ -1302,26 +1508,22 @@ refused why m =
 answer : AnswerLine -> Model -> Model
 answer a m =
     case a of
-        HelloIs h ->
-            if h.protocol == supported then
-                case Unit.engineFromName h.engine of
-                    Just e ->
-                        { m | part = Unit.partFromInt h.part, engine = Just e }
+        HelloIs (Speaks h) ->
+            { m | part = Just h.part, engine = Just h.engine }
 
-                    Nothing ->
-                        { m | stage = Halted UpdateEditor }
+        HelloIs (TooNew n) ->
+            { m | stage = Halted (OtherProtocol n) }
 
-            else
-                { m
-                    | stage =
-                        Halted
-                            (if h.protocol > supported then
-                                UpdateEditor
+        HelloIs (TooOld n) ->
+            { m | stage = Halted (OtherProtocol n) }
 
-                             else
-                                UpdateUnit
-                            )
-                }
+        -- An engine it doesn't know is a newer unit's; a Part past six, a
+        -- unit not speaking as it says: either way, stop and say so.
+        Faulty (NoSuchEngine _) ->
+            { m | stage = Halted UpdateEditor, asked = Nothing }
+
+        Faulty f ->
+            { m | stage = Halted (Faulted f), asked = Nothing }
 
         SchemaIs r ->
             case m.stage of
@@ -1350,25 +1552,20 @@ answer a m =
                 Halted _ ->
                     m
 
-        PartIs n name ->
-            case Unit.engineFromName name of
-                Just e ->
-                    -- A new Part or engine: PART's section is whole; MIXER's stays.
-                    -- An engine read this connection is shown at once.
-                    adopt <|
-                        mixerOnly
-                            { m
-                                | part = Unit.partFromInt n
-                                , engine = Just e
-                                , seat = nextSeat m.seat
-                                , routes = Dict.empty
-                                , refusals = Dict.empty
-                                , whole = True
-                                , source = Nothing
-                            }
-
-                Nothing ->
-                    { m | stage = Halted UpdateEditor }
+        PartIs p e ->
+            -- A new Part or engine: PART's section is whole; MIXER's stays.
+            -- An engine read this connection is shown at once.
+            adopt <|
+                mixerOnly
+                    { m
+                        | part = Just p
+                        , engine = Just e
+                        , seat = nextSeat m.seat
+                        , routes = Dict.empty
+                        , refusals = Dict.empty
+                        , whole = True
+                        , source = Nothing
+                    }
 
         MixerIs ->
             -- MIXER's section whole: what was held for it goes.
@@ -1379,7 +1576,12 @@ answer a m =
 
         Panel p ->
             if m.stage == Following then
-                { m | variants = Dict.insert p.name p.variant m.variants }
+                case p.variant of
+                    Just v ->
+                        { m | variants = Dict.insert p.name v m.variants }
+
+                    Nothing ->
+                        { m | variants = Dict.remove p.name m.variants }
 
             else
                 describing a m
@@ -1458,7 +1660,7 @@ answer a m =
             { m | project = Just p }
 
         SoundIs snd ->
-            { m | sounds = Dict.insert snd.part { name = snd.name, status = snd.status } m.sounds }
+            { m | sounds = Dict.insert (Unit.partNumber snd.part) { name = snd.name, status = snd.status } m.sounds }
 
         ToastIs t ->
             { m | toast = Just t }
@@ -1612,7 +1814,7 @@ describing a m =
 {-| `OK` ends the request in flight. `more`: a `since` answer owes sections,
 asked for on the next tick.
 -}
-ok : Maybe Gen -> Bool -> Model -> ( Model, List Effect )
+ok : Maybe Gen -> Bool -> Model -> ( Model, List Wish )
 ok done more m0 =
     let
         m : Model
@@ -1668,7 +1870,7 @@ ok done more m0 =
                 in
                 if read_ == r.hash then
                     ( readNext (install s { hash = r.hash, schema = m.incoming } { m1 | incoming = Schema.empty, incomingLines = [] })
-                    , [ Keep (cacheKey s r.hash) lines ]
+                    , [ Store (cacheKey s r.hash) lines ]
                     )
 
                 else
@@ -1690,13 +1892,38 @@ ok done more m0 =
 {-| A schema the editor doesn't hold: from the cache, or, with no pages
 (ORBIT or MIDI MAP not in the build), empty at once.
 -}
-recall : SchemaId -> Reply -> Model -> ( Model, List Effect )
+recall : SchemaId -> Reply -> Model -> ( Model, List Wish )
 recall s r m =
     if r.pages == 0 then
         ( readNext (install s { hash = r.hash, schema = Schema.empty } m), [] )
 
     else
-        ( { m | stage = Recalling s r }, [ Recall (cacheKey s r.hash) ] )
+        ( { m | stage = Recalling s r, asked = Just m.now }, [ Remember (cacheKey s r.hash) ] )
+
+
+{-| The schema being recalled is not in the cache (or the cache answered
+nothing it could mean, or never answered): describe it.
+-}
+recallMissed : Model -> Model
+recallMissed m =
+    case m.stage of
+        Recalling s reply ->
+            { m | stage = Describing s reply Protocol.firstPage, incoming = Schema.empty, incomingLines = [], asked = Nothing }
+
+        Greeting ->
+            m
+
+        Checking _ _ ->
+            m
+
+        Describing _ _ _ ->
+            m
+
+        Following ->
+            m
+
+        Halted _ ->
+            m
 
 
 {-| A `since` answered. Once nothing is owed and no command sent waits for
@@ -1752,7 +1979,7 @@ what the unit said are describe's own text: read as its answer is, and a line
 of them the editor can't read marks the schema bad. Anything else is a miss:
 describe it.
 -}
-recalled : { key : String, lines : Maybe (List String) } -> Model -> Model
+recalled : Cache.Recalled -> Model -> Model
 recalled r m =
     case m.stage of
         Recalling s reply ->
@@ -1763,18 +1990,18 @@ recalled r m =
                 let
                     describe : Model
                     describe =
-                        { m | stage = Describing s reply Protocol.firstPage, incoming = Schema.empty, incomingLines = [] }
+                        recallMissed m
                 in
                 case r.lines |> Maybe.map (\ls -> ( Hash.ofLines ls == reply.hash, List.foldl read (Ok Schema.empty) ls )) of
                     Just ( True, Ok sch ) ->
                         if Schema.pageCount sch == Just reply.pages && List.length (Schema.pages sch) == reply.pages then
-                            readNext (install s { hash = reply.hash, schema = sch } m)
+                            readNext (install s { hash = reply.hash, schema = sch } { m | asked = Nothing })
 
                         else
                             describe
 
                     Just ( True, Err l ) ->
-                        { m | stage = Halted (BadSchema s (Unreadable l)) }
+                        { m | stage = Halted (BadSchema s (Unreadable l)), asked = Nothing }
 
                     Just ( False, _ ) ->
                         describe
@@ -1912,3 +2139,8 @@ readNext m =
 
         Nothing ->
             go (Halted UpdateEditor)
+
+
+maybeList : Maybe a -> List a
+maybeList =
+    Maybe.map List.singleton >> Maybe.withDefault []

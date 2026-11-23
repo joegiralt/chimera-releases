@@ -8,7 +8,7 @@ import Expect
 import Fixture
 import FixtureData
 import Hash
-import Protocol exposing (ActCell(..), AddInput(..), AnswerLine(..), Cell, Clock(..), Command(..), Edits(..), Flags, Health(..), Kind(..), Learn(..), Line(..), MapCommand(..), MapForm(..), MapInput(..), MapKind(..), MapRow(..), NotePool, OnOff(..), OrbitCommand(..), OverEdits(..), Playback(..), ProjectFile(..), RouteKind(..), RouteTo(..), RowIndex, RowSetting(..), RowStatus(..), SaveInto(..), Scale(..), SchemaId(..), SlotState(..), SoundStatus(..), SpanPlace, Value(..), encode, optIndex, parse)
+import Protocol exposing (ActCell(..), AddInput(..), AnswerLine(..), Cell, Clock(..), Command(..), Edits(..), Fault(..), Flags, Health(..), Kind(..), Learn(..), Line(..), MapCommand(..), MapForm(..), MapInput(..), MapKind(..), MapRow(..), NotePool, OnOff(..), OrbitCommand(..), OverEdits(..), Playback(..), ProjectFile(..), Protocol(..), RouteKind(..), RouteTo(..), RowIndex, RowSetting(..), RowStatus(..), SaveInto(..), Scale(..), SchemaId(..), SlotState(..), SoundStatus(..), SpanPlace, Value(..), encode, optIndex, parse)
 import Schema
 import Test exposing (Test, describe, test)
 import Unit
@@ -56,10 +56,20 @@ suite : Test
 suite =
     describe "Protocol"
         [ describe "answers, copied from the firmware's console tests and the kit's fixtures"
-            [ p "hello" "ed hello 4 0.3.0-dev part 1 ALGO" (Answer (HelloIs { protocol = 4, build = "0.3.0-dev", part = 1, engine = "ALGO" }))
+            [ p "hello" "ed hello 4 0.3.0-dev part 1 ALGO" (Unit.partFromInt 1 |> Maybe.map (\pt -> Answer (HelloIs (Speaks { build = "0.3.0-dev", part = pt, engine = Unit.Algo }))) |> Maybe.withDefault Unknown)
+            , p "hello from a newer protocol says only that" "ed hello 5 0.5.0 part 9 GRANULAR" (Answer (HelloIs (TooNew 5)))
+            , p "hello from an older protocol says only that" "ed hello 3 0.2.0 part 1 ALGO" (Answer (HelloIs (TooOld 3)))
+            , p "hello naming part 7 is faulty" "ed hello 4 b part 7 ALGO" (Answer (Faulty (NoSuchPart "7")))
+            , p "hello naming an unknown engine is faulty" "ed hello 4 b part 1 GRANULAR" (Answer (Faulty (NoSuchEngine "GRANULAR")))
+            , p "part 0 is faulty" "part 0 VA" (Answer (Faulty (NoSuchPart "0")))
+            , p "part 7 is faulty" "part 7 VA" (Answer (Faulty (NoSuchPart "7")))
+            , p "a part that is no number is faulty" "part x VA" (Answer (Faulty (NoSuchPart "x")))
+            , p "a part line naming an unknown engine is faulty" "part 2 GRANULAR" (Answer (Faulty (NoSuchEngine "GRANULAR")))
+            , p "a sound line naming part 9 is faulty" "sound 9 \"BASS\" stale" (Answer (Faulty (NoSuchPart "9")))
+            , p "a sound line with no status is unread" "sound 2 \"BASS\" sideways" Unknown
             , p "page" "page 22 FLT of 36" (Protocol.pageLabelFrom "FLT" |> Maybe.map (\l -> Answer (Page { n = page 22, label = l, count = 36 })) |> Maybe.withDefault Unknown)
-            , p "panel fixed" "panel ALG -" (Answer (Panel { name = "ALG", variant = "-" }))
-            , p "panel variant" "panel FILTER CLEAN" (Answer (Panel { name = "FILTER", variant = "CLEAN" }))
+            , p "panel fixed" "panel ALG -" (Answer (Panel { name = "ALG", variant = Nothing }))
+            , p "panel variant" "panel FILTER CLEAN" (Answer (Panel { name = "FILTER", variant = Protocol.variantName "CLEAN" }))
             , p "param choice" "param ALGO.ALG_A \"ALG A\" choice lin 0 31 1 0 m" (Answer (Param { addr = addr "ALGO.ALG_A", label = "ALG A", kind = Choice, scale = Linear, min = 0, max = 31, step = 1, default = 0, flags = { mappable = True, modulation = False } }))
             , p "param cont" "param OUT.LEVEL \"VOL\" cont lin 0 1 0.0078125 0.3515625 -" (Answer (Param { addr = addr "OUT.LEVEL", label = "VOL", kind = Cont, scale = Linear, min = 0, max = 1, step = 0.0078125, default = 0.3515625, flags = none }))
             , p "param stepped" "param DELAY.NOTE \"TIME\" stepped lin 0 1 0.1 0.9 m" (Answer (Param { addr = addr "DELAY.NOTE", label = "TIME", kind = Stepped, scale = Linear, min = 0, max = 1, step = 0.1, default = 0.9, flags = { mappable = True, modulation = False } }))
@@ -83,7 +93,7 @@ suite =
             , p "schema with an upper-case hash" "schema MIXER 31 00FF00FF00FF00FF" Unknown
             , p "schema of an unknown schema" "schema PADS 19 00ff00ff00ff00ff" Unknown
             , p "mixer" "mixer" (Answer MixerIs)
-            , p "panel reverb" "panel REVERB HALL" (Answer (Panel { name = "REVERB", variant = "HALL" }))
+            , p "panel reverb" "panel REVERB HALL" (Answer (Panel { name = "REVERB", variant = Protocol.variantName "HALL" }))
             , p "bad scale" "param A.B \"L\" cont log 0 1 1 0" Unknown
             , p "source" "source \"KICK 909\"" (Answer (Source "KICK 909"))
             , p "opt" "opt ALGO.ALG_A 8 \"A1\"" (optIndex 8 |> Maybe.map (\ix -> Answer (Opt { addr = addr "ALGO.ALG_A", index = ix, name = "A1" })) |> Maybe.withDefault Unknown)
@@ -105,8 +115,8 @@ suite =
             , p "val empty text" "val A.B 0 0 \"\"" (Answer (Val { addr = addr "A.B", norm = 0, stored = 0, text = "" }))
             , p "val inner quote not before a space" "val A.B 0 0 \"5\" wide\"" Unknown
             , p "val signed text" "val VOICEFX.MIX 1 1 \"+63\"" (Answer (Val { addr = addr "VOICEFX.MIX", norm = 1, stored = 1, text = "+63" }))
-            , p "since part" "part 1 ALGO" (Answer (PartIs 1 "ALGO"))
-            , p "since panel" "panel LFO3 CLASSIC" (Answer (Panel { name = "LFO3", variant = "CLASSIC" }))
+            , p "since part" "part 1 ALGO" (Unit.partFromInt 1 |> Maybe.map (\pt -> Answer (PartIs pt Unit.Algo)) |> Maybe.withDefault Unknown)
+            , p "since panel" "panel LFO3 CLASSIC" (Answer (Panel { name = "LFO3", variant = Protocol.variantName "CLASSIC" }))
             , p "since val" "val OUT.PAN 0.5 0 \"C\"" (Answer (Val { addr = addr "OUT.PAN", norm = 0.5, stored = 0, text = "C" }))
             , p "queued" "OK queued" Queued
             , p "refused" "refused PAD3.KNOB_G \"NOT ON THIS MACHINE\"" (Answer (Refused (addr "PAD3.KNOB_G") "NOT ON THIS MACHINE"))
@@ -166,8 +176,8 @@ suite =
                             Expect.fail "not a project line"
             , p "a project line with a bad state" "project \"X\" 3 dirty gen 1" Unknown
             , p "a project line with id 0" "project \"X\" 0 clean gen 1" Unknown
-            , p "sound" "sound 3 \"BASS 1\" stale" (Answer (SoundIs { part = 3, name = "BASS 1", status = SoundStale }))
-            , p "sound edited" "sound 1 \"INIT\" edited" (Answer (SoundIs { part = 1, name = "INIT", status = SoundEdited }))
+            , p "sound" "sound 3 \"BASS 1\" stale" (Unit.partFromInt 3 |> Maybe.map (\pt -> Answer (SoundIs { part = pt, name = "BASS 1", status = SoundStale })) |> Maybe.withDefault Unknown)
+            , p "sound edited" "sound 1 \"INIT\" edited" (Unit.partFromInt 1 |> Maybe.map (\pt -> Answer (SoundIs { part = pt, name = "INIT", status = SoundEdited })) |> Maybe.withDefault Unknown)
             , p "toast" "toast \"SAVED\"" (Answer (ToastIs "SAVED"))
             , p "projects" "projects 3" (Answer (ProjectsIs { count = 3, more = False }))
             , p "projects more" "projects 48 more" (Answer (ProjectsIs { count = 48, more = True }))
@@ -583,12 +593,12 @@ suite =
             , test "a_field_that_is_no_unit_word_makes_no_address" <|
                 \_ ->
                     [ "A B", "", "cutoff", "X\n", ".B", "A.", "A\"B" ]
-                        |> List.map (\w -> encode (Set (Addr.at Addr.Kit (Addr.field w)) (Num 1)))
+                        |> List.map Addr.field
                         |> Expect.equal (List.repeat 7 Nothing)
             , test "a_unit_word_makes_its_address" <|
                 \_ ->
                     [ "TONAL", "E.DPT", "GATE_DECAY", "KNOB_G" ]
-                        |> List.map (\w -> encode (Get (Addr.at Addr.Kit (Addr.field w))))
+                        |> List.map (\w -> Addr.named Addr.Kit w |> Result.toMaybe |> Maybe.andThen (Get >> encode))
                         |> Expect.equal (List.map (\w -> Just ("ed get KIT." ++ w)) [ "TONAL", "E.DPT", "GATE_DECAY", "KNOB_G" ])
             , test "refuses a name that would split or inject" <|
                 \_ ->

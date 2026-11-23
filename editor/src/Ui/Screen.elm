@@ -13,6 +13,7 @@ module Ui.Screen exposing
     , encodeSpec
     , fallback
     , focus
+    , gauge
     , new
     , onPad
     , padIcon
@@ -62,10 +63,12 @@ type Shape
 
 
 {-| What of the page the renderer paints: the page's art, the focus band's
-gauge, the whole screen, or one DRUM pad's machine icon.
+gauge (the focused cell's own picture, right of its big value), or one DRUM
+pad's machine icon.
 -}
 type Region
     = ScreenArt
+    | Gauge
     | PadIconOf Pad
 
 
@@ -75,6 +78,9 @@ type Focus
     = CellA
     | CellB
     | CellC
+    | CellD
+    | CellE
+    | CellF
 
 
 focusIndex : Focus -> Int
@@ -88,6 +94,15 @@ focusIndex f =
 
         CellC ->
             2
+
+        CellD ->
+            3
+
+        CellE ->
+            4
+
+        CellF ->
+            5
 
 
 {-| What `<chimera-screen>` is told: the engine and page, the region, the
@@ -131,6 +146,14 @@ new e g =
 drawn : Engine -> PageNo -> Shape -> Config
 drawn e n s =
     Config { engine = e, art = Drawn { page = n, region = ScreenArt, shape = s, focus = Nothing, pad = Nothing }, fallback = Nothing, caption = "", values = [] }
+
+
+{-| The focus band's gauge on page `n`, cell `f` focused: the picture the
+unit draws for that cell (VA's WAVE morph, a knob's arc, a machine).
+-}
+gauge : Engine -> PageNo -> Focus -> Config
+gauge e n f =
+    Config { engine = e, art = Drawn { page = n, region = Gauge, shape = Strip, focus = Just f, pad = Nothing }, fallback = Nothing, caption = "", values = [] }
 
 
 {-| Pad `p`'s machine icon, from its MACHINE value on page `n` (its MACHINE
@@ -213,6 +236,9 @@ regionName r =
         ScreenArt ->
             "screen"
 
+        Gauge ->
+            "gauge"
+
         PadIconOf _ ->
             "padicon"
 
@@ -267,6 +293,10 @@ size art =
 
                 ( ScreenArt, Tall ) ->
                     ( 240, 158 )
+
+                -- The widest gauge (VA's BLEND) and its end words.
+                ( Gauge, _ ) ->
+                    ( 120, 90 )
 
 
 width : Config -> Width

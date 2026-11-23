@@ -1,20 +1,34 @@
 -- SPDX-License-Identifier: GPL-3.0-or-later
 
 
-module Layout.Page exposing (PadPage(..), UnitPage(..), label, pad, resolve, variantSelector)
+module Layout.Page exposing (DrawnPage(..), PadDrawn(..), PadScoped(..), ScopedPage(..), UnitPage(..), label, pad, resolve, variantSelector)
 
 {-| The unit's pages a layout draws from, by name: a layout never writes a
 page's label as a string, and `resolve` finds its number in the schema the
 unit described (a test checks every layout's pages resolve).
+
+A page is drawn or scoped. A drawn page's art band is the page's own picture
+(the algorithm chart, an envelope, a filter's curve). A scoped page's band is
+the unit's live audio scope, which the editor has no audio for: only its focus
+band's gauges draw anything, so a layout can ask a scoped page for a gauge
+alone (`Layout.Shared.gauge`), never for its band.
+
 -}
 
-import Addr exposing (Addr, Block(..), Env, Lfo, Operator, Osc, PadBlock(..))
+import Addr exposing (Addr, Block(..), Env, Lfo, Operator, PadBlock(..))
 import Protocol exposing (PageNo)
 import Schema exposing (Schema)
 import Ui.Pad as Pad exposing (Pad)
 
 
 type UnitPage
+    = Drawn DrawnPage
+    | Scoped ScopedPage
+
+
+{-| A page whose art band is its own picture.
+-}
+type DrawnPage
     = Alg
     | Pit
     | OpPage Operator
@@ -23,8 +37,13 @@ type UnitPage
     | Snd
     | EnvPage Env
     | LfoPage Lfo
-    | VaPage
-    | OscPage Osc
+    | PadDrawn Pad PadDrawn
+
+
+{-| A page whose art band is the live scope.
+-}
+type ScopedPage
+    = VaPage
     | Noise
     | Res
     | Exc
@@ -32,25 +51,42 @@ type UnitPage
     | Src
     | Deck
     | Mch
-    | PadPage Pad PadPage
+      -- TAPE's PIT: the same label as the others' drawn one, but scoped.
+    | TapePit
+    | PadScoped Pad PadScoped
 
 
-{-| A DRUM pad's own pages.
+{-| A DRUM pad's own drawn pages.
 -}
-type PadPage
+type PadDrawn
     = PadKit
-    | PadMch
     | PadFlt
     | PadAmp
     | PadPenv
-    | PadPlfo
     | PadFx
+
+
+{-| A DRUM pad's own scoped pages.
+-}
+type PadScoped
+    = PadMch
+    | PadPlfo
 
 
 {-| The page's label as `ed describe` gives it.
 -}
 label : UnitPage -> String
 label p =
+    case p of
+        Drawn d ->
+            drawnLabel d
+
+        Scoped s ->
+            scopedLabel s
+
+
+drawnLabel : DrawnPage -> String
+drawnLabel p =
     case p of
         Alg ->
             "ALG"
@@ -76,11 +112,31 @@ label p =
         LfoPage l ->
             "L" ++ String.fromInt (Addr.lfoNumber l)
 
+        PadDrawn n pp ->
+            padLabel n
+                ++ (case pp of
+                        PadKit ->
+                            "_KIT"
+
+                        PadFlt ->
+                            "_FLT"
+
+                        PadAmp ->
+                            "_AMP"
+
+                        PadPenv ->
+                            "_PENV"
+
+                        PadFx ->
+                            "_FX"
+                   )
+
+
+scopedLabel : ScopedPage -> String
+scopedLabel p =
+    case p of
         VaPage ->
             "VA"
-
-        OscPage o ->
-            "OSC" ++ String.fromInt (Addr.oscNumber o)
 
         Noise ->
             "NOISE"
@@ -103,33 +159,23 @@ label p =
         Mch ->
             "MCH"
 
-        PadPage n pp ->
-            "PAD" ++ String.fromInt (Pad.number n) ++ padSuffix pp
+        TapePit ->
+            "PIT"
+
+        PadScoped n pp ->
+            padLabel n
+                ++ (case pp of
+                        PadMch ->
+                            "_MCH"
+
+                        PadPlfo ->
+                            "_PLFO"
+                   )
 
 
-padSuffix : PadPage -> String
-padSuffix pp =
-    case pp of
-        PadKit ->
-            "_KIT"
-
-        PadMch ->
-            "_MCH"
-
-        PadFlt ->
-            "_FLT"
-
-        PadAmp ->
-            "_AMP"
-
-        PadPenv ->
-            "_PENV"
-
-        PadPlfo ->
-            "_PLFO"
-
-        PadFx ->
-            "_FX"
+padLabel : Pad -> String
+padLabel n =
+    "PAD" ++ String.fromInt (Pad.number n)
 
 
 {-| The page's number in the schema the unit described, if it has the page.
@@ -144,58 +190,61 @@ resolve p =
 pad : UnitPage -> Maybe Pad
 pad p =
     case p of
-        PadPage n _ ->
+        Drawn (PadDrawn n _) ->
             Just n
 
-        Alg ->
+        Scoped (PadScoped n _) ->
+            Just n
+
+        Drawn Alg ->
             Nothing
 
-        Pit ->
+        Drawn Pit ->
             Nothing
 
-        OpPage _ ->
+        Drawn (OpPage _) ->
             Nothing
 
-        Flt ->
+        Drawn Flt ->
             Nothing
 
-        Fx ->
+        Drawn Fx ->
             Nothing
 
-        Snd ->
+        Drawn Snd ->
             Nothing
 
-        EnvPage _ ->
+        Drawn (EnvPage _) ->
             Nothing
 
-        LfoPage _ ->
+        Drawn (LfoPage _) ->
             Nothing
 
-        VaPage ->
+        Scoped VaPage ->
             Nothing
 
-        OscPage _ ->
+        Scoped Noise ->
             Nothing
 
-        Noise ->
+        Scoped Res ->
             Nothing
 
-        Res ->
+        Scoped Exc ->
             Nothing
 
-        Exc ->
+        Scoped Mdl2 ->
             Nothing
 
-        Mdl2 ->
+        Scoped Src ->
             Nothing
 
-        Src ->
+        Scoped Deck ->
             Nothing
 
-        Deck ->
+        Scoped Mch ->
             Nothing
 
-        Mch ->
+        Scoped TapePit ->
             Nothing
 
 
@@ -230,29 +279,29 @@ variantSelector name =
             else
                 Nothing
 
-        f : String -> Addr.Field
-        f =
-            Addr.field
+        f : Block -> String -> Maybe Addr
+        f b =
+            Addr.named b >> Result.toMaybe
     in
     case name of
         "FILTER" ->
-            Just (Addr.at Filter (f "KIND"))
+            f Filter "KIND"
 
         "FX" ->
-            Just (Addr.at VoiceFx (f "TYPE"))
+            f VoiceFx "TYPE"
 
         "RESONATOR" ->
-            Just (Addr.at Modal (f "MODE"))
+            f Modal "MODE"
 
         "MACHINE" ->
-            Just (Addr.at Tape (f "MODEL"))
+            f Tape "MODEL"
 
         _ ->
-            [ numbered "ENV" Addr.envs |> Maybe.map (\e -> Addr.at (EnvBlock e) (f "TYPE"))
-            , numbered "LFO" Addr.lfos |> Maybe.map (\l -> Addr.at (LfoBlock l) (f "TYPE"))
-            , numbered "OP" Addr.operators |> Maybe.map (\o -> Addr.at (Op o) (f "WAVE"))
-            , padOf "_MCH" |> Maybe.map (\p -> Addr.at (Pad p Voice) (f "MACHINE"))
-            , padOf "_FLT" |> Maybe.map (\p -> Addr.at (Pad p PadFilter) (f "KIND"))
+            [ numbered "ENV" Addr.envs |> Maybe.andThen (\e -> f (EnvBlock e) "TYPE")
+            , numbered "LFO" Addr.lfos |> Maybe.andThen (\l -> f (LfoBlock l) "TYPE")
+            , numbered "OP" Addr.operators |> Maybe.andThen (\o -> f (Op o) "WAVE")
+            , padOf "_MCH" |> Maybe.andThen (\p -> f (Pad p Voice) "MACHINE")
+            , padOf "_FLT" |> Maybe.andThen (\p -> f (Pad p PadFilter) "KIND")
             ]
                 |> List.filterMap identity
                 |> List.head

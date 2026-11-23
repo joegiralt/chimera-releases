@@ -29,6 +29,13 @@ feed ls m =
     List.foldl (\l -> Model.step (Line l) >> Tuple.first) m ls
 
 
+{-| The variant the model holds for a panel, as the unit names it.
+-}
+variantOf : String -> Model.Model -> Maybe String
+variantOf name m =
+    Dict.get name m.variants |> Maybe.map Protocol.variantText
+
+
 {-| The lines to the unit among a step's effects.
 -}
 sends : List Effect -> List Command
@@ -36,8 +43,8 @@ sends =
     List.filterMap
         (\e ->
             case e of
-                Send c ->
-                    Just c
+                Send o ->
+                    Just (Protocol.outgoingCommand o)
 
                 Recall _ ->
                     Nothing
@@ -296,7 +303,35 @@ isUnread n =
         Unread _ ->
             True
 
+        Unsendable _ ->
+            False
+
+        Unsent _ ->
+            False
+
+        NoAnswer _ ->
+            False
+
         Refusal _ ->
+            False
+
+
+isRefusalOrUnread : Notice -> Bool
+isRefusalOrUnread n =
+    case n of
+        Unread _ ->
+            True
+
+        Refusal _ ->
+            True
+
+        Unsendable _ ->
+            False
+
+        Unsent _ ->
+            False
+
+        NoAnswer _ ->
             False
 
 
@@ -338,7 +373,7 @@ suite =
                 let
                     under : List ( String, String ) -> String -> Int -> List Command
                     under v a i =
-                        pick (addr a) i { following | schema = Fixture.schema, variants = Dict.fromList v }
+                        pick (addr a) i { following | schema = Fixture.schema, variants = Dict.fromList (List.filterMap (\( n, w ) -> Protocol.variantName w |> Maybe.map (Tuple.pair n)) v) }
                 in
                 Expect.all
                     [ \_ -> Expect.equal [ Set (addr "FILTER.MODE") (idx 1) ] (under [ ( "FILTER", "LADDER" ) ] "FILTER.MODE" 1)
@@ -352,7 +387,7 @@ suite =
                     bad =
                         Schema.pages Fixture.schema
                             |> List.concatMap .panels
-                            |> List.filter (\pn -> pn.variant /= "-")
+                            |> List.filterMap (\pn -> pn.variant |> Maybe.map (\v -> { name = pn.name, variant = v, params = pn.params }))
                             |> List.concatMap
                                 (\pn ->
                                     pn.params
@@ -373,7 +408,7 @@ suite =
                                                                 Nothing
 
                                                             else
-                                                                Just ( pn.name, pn.variant, i )
+                                                                Just ( pn.name, Protocol.variantText pn.variant, i )
                                                         )
                                             )
                                 )
@@ -542,7 +577,7 @@ suite =
                 Expect.all
                     [ \_ -> Expect.equal (Just "2000 Hz") (shown m)
                     , \_ -> Expect.equal (gen 6) m.gen
-                    , \_ -> Expect.equal (Just "2040") (Dict.get "FILTER" m.variants)
+                    , \_ -> Expect.equal (Just "2040") (variantOf "FILTER" m)
                     ]
                     ()
         , test "a_stale_answer_number_is_never_zero" <|
@@ -860,11 +895,37 @@ suite =
                         Model.init |> Model.step (LinkChanged Open) |> Tuple.first |> tick 0
                 in
                 Expect.all
-                    [ \x -> Expect.equal (Just "UPDATE THE EDITOR") (Model.notice x)
+                    [ \x -> Expect.equal (Just "UPDATE THE EDITOR: THE UNIT SPEAKS PROTOCOL 5, THIS EDITOR 4") (Model.notice x)
                     , \x -> Expect.equal [] (tick 33 x |> Tuple.second)
                     , \x -> Expect.equal [] (tick 5000 x |> Tuple.second)
                     ]
                     (feed [ "ed hello 5 x part 1 ALGO", "OK" ] m)
+        , describe "a part past six halts and says so, never a part of nothing"
+            (List.map
+                (\( name, lines ) ->
+                    test name <|
+                        \_ ->
+                            let
+                                ( m, _ ) =
+                                    Model.init |> Model.step (LinkChanged Open) |> Tuple.first |> tick 0
+                            in
+                            Expect.all
+                                [ \x -> Expect.equal (Just "THE UNIT NAMED PART 7: THIS EDITOR KNOWS PARTS 1 TO 6") (Model.notice x)
+                                , \x -> Expect.equal [] (tick 5000 x |> Tuple.second)
+                                ]
+                                (feed lines m)
+                )
+                [ ( "in_hello", [ "ed hello 4 x part 7 ALGO", "OK" ] )
+                , ( "in_a_since", [ "ed hello 4 x part 1 ALGO", "OK", "part 7 ALGO" ] )
+                , ( "in_a_sound_line", [ "ed hello 4 x part 1 ALGO", "OK", "sound 7 \"BASS\" stale" ] )
+                ]
+            )
+        , test "a_part_line_naming_part_zero_halts" <|
+            \_ ->
+                following
+                    |> feed [ "part 0 ALGO", "OK 3" ]
+                    |> Model.notice
+                    |> Expect.equal (Just "THE UNIT NAMED PART 0: THIS EDITOR KNOWS PARTS 1 TO 6")
         , test "unit_older_than_the_editor_says_update_the_unit_and_stops" <|
             \_ ->
                 let
@@ -872,7 +933,7 @@ suite =
                         Model.init |> Model.step (LinkChanged Open) |> Tuple.first |> tick 0
                 in
                 Expect.all
-                    [ \x -> Expect.equal (Just "UPDATE THE UNIT") (Model.notice x)
+                    [ \x -> Expect.equal (Just "UPDATE THE UNIT: THE UNIT SPEAKS PROTOCOL 3, THIS EDITOR 4") (Model.notice x)
                     , \x -> Expect.equal [] (tick 33 x |> Tuple.second)
                     ]
                     (feed [ "ed hello 3 x part 1 ALGO", "OK" ] m)
@@ -995,6 +1056,33 @@ suite =
                     |> tick 66
                     |> Tuple.second
                     |> Expect.equal []
+        , test "a_cache_answer_that_is_no_answer_is_a_miss" <|
+            \_ ->
+                greeted
+                    |> tick 33
+                    |> Tuple.first
+                    |> feed [ "schema ALGO 1 " ++ algoHash, "OK" ]
+                    |> Model.step RecallGarbled
+                    |> Tuple.first
+                    |> tick 66
+                    |> Tuple.second
+                    |> Expect.equal [ Describe (EngineSchema Algo) (page 0) ]
+        , test "a_cache_that_never_answers_is_a_miss_after_the_timeout" <|
+            \_ ->
+                let
+                    recalling : Model.Model
+                    recalling =
+                        greeted
+                            |> tick 33
+                            |> Tuple.first
+                            |> feed [ "schema ALGO 1 " ++ algoHash, "OK" ]
+                in
+                Expect.all
+                    [ \m -> Expect.equal [] (tick 999 m |> Tuple.second)
+                    , \m -> Expect.equal [ Describe (EngineSchema Algo) (page 0) ] (tick 1033 m |> Tuple.first |> tick 1066 |> Tuple.second)
+                    , \m -> Expect.equal Nothing (tick 1033 m |> Tuple.first |> Model.notice)
+                    ]
+                    recalling
         , test "an_ok_with_no_schema_line_says_update_the_editor" <|
             \_ ->
                 greeted
@@ -1065,16 +1153,16 @@ suite =
                 in
                 Expect.all
                     [ \_ -> Expect.equal (Just "64") (Model.shown level m |> Maybe.map .text)
-                    , \_ -> Expect.equal (Just "HALL") (Dict.get "REVERB" m.variants)
+                    , \_ -> Expect.equal (Just "HALL") (variantOf "REVERB" m)
                     , -- A new Part: PART's whole, the mixer's kept.
                       \_ ->
                         feed [ "part 2 ALGO", "OK 3" ] m
-                            |> (\x -> ( Model.shown level x |> Maybe.map .text, shown x, Dict.get "REVERB" x.variants ))
+                            |> (\x -> ( Model.shown level x |> Maybe.map .text, shown x, variantOf "REVERB" x ))
                             |> Expect.equal ( Just "64", Nothing, Just "HALL" )
                     , -- The mixer whole: the Part's kept, the mixer's dropped.
                       \_ ->
                         feed [ "mixer", "panel REVERB QUAD", "OK 3" ] m
-                            |> (\x -> ( Model.shown level x, shown x, Dict.get "REVERB" x.variants ))
+                            |> (\x -> ( Model.shown level x, shown x, variantOf "REVERB" x ))
                             |> Expect.equal ( Nothing, Just "1000 Hz", Just "QUAD" )
                     ]
                     ()
@@ -1087,15 +1175,15 @@ suite =
                             |> feed [ "part 1 ALGO", cutoffLine "1000", "mixer", "panel REVERB HALL", "panel DELAY SYNC", "val DELAY.NOTE 0.7 0.7 \"1/8\"", "OK 2" ]
                 in
                 Expect.all
-                    [ \_ -> Expect.equal (Just "SYNC") (Dict.get "DELAY" m.variants)
+                    [ \_ -> Expect.equal (Just "SYNC") (variantOf "DELAY" m)
                     , \_ -> Expect.equal (Just "1/8") (Model.shown (addr "DELAY.NOTE") m |> Maybe.map .text)
                     , \_ ->
                         feed [ "part 2 ALGO", "OK 3" ] m
-                            |> (\x -> ( Dict.get "DELAY" x.variants, Dict.get "REVERB" x.variants ))
+                            |> (\x -> ( variantOf "DELAY" x, variantOf "REVERB" x ))
                             |> Expect.equal ( Just "SYNC", Just "HALL" )
                     , \_ ->
                         feed [ "mixer", "panel REVERB HALL", "panel DELAY FREE", "OK 3" ] m
-                            |> (\x -> Dict.get "DELAY" x.variants)
+                            |> (\x -> variantOf "DELAY" x)
                             |> Expect.equal (Just "FREE")
                     ]
                     ()
@@ -1429,6 +1517,103 @@ suite =
 
                     _ ->
                         Expect.fail "a scene and a rev"
+        , describe "the edits' window: one set on the wire"
+            (let
+                reso : Addr
+                reso =
+                    addr "ENV1.HOLD"
+
+                sets : List Command -> List Command
+                sets =
+                    List.filter (Protocol.sketch >> String.startsWith "ed set ")
+
+                -- Steps in order: the model after, and the sets they sent.
+                run : List Msg -> Model.Model -> ( Model.Model, List Command )
+                run msgs m0 =
+                    List.foldl (\msg ( m, out ) -> stepSends msg m |> Tuple.mapSecond (\cs -> out ++ sets cs)) ( m0, [] ) msgs
+
+                now : Int
+                now =
+                    Time.posixToMillis following.now
+
+                busy : ( Model.Model, List Command )
+                busy =
+                    run [ Edit cutoff (Num 100), Edit cutoff (Num 200), Edit reso (Num 1), Edit cutoff (Num 300) ] following
+
+                inFlight : Model.Model -> Int
+                inFlight m =
+                    m.awaiting |> sets |> List.length
+             in
+             [ test "never_more_than_one_set_in_flight" <|
+                \_ ->
+                    Expect.all
+                        [ \_ -> Expect.equal [ Set cutoff (Num 100) ] (Tuple.second busy)
+                        , \_ -> Expect.equal 1 (inFlight (Tuple.first busy))
+                        ]
+                        ()
+
+             -- What waits goes in address order, each address's latest value once.
+             , test "the_latest_want_wins_and_nothing_is_lost_after_the_ok" <|
+                \_ ->
+                    run [ Line "OK", Line "OK", Line "OK" ] (Tuple.first busy)
+                        |> Tuple.second
+                        |> Expect.equal [ Set reso (Num 1), Set cutoff (Num 300) ]
+             , test "each_ok_sends_one_more_and_keeps_one_in_flight" <|
+                \_ ->
+                    let
+                        ( m, sent ) =
+                            run [ Line "OK" ] (Tuple.first busy)
+                    in
+                    Expect.all
+                        [ \_ -> Expect.equal [ Set reso (Num 1) ] sent
+                        , \_ -> Expect.equal 1 (inFlight m)
+                        ]
+                        ()
+             , test "a_refusal_frees_the_window_too" <|
+                \_ ->
+                    run [ Line "ERR ed set FILTER.CUTOFF out of range" ] (Tuple.first busy)
+                        |> Tuple.second
+                        |> Expect.equal [ Set reso (Num 1) ]
+             , test "a_hand_sees_where_it_asked_to_go" <|
+                \_ ->
+                    ( Model.pending cutoff (Tuple.first busy), Model.pending reso (Tuple.first busy) )
+                        |> Expect.equal ( Just (Num 300), Just (Num 1) )
+             , test "an_unanswered_set_is_sent_once_more_then_given_up_and_the_window_moves_on" <|
+                \_ ->
+                    let
+                        ( again, resent ) =
+                            run [ Tick (at (now + 1000)) ] (Tuple.first busy)
+
+                        ( gaveUp, next ) =
+                            run [ Tick (at (now + 2000)) ] again
+                    in
+                    Expect.all
+                        [ \_ -> Expect.equal [ Set cutoff (Num 300) ] resent
+                        , \_ -> Expect.equal 1 (inFlight again)
+                        , \_ -> Expect.equal [ Set reso (Num 1) ] next
+                        , \_ -> Expect.equal 1 (inFlight gaveUp)
+                        , \_ -> Expect.equal [ NoAnswer (Set cutoff (Num 300)) ] (Model.notices gaveUp |> List.map .notice |> List.filter (not << isRefusalOrUnread))
+                        ]
+                        ()
+             , test "a_set_the_unit_cant_read_is_said_never_sent" <|
+                \_ ->
+                    let
+                        ( m, sent ) =
+                            run [ Edit cutoff (Num 1.0e-7) ] following
+                    in
+                    Expect.all
+                        [ \_ -> Expect.equal [] sent
+                        , \_ -> Expect.equal 1 (Model.notices m |> List.map .notice |> List.filter (not << isRefusalOrUnread) |> List.length)
+                        ]
+                        ()
+             , test "a_line_the_link_dropped_is_said" <|
+                \_ ->
+                    Model.step (WriteFailed "ed set FILTER.CUTOFF 300") following
+                        |> Tuple.first
+                        |> said
+                        |> Expect.equal [ "THE LINK DROPPED A LINE: ed set FILTER.CUTOFF 300" ]
+             ]
+            )
         , describe "what the unit refused or the editor couldn't read is kept"
             [ test "a_stale_witness_refusal_is_kept_with_the_command_it_answers" <|
                 \_ ->

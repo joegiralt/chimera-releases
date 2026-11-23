@@ -9,7 +9,7 @@ import Expect
 import Fixture
 import Layout.Page
 import Layout.Shared as Shared exposing (Module)
-import Protocol
+import Protocol exposing (VariantName)
 import Schema exposing (Schema)
 import Set exposing (Set)
 import Test exposing (Test, describe, test)
@@ -62,22 +62,22 @@ placed =
 {-| Every variant of every panel, one Sound each: a panel shows its first
 variant unless this Sound picks another.
 -}
-sounds : Schema -> List (Dict String String)
+sounds : Schema -> List (Dict String VariantName)
 sounds sch =
     let
-        variants : Dict String (List String)
+        variants : Dict String (List VariantName)
         variants =
             Schema.pages sch
                 |> List.concatMap .panels
-                |> List.filter (\pn -> pn.variant /= "-")
-                |> List.foldl (\pn -> Dict.update pn.name (\vs -> Just (Maybe.withDefault [] vs ++ [ pn.variant ]))) Dict.empty
+                |> List.filterMap (\pn -> pn.variant |> Maybe.map (Tuple.pair pn.name))
+                |> List.foldl (\( name, v ) -> Dict.update name (\vs -> Just (Maybe.withDefault [] vs ++ [ v ]))) Dict.empty
 
         deepest : Int
         deepest =
             Dict.values variants |> List.map List.length |> List.maximum |> Maybe.withDefault 1
     in
     List.range 0 (deepest - 1)
-        |> List.map (\k -> Dict.map (\_ vs -> List.drop (modBy (List.length vs) k) vs |> List.head |> Maybe.withDefault "") variants)
+        |> List.map (\k -> Dict.toList variants |> List.filterMap (\( n, vs ) -> List.drop (modBy (List.length vs) k) vs |> List.head |> Maybe.map (Tuple.pair n)) |> Dict.fromList)
 
 
 dupes : List String -> List String
@@ -138,7 +138,7 @@ shownIn e tab vs title =
     let
         items : List Shared.Item
         items =
-            Shared.active (Fixture.schemaFor e) (Dict.fromList vs)
+            Shared.active (Fixture.schemaFor e) (Dict.fromList (List.filterMap (\( n, v ) -> Protocol.variantName v |> Maybe.map (Tuple.pair n)) vs))
     in
     (EnginePage.layout e tab).shown
         |> List.filter (\m -> Shared.title m == title)
@@ -188,6 +188,24 @@ suite =
                 )
                 paged
             )
+        , describe "every word a layout names builds an address"
+            (List.map
+                (\e ->
+                    test (Unit.engineName e) <|
+                        \_ ->
+                            (EnginePage.layout e Kit).every
+                                |> List.concatMap Shared.unbuilt
+                                |> Expect.equal []
+                )
+                paged
+            )
+        , test "a_word_the_unit_has_none_of_is_named_not_dropped" <|
+            \_ ->
+                Shared.module_ Chip.Mod "TEST"
+                    |> Shared.withHeader [ Addr.named Addr.Kit "kind" ]
+                    |> Shared.withGroups [ Shared.group "" [ Shared.knob (Addr.named Addr.Kit "TONAL"), Shared.knob (Addr.named Addr.Kit "A B") ] ]
+                    |> (\m -> ( Shared.unbuilt m, List.map Addr.key (Shared.addresses m) ))
+                    |> Expect.equal ( [ "KIT.kind", "KIT.A B" ], [ "KIT.TONAL" ] )
         , test "a_layout_never_names_an_address_no_engine_describes" <|
             \_ ->
                 let
@@ -222,9 +240,9 @@ suite =
 
                                 known : Set ( String, String )
                                 known =
-                                    Schema.pages sch |> List.concatMap .panels |> List.map (\pn -> ( pn.name, pn.variant )) |> Set.fromList
+                                    Schema.pages sch |> List.concatMap .panels |> List.filterMap (\pn -> pn.variant |> Maybe.map (\v -> ( pn.name, Protocol.variantText v ))) |> Set.fromList
                             in
-                            Fixture.initVariants e |> Dict.toList |> List.filter (\nv -> not (Set.member nv known))
+                            Fixture.initVariants e |> Dict.toList |> List.map (Tuple.mapSecond Protocol.variantText) |> List.filter (\nv -> not (Set.member nv known))
                         )
                     |> Expect.equal []
         , describe "every screen a layout draws is a page its engine describes"
@@ -240,8 +258,9 @@ suite =
                             views e
                                 |> List.concatMap (\v -> (EnginePage.layout e v).shown)
                                 |> List.filterMap Shared.screen
-                                |> List.filter (\sc -> Layout.Page.resolve sc.page sch == Nothing)
-                                |> List.map (.page >> Layout.Page.label)
+                                |> List.map Shared.screenPage
+                                |> List.filter (\pg -> Layout.Page.resolve pg sch == Nothing)
+                                |> List.map Layout.Page.label
                                 |> Expect.equal []
                 )
                 paged
@@ -258,7 +277,7 @@ suite =
                             in
                             Schema.pages sch
                                 |> List.concatMap .panels
-                                |> List.filter (\pn -> pn.variant /= "-")
+                                |> List.filter (\pn -> pn.variant /= Nothing)
                                 |> List.map .name
                                 |> List.filter (\n -> Layout.Page.variantSelector n |> Maybe.andThen (\a -> Schema.param a sch) |> (==) Nothing)
                                 |> Set.fromList

@@ -13,9 +13,11 @@ kit:
     cp {{kit_dir}}/screen.wasm editor/public/screen.wasm
 
 # The editor's Elm tests, elm-review, elm-format, and the JS glue's checks
-# (screen.wasm painted from node). Elm itself is pinned in editor/package.json.
+# (screen.wasm painted from node, every layout screen included, its spec from
+# editor/screens/LayoutScreens.elm). Elm itself is pinned in editor/package.json.
 editor-test: kit
-    cd editor && npm install --no-audit --no-fund --silent && node tests/gen-fixture.js && npx elm-test --compiler node_modules/.bin/elm && npx elm-review --compiler node_modules/.bin/elm && npx elm-format --validate src tests review/src >/dev/null && node public/ports.check.js && node public/theme.check.js && node public/screen.check.js
+    cd editor && npm install --no-audit --no-fund --silent && node tests/gen-fixture.js && npx elm-test --compiler node_modules/.bin/elm && npx elm-review --compiler node_modules/.bin/elm && npx elm-format --validate src tests review/src screens >/dev/null && node public/ports.check.js && node public/theme.check.js && node public/screen.check.js
+    cd editor/screens && ../node_modules/.bin/elm make LayoutScreens.elm --optimize --output=layout-screens.js >/dev/null && node layout-screens.check.js
 
 # The editor, optimised, into editor/dist/
 editor-build: kit

@@ -10,6 +10,7 @@ port module Transport exposing
     , linkText
     , parseLink
     , send
+    , writeFailed
     )
 
 {-| The one link to the unit, over Web Serial or a WebSocket. The JavaScript
@@ -35,6 +36,11 @@ port send : String -> Cmd msg
 
 
 port lineIn : (String -> msg) -> Sub msg
+
+
+{-| A line the browser could not write to the link (the link then drops).
+-}
+port writeFailed : (String -> msg) -> Sub msg
 
 
 port linkState : (String -> msg) -> Sub msg

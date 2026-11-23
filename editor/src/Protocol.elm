@@ -13,6 +13,7 @@ module Protocol exposing
     , ControlNo
     , Degree
     , Edits(..)
+    , Fault(..)
     , Flags
     , Generation
     , Health(..)
@@ -32,6 +33,7 @@ module Protocol exposing
     , OnOff(..)
     , OptIndex
     , OrbitCommand(..)
+    , Outgoing
     , OverEdits(..)
     , PageLabel
     , PageNo
@@ -39,6 +41,7 @@ module Protocol exposing
     , ProjectFile(..)
     , ProjectId
     , ProjectName
+    , Protocol(..)
     , Rev
     , RingNo
     , RouteKind(..)
@@ -60,6 +63,7 @@ module Protocol exposing
     , SpanPlace
     , StepNo
     , Value(..)
+    , VariantName
     , amount
     , binding
     , cell
@@ -81,6 +85,9 @@ module Protocol exposing
     , noteToInt
     , nrpnNo
     , optIndex
+    , outgoing
+    , outgoingCommand
+    , outgoingLine
     , pageLabel
     , pageLabelFrom
     , pageNo
@@ -104,9 +111,13 @@ module Protocol exposing
     , schemaToken
     , segment
     , segmentToInt
+    , sketch
     , spanPlace
     , stepNo
     , stepNoToInt
+    , supported
+    , variantName
+    , variantText
     )
 
 {-| The unit's text console, `ed` namespace: one command out, answer lines in.
@@ -117,6 +128,51 @@ model keeps and shows; it is never dropped.
 import Addr exposing (Addr)
 import Hash exposing (Hash)
 import Unit exposing (Engine, Gen, Part)
+
+
+{-| The console protocol this editor speaks.
+-}
+supported : Int
+supported =
+    4
+
+
+{-| What a unit's `ed hello` says of the protocol it speaks: this editor's,
+with the Part it follows and that Part's engine, or another one.
+-}
+type Protocol
+    = Speaks { build : String, part : Part, engine : Engine }
+    | TooNew Int
+    | TooOld Int
+
+
+{-| A line the unit said in the protocol's words but with a value no unit of
+this protocol says: a Part past six, an engine this editor doesn't know.
+-}
+type Fault
+    = NoSuchPart String
+    | NoSuchEngine String
+
+
+{-| The variant a panel shows (`panel FILTER LADDER`); a fixed panel (`-`)
+has none.
+-}
+type VariantName
+    = VariantName String
+
+
+variantName : String -> Maybe VariantName
+variantName s =
+    if s == "-" then
+        Nothing
+
+    else
+        Just (VariantName s)
+
+
+variantText : VariantName -> String
+variantText (VariantName s) =
+    s
 
 
 {-| A page of `ed describe`, by the unit's number for it: 0 is the first.
@@ -984,10 +1040,10 @@ type Command
 
 
 type AnswerLine
-    = HelloIs { protocol : Int, build : String, part : Int, engine : String }
+    = HelloIs Protocol
     | SchemaIs { schema : SchemaId, pages : Int, hash : Hash }
     | Page { n : PageNo, label : PageLabel, count : Int }
-    | Panel { name : String, variant : String }
+    | Panel { name : String, variant : Maybe VariantName }
     | Param { addr : Addr, label : String, kind : Kind, scale : Scale, min : Float, max : Float, step : Float, default : Float, flags : Flags }
     | Opt { addr : Addr, index : OptIndex, name : String }
       -- FLT › MOD's knob: the matrix cell it views.
@@ -1004,7 +1060,7 @@ type AnswerLine
     | RouteIs { cell : Cell, amount : Int, text : String }
     | Unroute Cell
     | Val { addr : Addr, norm : Float, stored : Float, text : String }
-    | PartIs Int String
+    | PartIs Part Engine
       -- The MIXER section of `since`, whole: what was held for it is dropped.
     | MixerIs
       -- A set the unit took and then would not apply, and the box's reason
@@ -1015,7 +1071,7 @@ type AnswerLine
       -- The SETTINGS section of `since`, whole: what was held for it is dropped.
     | SettingsIs
     | ProjectIs { name : String, file : ProjectFile, edits : Edits, generation : Maybe Generation }
-    | SoundIs { part : Int, name : String, status : SoundStatus }
+    | SoundIs { part : Part, name : String, status : SoundStatus }
       -- The box's toast, when a new one goes up.
     | ToastIs String
       -- The listing, whole: its count, and whether the card has more.
@@ -1046,6 +1102,8 @@ type AnswerLine
     | ScaleIs ScaleMask
     | StepIs RingNo StepNo Note
     | PoolIs RingNo NotePool
+      -- A line in the protocol's words with a value no unit says.
+    | Faulty Fault
 
 
 type Line
@@ -1062,6 +1120,90 @@ type Line
       -- what one answer may carry. Asking again gets the same.
     | SinceTooLarge
     | Unknown
+
+
+{-| A command with the line it is on the wire: only `outgoing` makes one,
+so a line sent is always one `encode` could write.
+-}
+type Outgoing
+    = Outgoing Command String
+
+
+outgoing : Command -> Maybe Outgoing
+outgoing c =
+    encode c |> Maybe.map (Outgoing c)
+
+
+outgoingCommand : Outgoing -> Command
+outgoingCommand (Outgoing c _) =
+    c
+
+
+outgoingLine : Outgoing -> String
+outgoingLine (Outgoing _ l) =
+    l
+
+
+{-| A command as a person reads it, even one `encode` can't write (an
+address or a number the unit wouldn't read): for saying what was not sent.
+-}
+sketch : Command -> String
+sketch c =
+    let
+        value : Value -> String
+        value v =
+            case v of
+                Num n ->
+                    String.fromFloat n
+
+                Name n ->
+                    n
+
+                Index (OptIndex i) ->
+                    "#" ++ String.fromInt i
+    in
+    case c of
+        Set a v ->
+            "ed set " ++ Addr.key a ++ " " ++ value v
+
+        Get a ->
+            "ed get " ++ Addr.key a
+
+        MapCmd _ ->
+            encode c |> Maybe.withDefault "ed map"
+
+        SaveProjectAs (ProjectName n) ->
+            "ed project saveas " ++ n
+
+        Hello ->
+            encode c |> Maybe.withDefault "ed hello"
+
+        AskSchema _ ->
+            encode c |> Maybe.withDefault "ed schema"
+
+        Describe _ _ ->
+            encode c |> Maybe.withDefault "ed describe"
+
+        Since _ ->
+            encode c |> Maybe.withDefault "ed since"
+
+        Follow _ ->
+            encode c |> Maybe.withDefault "ed part"
+
+        SetRoute _ _ ->
+            encode c |> Maybe.withDefault "ed route"
+
+        ListProjects ->
+            encode c |> Maybe.withDefault "ed projects"
+
+        SaveProject ->
+            encode c |> Maybe.withDefault "ed project save"
+
+        LoadProject _ _ _ ->
+            encode c |> Maybe.withDefault "ed project load"
+
+        OrbitCmd _ ->
+            encode c |> Maybe.withDefault "ed orbit"
 
 
 {-| The line to send, or `Nothing` if it could not be one command: an address
@@ -1518,7 +1660,7 @@ answer : List String -> Maybe AnswerLine
 answer ts =
     case ts of
         [ "ed", "hello", proto, build, "part", n, engine ] ->
-            Maybe.map2 (\pr pt -> HelloIs { protocol = pr, build = build, part = pt, engine = engine }) (nat proto) (nat n)
+            nat proto |> Maybe.map (\pr -> hello pr build n engine)
 
         [ "schema", token, pages, hash ] ->
             Maybe.map3 (\sc n h -> SchemaIs { schema = sc, pages = n, hash = h }) (schemaFromToken token) (nat pages) (Hash.fromHex hash)
@@ -1530,10 +1672,10 @@ answer ts =
             Maybe.map3 (\a l b -> Page { n = PageNo a, label = l, count = b }) (nat n) (pageLabelFrom label) (nat count)
 
         [ "panel", name, variant ] ->
-            Just (Panel { name = name, variant = variant })
+            Just (Panel { name = name, variant = variantName variant })
 
         [ "part", n, engine ] ->
-            nat n |> Maybe.map (\i -> PartIs i engine)
+            Just (faulty (Result.map2 PartIs (partOf n) (engineOf engine)))
 
         [ "param", a, label, kind, scale, lo, hi, step, def, flags ] ->
             Maybe.map2 Tuple.pair (scaleOf scale) (flagsOf flags)
@@ -1587,7 +1729,7 @@ answer ts =
             Maybe.map3 (\f e gn -> ProjectIs { name = name, file = f, edits = e, generation = gn }) (fileOf file) (editsOf edits) (generationOf g)
 
         [ "sound", n, name, status ] ->
-            Maybe.map2 (\i st -> SoundIs { part = i, name = name, status = st }) (nat n) (soundStatusOf status)
+            soundStatusOf status |> Maybe.map (\st -> faulty (partOf n |> Result.map (\p -> SoundIs { part = p, name = name, status = st })))
 
         [ "toast", text ] ->
             Just (ToastIs text)
@@ -2009,6 +2151,41 @@ editsOf s =
 
         _ ->
             Nothing
+
+
+{-| `ed hello`'s answer: a unit speaking this editor's protocol names its
+Part and engine, each one this editor knows, or the line is faulty.
+-}
+hello : Int -> String -> String -> String -> AnswerLine
+hello pr build n engine =
+    if pr > supported then
+        HelloIs (TooNew pr)
+
+    else if pr < supported then
+        HelloIs (TooOld pr)
+
+    else
+        faulty (Result.map2 (\p e -> HelloIs (Speaks { build = build, part = p, engine = e })) (partOf n) (engineOf engine))
+
+
+partOf : String -> Result Fault Part
+partOf n =
+    nat n |> Maybe.andThen Unit.partFromInt |> Result.fromMaybe (NoSuchPart n)
+
+
+engineOf : String -> Result Fault Engine
+engineOf e =
+    Unit.engineFromName e |> Result.fromMaybe (NoSuchEngine e)
+
+
+faulty : Result Fault AnswerLine -> AnswerLine
+faulty r =
+    case r of
+        Ok a ->
+            a
+
+        Err f ->
+            Faulty f
 
 
 soundStatusOf : String -> Maybe SoundStatus

@@ -22,7 +22,7 @@ import Html.Events exposing (onClick)
 import Layout.Algo
 import Layout.Drum
 import Layout.Modal
-import Layout.Page as UnitPage exposing (PadPage(..), UnitPage(..))
+import Layout.Page as UnitPage exposing (PadScoped(..), ScopedPage(..), UnitPage(..))
 import Layout.Shared as Shared exposing (As(..), Extra(..), Item, Module, Placement(..))
 import Layout.Tape
 import Layout.Va
@@ -379,7 +379,7 @@ hand : Model -> Control.Msg -> State -> State
 hand m h s =
     let
         ( drag, intents ) =
-            Control.update (target m) h s.drag
+            Control.update (target m s) h s.drag
     in
     List.foldl (intend m) { s | drag = drag } intents
 
@@ -405,20 +405,74 @@ isChoice p =
             True
 
 
-{-| What a hand reaches: the unit's own value. A control the unit has not
-reported cannot be taken hold of.
+{-| What a hand reaches: where the editor last asked the control to go and
+the unit has not yet said (this frame's want, else one waiting for or on the
+wire), else the unit's own value. So a wheel's notches faster than the
+unit's answers each count. A control the unit has not reported cannot be
+taken hold of.
 -}
-target : Model -> Addr -> Maybe Target
-target m a =
+target : Model -> State -> Addr -> Maybe Target
+target m s a =
     paramOf m a
         |> Maybe.andThen
             (\p ->
+                let
+                    local : Maybe Want
+                    local =
+                        case Control.wanted p.addr s.wanted of
+                            Just w ->
+                                Just w
+
+                            Nothing ->
+                                Model.pending p.addr m |> Maybe.andThen wantOf
+                in
                 if isChoice p then
-                    Control.current (chosen m p) |> Maybe.map (\i -> Discrete { options = List.map Tuple.first p.options, current = i })
+                    (case local of
+                        Just (Option i) ->
+                            Just i
+
+                        Just (Number _) ->
+                            Control.current (chosen m p)
+
+                        Nothing ->
+                            Control.current (chosen m p)
+                    )
+                        |> Maybe.map (\i -> Discrete { options = List.map Tuple.first p.options, current = i })
 
                 else
-                    Model.shown p.addr m |> Maybe.map (\v -> Continuous { norm = v.norm, wheel = Control.wheelNorm p })
+                    Model.shown p.addr m
+                        |> Maybe.map
+                            (\v ->
+                                Continuous
+                                    { norm =
+                                        case local of
+                                            Just (Number x) ->
+                                                Control.normOf p x
+
+                                            Just (Option _) ->
+                                                v.norm
+
+                                            Nothing ->
+                                                v.norm
+                                    , wheel = Control.wheelNorm p
+                                    }
+                            )
             )
+
+
+{-| A value the editor sent, as the want it was.
+-}
+wantOf : Value -> Maybe Want
+wantOf v =
+    case v of
+        Num x ->
+            Just (Number x)
+
+        Index i ->
+            Just (Option i)
+
+        Name _ ->
+            Nothing
 
 
 intend : Model -> Intent -> State -> State
@@ -543,13 +597,14 @@ choiceReading m p =
 -- THE SCREENS
 
 
-{-| What a screen on `page` draws from: that page's own addresses and the
-selectors its variants hang on (FILTER.KIND for FILTER's), in `describe`
-order, each with the unit's stored value. Nothing else, so a value elsewhere
-never repaints it.
+{-| What a screen on `page` draws from: that page's own addresses, the
+selectors its variants hang on (FILTER.KIND for FILTER's) and the addresses
+off the page its art reads (`reads`: VA's WAVE morph reads SHAPE), in
+`describe` order, each with the unit's stored value. Nothing else, so a value
+elsewhere never repaints it.
 -}
-screenVals : Model -> PageNo -> List ( Addr, Float )
-screenVals m n =
+screenVals : Model -> PageNo -> List Addr -> List ( Addr, Float )
+screenVals m n reads =
     let
         own : List Addr
         own =
@@ -560,12 +615,12 @@ screenVals m n =
             Schema.pages m.schema
                 |> List.filter (\pg -> pg.n == n)
                 |> List.concatMap .panels
-                |> List.filter (\pn -> pn.variant /= "-")
+                |> List.filter (\pn -> pn.variant /= Nothing)
                 |> List.filterMap (.name >> UnitPage.variantSelector)
 
         wanted : Set String
         wanted =
-            Set.fromList (List.map Addr.key (own ++ selectors))
+            Set.fromList (List.map Addr.key (own ++ selectors ++ reads))
     in
     Schema.addresses m.schema
         |> List.filter (\a -> Set.member (Addr.key a) wanted)
@@ -576,32 +631,22 @@ screenVals m n =
 -}
 screenSpec : Model -> Engine -> Shared.ScreenAt -> Maybe Screen.Config
 screenSpec m e sc =
-    UnitPage.resolve sc.page m.schema
-        |> Maybe.map
-            (\n ->
-                Screen.drawn e n sc.shape
-                    |> (sc.fallback |> Maybe.map Screen.fallback |> Maybe.withDefault identity)
-                    |> (sc.focus |> Maybe.map Screen.focus |> Maybe.withDefault identity)
-                    |> (UnitPage.pad sc.page |> Maybe.map Screen.onPad |> Maybe.withDefault identity)
-                    |> Screen.values (screenVals m n)
-            )
+    UnitPage.resolve (Shared.screenPage sc) m.schema
+        |> Maybe.map (\n -> Shared.screenConfig e n sc |> Screen.values (screenVals m n (Shared.screenReads sc)))
 
 
 {-| Pad `p`'s icon in the strip: the unit's own for the pad's machine.
 -}
 padIcon : Model -> Pad -> Screen.Config
 padIcon m p =
-    case UnitPage.resolve (PadPage p PadMch) m.schema of
-        Just n ->
-            let
-                machine : Addr
-                machine =
-                    Addr.at (Addr.Pad p Voice) (Addr.field "MACHINE")
-            in
-            Screen.padIcon n p |> Screen.values (Model.shown machine m |> Maybe.map (\v -> [ ( machine, v.stored ) ]) |> Maybe.withDefault [])
+    Maybe.map2 Tuple.pair (UnitPage.resolve (Scoped (PadScoped p PadMch)) m.schema) (Result.toMaybe (machineOf p))
+        |> Maybe.map (\( n, machine ) -> Screen.padIcon n p |> Screen.values (Model.shown machine m |> Maybe.map (\v -> [ ( machine, v.stored ) ]) |> Maybe.withDefault []))
+        |> Maybe.withDefault (Screen.new Drum (Screen.PadIcon p))
 
-        Nothing ->
-            Screen.new Drum (Screen.PadIcon p)
+
+machineOf : Pad -> Shared.Built
+machineOf p =
+    Addr.named (Addr.Pad p Voice) "MACHINE"
 
 
 
@@ -771,7 +816,7 @@ enginePage m s status e =
 -}
 padName : Model -> Pad -> String
 padName m p =
-    Model.shown (Addr.at (Addr.Pad p Voice) (Addr.field "MACHINE")) m |> Maybe.map .text |> Maybe.withDefault "--"
+    machineOf p |> Result.toMaybe |> Maybe.andThen (\a -> Model.shown a m) |> Maybe.map .text |> Maybe.withDefault "--"
 
 
 partTabs : Model -> List (Page.Tab Msg)
@@ -875,7 +920,7 @@ extra ctx x =
                 named : List String
                 named =
                     Schema.pages ctx.m.schema
-                        |> List.concatMap (.panels >> List.filter (\pn -> pn.variant == "-" || Dict.get pn.name ctx.m.variants == Just pn.variant) >> List.concatMap (.routes >> List.map .label))
+                        |> List.concatMap (.panels >> List.filter (Schema.panelShown ctx.m.variants) >> List.concatMap (.routes >> List.map .label))
                         |> List.foldl
                             (\r acc ->
                                 if List.member r acc then

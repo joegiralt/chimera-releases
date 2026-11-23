@@ -16,7 +16,12 @@ fixture holds, so a test using it fails on it.
 -}
 addr : String -> Addr
 addr s =
-    Addr.fromWire s |> Maybe.withDefault (Addr.at Addr.Kit (Addr.field "NOT_AN_ADDRESS"))
+    case Addr.fromWire s of
+        Just a ->
+            a
+
+        Nothing ->
+            addr "KIT.NOT_AN_ADDRESS"
 
 
 page : Int -> PageNo

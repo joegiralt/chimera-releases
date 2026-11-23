@@ -7,9 +7,9 @@ module Layout.Algo exposing (chartFocus, modules)
 (FILTER, FILTER MOD, VOICE FX, AMP · OUT, ENV 1–3, LFO 1–3) and MOD.
 -}
 
-import Addr exposing (Addr, Block(..), Operator)
-import Layout.Page exposing (UnitPage(..))
-import Layout.Shared as Shared exposing (Module, auto, fader, group, hero, heroFader, knob, menu, module_, strip)
+import Addr exposing (Block(..), Operator)
+import Layout.Page exposing (DrawnPage(..))
+import Layout.Shared as Shared exposing (Built, Module, auto, fader, group, hero, heroFader, knob, menu, module_, strip)
 import Ui.Chip as Chip
 import Ui.Screen exposing (Focus(..), Glyph(..))
 
@@ -36,9 +36,9 @@ chartFocus =
 algorithm : Module
 algorithm =
     let
-        a : String -> Addr
+        a : String -> Built
         a =
-            Addr.field >> Addr.at Algo
+            Addr.named Algo
     in
     module_ Chip.Algorithm "ALGORITHM"
         |> Shared.withScreen (strip Alg |> Shared.withFallback AlgoChart |> Shared.withFocus chartFocus)
@@ -54,9 +54,9 @@ the kind's controls. TABLE has a ratio; FORMANT and NOISE a band.
 operator : Operator -> Module
 operator o =
     let
-        a : String -> Addr
+        a : String -> Built
         a =
-            Addr.field >> Addr.at (Op o)
+            Addr.named (Op o)
     in
     module_ Chip.Operators ("OP " ++ String.fromInt (Addr.operatorNumber o))
         |> Shared.withHeader [ a "WAVE" ]

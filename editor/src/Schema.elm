@@ -21,6 +21,7 @@ module Schema exposing
     , pageCount
     , pageNumber
     , pages
+    , panelShown
     , param
     , paramIn
     )
@@ -31,7 +32,7 @@ answers arrive. Pages hold panels (a variant each), panels hold params.
 
 import Addr exposing (Addr)
 import Dict exposing (Dict)
-import Protocol exposing (ActCell, AnswerLine, Cell, ControlNo, Flags, Kind, MapForm, MapKind, Msb, OptIndex, PageLabel, PageNo, RouteKind, Scale, SpanPlace)
+import Protocol exposing (ActCell, AnswerLine, Cell, ControlNo, Flags, Kind, MapForm, MapKind, Msb, OptIndex, PageLabel, PageNo, RouteKind, Scale, SpanPlace, VariantName)
 
 
 type alias Param =
@@ -50,7 +51,7 @@ type alias Param =
 
 type alias Panel =
     { name : String
-    , variant : String
+    , variant : Maybe VariantName
     , params : List Param
     , routes : List Route
     }
@@ -206,7 +207,7 @@ described by several variants (FILTER.MODE has different names per kind), so
 `param` alone is the last described, and editing needs this: a variant panel
 beats a generic one.
 -}
-paramIn : Dict String String -> Addr -> Schema -> Maybe Param
+paramIn : Dict String VariantName -> Addr -> Schema -> Maybe Param
 paramIn variants a (Schema s) =
     let
         key : String
@@ -214,12 +215,12 @@ paramIn variants a (Schema s) =
             Addr.key a
 
         shown : Panel -> Bool
-        shown pn =
-            pn.variant == "-" || Dict.get pn.name variants == Just pn.variant
+        shown =
+            panelShown variants
 
         mine : Panel -> Maybe ( Bool, Param )
         mine pn =
-            pn.params |> List.filter (\p -> Addr.key p.addr == key) |> List.head |> Maybe.map (\p -> ( pn.variant /= "-", p ))
+            pn.params |> List.filter (\p -> Addr.key p.addr == key) |> List.head |> Maybe.map (\p -> ( pn.variant /= Nothing, p ))
 
         found : List ( Bool, Param )
         found =
@@ -243,7 +244,20 @@ paramIn variants a (Schema s) =
                     Dict.get key s.index
 
 
-optionName : Dict String String -> Addr -> OptIndex -> Schema -> Maybe String
+{-| A panel the Sound shows now: a fixed one always, a variant while the
+Sound has that variant.
+-}
+panelShown : Dict String VariantName -> Panel -> Bool
+panelShown variants pn =
+    case pn.variant of
+        Nothing ->
+            True
+
+        Just v ->
+            Dict.get pn.name variants == Just v
+
+
+optionName : Dict String VariantName -> Addr -> OptIndex -> Schema -> Maybe String
 optionName variants a i sch =
     paramIn variants a sch
         |> Maybe.andThen (\p -> p.options |> List.filter (\( k, _ ) -> k == i) |> List.head)
@@ -346,6 +360,9 @@ add line (Schema s) =
 
         -- TAPE's SOURCE is read-only: its text comes with `since`.
         Protocol.Source _ ->
+            Schema s
+
+        Protocol.Faulty _ ->
             Schema s
 
         Protocol.HelloIs _ ->

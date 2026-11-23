@@ -3,6 +3,7 @@
 
 module Layout.Shared exposing
     ( As(..)
+    , Built
     , Extra(..)
     , Group
     , Item
@@ -24,6 +25,7 @@ module Layout.Shared exposing
     , filter
     , filterCore
     , filterMod
+    , gauge
     , group
     , header
     , hero
@@ -38,11 +40,16 @@ module Layout.Shared exposing
     , note
     , padRoutes
     , pitch
+    , pitchWith
     , place
     , screen
+    , screenConfig
+    , screenPage
+    , screenReads
     , strip
     , tall
     , title
+    , unbuilt
     , voiceFx
     , withChip
     , withExtras
@@ -51,6 +58,7 @@ module Layout.Shared exposing
     , withGroups
     , withHeader
     , withNote
+    , withReads
     , withScreen
     )
 
@@ -61,18 +69,21 @@ an address the Sound doesn't show now (another variant's) is simply not
 drawn. The modules every voice engine shares live here.
 
 A `Module` is opaque: a layout builds one with `module_` and the `with`
-setters, and every address in it comes from `Addr`'s typed builders.
+setters, and every address in it comes from `Addr`'s typed builders. A word
+the unit has none of builds no address: the module keeps it (`unbuilt`), a
+test holds every layout to none, and the page draws the rest.
 
 -}
 
 import Addr exposing (Addr, Block(..), Env, Lfo, PadBlock(..))
 import Dict exposing (Dict)
-import Layout.Page exposing (UnitPage(..))
-import Protocol
+import Layout.Page as Page exposing (DrawnPage(..), UnitPage(..))
+import Protocol exposing (PageNo, VariantName)
 import Schema exposing (Schema)
 import Ui.Chip as Chip exposing (Chip)
 import Ui.Pad exposing (Pad)
-import Ui.Screen exposing (Focus, Glyph, Shape(..))
+import Ui.Screen as Screen exposing (Focus, Glyph, Shape(..))
+import Unit exposing (Engine)
 
 
 
@@ -93,8 +104,15 @@ type As
     | AsMenu
 
 
+{-| An address a layout built from the unit's word, or the word, which
+the unit has none of.
+-}
+type alias Built =
+    Result String Addr
+
+
 type alias Slot =
-    { addr : Addr, as_ : As }
+    { addr : Built, as_ : As }
 
 
 type alias Group =
@@ -115,11 +133,21 @@ type Extra
     | PadRoutes Pad
 
 
-{-| A screen: the unit's page whose art it draws, its shape, the crop under
-it while the WASM loads, and the cell the unit's focus band is on.
+{-| A screen: the unit's page and what of it is drawn, the crop under it
+while the WASM loads, and the addresses off that page its art also reads
+(VA's WAVE morph draws OSC 1's SHAPE). Opaque: a band (`strip`, `tall`) is
+only ever a drawn page's, so no screen draws the live scope.
 -}
-type alias ScreenAt =
-    { page : UnitPage, shape : Shape, fallback : Maybe Glyph, focus : Maybe Focus }
+type ScreenAt
+    = ScreenAt { page : UnitPage, art : Art, fallback : Maybe Glyph, reads : List Built }
+
+
+{-| A drawn page's band, its shape and the cell in focus; or a page's focus
+band gauge with that cell's picture.
+-}
+type Art
+    = Band Shape (Maybe Focus)
+    | GaugeOf Focus
 
 
 type Span
@@ -132,7 +160,7 @@ type Module
         { title : String
         , note : String
         , chip : Chip
-        , header : List Addr
+        , header : List Built
         , screen : Maybe ScreenAt
         , groups : List Group
         , extras : List Extra
@@ -157,7 +185,7 @@ withNote n (Module m) =
 
 {-| The title bar's type menus: the selectors that swap the module's body.
 -}
-withHeader : List Addr -> Module -> Module
+withHeader : List Built -> Module -> Module
 withHeader h (Module m) =
     Module { m | header = h }
 
@@ -206,7 +234,7 @@ chip (Module m) =
 
 header : Module -> List Addr
 header (Module m) =
-    m.header
+    List.filterMap Result.toMaybe m.header
 
 
 screen : Module -> Maybe ScreenAt
@@ -229,54 +257,104 @@ group =
     Group
 
 
-auto : Addr -> Slot
+auto : Built -> Slot
 auto a =
     { addr = a, as_ = Auto }
 
 
-knob : Addr -> Slot
+knob : Built -> Slot
 knob a =
     { addr = a, as_ = AsKnob }
 
 
-hero : Addr -> Slot
+hero : Built -> Slot
 hero a =
     { addr = a, as_ = AsHero }
 
 
-fader : Addr -> Slot
+fader : Built -> Slot
 fader a =
     { addr = a, as_ = AsFader }
 
 
-heroFader : Addr -> Slot
+heroFader : Built -> Slot
 heroFader a =
     { addr = a, as_ = AsHeroFader }
 
 
-menu : Addr -> Slot
+menu : Built -> Slot
 menu a =
     { addr = a, as_ = AsMenu }
 
 
-strip : UnitPage -> ScreenAt
+{-| A drawn page's art band, 240 by 68.
+-}
+strip : DrawnPage -> ScreenAt
 strip page =
-    { page = page, shape = Strip, fallback = Nothing, focus = Nothing }
+    ScreenAt { page = Drawn page, art = Band Strip Nothing, fallback = Nothing, reads = [] }
 
 
-tall : UnitPage -> ScreenAt
+{-| A drawn page's tall art (a filter's, an envelope's), 240 by 158.
+-}
+tall : DrawnPage -> ScreenAt
 tall page =
-    { page = page, shape = Tall, fallback = Nothing, focus = Nothing }
+    ScreenAt { page = Drawn page, art = Band Tall Nothing, fallback = Nothing, reads = [] }
+
+
+{-| Any page's focus band gauge with cell `f` in focus: the picture the unit
+shows for that cell, the only art a scoped page has.
+-}
+gauge : UnitPage -> Focus -> ScreenAt
+gauge page f =
+    ScreenAt { page = page, art = GaugeOf f, fallback = Nothing, reads = [] }
 
 
 withFallback : Glyph -> ScreenAt -> ScreenAt
-withFallback g s =
-    { s | fallback = Just g }
+withFallback g (ScreenAt s) =
+    ScreenAt { s | fallback = Just g }
 
 
 withFocus : Focus -> ScreenAt -> ScreenAt
-withFocus f s =
-    { s | focus = Just f }
+withFocus f (ScreenAt s) =
+    case s.art of
+        Band shape _ ->
+            ScreenAt { s | art = Band shape (Just f) }
+
+        GaugeOf _ ->
+            ScreenAt { s | art = GaugeOf f }
+
+
+{-| The addresses off the screen's page its art reads too.
+-}
+withReads : List Built -> ScreenAt -> ScreenAt
+withReads rs (ScreenAt s) =
+    ScreenAt { s | reads = rs }
+
+
+screenPage : ScreenAt -> UnitPage
+screenPage (ScreenAt s) =
+    s.page
+
+
+screenReads : ScreenAt -> List Addr
+screenReads (ScreenAt s) =
+    List.filterMap Result.toMaybe s.reads
+
+
+{-| The screen as `<chimera-screen>` is told it, its page found at `n`, but
+for the values.
+-}
+screenConfig : Engine -> PageNo -> ScreenAt -> Screen.Config
+screenConfig e n (ScreenAt s) =
+    (case s.art of
+        Band shape f ->
+            Screen.drawn e n shape |> (f |> Maybe.map Screen.focus |> Maybe.withDefault identity)
+
+        GaugeOf f ->
+            Screen.gauge e n f
+    )
+        |> (s.fallback |> Maybe.map Screen.fallback |> Maybe.withDefault identity)
+        |> (Page.pad s.page |> Maybe.map Screen.onPad |> Maybe.withDefault identity)
 
 
 {-| One of a DRUM pad's routes: its three addresses.
@@ -285,26 +363,78 @@ type alias Route =
     { source : Addr, dest : Addr, amount : Addr }
 
 
+{-| A pad's four routes, each built whole or not at all (`unbuilt` names
+what was not).
+-}
 padRoutes : Pad -> List Route
 padRoutes p =
+    List.filterMap Result.toMaybe (builtRoutes p)
+
+
+builtRoutes : Pad -> List (Result (List String) Route)
+builtRoutes p =
     List.map
         (\k ->
             let
-                at : String -> Addr
-                at f =
-                    Addr.at (Pad p (PadRoute k)) (Addr.field f)
+                at : String -> Built
+                at =
+                    Addr.named (Pad p (PadRoute k))
             in
-            { source = at "SOURCE", dest = at "DEST", amount = at "AMOUNT" }
+            case ( at "SOURCE", at "DEST", at "AMOUNT" ) of
+                ( Ok source, Ok dest, Ok amount ) ->
+                    Ok { source = source, dest = dest, amount = amount }
+
+                ( s, d, a ) ->
+                    Err (List.filterMap errOf [ s, d, a ])
         )
         Addr.routeSlots
+
+
+errOf : Result e a -> Maybe e
+errOf r =
+    case r of
+        Ok _ ->
+            Nothing
+
+        Err e ->
+            Just e
+
+
+{-| The words the module asked for that build no address: none, in a
+layout that is right.
+-}
+unbuilt : Module -> List String
+unbuilt (Module m) =
+    List.filterMap errOf m.header
+        ++ List.concatMap (.slots >> List.filterMap (.addr >> errOf)) m.groups
+        ++ (m.screen |> Maybe.map (\(ScreenAt s) -> List.filterMap errOf s.reads) |> Maybe.withDefault [])
+        ++ List.concatMap
+            (\x ->
+                case x of
+                    PadRoutes p ->
+                        List.concat (List.filterMap errOf (builtRoutes p))
+
+                    SourceText ->
+                        []
+
+                    Note _ ->
+                        []
+
+                    NextSlice ->
+                        []
+
+                    PartMatrix ->
+                        []
+            )
+            m.extras
 
 
 {-| Every address the module places.
 -}
 addresses : Module -> List Addr
 addresses (Module m) =
-    m.header
-        ++ List.concatMap (.slots >> List.map .addr) m.groups
+    header (Module m)
+        ++ List.concatMap (.slots >> List.filterMap (.addr >> Result.toMaybe)) m.groups
         ++ List.concatMap
             (\x ->
                 case x of
@@ -366,12 +496,12 @@ place every =
 order. One address can sit on several pages (an operator's WAVE is on the OSC
 page and on the operator's own): the variant panel's description wins.
 -}
-active : Schema -> Dict String String -> List Item
+active : Schema -> Dict String VariantName -> List Item
 active sch variants =
     let
         shown : Schema.Panel -> Bool
-        shown pn =
-            pn.variant == "-" || Dict.get pn.name variants == Just pn.variant
+        shown =
+            Schema.panelShown variants
 
         keep : ( Bool, Item ) -> ( List String, Dict String ( Bool, Item ) ) -> ( List String, Dict String ( Bool, Item ) )
         keep ( generic, item ) ( order, best ) =
@@ -397,7 +527,7 @@ active sch variants =
                     (\pg ->
                         pg.panels
                             |> List.filter shown
-                            |> List.concatMap (\pn -> List.map (\p -> ( pn.variant == "-", { param = p, label = labelOf pg pn p } )) pn.params)
+                            |> List.concatMap (\pn -> List.map (\p -> ( pn.variant == Nothing, { param = p, label = labelOf pg pn p } )) pn.params)
                     )
                 |> List.foldl keep ( [], Dict.empty )
     in
@@ -417,7 +547,7 @@ the Sound has, and no empty group.
 fill : Dict String Item -> Module -> List ( String, List ( Item, As ) )
 fill items (Module m) =
     m.groups
-        |> List.map (\g -> ( g.title, List.filterMap (\s -> Dict.get (Addr.key s.addr) items |> Maybe.map (\i -> ( i, s.as_ ))) g.slots ))
+        |> List.map (\g -> ( g.title, List.filterMap (\s -> s.addr |> Result.toMaybe |> Maybe.andThen (\a -> Dict.get (Addr.key a) items) |> Maybe.map (\i -> ( i, s.as_ ))) g.slots ))
         |> List.filter (Tuple.second >> List.isEmpty >> not)
 
 
@@ -427,7 +557,7 @@ what the page is about.
 labelOf : Schema.Page -> Schema.Panel -> Schema.Param -> String
 labelOf pg pn p =
     case ( pn.variant, String.toList p.label ) of
-        ( "-", [ 'O', 'P', d ] ) ->
+        ( Nothing, [ 'O', 'P', d ] ) ->
             if d >= '1' && d <= '6' then
                 Protocol.pageLabel pg.label
 
@@ -442,20 +572,24 @@ labelOf pg pn p =
 -- THE MODULES EVERY VOICE SHARES
 
 
-word : String -> Addr.Field
-word =
-    Addr.field
-
-
+{-| PITCH, its screen the PIT page's art band.
+-}
 pitch : Module
 pitch =
+    pitchWith (strip Pit)
+
+
+{-| PITCH with screen `sc`: TAPE's PIT page is scoped, so it draws a gauge.
+-}
+pitchWith : ScreenAt -> Module
+pitchWith sc =
     let
-        a : String -> Addr
+        a : String -> Built
         a =
-            word >> Addr.at Pitch
+            Addr.named Pitch
     in
     module_ Chip.Pitch "PITCH"
-        |> withScreen (strip Pit)
+        |> withScreen sc
         |> withGroups
             [ group "" [ hero (a "PITCH"), knob (a "FINE") ]
             , group "" [ fader (a "GLIDE_TIME") ]
@@ -465,12 +599,12 @@ pitch =
 
 {-| A filter in `block` (FILTER, or a DRUM pad's own), its art on `page`.
 -}
-filterCore : Block -> UnitPage -> Module
+filterCore : Block -> DrawnPage -> Module
 filterCore block page =
     let
-        a : String -> Addr
+        a : String -> Built
         a =
-            word >> Addr.at block
+            Addr.named block
     in
     module_ Chip.Filter "FILTER"
         |> withHeader [ a "KIND" ]
@@ -483,7 +617,7 @@ filterCore block page =
 
 filter : Module
 filter =
-    filterCore Filter Flt |> addGroups [ group "" [ fader (Addr.at Filter (word "STAB")) ] ]
+    filterCore Filter Flt |> addGroups [ group "" [ fader (Addr.named Filter "STAB") ] ]
 
 
 {-| The filter's own modulation: feedback, the input, and the two jacks.
@@ -491,9 +625,9 @@ filter =
 filterMod : Module
 filterMod =
     let
-        a : String -> Addr
+        a : String -> Built
         a =
-            word >> Addr.at Filter
+            Addr.named Filter
     in
     module_ Chip.Filter "FILTER MOD"
         |> withGroups
@@ -505,12 +639,12 @@ filterMod =
 
 {-| The voice's effect, its art on `page` (FX, or a DRUM pad's).
 -}
-voiceFx : UnitPage -> Module
+voiceFx : DrawnPage -> Module
 voiceFx page =
     let
-        a : String -> Addr
+        a : String -> Built
         a =
-            word >> Addr.at VoiceFx
+            Addr.named VoiceFx
     in
     module_ Chip.Fx "VOICE FX"
         |> withHeader [ a "TYPE" ]
@@ -525,9 +659,9 @@ voiceFx page =
 ampOut : Module
 ampOut =
     let
-        a : String -> Addr
+        a : String -> Built
         a =
-            word >> Addr.at Out
+            Addr.named Out
     in
     module_ Chip.Amp "AMP · OUT"
         |> withNote "LOW-PASS GATE · STEREO · SENDS"
@@ -544,9 +678,9 @@ ampOut =
 envelope : Env -> Module
 envelope e =
     let
-        a : String -> Addr
+        a : String -> Built
         a =
-            word >> Addr.at (EnvBlock e)
+            Addr.named (EnvBlock e)
     in
     module_ Chip.Envelopes ("ENVELOPE " ++ String.fromInt (Addr.envNumber e))
         |> withHeader [ a "TYPE" ]
@@ -561,9 +695,9 @@ envelope e =
 lfo : Lfo -> Module
 lfo l =
     let
-        a : String -> Addr
+        a : String -> Built
         a =
-            word >> Addr.at (LfoBlock l)
+            Addr.named (LfoBlock l)
     in
     module_ Chip.Lfos ("LFO " ++ String.fromInt (Addr.lfoNumber l))
         |> withHeader [ a "TYPE" ]
