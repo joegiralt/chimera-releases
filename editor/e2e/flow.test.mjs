@@ -176,7 +176,17 @@ describe("refusals", () => {
     // The editor's reads wait at the bridge until all six sets are in: one `since` then holds all six refusals.
     const wait = bridge.flow.rule({ match: /^ed since /, act: "defer", times: Infinity });
     const from = bridge.flow.sent.length;
-    for (const [a, name] of refusedSets) await pick(a, name);
+    // Six picks inside the editor's answer timeout (1 s): a hand at the page's own pace, two frames each.
+    await page.evaluate(async (sets) => {
+      const frame = () => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+      for (const [a, name] of sets) {
+        const c = document.querySelector(`[data-choice="${a}"]`);
+        c.querySelector('[aria-haspopup="listbox"]').click();
+        await frame();
+        [...c.querySelectorAll('[role="option"]')].find((o) => o.textContent.trim() === name).click();
+        await frame();
+      }
+    }, refusedSets);
     await until("the six sets sent and answered", () => refusedSets.every(([a]) => setsOf(a, from).length >= 1) && !bridge.flow.setsInFlight, 5000);
     wait.release();
     const unmarked = async () => {

@@ -751,7 +751,11 @@ noticeText n =
             "THE UNIT WAS BUSY FOR " ++ Protocol.sketch c ++ ", ASKED " ++ String.fromInt Flow.busyTries ++ " TIMES: GIVEN UP"
 
         Untaken c ->
-            "THE UNIT DID NOT TAKE " ++ Protocol.sketch c ++ ": IT KEPT ITS VALUE, AND NAMED NO REFUSAL (IT NAMES ONLY ITS NEWEST)"
+            if String.startsWith "ed route " (Protocol.sketch c) then
+                "THE UNIT DID NOT TAKE " ++ Protocol.sketch c ++ ": THE ROUTE IS AS IT WAS (THE MATRIX MAY BE FULL)"
+
+            else
+                "THE UNIT DID NOT TAKE " ++ Protocol.sketch c ++ ": IT KEPT ITS VALUE, AND NAMED NO REFUSAL (IT NAMES ONLY ITS NEWEST)"
 
         Declined why ->
             why
@@ -1331,8 +1335,28 @@ untakenSet e m =
             else
                 m
 
-        Flow.RouteOf _ _ ->
-            m
+        -- A route the box didn't make (or didn't remove) at its turn: it
+        -- says no refusal for routes, so this is the only word of it.
+        Flow.RouteOf c to ->
+            let
+                made : Bool
+                made =
+                    Dict.member (cellKey c) m.routes
+            in
+            case to of
+                Protocol.RouteAmount _ ->
+                    if made then
+                        m
+
+                    else
+                        keep (Untaken (SetRoute c to)) m
+
+                Protocol.RouteOff ->
+                    if made then
+                        keep (Untaken (SetRoute c to)) m
+
+                    else
+                        m
 
 
 removeFirst : a -> List a -> List a

@@ -12,7 +12,7 @@ import assert from "node:assert/strict";
 import { describe, test } from "node:test";
 import { describeAll } from "./contract.mjs";
 import {
-  bridge, cableText, centre, choice, describedParams, drag, expectNotice, followPart, frames, noticesOn, onEngine, onMixer, page, pick, seen, setup, settledRoute, slider, sliderFollows,
+  bridge, cableText, centre, choice, describedParams, drag, expectNotice, followPart, loadInit, frames, noticesOn, onEngine, onMixer, page, pick, seen, setup, settledRoute, slider, sliderFollows,
   tokens, unit, unitRoutes, until, wheel,
 } from "./harness.mjs";
 
@@ -166,22 +166,28 @@ describe("knobs", () => {
     }
   });
 
-  test("E8: describe's defaults are INIT's values (a double click's reset is the INIT Sound's)", async () => {
-    await onEngine(1, "ALGO");
+  test("E8: describe's defaults against a fresh INIT's values (what a double click resets to vs the INIT Sound)", async (t) => {
+    // A fresh INIT ALGO on Part 6 (clean: this file never edits it).
+    await loadInit(6, "ALGO");
+    await unit.ok("ed part 6");
     const vals = {};
+    const panels = {};
     for (const l of await unit.ask("ed since 0")) {
       const w = tokens(l);
       if (w[0] === "val") vals[w[1]] = Number(w[3]);
+      if (w[0] === "panel") panels[w[1]] = w[2];
     }
-    // Part 1's Sound is INIT ALGO with this file's edits; Part 6's, the boot Sound: compare a fresh INIT's, Part 2's MODAL aside.
-    const drift = [];
+    await unit.ok("ed part 1");
+    const drift = new Set();
     for (const p of await describedParams("ALGO")) {
       const v = vals[p.addr];
-      if (v === undefined || p.panel?.variant !== null) continue;
-      if (Math.abs(v - p.def) > Math.max(p.step / 2, 1e-4)) drift.push(`${p.addr}: default ${p.def}, INIT ${v}`);
+      // The panels in force only: a variant's default is its own.
+      if (v === undefined || (p.panel.variant !== "-" && panels[p.panel.name] !== p.panel.variant)) continue;
+      if (Math.abs(v - p.def) > Math.max(p.step / 2, 1e-4 * Math.abs(p.def))) drift.add(`${p.addr} default ${p.def}, INIT ${v}`);
     }
-    // A diagnostic of INIT against describe; the reset itself is E7's.
-    if (drift.length) console.log(`E8: ${drift.length} params whose describe default is not INIT's: ${drift.slice(0, 12).join("; ")}`);
+    // INIT is a voiced Sound, not every default: the differences are said, the reset itself is E7's.
+    t.diagnostic(`${drift.size} params whose describe default is not INIT ALGO's${drift.size ? `: ${[...drift].join("; ")}` : ""}`);
+    await followPart(1, "ALGO");
   });
 
   test("E9: a hand held while the box takes another Part: nothing more sent for the old Part", async () => {
@@ -279,10 +285,11 @@ describe("the Part's MOD bay", () => {
     await until("the column gone", async () => (await cols()) === n);
   });
 
-  test("F3: the matrix full: the unit's refusal is said, and no cable drawn for it", async () => {
+  test("F3: the matrix full: the unit's refusal is said, and no cable drawn for it", async (t) => {
     await onEngine(1, "ALGO");
     const made = [];
-    const dests = (await describedParams("ALGO")).filter((p) => p.kind === "cont" && !p.addr.startsWith("FILTER.")).map((p) => p.addr);
+    // The params a route may take (describe's flags: `d`), off the matrix's fixed columns.
+    const dests = (await describedParams("ALGO")).filter((p) => (p.words[9] ?? "").includes("d") && !p.addr.startsWith("FILTER.") && !p.addr.startsWith("OUT.")).map((p) => p.addr);
     let full = null;
     for (const d of [...new Set(dests)]) {
       const got = await unit.ask(`ed route ENV2:${d} 30`);
@@ -304,16 +311,16 @@ describe("the Part's MOD bay", () => {
       await until("the editor draws the unit's routes", async () => (await cables()) === kept, 5000).catch(async () => {
         throw new Error(`the unit has ${kept} routes, the editor ${await cables()} cables`);
       });
-      // One more from the editor's hand.
-      expectNotice(/^THE UNIT REFUSED /);
-      await patchTo("NOTE", 0).catch(() => {});
-      await frames();
+      // One more from the editor's hand, to a fixed column (VCA): the box takes routes to its fixed
+      // columns past the limit; were it dropped, the editor says so. Either way no phantom cable.
+      expectNotice(/^THE UNIT DID NOT TAKE ed route VEL:OUT\.VCA /);
+      await patchTo("VELO", 2);
+      await until("the route made, or its loss said", async () => !!(await unitRoutes())["VEL:OUT.VCA"] || (await noticesOn()).some((n) => n.startsWith("THE UNIT DID NOT TAKE ed route VEL:OUT.VCA")), 5000);
       await until("the editor still draws only the unit's", async () => (await cables()) === Object.keys(await unitRoutes()).length, 5000);
-      await seen().catch(() => {});
-      console.log(`F3: ${made.length} routes asked, the unit kept ${kept}${full ? `, then said ${full}` : ""}`);
+      made.push("VEL:OUT.VCA");
+      t.diagnostic(`${made.length} routes asked, the unit kept ${kept}${full ? `, then said ${full}` : ""}`);
     } finally {
       for (const c of made) await unit.ask(`ed route ${c} off`);
-      for (const c of Object.keys(await unitRoutes())) if (c.startsWith("NOTE:FILTER.CUTOFF") && !c) await unit.ask(`ed route ${c} off`);
     }
     await until("the routes gone", async () => !Object.keys(await unitRoutes()).some((c) => c.startsWith("ENV2:")), 10000);
     void noticesOn;

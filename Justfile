@@ -51,7 +51,7 @@ editor-e2e:
 #
 # Two tiers: `e2e` is the quick one (e2e/editor.test.mjs: each engine's page,
 # a knob, the screens, the MOD bay, the flow, the MIXER); `e2e-full` runs
-# every e2e/*.test.mjs, each file its own simulator and browser, three at a
+# every e2e/*.test.mjs, each file its own simulator and browser, four at a
 # time. A test only the real unit can run is skipped on the simulator, and
 # one only the simulator can run (a reboot, a fault the bridge makes, a
 # project saved on its card) is skipped on the unit: either way the skip and
@@ -73,7 +73,7 @@ _e2e files:
     fi
     cd editor/e2e/contract && ../../node_modules/.bin/elm make Contract.elm --output=contract.js >/dev/null
     # One unit has one console: on the real unit the files run one at a time.
-    jobs=3; if [ -n "${UNIT:-}" ]; then jobs=1; fi
+    jobs=4; if [ -n "${UNIT:-}" ]; then jobs=1; fi
     cd ../.. && node --test --test-concurrency=$jobs --test-reporter=spec {{files}}
 
 # Where the site is served from: "/" here, "/chimera-releases/" on GitHub Pages

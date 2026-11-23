@@ -148,7 +148,7 @@ describe("the box busy elsewhere", () => {
 });
 
 describe("names", () => {
-  test("G8: a project named the longest a name takes: read without a notice", async () => {
+  test("G8: a project named the longest a name takes: read without a notice", { skip: simOnly("saves a project on the card") }, async () => {
     await onEngine(1, "ALGO");
     await unit.ok("ed project saveas ABCDEFGHIJKLMNOP");
     await until("saved", async () => (await unit.ask("status")).includes("project ABCDEFGHIJKLMNOP"), 5000);

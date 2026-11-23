@@ -636,7 +636,7 @@ export function cacheGet(key, p = page) {
 /** Every slider the editor shows a value for (cables aside) against the unit's `ed get`: the mismatches. */
 export async function slidersAgainstUnit(limit = 40) {
   const shown = await page.$$eval('[data-addr][role="slider"]', (els) =>
-    els.filter((e) => !e.dataset.addr.includes(":")).map((e) => [e.dataset.addr, e.getAttribute("aria-valuetext")]),
+    els.map((e) => [e.getAttribute("data-addr") ?? "", e.getAttribute("aria-valuetext")]).filter(([a]) => a && !a.includes(":")),
   );
   const seen = new Set();
   const bad = [];
