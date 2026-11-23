@@ -249,6 +249,19 @@ async function followPart(n, e) {
   });
 }
 
+/** The unit on `addr`'s page, that cell focused: `ed learn <addr>` takes
+ * the box there, `ed learn off` leaves learn. False where learn refuses the
+ * cell (the unit stays where it is). */
+async function showCell(addr) {
+  const was = await unit.at();
+  const got = await unit.ask(`ed learn ${addr}`);
+  if (!got.at(-1).startsWith("OK")) return false;
+  await unit.ok("ed learn off");
+  // Already on that page, `at` stays: the wait is only for a move.
+  await until(`the unit on ${addr}'s page`, async () => (await unit.at()) !== was, 2000).catch(() => {});
+  return true;
+}
+
 /** The unit's screen, settled: two shots alike. */
 async function settledShot() {
   let last = await unit.shot();
@@ -379,6 +392,8 @@ for (const engine of ENGINES) {
       const at = await unit.at();
       assert.match(at, new RegExp(`^PART ${n} > `), "the unit shows the Part's page");
       const { addr, knob } = await firstKnob(engine);
+      // The knob may sit on a page the unit isn't showing (INIT lands on the engine's home).
+      await showCell(addr);
       const before = await settledShot();
       const was = await unit.get(addr);
       await wheel(knob, was.norm > 0.5 ? -1 : 1);
@@ -555,7 +570,7 @@ describe("MIXER", () => {
 
   test("the unit's own screen redraws when the editor moves a level on its MIXER", { todo: REDRAW_TODO }, async () => {
     await onMixer();
-    await unit.ok("key MIX+B1");
+    if (!(await showCell("PART1.LEVEL"))) await unit.ok("key MIX+B1");
     await until("the unit on its MIXER", async () => (await unit.at()).startsWith("MIXER 1"));
     const before = await settledShot();
     const fader = page.locator('[data-addr="PART1.LEVEL"][role="slider"]');
