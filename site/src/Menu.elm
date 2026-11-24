@@ -20,6 +20,7 @@ doors : Editor -> List { route : Route, label : String, text : String }
 doors editor =
     [ { route = Install, label = "INSTALL & UPDATE", text = "The latest release to download, and the steps to put it on the unit. The same steps update an earlier version." }
     , { route = Guides, label = "GUIDES", text = "Getting started, a tour of every page, the FAQ, MIDI control, tuning and the known issues." }
+    , { route = Manual, label = "MANUAL", text = "The complete reference for Chimera 0.4: every page, cell and gesture, and why the instrument works as it does." }
     , { route = Releases, label = "RELEASES", text = "Every release, its notes and its files." }
     ]
         ++ (case editor of
@@ -49,6 +50,12 @@ shows editor route =
             True
 
         Guide _ ->
+            True
+
+        Manual ->
+            True
+
+        Chapter _ ->
             True
 
         Releases ->

@@ -84,7 +84,7 @@ _e2e files:
 site_base := "/"
 
 # The site, optimised, into site/dist/: the app, the guides and their images
-# from this repository's root, 404.html for deep links, and the editor's own
+# from this repository's root, the 0.4 manual (manual/preenfm3/0.4/), 404.html for deep links, and the editor's own
 # build in dist/editor/
 site-build base=site_base: editor-build
     #!/usr/bin/env bash
@@ -100,6 +100,8 @@ site-build base=site_base: editor-build
     cp public/style.css public/favicon.svg public/favicon-32.png public/apple-touch-icon.png dist/
     cp ../*.md dist/guides/
     cp ../docs/img/* dist/guides/img/
+    # The manual's Markdown, images, manual.md and llms.txt beside its pages.
+    node scripts/manual.js dist {{base}}
     cp -r ../editor/dist dist/editor
 
 # The site live on GitHub Pages: built for /chimera-releases/, committed to
@@ -132,7 +134,7 @@ site-serve port="8000":
 
 # The site's Elm tests (every guide at the root included) and elm-review
 site-test:
-    cd site && npm install --no-audit --no-fund --silent && node tests/gen-fixtures.js && node tests/icons.check.js && node tests/pages.check.js && npx elm-test && npx elm-review
+    cd site && npm install --no-audit --no-fund --silent && node tests/gen-fixtures.js && node tests/icons.check.js && node tests/pages.check.js && node tests/manual.check.js && npx elm-test && npx elm-review
 
 # The manual's manual.md and llms.txt, from its chapters
 manual:

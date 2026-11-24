@@ -44,7 +44,22 @@ anchorsOf : Link -> Maybe ( Doc, AnchorId )
 anchorsOf link =
     case link of
         Page route (Just fragment) ->
-            Route.doc route |> Maybe.map (\d -> ( d, fragment ))
+            case Route.doc route of
+                Just ((Doc.GuideDoc _) as d) ->
+                    Just ( d, fragment )
+
+                Just Doc.Readme ->
+                    Just ( Doc.Readme, fragment )
+
+                -- The manual's own test checks its anchors.
+                Just Doc.ManualIndex ->
+                    Nothing
+
+                Just (Doc.ManualChapter _) ->
+                    Nothing
+
+                Nothing ->
+                    Nothing
 
         _ ->
             Nothing

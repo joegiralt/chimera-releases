@@ -30,7 +30,10 @@ try {
     if (!html.includes(`<meta name="description" content="${p.description}">`)) fail(`${p.path}: no description`);
     if (!html.includes('src="/chimera-releases/elm.js"') || html.includes("__")) fail(`${p.path}: the shell's placeholders not filled`);
   }
-  for (const p of ["install", "guides", "guides/licensing", "releases", "sound-editor"])
+  // The manual: its index and a page per chapter file (manual.check.js checks them all).
+  const chapters = fs.readdirSync(path.join(site, "..", "manual", "preenfm3", "0.4")).filter((f) => /^\d\d-.*\.md$/.test(f));
+  for (const f of chapters) if (!pages.some((q) => q.path === `manual/preenfm3/0.4/${f.replace(/\.md$/, "")}/`)) fail(`${f}: no page listed`);
+  for (const p of ["install", "guides", "guides/licensing", "releases", "sound-editor", "manual/preenfm3/0.4/"])
     if (!pages.some((q) => q.path === p)) fail(`${p} not among the pages`);
   if (!fs.existsSync(path.join(out, "404.html"))) fail("no 404.html");
   if (!failed) console.log(`pages: ${pages.length} routes, each its own index.html`);
