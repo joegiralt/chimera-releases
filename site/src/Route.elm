@@ -11,6 +11,7 @@ so each new page fails to compile until it has a place.
 -}
 
 import AssetPath exposing (AssetPath)
+import Chapter exposing (Chapter)
 import Doc exposing (Doc(..))
 import GuideId exposing (GuideId)
 import Href exposing (Href)
@@ -22,6 +23,8 @@ type Route
     | Install
     | Guides
     | Guide GuideId
+    | Manual
+    | Chapter Chapter
     | Releases
     | Editor
     | NotFound
@@ -37,9 +40,12 @@ all =
     let
         from : Route -> List Route
         from r =
-            -- The guides' list, then each guide.
+            -- The guides' list, then each guide; the manual's index, then each chapter.
             (if r == Guides then
                 Guides :: List.map Guide GuideId.all
+
+             else if r == Manual then
+                Manual :: List.map Chapter Chapter.all
 
              else
                 [ r ]
@@ -59,9 +65,15 @@ next r =
             Just Guides
 
         Guides ->
-            Just Releases
+            Just Manual
 
         Guide _ ->
+            Nothing
+
+        Manual ->
+            Just Releases
+
+        Chapter _ ->
             Nothing
 
         Releases ->
@@ -120,6 +132,12 @@ fromSegments path =
         [ "guides", slug ] ->
             GuideId.fromSlug slug |> Maybe.map Guide |> Maybe.withDefault NotFound
 
+        [ "manual", "preenfm3", "0.4" ] ->
+            Manual
+
+        [ "manual", "preenfm3", "0.4", slug ] ->
+            Chapter.fromSlug slug |> Maybe.map Chapter |> Maybe.withDefault NotFound
+
         [ "releases" ] ->
             Releases
 
@@ -146,6 +164,12 @@ href (Base root) route =
 
                     Guide id ->
                         [ "guides", GuideId.slug id ]
+
+                    Manual ->
+                        [ "manual", "preenfm3", "0.4", "" ]
+
+                    Chapter c ->
+                        [ "manual", "preenfm3", "0.4", Chapter.slug c, "" ]
 
                     Releases ->
                         [ "releases" ]
@@ -179,6 +203,12 @@ fromDoc d =
         GuideDoc id ->
             Guide id
 
+        ManualIndex ->
+            Manual
+
+        ManualChapter c ->
+            Chapter c
+
 
 {-| The doc a page shows, if any.
 -}
@@ -190,6 +220,12 @@ doc route =
 
         Guide id ->
             Just (GuideDoc id)
+
+        Manual ->
+            Just ManualIndex
+
+        Chapter c ->
+            Just (ManualChapter c)
 
         Home ->
             Nothing

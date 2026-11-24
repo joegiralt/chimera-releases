@@ -7,6 +7,7 @@ module Meta exposing (description, title)
 the page's own `index.html` (what a link preview shows).
 -}
 
+import Chapter
 import Features
 import GuideId
 import Menu
@@ -33,6 +34,12 @@ title route =
         Guide id ->
             named (GuideId.title id)
 
+        Manual ->
+            named "Manual"
+
+        Chapter c ->
+            named (Chapter.title c ++ " (manual)")
+
         Releases ->
             named "Releases"
 
@@ -57,8 +64,14 @@ description route =
         Guide id ->
             GuideId.title id ++ ": a guide to Chimera, alternative firmware for the PreenFM3."
 
+        Chapter c ->
+            Chapter.title c ++ ": a chapter of the Chimera 0.4 manual for the PreenFM3."
+
         NotFound ->
             "Chimera, alternative firmware for the PreenFM3."
+
+        Manual ->
+            door
 
         Install ->
             door

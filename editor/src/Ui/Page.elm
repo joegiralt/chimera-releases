@@ -180,10 +180,10 @@ view toMsg (State s) (Config c) =
     div [ class "ui page", Tokens.themed s.theme ]
         [ div [ class "ptop" ]
             ([ div [ class "row" ]
-                -- The way back to the site: its home, and its guides (relative: the
+                -- The way back to the site: its home, and its manual (relative: the
                 -- editor sits at <site>/editor/, whatever the site's base).
                 (a [ class "brand", href "../", title "Chimera: the site's home" ] [ text "CHIMERA" ]
-                    :: a [ class "manual", href "../guides", title "The guides" ] [ text "MANUAL" ]
+                    :: a [ class "manual", href "../manual/preenfm3/0.4/", title "The manual" ] [ text "MANUAL" ]
                     :: List.map tab c.parts
                     ++ (if List.isEmpty c.units then
                             []

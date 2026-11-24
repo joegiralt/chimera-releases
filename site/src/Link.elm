@@ -1,7 +1,7 @@
 -- SPDX-License-Identifier: GPL-3.0-or-later
 
 
-module Link exposing (Link(..), href, image, link)
+module Link exposing (Link(..), href, image, inManual, link)
 
 {-| Where a link or image in a guide or release note points on the site.
 Pure: the Markdown's own destinations in, a typed target out. `Unresolved`
@@ -10,6 +10,7 @@ is a destination the site can't place; a test fails on any in the guides.
 
 import Anchor exposing (AnchorId)
 import AssetPath exposing (AssetPath)
+import Chapter
 import Doc
 import Href exposing (Href)
 import Route exposing (Base, Route)
@@ -32,6 +33,10 @@ link : String -> Link
 link dest =
     if String.startsWith "#" dest then
         InPage (Anchor.fromFragment (String.dropLeft 1 dest))
+
+    else if List.any (\dir -> String.startsWith dir dest) [ "editor/", "site/" ] then
+        -- The licence texts (LICENSE.md): files of the repository, not pages.
+        Href.web (repo ++ "/blob/main/" ++ dest) |> Maybe.map External |> Maybe.withDefault (Unresolved dest)
 
     else if String.startsWith repo dest then
         fromRepo dest (String.dropLeft (String.length repo) dest)
@@ -73,8 +78,73 @@ fromRepo dest path =
         Unresolved dest
 
 
+{-| The manual's folder in the repository. `Guide.parseManual` writes a
+manual page's relative destinations as `manual/preenfm3/0.4/…`, so that
+`README.md` there is the manual's index and not the install steps.
+-}
+manualDir : String
+manualDir =
+    "manual/preenfm3/0.4/"
+
+
+{-| A destination written in a manual page, as `link` and `image` read it:
+a relative one is under the manual's folder.
+-}
+inManual : String -> String
+inManual dest =
+    if List.any (\prefix -> String.startsWith prefix dest) [ "https://", "http://", "mailto:", "#", "/", ".", manualDir ] then
+        dest
+
+    else
+        manualDir ++ dest
+
+
+toManual : String -> String -> Link
+toManual dest rest =
+    let
+        ( name, fragment ) =
+            case String.split "#" rest of
+                n :: f :: _ ->
+                    ( n, Just (Anchor.fromFragment f) )
+
+                n :: _ ->
+                    ( n, Nothing )
+
+                [] ->
+                    ( rest, Nothing )
+    in
+    if name == "README.md" then
+        Page Route.Manual fragment
+
+    else
+        case Chapter.fromFile name of
+            Just c ->
+                Page (Route.Chapter c) fragment
+
+            Nothing ->
+                AssetPath.manualFile name
+                    |> Maybe.andThen
+                        (\path ->
+                            if List.member name [ "manual.md", "llms.txt" ] then
+                                Just (File path)
+
+                            else
+                                Nothing
+                        )
+                    |> Maybe.withDefault (Unresolved dest)
+
+
 toDoc : String -> Link
 toDoc dest =
+    if String.startsWith manualDir dest then
+        toManual dest (String.dropLeft (String.length manualDir) dest)
+
+    else
+        toGuide dest
+
+
+toGuide : String -> Link
+toGuide dest =
     let
         ( name, fragment ) =
             case List.head (String.indexes "#" dest) of
@@ -103,7 +173,12 @@ image src =
                 Unresolved src
 
         Nothing ->
-            if String.startsWith "docs/img/" src then
+            if String.startsWith (manualDir ++ "img/") src then
+                AssetPath.manualImage (String.dropLeft (String.length manualDir + 4) src)
+                    |> Maybe.map File
+                    |> Maybe.withDefault (Unresolved src)
+
+            else if String.startsWith "docs/img/" src then
                 AssetPath.image (String.dropLeft 9 src)
                     |> Maybe.map File
                     |> Maybe.withDefault (Unresolved src)

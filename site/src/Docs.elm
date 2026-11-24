@@ -7,6 +7,8 @@ module Docs exposing (Docs, Slot, empty, get, needsFetch, set)
 guide has a slot or doesn't compile). `Nothing` is never requested.
 -}
 
+import Chapter
+import Dict exposing (Dict)
 import Doc exposing (Doc(..))
 import GuideId exposing (GuideId(..))
 import Markdown.Block exposing (Block)
@@ -31,6 +33,7 @@ type Docs
         , knownIssues : Slot
         , license : Slot
         , licensing : Slot
+        , manual : Dict String Slot
         }
 
 
@@ -47,6 +50,7 @@ empty =
         , knownIssues = Nothing
         , license = Nothing
         , licensing = Nothing
+        , manual = Dict.empty
         }
 
 
@@ -83,6 +87,12 @@ get doc (Docs d) =
         GuideDoc Licensing ->
             d.licensing
 
+        ManualIndex ->
+            Dict.get "" d.manual |> Maybe.andThen identity
+
+        ManualChapter c ->
+            Dict.get (Chapter.slug c) d.manual |> Maybe.andThen identity
+
 
 set : Doc -> Slot -> Docs -> Docs
 set doc slot (Docs d) =
@@ -117,6 +127,12 @@ set doc slot (Docs d) =
 
             GuideDoc Licensing ->
                 { d | licensing = slot }
+
+            ManualIndex ->
+                { d | manual = Dict.insert "" slot d.manual }
+
+            ManualChapter c ->
+                { d | manual = Dict.insert (Chapter.slug c) slot d.manual }
 
 
 {-| Never requested, or failed (a visit or RETRY tries again).

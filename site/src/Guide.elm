@@ -1,7 +1,7 @@
 -- SPDX-License-Identifier: GPL-3.0-or-later
 
 
-module Guide exposing (anchors, parse, render, targets, view)
+module Guide exposing (anchors, parse, parseManual, render, targets, view)
 
 {-| A chimera-releases Markdown file (a guide, README or a release's
 notes), parsed and rendered with every link and image through `Link`.
@@ -34,6 +34,48 @@ parse markdown =
     Markdown.Parser.parse (closeVoidTags markdown)
         |> Result.map (List.filterMap normalize)
         |> Result.mapError (List.map Markdown.Parser.deadEndToString >> String.join "\n")
+
+
+{-| A page of the manual: its relative links and images are the manual
+folder's, not the repository root's.
+-}
+parseManual : String -> Result String (List Block)
+parseManual =
+    parse
+        >> Result.map
+            (List.map
+                (Block.walkInlines
+                    (\inline ->
+                        case inline of
+                            Block.Link dest title children ->
+                                Block.Link (Link.inManual dest) title children
+
+                            Block.Image src title children ->
+                                Block.Image (Link.inManual src) title children
+
+                            Block.HtmlInline _ ->
+                                inline
+
+                            Block.Emphasis _ ->
+                                inline
+
+                            Block.Strong _ ->
+                                inline
+
+                            Block.Strikethrough _ ->
+                                inline
+
+                            Block.CodeSpan _ ->
+                                inline
+
+                            Block.Text _ ->
+                                inline
+
+                            Block.HardLineBreak ->
+                                inline
+                    )
+                )
+            )
 
 
 
@@ -539,7 +581,43 @@ withIds blocks =
 -}
 render : Base -> List Block -> Result String (List (Html msg))
 render base blocks =
-    Markdown.Renderer.renderWithMeta (renderer base) (withIds blocks)
+    Markdown.Renderer.renderWithMeta (renderer base) (List.map (\( block, id ) -> ( block, { id = id, note = isDesignNote block } )) (withIds blocks))
+
+
+{-| A quote that opens with **Design note:** (the manual's asides).
+-}
+isDesignNote : Block -> Bool
+isDesignNote block =
+    case block of
+        Block.BlockQuote ((Block.Paragraph ((Block.Strong [ Block.Text "Design note:" ]) :: _)) :: _) ->
+            True
+
+        Block.BlockQuote _ ->
+            False
+
+        Block.HtmlBlock _ ->
+            False
+
+        Block.UnorderedList _ _ ->
+            False
+
+        Block.OrderedList _ _ _ ->
+            False
+
+        Block.Heading _ _ ->
+            False
+
+        Block.Paragraph _ ->
+            False
+
+        Block.Table _ _ ->
+            False
+
+        Block.CodeBlock _ ->
+            False
+
+        Block.ThematicBreak ->
+            False
 
 
 view : Base -> List Block -> List (Html msg)
@@ -552,10 +630,11 @@ view base blocks =
             [ Html.p [ Attr.class "problem" ] [ Html.text ("This page could not be shown: " ++ e) ] ]
 
 
-renderer : Base -> Maybe AnchorId -> Renderer (Html msg)
-renderer base id =
+renderer : Base -> { id : Maybe AnchorId, note : Bool } -> Renderer (Html msg)
+renderer base { id, note } =
     { defaultHtmlRenderer
-        | heading =
+        | blockQuote = Html.blockquote [ Attr.classList [ ( "design-note", note ) ] ]
+        , heading =
             \{ level, rawText, children } ->
                 let
                     tag : List (Html.Attribute msg) -> List (Html msg) -> Html msg

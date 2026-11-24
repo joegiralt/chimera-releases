@@ -3,6 +3,7 @@
 
 module RouteTest exposing (suite)
 
+import Chapter
 import Expect
 import GuideId
 import Route exposing (Route(..))
@@ -17,7 +18,7 @@ bases =
 
 routes : List Route
 routes =
-    [ Home, Install, Guides, Releases, Editor ] ++ List.map Guide GuideId.all
+    [ Home, Install, Guides, Manual, Releases, Editor ] ++ List.map Guide GuideId.all ++ List.map Chapter Chapter.all
 
 
 url : String -> Url
@@ -52,14 +53,22 @@ suite =
             \_ ->
                 List.map parseRoot [ "/", "/install", "/guides", "/guides/midi", "/releases", "/sound-editor" ]
                     |> Expect.equal [ Home, Install, Guides, Guide GuideId.Midi, Releases, Editor ]
+        , test "the manual's pages" <|
+            \_ ->
+                List.map parseRoot [ "/manual/preenfm3/0.4/", "/manual/preenfm3/0.4/01-concepts/", "/manual/preenfm3/0.4/03-algo" ]
+                    |> Expect.equal (Manual :: List.filterMap (Chapter.fromSlug >> Maybe.map Chapter) [ "01-concepts", "03-algo" ])
+        , test "the manual's paths end in a slash, as pages.js writes them" <|
+            \_ ->
+                List.map (Route.toString (Route.base "/chimera-releases/")) (Manual :: List.filterMap (Chapter.fromSlug >> Maybe.map Chapter) [ "01-concepts" ])
+                    |> Expect.equal [ "/chimera-releases/manual/preenfm3/0.4/", "/chimera-releases/manual/preenfm3/0.4/01-concepts/" ]
         , test "a trailing slash is the same page" <|
             \_ ->
                 List.map parseRoot [ "/install/", "/guides/faq/" ]
                     |> Expect.equal [ Install, Guide GuideId.Faq ]
         , test "unknown paths are NotFound" <|
             \_ ->
-                List.map parseRoot [ "/nope", "/guides/readme", "/guides/faq/x", "/editor/", "/guides/img/a.png" ]
-                    |> Expect.equal (List.repeat 5 NotFound)
+                List.map parseRoot [ "/nope", "/guides/readme", "/guides/faq/x", "/editor/", "/guides/img/a.png", "/manual/preenfm3/0.4/nope", "/manual/preenfm3/0.3/" ]
+                    |> Expect.equal (List.repeat 7 NotFound)
         , test "NotFound's path parses back to NotFound" <|
             \_ ->
                 parseRoot (Route.toString (Route.base "/") NotFound)

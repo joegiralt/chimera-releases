@@ -13,6 +13,7 @@ import Browser
 import Browser.Dom as Dom
 import Browser.Navigation as Nav
 import ByteSize
+import Chapter exposing (Chapter)
 import Doc exposing (Doc(..))
 import Docs exposing (Docs)
 import Features
@@ -24,6 +25,7 @@ import Html.Attributes as Attr
 import Html.Events as Events
 import Http
 import Json.Encode
+import Markdown.Block exposing (Block)
 import Menu
 import Meta
 import NotFound
@@ -128,7 +130,7 @@ update msg model =
 
         GotDoc doc result ->
             if Route.doc model.route == Just doc then
-                ( { model | docs = Docs.set doc (Just (fromResult (Result.map Guide.parse result))) model.docs }
+                ( { model | docs = Docs.set doc (Just (fromResult (Result.map (parseDoc doc) result))) model.docs }
                 , model.fragment |> Maybe.map scrollTo |> Maybe.withDefault Cmd.none
                 )
 
@@ -155,6 +157,22 @@ update msg model =
 
         Settled ->
             ( model, Cmd.none )
+
+
+parseDoc : Doc -> String -> Result String (List Block)
+parseDoc doc =
+    case doc of
+        ManualIndex ->
+            Guide.parseManual
+
+        ManualChapter _ ->
+            Guide.parseManual
+
+        Readme ->
+            Guide.parse
+
+        GuideDoc _ ->
+            Guide.parse
 
 
 {-| A new address: its page, its doc fetched if never requested, and for
@@ -273,6 +291,12 @@ pageClass route =
         Guide _ ->
             "page"
 
+        Manual ->
+            "page"
+
+        Chapter _ ->
+            "page"
+
         Releases ->
             "page"
 
@@ -299,6 +323,12 @@ section route =
 
         Guide _ ->
             Just Guides
+
+        Manual ->
+            Just Manual
+
+        Chapter _ ->
+            Just Manual
 
         Releases ->
             Just Releases
@@ -362,6 +392,28 @@ page model =
                 [ Html.a [ href (sourceOf (GuideDoc id)) ] [ Html.text ("READ " ++ GuideId.file id ++ " ON GITHUB") ] ]
             ]
 
+        Manual ->
+            [ Html.article [ Attr.class "doc" ] (docView model ManualIndex)
+            , Html.p [ Attr.class "source" ]
+                (case AssetPath.manualFile "manual.md" of
+                    Just whole ->
+                        [ Html.a [ href (Route.asset model.base whole) ] [ Html.text "THE WHOLE MANUAL AS ONE FILE" ]
+                        , Html.text " · "
+                        , Html.a [ href (sourceOf ManualIndex) ] [ Html.text "READ IT ON GITHUB" ]
+                        ]
+
+                    Nothing ->
+                        []
+                )
+            ]
+
+        Chapter c ->
+            [ Html.article [ Attr.class "doc" ] (docView model (ManualChapter c))
+            , chapterNav model.base c
+            , Html.p [ Attr.class "source" ]
+                [ Html.a [ href (sourceOf (ManualChapter c)) ] [ Html.text ("READ " ++ Chapter.file c ++ " ON GITHUB") ] ]
+            ]
+
         Releases ->
             releases model
 
@@ -372,9 +424,38 @@ page model =
             NotFound.view model.base
 
 
+chapterNav : Base -> Chapter -> Html Msg
+chapterNav base c =
+    let
+        ( before, after ) =
+            Chapter.neighbours c
+
+        entry : String -> String -> Maybe Chapter -> List (Html Msg)
+        entry cls label =
+            Maybe.map (\n -> [ Html.a [ Attr.class cls, href (Route.href base (Chapter n)) ] [ Html.span [ Attr.class "label" ] [ Html.text label ], Html.text (Chapter.title n) ] ])
+                >> Maybe.withDefault []
+    in
+    Html.nav [ Attr.class "chapters", Attr.attribute "aria-label" "Chapters" ]
+        (entry "prev" "PREVIOUS" before
+            ++ [ Html.a [ Attr.class "all", href (Route.href base Manual) ] [ Html.text "ALL CHAPTERS" ] ]
+            ++ entry "next" "NEXT" after
+        )
+
+
 sourceOf : Doc -> Href
 sourceOf doc =
-    Href.repo [ "blob", "main", Doc.file doc ]
+    case doc of
+        ManualIndex ->
+            Href.repo [ "blob", "main", "manual", "preenfm3", "0.4", Doc.file doc ]
+
+        ManualChapter _ ->
+            Href.repo [ "blob", "main", "manual", "preenfm3", "0.4", Doc.file doc ]
+
+        Readme ->
+            Href.repo [ "blob", "main", Doc.file doc ]
+
+        GuideDoc _ ->
+            Href.repo [ "blob", "main", Doc.file doc ]
 
 
 githubReleases : Href

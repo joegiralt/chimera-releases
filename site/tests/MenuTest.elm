@@ -25,11 +25,11 @@ suite =
         , test "shown, the editor is the last entry of both" <|
             \_ ->
                 ( routes (Menu.nav EditorShown), routes (Menu.doors EditorShown) )
-                    |> Expect.equal ( [ Install, Guides, Releases, Editor ], [ Install, Guides, Releases, Editor ] )
+                    |> Expect.equal ( [ Install, Guides, Manual, Releases, Editor ], [ Install, Guides, Manual, Releases, Editor ] )
         , test "hidden, the rest stay" <|
             \_ ->
                 routes (Menu.nav EditorHidden)
-                    |> Expect.equal [ Install, Guides, Releases ]
+                    |> Expect.equal [ Install, Guides, Manual, Releases ]
         , test "hidden, the editor's address is no page" <|
             \_ ->
                 ( Menu.shows EditorHidden Editor, Menu.shows EditorShown Editor, Menu.shows EditorHidden Guides )
