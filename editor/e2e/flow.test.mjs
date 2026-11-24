@@ -39,13 +39,20 @@ async function resetOps(algs) {
 }
 
 describe("lost answers", () => {
-  test("C1: a set's answer lost once: the set goes again, the knob ends on the unit's value, the window still opens", async () => {
+  test("C1: a set's answer lost once: the set goes again, the knob ends on the unit's value, the window still opens", async (t) => {
     await onEngine(1, "ALGO");
     const { addr, knob } = await firstKnob("ALGO");
     const was = await unit.get(addr);
     const lost = bridge.flow.rule({ match: (l) => l.startsWith(`ed set ${addr} `), act: "drop" });
     const from = bridge.flow.sent.length;
     await wheel(knob, was.norm > 0.5 ? -1 : 1);
+    const t0 = Date.now();
+    const timeline = () => [...bridge.flow.got.map((g) => ({ ...g, lines: g.lines.length })), ...bridge.flow.dropped.map((d) => ({ ...d, dropped: true }))]
+      .filter((g) => g.sentAt >= t0 - 50)
+      .sort((a, b) => a.seq - b.seq)
+      .map((g) => `#${g.seq} sent ${g.sentAt - t0}ms, answered ${g.at - t0}ms: ${g.line}${g.dropped ? " (dropped)" : ` (${g.lines} lines)`}`);
+    // The sets' answer times, for a unit's run: what its link takes.
+    t.after(() => t.diagnostic(timeline().filter((l) => l.includes("ed set")).join("\n")));
     await until("the set sent again after its answer was lost", () => setsOf(addr, from).length >= 2, 5000);
     assert.equal(lost.hits, 1);
     const [first, again] = setsOf(addr, from);
@@ -59,6 +66,24 @@ describe("lost answers", () => {
     await until("the next notch's set", () => setsOf(addr).length > n);
     await until(`${addr} to move again`, async () => (await unit.get(addr)).stored !== now.stored);
     await sliderFollows(addr);
+  });
+
+  test("C14: a set's answer lost once, then the unit silent a while (a busy unit): the resend's late answer lands, nothing given up", async () => {
+    await onEngine(1, "ALGO");
+    const { addr, knob } = await firstKnob("ALGO");
+    const was = await unit.get(addr);
+    // The first answer lost; the resend's held 1.5 s, past the editor's 1 s answer timeout, and every answer after it
+    // with it (the unit answers in order). On the unit (2026-11-24) answers take 2-17 ms; a busy unit stalls them all.
+    bridge.flow.rule({ match: (l) => l.startsWith(`ed set ${addr} `), act: "drop" });
+    const from = bridge.flow.sent.length;
+    bridge.flow.rule({ match: (l) => l.startsWith(`ed set ${addr} `), act: "stall" });
+    await wheel(knob, was.norm > 0.5 ? -1 : 1);
+    await until("the set sent again", () => setsOf(addr, from).length >= 2, 5000);
+    await new Promise((r) => setTimeout(r, 1500));
+    bridge.flow.resume();
+    const now = await sliderFollows(addr);
+    assert.notEqual(now.stored, was.stored);
+    assert.deepEqual(await noticesOn(), [], "a late answer is no lost one");
   });
 
   test("C2: a set's answer lost twice: given up with a notice, and the next want still goes", async () => {

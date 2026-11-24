@@ -65,13 +65,28 @@ suite =
             \_ -> Expect.equal Fresh (Flow.expire (at 999) 1000 busy |> Tuple.second)
         , test "a_late_set_goes_again_with_its_latest_value" <|
             \_ -> Expect.equal (Resent (Set a (Num 1)) (Set a (Num 2))) (Flow.expire (at 1000) 1000 busy |> Tuple.second)
-        , test "late_twice_it_is_given_up_and_the_window_frees" <|
+        , test "sent_again_and_the_unit_still_silent_it_waits_a_busy_units_while" <|
             \_ ->
                 Flow.expire (at 1000) 1000 busy
                     |> Tuple.first
                     |> Flow.expire (at 2000) 1000
+                    |> Tuple.second
+                    |> Expect.equal Fresh
+        , test "sent_again_and_silent_past_a_busy_units_while_it_is_given_up_and_the_window_frees" <|
+            \_ ->
+                Flow.expire (at 1000) 1000 busy
+                    |> Tuple.first
+                    |> Flow.expire (at 6000) 1000
                     |> Tuple.mapFirst Flow.inFlight
                     |> Expect.equal ( Nothing, GaveUp (Set a (Num 2)) Nothing )
+        , test "sent_again_and_its_answer_lost_too_it_is_given_up_at_once" <|
+            \_ ->
+                Flow.expire (at 1000) 1000 busy
+                    |> Tuple.first
+                    |> Flow.answerLost
+                    |> Flow.expire (at 1010) 1000
+                    |> Tuple.second
+                    |> Expect.equal (GaveUp (Set a (Num 2)) Nothing)
         , test "err_busy_shuts_the_window_and_the_latest_goes_when_it_opens" <|
             \_ ->
                 let

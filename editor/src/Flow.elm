@@ -206,6 +206,14 @@ busy now (Flow f) =
                 )
 
 
+{-| How many answer timeouts a unit may be silent (busy) before an edit sent
+again is given up.
+-}
+busyUnit : Int
+busyUnit =
+    5
+
+
 {-| The edit on the wire lost its answer (a later one came first): timed out
 now, so the next clock sends it once more, or gives it up.
 -}
@@ -291,7 +299,11 @@ type Expiry
     | Reopened (Maybe Command)
 
 
-{-| The window after `ms` milliseconds without an answer.
+{-| The window after `ms` milliseconds without an answer: the edit is sent
+again; sent again, it is given up only once its answer is shown lost (a
+later one came first: `answerLost`), or the unit is silent `busyUnit` times
+as long. A silent unit is a busy one (its answers wait, in order), and an
+answer it then gives is late, not lost.
 -}
 expire : Time.Posix -> Int -> Flow -> ( Flow, Expiry )
 expire now ms (Flow f0) =
@@ -321,6 +333,9 @@ expire now ms (Flow f0) =
 
         Just s ->
             if not (late s.at) then
+                ( Flow f, Fresh )
+
+            else if s.resent && Time.posixToMillis now - Time.posixToMillis s.at < busyUnit * ms then
                 ( Flow f, Fresh )
 
             else if not s.resent then

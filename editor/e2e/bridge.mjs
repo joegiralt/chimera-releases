@@ -70,13 +70,15 @@ export async function startBridge(dist, unit) {
   const flow = {
     sent: [], // every line the editor sent, in order
     sentAt: [], // when each was sent (ms)
-    got: [], // each answer the editor was given: { line, lines }
+    got: [], // each answer the editor was given: { line, lines, sentAt, at } (ms)
+    dropped: [], // each answer a `drop` kept from it: { line, sentAt, at }
     setsInFlight: 0, // the editor's edits (`ed set`, `ed route`) sent and not yet answered
     maxSetsInFlight: 0,
     reset() {
       this.sent = [];
       this.sentAt = [];
       this.got = [];
+      this.dropped = [];
       this.maxSetsInFlight = this.setsInFlight;
     },
     // Paused, the unit's answers wait here, in order: a unit slower than the hand.
@@ -94,7 +96,7 @@ export async function startBridge(dist, unit) {
     /** A fault on the editor's lines `match` takes (a RegExp or a function), `times` times (default once):
      * act `drop` (the unit takes the line, its answer never comes), `answer` (`lines` answer it, the unit
      * never sees it), `map` (the unit's answer through `map(lines, line)`), `hold` (the answer waits for
-     * `release()`), `rewrite` (the line the unit gets is `map(line)`), `defer` (the line reaches the unit only at `release()`, after lines sent since) or
+     * `release()`), `stall` (it and every answer after it wait for `resume()`), `rewrite` (the line the unit gets is `map(line)`), `defer` (the line reaches the unit only at `release()`, after lines sent since) or
      * `close` (the socket closes before the line goes on). */
     rule({ match, act, lines = [], map = (l) => l, times = 1 }) {
       const test = typeof match === "function" ? match : (l) => match.test(l);
@@ -148,12 +150,16 @@ export async function startBridge(dist, unit) {
         if (op !== 0x1) continue;
         const line = body.toString("utf8").replace(/[\r\n]+$/, "");
         flow.sent.push(line);
-        flow.sentAt.push(Date.now());
+        const at = Date.now();
+        const seq = flow.sentAt.length;
+        flow.sentAt.push(at);
         const rule = flow.rules.find((r) => r.times > 0 && r.test(line));
         if (rule) {
           rule.times--;
           rule.hits++;
         }
+        // The unit busy from this line on: its answer and every one after it wait, in order, for `resume()`.
+        if (rule?.act === "stall") flow.pause();
         if (rule?.act === "close") {
           sock.destroy();
           return;
@@ -170,10 +176,13 @@ export async function startBridge(dist, unit) {
         answered.then((c) => {
           const deliver = () => {
             if (isSet) flow.setsInFlight--;
-            if (rule?.act === "drop") return;
+            if (rule?.act === "drop") {
+              flow.dropped.push({ line, seq, sentAt: at, at: Date.now() });
+              return;
+            }
             if (sock !== socket || sock.destroyed) return;
             const lines = rule?.act === "map" ? rule.map(c.lines, line) : c.lines;
-            flow.got.push({ line, lines });
+            flow.got.push({ line, lines, seq, sentAt: at, at: Date.now() });
             for (const l of lines) sock.write(frame(0x1, Buffer.from(l, "utf8")));
           };
           if (rule?.act === "hold") rule.held.push(deliver);

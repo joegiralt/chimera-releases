@@ -1626,7 +1626,7 @@ suite =
                             run [ Tick (at (now + 1000)) ] (Tuple.first busy)
 
                         ( gaveUp, next ) =
-                            run [ Tick (at (now + 2000)) ] again
+                            run [ Tick (at (now + 2000)), Tick (at (now + 6000)) ] again
                     in
                     Expect.all
                         [ \_ -> Expect.equal [ Set cutoff (Num 300) ] resent
@@ -1636,6 +1636,14 @@ suite =
                         , \_ -> Expect.equal [ NoAnswer (Set cutoff (Num 300)) ] (Model.notices gaveUp |> List.map .notice |> List.filter (not << isRefusalOrUnread))
                         ]
                         ()
+             , test "sent_again_and_its_answer_late_past_the_timeout_a_busy_unit_it_lands_unsaid" <|
+                \_ ->
+                    run [ Tick (at (now + 1000)), Tick (at (now + 2500)), Line "OK" ] (Tuple.first busy)
+                        |> Tuple.first
+                        |> Model.notices
+                        |> List.map .notice
+                        |> List.filter (not << isRefusalOrUnread)
+                        |> Expect.equal []
              , test "a_routes_amount_goes_through_the_same_window_latest_wins" <|
                 \_ ->
                     case ( Protocol.cell "LFO1:FILTER.CUTOFF", Protocol.amount 10, Protocol.amount 20 ) of
