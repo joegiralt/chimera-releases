@@ -27,6 +27,7 @@ module Model exposing
     , noticesLost
     , pending
     , pendingRoute
+    , readingPage
     , refusal
     , seat
     , sensingRow
@@ -202,6 +203,10 @@ type Notice
     | Untaken Command
       -- Refusals no `refused` line named: how many (31 is 31 or more).
     | RefusedUnnamed Int
+      -- A hand held during a read, of a control the page read lacks.
+    | NotSent Addr
+      -- A hand held during a read for the Part the box then left (what it edits).
+    | LeftPart String
       -- A hand the editor itself can't carry out, and why (a pad's four routes all in use).
     | Declined String
 
@@ -270,6 +275,11 @@ type alias Model =
 
     -- The edits' window: the one set on the wire, and the wants waiting.
     , flow : Flow
+
+    -- A hand's latest wants while the page is read (an engine change, a
+    -- schema asked again), by what they edit: they go to the window once
+    -- the page is the unit's.
+    , hands : Dict String ( Maybe Part, Flow.Edit )
 
     -- What the unit refused or the editor couldn't read, newest first, each
     -- distinct one once; and how many fell off the end unseen.
@@ -385,6 +395,7 @@ init =
     , orbit = Schema.empty
     , routes = Dict.empty
     , held = Dict.empty
+    , hands = Dict.empty
     , checked = Set.empty
     , restarted = False
     , incoming = Schema.empty
@@ -761,6 +772,12 @@ lastRefusal m =
                     RefusedUnnamed _ ->
                         Nothing
 
+                    NotSent _ ->
+                        Nothing
+
+                    LeftPart _ ->
+                        Nothing
+
                     Declined _ ->
                         Nothing
             )
@@ -795,6 +812,12 @@ noticeText n =
 
         BusyGaveUp c ->
             "THE UNIT WAS BUSY FOR " ++ Protocol.sketch c ++ ", ASKED " ++ String.fromInt Flow.busyTries ++ " TIMES: GIVEN UP"
+
+        NotSent a ->
+            "THE TURN OF " ++ Addr.key a ++ " WAS NOT SENT: THE UNIT'S PAGE HAS NO " ++ Addr.key a ++ " NOW"
+
+        LeftPart what ->
+            "THE TURN OF " ++ what ++ " WAS NOT SENT: THE BOX TOOK ANOTHER PART"
 
         RefusedUnnamed count ->
             if count >= 31 then
@@ -873,6 +896,12 @@ evict all =
                     False
 
                 RefusedUnnamed _ ->
+                    False
+
+                NotSent _ ->
+                    False
+
+                LeftPart _ ->
                     False
 
                 Declined _ ->
@@ -975,11 +1004,105 @@ takesEdits m =
     m.stage == Following && m.engine /= Nothing && m.engine == m.described
 
 
+{-| Linked and reading the page (the box's engine, or its schema asked
+again): a hand now is held, not sent against a page that may change.
+-}
+readingPage : Model -> Bool
+readingPage m =
+    m.link == Just Open && not (halted m) && not (takesEdits m && not (unchecked m))
+
+
+halted : Model -> Bool
+halted m =
+    case m.stage of
+        Halted _ ->
+            True
+
+        Greeting ->
+            False
+
+        Checking _ _ ->
+            False
+
+        Recalling _ _ ->
+            False
+
+        Describing _ _ _ ->
+            False
+
+        Following ->
+            False
+
+
+{-| A hand's want held for the read, the latest of what it edits.
+-}
+holdHand : Flow.Edit -> Model -> Model
+holdHand e m =
+    { m | hands = Dict.insert (handKey e) ( m.part, e ) m.hands }
+
+
+handKey : Flow.Edit -> String
+handKey e =
+    case e of
+        Flow.SetTo a _ ->
+            Addr.key a
+
+        Flow.RouteOf c _ ->
+            "route " ++ cellKey c
+
+
+{-| What a held hand edits, as a notice names it.
+-}
+handName : Flow.Edit -> String
+handName e =
+    case e of
+        Flow.SetTo a _ ->
+            Addr.key a
+
+        Flow.RouteOf c _ ->
+            cellKey c
+
+
+{-| The held hands: one for a Part the box has left is said, not sent (a
+hand reaches its own Part only); once the page is read, the rest go to the
+window, each of a control the page has, one of a control it lacks said.
+-}
+handsGo : Model -> ( Model, List Wish )
+handsGo m00 =
+    let
+        ( stale, mine ) =
+            Dict.partition (\_ ( p, _ ) -> p /= m00.part) m00.hands
+
+        m0 : Model
+        m0 =
+            Dict.foldl (\_ ( _, e ) acc -> keep (LeftPart (handName e)) acc) { m00 | hands = mine } stale
+    in
+    if Dict.isEmpty m0.hands || readingPage m0 || not (takesEdits m0) then
+        ( m0, [] )
+
+    else
+        Dict.foldl
+            (\_ ( _, e ) ( m, out ) ->
+                case e of
+                    Flow.SetTo a v ->
+                        if isDescribed a m then
+                            edit a v m |> Tuple.mapSecond (\cs -> out ++ List.map Say cs)
+
+                        else
+                            ( keep (NotSent a) m, out )
+
+                    Flow.RouteOf c to ->
+                        Flow.want m.now (Flow.RouteOf c to) m.flow |> Tuple.mapBoth (\flow -> { m | flow = flow }) (\c1 -> out ++ List.map Say (maybeList c1))
+            )
+            ( { m0 | hands = Dict.empty }, [] )
+            m0.hands
+
+
 step : Msg -> Model -> ( Model, List Effect )
 step msg m =
     let
         ( m1, wishes ) =
-            stepIn msg m
+            stepIn msg m |> (\( mi, ws ) -> handsGo mi |> Tuple.mapSecond (\more -> ws ++ more))
 
         ( m2, effects ) =
             effectsOf wishes m1
@@ -1124,7 +1247,10 @@ stepIn msg m =
         -- A route's amount or its removal, through the edits' window: the
         -- unit glides it a turn's step a pass, and `since` says where it is.
         EditRoute c to ->
-            if takesEdits m then
+            if readingPage m then
+                ( holdHand (Flow.RouteOf c to) m, [] )
+
+            else if takesEdits m then
                 Flow.want m.now (Flow.RouteOf c to) m.flow |> Tuple.mapBoth (\flow -> { m | flow = flow }) (maybeList >> List.map Say)
 
             else
@@ -1448,7 +1574,10 @@ write is said, never sent.
 -}
 edit : Addr -> Value -> Model -> ( Model, List Command )
 edit a v m =
-    if takesEdits m && isDescribed a m then
+    if readingPage m then
+        ( holdHand (Flow.SetTo a v) m, [] )
+
+    else if takesEdits m && isDescribed a m then
         case Protocol.outgoing (Set a v) of
             Just _ ->
                 Flow.want m.now (Flow.SetTo a v) m.flow |> Tuple.mapBoth (\flow -> { m | flow = flow }) maybeList

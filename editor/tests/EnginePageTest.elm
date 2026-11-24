@@ -323,6 +323,12 @@ suite =
                 \_ ->
                     run [ Hand (Control.Step cutoff Up), Frame ]
                         |> Expect.equal [ Model.Edit cutoff (Num (Control.atNorm cutoffParam (0.5 + Control.wheelNorm cutoffParam))) ]
+            , test "a_turn_while_the_boxs_new_part_is_read_is_said_not_sent" <|
+                -- Its value gone with the old Part, the control has nothing to turn from.
+                \_ ->
+                    live [ Hand (Control.Step cutoff Up), Frame ] (model |> Model.step (Model.Line "part 2 VA") |> Tuple.first)
+                        |> Tuple.second
+                        |> Expect.equal [ Model.Decline "THE TURN OF FILTER.CUTOFF WAS NOT SENT: THE BOX TOOK ANOTHER PART OR SOUND, READ NOW" ]
             , test "two_notches_in_a_frame_count_twice" <|
                 \_ ->
                     run [ Hand (Control.Step cutoff Up), Hand (Control.Step cutoff Up), Frame ]

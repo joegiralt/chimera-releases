@@ -282,9 +282,14 @@ for (const engine of ENGINES) {
       await page.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))));
       await page.mouse.move(ax, ay - 75, { steps: 6 });
       await page.mouse.up();
+      const dragFrom = bridge.flow.got.length;
       await until(`${patched}'s amount to move`, async () => {
         const r = (await unitRoutes())[patched];
         return r && r.amount !== from;
+      }).catch(async (e) => {
+        const said = bridge.flow.got.slice(dragFrom).filter((g) => !(g.line.startsWith("ed since") && g.lines.length === 1));
+        throw new Error(`${e.message}: the unit ${JSON.stringify((await unitRoutes())[patched])}, the cable ${await att.getAttribute("aria-valuetext")}, notices ${JSON.stringify(await noticesOn())}; ` +
+          `sent ${bridge.flow.sent.slice(-40).filter((l) => !l.startsWith("ed since")).join(" ; ")}\n${said.slice(0, 20).map((g) => `${g.line} => ${g.lines.join(" | ").slice(0, 300)}`).join("\n")}`);
       });
       // The unit glides a route a step a pass: the amount it lands on, not one on the way.
       const moved = await settledRoute(patched);

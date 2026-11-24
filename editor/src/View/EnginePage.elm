@@ -232,7 +232,7 @@ update msg m s0 =
     in
     case msg of
         Hand h ->
-            ( hand m h s, [], Nothing )
+            hand m h s |> (\( st, asks ) -> ( st, asks, Nothing ))
 
         MenuMsg mm ->
             let
@@ -243,7 +243,7 @@ update msg m s0 =
                 shut =
                     { s | menu = menu }
             in
-            ( picked |> Maybe.map (\h -> hand m h shut) |> Maybe.withDefault shut, [], Nothing )
+            picked |> Maybe.map (\h -> hand m h shut) |> Maybe.withDefault ( shut, [] ) |> (\( st, asks ) -> ( st, asks, Nothing ))
 
         PageMsg pm ->
             let
@@ -328,7 +328,7 @@ bayEffect : Model -> BayId -> PatchBay.Effect -> State -> ( State, List Model.Ms
 bayEffect m id effect s =
     case ( id, effect ) of
         ( _, PatchBay.Handed h ) ->
-            ( hand m h s, [] )
+            hand m h s
 
         ( PartBay, PatchBay.Patched from to ) ->
             if List.any (\c -> c.from == from && c.to == to) (Routes.cables (partBay m)) then
@@ -542,13 +542,52 @@ padBay m p =
         |> List.foldl Routes.add (Routes.new (List.map Routes.source (options .source)) (List.map Routes.dest (options .dest)))
 
 
-hand : Model -> Control.Msg -> State -> State
+hand : Model -> Control.Msg -> State -> ( State, List Model.Msg )
 hand m h s =
     let
         ( drag, intents ) =
             Control.update (target m s) h s.drag
+
+        -- A hand on a control whose value went with the Part or Sound the
+        -- box just took (read now) has nothing to turn from: said, not dropped.
+        unread : List Model.Msg
+        unread =
+            case reached h of
+                Just a ->
+                    if Model.readingPage m && target m s a == Nothing then
+                        [ Model.Decline ("THE TURN OF " ++ Addr.key a ++ " WAS NOT SENT: THE BOX TOOK ANOTHER PART OR SOUND, READ NOW") ]
+
+                    else
+                        []
+
+                Nothing ->
+                    []
     in
-    List.foldl (intend m) { s | drag = drag } intents
+    ( List.foldl (intend m) { s | drag = drag } intents, unread )
+
+
+{-| The control a hand reaches for, where it starts one.
+-}
+reached : Control.Msg -> Maybe Addr
+reached h =
+    case h of
+        Control.Grab a _ _ ->
+            Just a
+
+        Control.Step a _ ->
+            Just a
+
+        Control.Pick a _ ->
+            Just a
+
+        Control.Reset a ->
+            Just a
+
+        Control.Moved _ ->
+            Nothing
+
+        Control.Released ->
+            Nothing
 
 
 {-| The param as the panels now showing describe it: the engine's, else

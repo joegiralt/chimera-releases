@@ -11,7 +11,7 @@
 import assert from "node:assert/strict";
 import { describe, test } from "node:test";
 import {
-  bridge, choice, settled, firstKnob, followPart, loadInit, newProject, noticesOn, onEngine, onMixer, page, polled, setup, showCell, simOnly, slider, sliderFollows, slidersAgainstUnit,
+  bridge, choice, expectNotice, settled, firstKnob, followPart, loadInit, newProject, noticesOn, onEngine, onMixer, page, polled, setup, showCell, simOnly, slider, sliderFollows, slidersAgainstUnit,
   statusText, tokens, tryGet, unit, unitRoutes, until, wheel,
 } from "./harness.mjs";
 
@@ -99,6 +99,40 @@ describe("the box's own hands", () => {
     await followPart(2, "MODAL");
     await unit.ok("key B1");
     await followPart(1, "ALGO");
+  });
+
+  // G4's failure on the unit (2026-11-24): a turn that lands in the frame the box's new Part comes in, on the old
+  // page's control, its value gone with that Part. Not sent (Part 1's turn is not Part 2's), and said.
+  test("G4: a turn in the frame the box takes another Part: not sent, and said", async () => {
+    await onEngine(1, "ALGO");
+    const { addr, knob } = await firstKnob("ALGO");
+    const was = await unit.get(addr);
+    expectNotice(/^THE TURN OF \S+ WAS NOT SENT: THE BOX TOOK ANOTHER PART/);
+    // The wheel goes on the line `part 2 MODAL` itself: the editor has read it, the page not yet drawn again.
+    await page.evaluate((a) => {
+      const send = WebSocket.prototype.send;
+      WebSocket.prototype.send = function (d) {
+        WebSocket.prototype.send = send;
+        this.addEventListener("message", function on(ev) {
+          if (ev.data !== "part 2 MODAL") return;
+          this.removeEventListener("message", on);
+          const el = document.querySelector(`[data-addr="${a}"][role="slider"]`);
+          el.dispatchEvent(new WheelEvent("wheel", { deltaY: -100, bubbles: true, cancelable: true }));
+          window.__turned = true;
+        });
+        return send.call(this, d);
+      };
+    }, addr);
+    const from = bridge.flow.sent.length;
+    await unit.ok("key B2");
+    await until("the turn in that frame", () => page.evaluate(() => window.__turned === true), 10000);
+    await followPart(2, "MODAL");
+    await until("the turn said", async () => (await noticesOn()).some((n) => n.startsWith(`THE TURN OF ${addr} WAS NOT SENT`)), 3000);
+    assert.deepEqual(bridge.flow.sent.slice(from).filter((l) => l.startsWith("ed set ")), [], "the turn sent");
+    await unit.ok("key B1");
+    await followPart(1, "ALGO");
+    assert.equal((await unit.get(addr)).stored, was.stored, `Part 1's ${addr} moved`);
+    void knob;
   });
 
   test("G5: a level moved for a Part the editor doesn't follow: its MIXER strip follows", async () => {

@@ -318,6 +318,12 @@ isUnread n =
         RefusedUnnamed _ ->
             False
 
+        NotSent _ ->
+            False
+
+        LeftPart _ ->
+            False
+
         Untaken _ ->
             False
 
@@ -351,6 +357,12 @@ isRefusalOrUnread n =
 
         RefusedUnnamed _ ->
             True
+
+        NotSent _ ->
+            False
+
+        LeftPart _ ->
+            False
 
         Untaken _ ->
             False
@@ -818,6 +830,59 @@ suite =
                     , \_ -> Expect.equal False (Model.takesEdits switched)
                     ]
                     ()
+        , describe "a hand during a read is held, and goes once the page is the unit's"
+            (let
+                hold : Addr
+                hold =
+                    addr "ENV1.HOLD"
+
+                -- Every step in turn, and every line they send.
+                through : List Msg -> Model.Model -> ( Model.Model, List Command )
+                through msgs m0 =
+                    List.foldl (\msg ( m, out ) -> stepSends msg m |> Tuple.mapSecond (\cs -> out ++ cs)) ( m0, [] ) msgs
+
+                lines : List String -> List Msg
+                lines =
+                    List.map Line
+
+                -- VA read: its schema, its matrix's, then following.
+                readVa : List Msg
+                readVa =
+                    Tick (at 99)
+                        :: lines [ "schema VA 1 " ++ hashOf vaPage, "OK" ]
+                        ++ [ Recalled { key = key (EngineSchema Va) (hashOf vaPage), lines = Nothing }, Tick (at 132) ]
+                        ++ lines (vaPage ++ [ "OK" ])
+                        ++ [ Tick (at 165) ]
+                        ++ lines [ "schema MTX-VA 1 " ++ hashOf [ "page 0 MTX of 1" ], "OK" ]
+                        ++ [ Recalled { key = key (MatrixSchema Va) (hashOf [ "page 0 MTX of 1" ]), lines = Nothing }, Tick (at 198) ]
+                        ++ lines [ "page 0 MTX of 1", "OK" ]
+                        ++ [ Tick (at 231) ]
+
+                -- Part 1's Sound loaded as VA: the same Part, another engine read.
+                ( after, sent ) =
+                    following
+                        |> feed [ "OK 1", "part 1 VA", "OK 2" ]
+                        |> through ([ Edit cutoff (Num 5000), Edit cutoff (Num 6000), Edit hold (Num 1) ] ++ readVa)
+
+                -- The box on Part 2 meanwhile: Part 1's hand is not Part 2's.
+                ( elsewhere, sentElsewhere ) =
+                    following
+                        |> feed [ "OK 1", "part 1 VA", "OK 2" ]
+                        |> through (Edit cutoff (Num 5000) :: Line "part 2 VA" :: Line "OK 3" :: readVa)
+
+                sets : List Command -> List Command
+                sets =
+                    List.filter (Protocol.sketch >> String.startsWith "ed set ")
+             in
+             [ test "the_latest_turn_of_an_address_the_new_page_has_goes_once_it_is_read" <|
+                \_ -> Expect.equal [ Set cutoff (Num 6000) ] (sets sent)
+             , test "a_turn_of_an_address_the_new_page_lacks_is_said_once" <|
+                \_ -> Expect.equal [ "THE TURN OF ENV1.HOLD WAS NOT SENT: THE UNIT'S PAGE HAS NO ENV1.HOLD NOW" ] (said after)
+             , test "a_turn_held_for_a_part_the_box_left_is_said_not_sent" <|
+                \_ ->
+                    Expect.equal ( [], [ "THE TURN OF FILTER.CUTOFF WAS NOT SENT: THE BOX TOOK ANOTHER PART" ] ) ( sets sentElsewhere, said elsewhere )
+             ]
+            )
         , test "a_new_part_is_a_new_seat" <|
             \_ ->
                 Expect.notEqual (Model.seat following) (Model.seat (feed [ "part 3 ALGO" ] following))
