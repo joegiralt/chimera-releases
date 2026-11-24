@@ -12,7 +12,7 @@ And if you decide Chimera isn't for you, you can always switch back to the stock
 
 Chimera is still in development. Some features aren't finished, and you may run into bugs.
 
-**[Read the Chimera 0.4 manual](https://github.com/joegiralt/chimera-releases/blob/main/manual/preenfm3/0.4/README.md)**: every page and cell, with its screen.
+**[Read the Chimera 0.4 manual](https://joegiralt.github.io/chimera-releases/manual/preenfm3/0.4/)**: every page and cell, with its screen.
 
 **[Open the browser editor](https://joegiralt.github.io/chimera-releases/editor/)** (needs Chimera 0.4 or later): a panel in Chrome or Edge that talks to the unit over USB.
 
