@@ -16,8 +16,8 @@ refusal with the unit's reason; nothing is guessed.
 import Addr exposing (Addr, PadBlock(..))
 import Browser.Events
 import Dict exposing (Dict)
-import Html exposing (Html, button, div, p, text)
-import Html.Attributes exposing (attribute, class, classList)
+import Html exposing (Html, a, button, div, p, text)
+import Html.Attributes exposing (attribute, class, classList, href, rel)
 import Html.Events exposing (onClick)
 import Layout.Algo
 import Layout.Drum
@@ -1019,11 +1019,23 @@ connectPage m s =
                     ++ [ Module.new Chip.Unit "UNIT"
                             |> Module.note says
                             |> Module.body
-                                [ div [ class "connect" ]
+                                (div [ class "connect" ]
                                     [ button [ class "hbtn", onClick (Unit (Model.Connect Model.ViaUnit)) ] [ text "CONNECT UNIT" ]
                                     , button [ class "hbtn", onClick (Unit (Model.Connect Model.ViaSimulator)) ] [ text "CONNECT SIMULATOR" ]
                                     ]
-                                ]
+                                    -- A unit too old for this editor: where its update is.
+                                    :: (case Model.download m of
+                                            Just url ->
+                                                [ div [ class "download" ]
+                                                    [ a [ href url, Html.Attributes.target "_blank", rel "noopener" ] [ text "DOWNLOAD CHIMERA 0.4 OR LATER" ]
+                                                    , text (" " ++ String.replace "https://" "" url)
+                                                    ]
+                                                ]
+
+                                            Nothing ->
+                                                []
+                                       )
+                                )
                        ]
                 )
         )

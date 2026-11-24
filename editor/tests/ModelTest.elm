@@ -455,16 +455,34 @@ suite =
             \_ ->
                 Expect.equal Nothing
                     (following |> feed [ "val OUT.PAN 0.5 0 \"C\"" ] |> Model.shown (addr "OUT.PAN"))
-        , test "an_old_unit_refusing_hello_says_update_the_unit" <|
-            \_ ->
-                Model.init
-                    |> Model.step (LinkChanged Open)
-                    |> Tuple.first
-                    |> tick 0
-                    |> Tuple.first
-                    |> feed [ "ERR unknown command ed, try help" ]
-                    |> Model.notice
-                    |> Expect.equal (Just "UPDATE THE UNIT")
+        , describe "a unit without `ed` (0.3): its version asked, and what to do said"
+            (let
+                hailed : Model.Model
+                hailed =
+                    Model.init |> Model.step (LinkChanged Open) |> Tuple.first |> tick 0 |> Tuple.first
+
+                ( refused, asked ) =
+                    hailed |> stepSends (Line "ERR unknown command ed, try help")
+
+                -- 0.3's `status`, as its console writes it.
+                told : Model.Model
+                told =
+                    refused |> feed [ "firmware 0.3.0 release", "build 2c8c47aa2", "protocol 3", "project NEW PROJECT", "state new", "part 1", "at PART 1 > ALGORITHM", "sram4 ok", "OK" ]
+             in
+             [ test "it_asks_status_and_nothing_else" <|
+                \_ -> Expect.equal ( [ AskStatus ], [] ) ( asked, (tick 33 told |> Tuple.second) ++ (tick 2000 refused |> Tuple.second) )
+             , test "the_status_names_its_version" <|
+                \_ -> Expect.equal (Just "THIS EDITOR NEEDS CHIMERA 0.4 OR LATER. THIS UNIT IS RUNNING 0.3.0.") (Model.notice told)
+             , test "a_status_with_no_firmware_line_names_none" <|
+                \_ -> Expect.equal (Just "THIS EDITOR NEEDS CHIMERA 0.4 OR LATER.") (feed [ "ERR unknown command status, try help" ] refused |> Model.notice)
+             , test "before_the_status_answers_it_says_so_without_the_version" <|
+                \_ -> Expect.equal (Just "THIS EDITOR NEEDS CHIMERA 0.4 OR LATER.") (Model.notice refused)
+             , test "the_download_page_is_given_with_it" <|
+                \_ -> Expect.equal ( Just Model.downloadUrl, Nothing ) ( Model.download told, Model.download following )
+             , test "nothing_the_status_says_is_a_notice_of_its_own" <|
+                \_ -> Expect.equal 0 (List.length (Model.notices told))
+             ]
+            )
         , test "the_status_names_the_link_part_and_engine_once_following" <|
             \_ ->
                 let
@@ -1113,7 +1131,8 @@ suite =
                         Model.init |> Model.step (LinkChanged Open) |> Tuple.first |> tick 0
                 in
                 Expect.all
-                    [ \x -> Expect.equal (Just "UPDATE THE UNIT: THE UNIT SPEAKS PROTOCOL 3, THIS EDITOR 4") (Model.notice x)
+                    [ \x -> Expect.equal (Just "THIS EDITOR NEEDS CHIMERA 0.4 OR LATER.") (Model.notice x)
+                    , \x -> Expect.equal (Just Model.downloadUrl) (Model.download x)
                     , \x -> Expect.equal [] (tick 33 x |> Tuple.second)
                     ]
                     (feed [ "ed hello 3 x part 1 ALGO", "OK" ] m)

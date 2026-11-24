@@ -1041,6 +1041,9 @@ type Command
     | SetRoute Cell RouteTo
       -- The card's projects listed again, for `since`'s listing.
     | ListProjects
+      -- The console's own `status` (every firmware has it): a unit without
+      -- `ed` asked its version.
+    | AskStatus
       -- MENU hold's quick save, over the loaded project's own file.
     | SaveProject
       -- Into a new id, never over another project.
@@ -1213,6 +1216,9 @@ sketch c =
         ListProjects ->
             encode c |> Maybe.withDefault "ed projects"
 
+        AskStatus ->
+            "status"
+
         SaveProject ->
             encode c |> Maybe.withDefault "ed project save"
 
@@ -1268,6 +1274,9 @@ encode c =
 
         ListProjects ->
             Just "ed projects"
+
+        AskStatus ->
+            Just "status"
 
         SaveProject ->
             Just "ed project save"

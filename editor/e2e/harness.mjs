@@ -346,7 +346,7 @@ export async function connectSays(p = page) {
 }
 
 /** What the connect page says when no link is up, or a halt stopped it. */
-const DOWN = /DISCONNECTED|NOT RUNNING|NOT CONNECTED|STOPPED ANSWERING|THE UNIT REFUSED|UPDATE THE|TOO LARGE|CAN'T READ|NOT THE TEXT|IN USE|USE CHROME|THE UNIT NAMED/;
+const DOWN = /DISCONNECTED|NOT RUNNING|NOT CONNECTED|STOPPED ANSWERING|THE UNIT REFUSED|UPDATE THE|TOO LARGE|CAN'T READ|NOT THE TEXT|IN USE|USE CHROME|THE UNIT NAMED|NEEDS CHIMERA/;
 
 /** The editor on Part `n` (its tab), the unit's engine `e` described and read. */
 export async function followPart(n, e) {

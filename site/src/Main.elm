@@ -889,8 +889,8 @@ editor base =
         [ Html.text "A sound editor that runs in your browser and talks to Chimera over the USB cable. It shows the Sound on the unit's current Part on one screen; turn a control in the editor and the unit follows, turn a knob on the unit and the editor follows." ]
     , Html.p []
         [ Html.text "It edits the current Part's Sound on every engine, and reaches the mixer, the mod matrix, MIDI MAP, ORBIT and the settings. It needs Chimera 0.4 or later on the unit: when the unit's firmware is older, the editor says "
-        , Html.span [ Attr.class "label" ] [ Html.text "UPDATE THE UNIT" ]
-        , Html.text "."
+        , Html.span [ Attr.class "label" ] [ Html.text "THIS EDITOR NEEDS CHIMERA 0.4 OR LATER" ]
+        , Html.text ", names the version the unit runs, and links the releases page."
         ]
     , Html.h2 [] [ Html.text "What you need" ]
     , Html.ul []

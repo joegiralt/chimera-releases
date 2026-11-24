@@ -177,15 +177,29 @@ describe("the unit's hello", () => {
     assert.equal(await page.locator('[role="slider"]').count(), 0);
   });
 
-  test("A11: a unit speaking protocol 3, or not knowing `ed`: UPDATE THE UNIT", async () => {
+  test("A11: a unit speaking protocol 3: this editor needs 0.4, and where to get it", async () => {
     bridge.flow.clearRules();
     bridge.flow.rule({ match: /^ed hello$/, act: "map", map: (ls) => ls.map((l) => l.replace(/^ed hello \d+ /, "ed hello 3 ")) });
     await reconnect("socket");
-    await until("the halt", async () => (await connectSays()).includes("UPDATE THE UNIT: THE UNIT SPEAKS PROTOCOL 3, THIS EDITOR 4"), 5000);
+    await until("the halt", async () => (await connectSays()).includes("THIS EDITOR NEEDS CHIMERA 0.4 OR LATER."), 5000);
+    assert.ok(!(await connectSays()).includes("THIS UNIT IS RUNNING"), "a version it was never told");
+    assert.equal(await page.locator(".download a").getAttribute("href"), "https://github.com/joegiralt/chimera-releases/releases");
+  });
+
+  test("A11: a 0.3 unit (no `ed`): its version asked of `status`, nothing else sent, and the download linked", async () => {
     bridge.flow.clearRules();
-    bridge.flow.rule({ match: /^ed hello$/, act: "answer", lines: ["ERR unknown command: ed"] });
+    // 0.3's console: `ed` unknown, `status` as it writes it.
+    bridge.flow.rule({ match: /^ed hello$/, act: "answer", lines: ["ERR unknown command ed, try help"] });
+    bridge.flow.rule({ match: /^status$/, act: "answer", lines: ["firmware 0.3.0 release", "build 2c8c47aa2", "protocol 3", "project NEW PROJECT", "state new", "part 1", "at PART 1 > ALGORITHM", "sram4 ok", "OK"] });
+    const from = bridge.flow.sent.length;
     await reconnect("socket");
-    await until("the halt", async () => /UPDATE THE UNIT(?!:)/.test(await connectSays()), 5000);
+    await until("the halt", async () => (await connectSays()).includes("THIS EDITOR NEEDS CHIMERA 0.4 OR LATER. THIS UNIT IS RUNNING 0.3.0."), 5000);
+    const link = page.locator(".download a");
+    assert.equal(await link.getAttribute("href"), "https://github.com/joegiralt/chimera-releases/releases");
+    assert.equal((await link.innerText()).trim(), "DOWNLOAD CHIMERA 0.4 OR LATER");
+    await new Promise((r) => setTimeout(r, 500));
+    assert.deepEqual(bridge.flow.sent.slice(from), ["ed hello", "status"], "sent besides hello and status");
+    assert.equal(await page.locator(".said").count(), 0, "status's lines said as notices");
   });
 
   test("A12: a unit that never answers at connect: THE UNIT STOPPED ANSWERING", async () => {

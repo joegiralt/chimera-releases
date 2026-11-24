@@ -19,6 +19,8 @@ module Model exposing
     , Stage
     , Via(..)
     , armedOn
+    , download
+    , downloadUrl
     , init
     , lastRefusal
     , notice
@@ -164,7 +166,8 @@ type Wish
 
 type Why
     = UpdateEditor
-    | UpdateUnit
+      -- A unit too old for `ed` (0.3): its version, as `status` names it.
+    | OldUnit OldVersion
       -- The unit speaks a protocol newer or older than this editor's.
     | OtherProtocol Int
     | RefusedBy String
@@ -172,6 +175,14 @@ type Why
     | TooLarge
     | BadSchema SchemaId SchemaFault
     | Faulted Fault
+
+
+{-| An old unit's version: asked of `status`, named, or not to be had.
+-}
+type OldVersion
+    = AskingVersion (Maybe String)
+    | Version String
+    | NoVersion
 
 
 {-| Why a schema's text can't be used: a line of it the editor can't read,
@@ -634,22 +645,21 @@ stageNotice m =
         Halted UpdateEditor ->
             Just "UPDATE THE EDITOR"
 
-        Halted UpdateUnit ->
-            Just "UPDATE THE UNIT"
+        Halted (OldUnit (Version v)) ->
+            Just (needsNewer ++ " THIS UNIT IS RUNNING " ++ String.toUpper v ++ ".")
+
+        Halted (OldUnit (AskingVersion (Just v))) ->
+            Just (needsNewer ++ " THIS UNIT IS RUNNING " ++ String.toUpper v ++ ".")
+
+        Halted (OldUnit _) ->
+            Just needsNewer
 
         Halted (OtherProtocol n) ->
-            Just
-                ((if n > Protocol.supported then
-                    "UPDATE THE EDITOR"
+            if n > Protocol.supported then
+                Just ("UPDATE THE EDITOR: THE UNIT SPEAKS PROTOCOL " ++ String.fromInt n ++ ", THIS EDITOR " ++ String.fromInt Protocol.supported)
 
-                  else
-                    "UPDATE THE UNIT"
-                 )
-                    ++ ": THE UNIT SPEAKS PROTOCOL "
-                    ++ String.fromInt n
-                    ++ ", THIS EDITOR "
-                    ++ String.fromInt Protocol.supported
-                )
+            else
+                Just needsNewer
 
         Halted (RefusedBy t) ->
             Just ("THE UNIT REFUSED: " ++ t)
@@ -1624,6 +1634,21 @@ edit a v m =
 line : String -> Line -> Model -> ( Model, List Wish )
 line raw l m =
     case m.stage of
+        -- An old unit's `status`, to its end: only its firmware line is read.
+        Halted (OldUnit (AskingVersion seen)) ->
+            case ( String.words raw, l ) of
+                ( "firmware" :: v :: _, _ ) ->
+                    ( { m | stage = Halted (OldUnit (AskingVersion (Just v))) }, [] )
+
+                ( _, Ok_ _ ) ->
+                    ( { m | stage = Halted (OldUnit (seen |> Maybe.map Version |> Maybe.withDefault NoVersion)) }, [] )
+
+                ( _, Err_ _ ) ->
+                    ( { m | stage = Halted (OldUnit NoVersion) }, [] )
+
+                _ ->
+                    ( m, [] )
+
         -- Nothing more is read, but nothing said is dropped.
         Halted _ ->
             case l of
@@ -1747,6 +1772,9 @@ askedBy c =
         ListProjects ->
             AskedOther
 
+        AskStatus ->
+            AskedOther
+
         SaveProject ->
             AskedOther
 
@@ -1828,7 +1856,8 @@ lineIn raw l m =
 
                 Greeting ->
                     if String.startsWith "unknown command" why then
-                        ( { m | stage = Halted UpdateUnit, asked = Nothing }, [] )
+                        -- No `ed`: a unit before 0.4. Its console's `status` names its version.
+                        ( { m | stage = Halted (OldUnit (AskingVersion Nothing)), asked = Nothing }, [ Say AskStatus ] )
 
                     else
                         ( connectBusy why m, [] )
@@ -2003,6 +2032,37 @@ refusedCommandOf why m =
 
         Nothing ->
             rest
+
+
+needsNewer : String
+needsNewer =
+    "THIS EDITOR NEEDS CHIMERA 0.4 OR LATER."
+
+
+{-| Where to get the firmware this editor needs.
+-}
+downloadUrl : String
+downloadUrl =
+    "https://github.com/joegiralt/chimera-releases/releases"
+
+
+{-| The download page, while the unit is too old for this editor.
+-}
+download : Model -> Maybe String
+download m =
+    case m.stage of
+        Halted (OldUnit _) ->
+            Just downloadUrl
+
+        Halted (OtherProtocol n) ->
+            if n < Protocol.supported then
+                Just downloadUrl
+
+            else
+                Nothing
+
+        _ ->
+            Nothing
 
 
 refused : String -> Model -> Model

@@ -420,6 +420,22 @@ suite =
                         |> Query.fromHtml
                         |> Query.find [ Sel.attribute (attribute "role" "slider"), Sel.attribute (attribute "aria-label" "FREQ") ]
                         |> Query.has [ Sel.attribute (attribute "aria-valuetext" "632 Hz") ]
+            , test "a_unit_too_old_says_what_to_do_and_links_the_download" <|
+                \_ ->
+                    let
+                        old : Model.Model
+                        old =
+                            Model.init
+                                |> Model.step (Model.LinkChanged Open)
+                                |> Tuple.first
+                                |> Model.step (Model.Tick (Time.millisToPosix 0))
+                                |> Tuple.first
+                                |> feed [ "ERR unknown command ed, try help", "firmware 0.3.0 release", "OK" ]
+                    in
+                    Page.view old (Page.init Day)
+                        |> Query.fromHtml
+                        |> Query.find [ Sel.tag "a", Sel.attribute (attribute "href" Model.downloadUrl) ]
+                        |> Query.has [ Sel.text "DOWNLOAD CHIMERA 0.4 OR LATER" ]
             , test "a_refusal_shows_on_its_control_with_the_units_reason" <|
                 \_ ->
                     Page.view (feed [ "refused FILTER.CUTOFF \"FILTER IS OFF\"", "OK 2" ] model) (Page.init Day)
