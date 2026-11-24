@@ -19763,7 +19763,7 @@ var $elm$html$Html$Attributes$tabindex = function (n) {
 		'tabIndex',
 		$elm$core$String$fromInt(n));
 };
-var $author$project$Main$title = function (route) {
+var $author$project$Meta$title = function (route) {
 	var named = function (name) {
 		return name + ' · Chimera';
 	};
@@ -19814,7 +19814,7 @@ var $author$project$Main$view = function (model) {
 				$author$project$Main$page(model)),
 				$author$project$Main$footer(model.l)
 			]),
-		dP: $author$project$Main$title(model.K)
+		dP: $author$project$Meta$title(model.K)
 	};
 };
 var $author$project$Main$main = $elm$browser$Browser$application(
