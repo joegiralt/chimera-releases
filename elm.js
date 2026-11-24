@@ -16234,6 +16234,7 @@ var $author$project$Main$navLink = F2(
 	});
 var $elm$html$Html$span = _VirtualDom_node('span');
 var $elm$svg$Svg$Attributes$class = _VirtualDom_attribute('class');
+var $author$project$Sign$d = 'M2.7 96.1a92.7 92.7 0 1 0 185.4 0a92.7 92.7 0 1 0 -185.4 0zM16.9 96.1a78.5 78.5 0 1 0 156.9 0a78.5 78.5 0 1 0 -156.9 0zM86.8 48Q86 47.7 80.9 52.6Q75.8 57.5 66.6 69.8Q57.4 82 54.3 86.8Q51.1 91.5 50.1 93.6Q49.1 95.8 49 97.4Q48.9 99 49.7 100.5Q50.5 101.9 52.5 102.8Q54.5 103.8 68.8 103.3Q83 102.9 85.1 103.7Q87.3 104.5 87.5 105.9Q87.8 107.3 87.5 108.4Q87.1 109.5 81.9 112.6Q76.8 115.6 75.8 116.6Q74.9 117.5 74.7 118.3Q74.6 119 76 119.8Q77.5 120.7 81.9 119.3Q86.3 118 88.9 118.1Q91.5 118.3 94.4 119.5Q97.3 120.8 100.3 124.4Q103.3 128 104.5 131.6Q105.8 135.3 105.8 139.9Q105.7 144.5 104.4 147.3Q103.1 150 99.6 153.6Q96 157.3 96.1 157.8Q96.3 158.3 97 158.5Q97.8 158.6 102.5 156.6Q107.3 154.6 110.8 151.7Q114.3 148.8 116.4 144.9Q118.6 141 118.7 139.6Q118.7 138.3 117.9 136.3Q117.1 134.3 118.3 132Q119.4 129.8 118.9 127.8Q118.3 125.8 116.6 122.6Q114.9 119.5 111 116.1Q107 112.6 103 110.9Q99 109.2 98.5 108.3Q98 107.5 98.1 106.2Q98.3 105 99.5 104.4Q100.8 103.9 114.8 103.8Q128.8 103.7 130.8 102.6Q132.8 101.4 133.6 99.5Q134.4 97.5 132.5 93.4Q130.5 89.3 126.9 84.6Q123.3 80 119.6 77.6Q116 75.2 115.4 75.4Q114.7 75.5 114.4 76.1Q114.2 76.8 116.4 83.3Q118.6 89.8 118.5 90.6Q118.3 91.5 117.7 92Q117 92.6 108.5 92.5Q100 92.5 99.6 91.9Q99.2 91.3 99.5 89.1Q99.9 87 99.6 84.6Q99.4 82.3 98.1 80.9Q96.8 79.5 94.9 78.9Q93 78.3 91.4 79.2Q89.9 80 89.1 81Q88.4 82 88.1 86.5Q87.8 91 87.3 91.8Q86.8 92.5 77.3 91.9Q67.8 91.3 67.7 90.5Q67.6 89.8 68.3 88.3Q69 86.8 75.2 77.1Q81.5 67.5 82.9 64.6Q84.4 61.8 86.1 56.5Q87.8 51.3 87.7 49.8Q87.5 48.3 86.8 48zM106.7 51.3Q105.5 51.2 103.7 52.6Q101.8 54 101.4 56.8Q101 59.5 102.5 61.4Q103.9 63.3 106 63.9Q108 64.6 110 63.8Q112 63 112.6 61.5Q113.2 60 110.9 57.9Q108.5 55.8 108.2 53.6Q107.9 51.5 106.7 51.3zM83.1 143.6Q81.5 143 80 143.6Q78.5 144.2 78 145Q77.5 145.8 79 147.6Q80.5 149.5 80.6 151.3Q80.6 153 81.4 153.4Q82.3 153.7 84.1 152.5Q85.9 151.3 86.4 149.6Q86.8 148 85.8 146.1Q84.8 144.3 83.1 143.6z';
 var $elm$svg$Svg$Attributes$d = _VirtualDom_attribute('d');
 var $elm$svg$Svg$Attributes$fill = _VirtualDom_attribute('fill');
 var $elm$svg$Svg$Attributes$fillRule = _VirtualDom_attribute('fill-rule');
@@ -16256,7 +16257,7 @@ var $author$project$Sign$view = A2(
 				[
 					$elm$svg$Svg$Attributes$fill('currentColor'),
 					$elm$svg$Svg$Attributes$fillRule('evenodd'),
-					$elm$svg$Svg$Attributes$d('M2.7 96.1a92.7 92.7 0 1 0 185.4 0a92.7 92.7 0 1 0 -185.4 0zM16.9 96.1a78.5 78.5 0 1 0 156.9 0a78.5 78.5 0 1 0 -156.9 0zM86.8 48Q86 47.7 80.9 52.6Q75.8 57.5 66.6 69.8Q57.4 82 54.3 86.8Q51.1 91.5 50.1 93.6Q49.1 95.8 49 97.4Q48.9 99 49.7 100.5Q50.5 101.9 52.5 102.8Q54.5 103.8 68.8 103.3Q83 102.9 85.1 103.7Q87.3 104.5 87.5 105.9Q87.8 107.3 87.5 108.4Q87.1 109.5 81.9 112.6Q76.8 115.6 75.8 116.6Q74.9 117.5 74.7 118.3Q74.6 119 76 119.8Q77.5 120.7 81.9 119.3Q86.3 118 88.9 118.1Q91.5 118.3 94.4 119.5Q97.3 120.8 100.3 124.4Q103.3 128 104.5 131.6Q105.8 135.3 105.8 139.9Q105.7 144.5 104.4 147.3Q103.1 150 99.6 153.6Q96 157.3 96.1 157.8Q96.3 158.3 97 158.5Q97.8 158.6 102.5 156.6Q107.3 154.6 110.8 151.7Q114.3 148.8 116.4 144.9Q118.6 141 118.7 139.6Q118.7 138.3 117.9 136.3Q117.1 134.3 118.3 132Q119.4 129.8 118.9 127.8Q118.3 125.8 116.6 122.6Q114.9 119.5 111 116.1Q107 112.6 103 110.9Q99 109.2 98.5 108.3Q98 107.5 98.1 106.2Q98.3 105 99.5 104.4Q100.8 103.9 114.8 103.8Q128.8 103.7 130.8 102.6Q132.8 101.4 133.6 99.5Q134.4 97.5 132.5 93.4Q130.5 89.3 126.9 84.6Q123.3 80 119.6 77.6Q116 75.2 115.4 75.4Q114.7 75.5 114.4 76.1Q114.2 76.8 116.4 83.3Q118.6 89.8 118.5 90.6Q118.3 91.5 117.7 92Q117 92.6 108.5 92.5Q100 92.5 99.6 91.9Q99.2 91.3 99.5 89.1Q99.9 87 99.6 84.6Q99.4 82.3 98.1 80.9Q96.8 79.5 94.9 78.9Q93 78.3 91.4 79.2Q89.9 80 89.1 81Q88.4 82 88.1 86.5Q87.8 91 87.3 91.8Q86.8 92.5 77.3 91.9Q67.8 91.3 67.7 90.5Q67.6 89.8 68.3 88.3Q69 86.8 75.2 77.1Q81.5 67.5 82.9 64.6Q84.4 61.8 86.1 56.5Q87.8 51.3 87.7 49.8Q87.5 48.3 86.8 48zM106.7 51.3Q105.5 51.2 103.7 52.6Q101.8 54 101.4 56.8Q101 59.5 102.5 61.4Q103.9 63.3 106 63.9Q108 64.6 110 63.8Q112 63 112.6 61.5Q113.2 60 110.9 57.9Q108.5 55.8 108.2 53.6Q107.9 51.5 106.7 51.3zM83.1 143.6Q81.5 143 80 143.6Q78.5 144.2 78 145Q77.5 145.8 79 147.6Q80.5 149.5 80.6 151.3Q80.6 153 81.4 153.4Q82.3 153.7 84.1 152.5Q85.9 151.3 86.4 149.6Q86.8 148 85.8 146.1Q84.8 144.3 83.1 143.6z')
+					$elm$svg$Svg$Attributes$d($author$project$Sign$d)
 				]),
 			_List_Nil)
 		]));
@@ -19657,6 +19658,239 @@ var $author$project$Main$releases = function (model) {
 			}
 		}());
 };
+var $author$project$NotFound$alt = 'Hastur, the King in Yellow: a round cartoon figure in a tattered yellow robe, no face under his hood, shrugging with both hands up.';
+var $elm$svg$Svg$circle = $elm$svg$Svg$trustedNode('circle');
+var $elm$svg$Svg$Attributes$cx = _VirtualDom_attribute('cx');
+var $elm$svg$Svg$Attributes$cy = _VirtualDom_attribute('cy');
+var $elm$svg$Svg$ellipse = $elm$svg$Svg$trustedNode('ellipse');
+var $elm$svg$Svg$g = $elm$svg$Svg$trustedNode('g');
+var $elm$svg$Svg$Attributes$height = _VirtualDom_attribute('height');
+var $elm$svg$Svg$rect = $elm$svg$Svg$trustedNode('rect');
+var $elm$svg$Svg$Attributes$rx = _VirtualDom_attribute('rx');
+var $elm$svg$Svg$Attributes$ry = _VirtualDom_attribute('ry');
+var $elm$svg$Svg$Attributes$transform = _VirtualDom_attribute('transform');
+var $elm$svg$Svg$Attributes$width = _VirtualDom_attribute('width');
+var $elm$svg$Svg$Attributes$x = _VirtualDom_attribute('x');
+var $elm$svg$Svg$Attributes$y = _VirtualDom_attribute('y');
+var $author$project$King$hand = function (at) {
+	var finger = F4(
+		function (x, y, h, turn) {
+			return A2(
+				$elm$svg$Svg$rect,
+				_List_fromArray(
+					[
+						$elm$svg$Svg$Attributes$x(x),
+						$elm$svg$Svg$Attributes$y(y),
+						$elm$svg$Svg$Attributes$width('5'),
+						$elm$svg$Svg$Attributes$height(h),
+						$elm$svg$Svg$Attributes$rx('2.5'),
+						$elm$svg$Svg$Attributes$transform(turn)
+					]),
+				_List_Nil);
+		});
+	return A2(
+		$elm$svg$Svg$g,
+		_List_fromArray(
+			[
+				$elm$svg$Svg$Attributes$class('hand'),
+				$elm$svg$Svg$Attributes$transform(at)
+			]),
+		_List_fromArray(
+			[
+				A2(
+				$elm$svg$Svg$ellipse,
+				_List_fromArray(
+					[
+						$elm$svg$Svg$Attributes$cx('0'),
+						$elm$svg$Svg$Attributes$cy('0'),
+						$elm$svg$Svg$Attributes$rx('10'),
+						$elm$svg$Svg$Attributes$ry('8')
+					]),
+				_List_Nil),
+				A4(finger, '-9', '-17', '12', ''),
+				A4(finger, '-3.5', '-19', '13', ''),
+				A4(finger, '2', '-17.5', '12', ''),
+				A4(finger, '7', '-12', '9', 'rotate(25 9 -8)')
+			]));
+};
+var $author$project$King$path = F2(
+	function (_class, d) {
+		return A2(
+			$elm$svg$Svg$path,
+			_List_fromArray(
+				[
+					$elm$svg$Svg$Attributes$class(_class),
+					$elm$svg$Svg$Attributes$d(d)
+				]),
+			_List_Nil);
+	});
+var $elm$svg$Svg$Attributes$r = _VirtualDom_attribute('r');
+var $elm$svg$Svg$text = $elm$virtual_dom$VirtualDom$text;
+var $elm$svg$Svg$title = $elm$svg$Svg$trustedNode('title');
+var $author$project$King$view = function (alt) {
+	return A2(
+		$elm$svg$Svg$svg,
+		_List_fromArray(
+			[
+				$elm$svg$Svg$Attributes$viewBox('0 0 260 250'),
+				$elm$svg$Svg$Attributes$class('king'),
+				A2($elm$html$Html$Attributes$attribute, 'role', 'img'),
+				A2($elm$html$Html$Attributes$attribute, 'aria-label', alt)
+			]),
+		_List_fromArray(
+			[
+				A2(
+				$elm$svg$Svg$title,
+				_List_Nil,
+				_List_fromArray(
+					[
+						$elm$svg$Svg$text(alt)
+					])),
+				A2(
+				$elm$svg$Svg$ellipse,
+				_List_fromArray(
+					[
+						$elm$svg$Svg$Attributes$class('floor'),
+						$elm$svg$Svg$Attributes$cx('130'),
+						$elm$svg$Svg$Attributes$cy('236'),
+						$elm$svg$Svg$Attributes$rx('70'),
+						$elm$svg$Svg$Attributes$ry('9')
+					]),
+				_List_Nil),
+				A2($author$project$King$path, 'robe', 'M96 120 C80 150 66 190 62 222 Q70 232 78 224 Q86 236 96 226 Q106 238 116 228 Q126 240 136 229 Q146 239 156 228 Q166 238 175 226 Q185 235 192 223 Q199 230 200 220 C196 188 182 150 164 120 Z'),
+				A2($author$project$King$path, 'fold', 'M100 140 C92 170 86 200 84 226 Q90 231 96 226 C98 200 104 170 110 142 Z'),
+				A2($author$project$King$path, 'fold', 'M160 140 C168 170 174 200 176 226 Q170 231 165 228 C163 200 158 170 151 142 Z'),
+				A2(
+				$elm$svg$Svg$g,
+				_List_fromArray(
+					[
+						$elm$svg$Svg$Attributes$transform('translate(112 150) scale(0.1875)')
+					]),
+				_List_fromArray(
+					[
+						A2(
+						$elm$svg$Svg$circle,
+						_List_fromArray(
+							[
+								$elm$svg$Svg$Attributes$class('robe'),
+								$elm$svg$Svg$Attributes$cx('96'),
+								$elm$svg$Svg$Attributes$cy('96'),
+								$elm$svg$Svg$Attributes$r('96')
+							]),
+						_List_Nil),
+						A2(
+						$elm$svg$Svg$path,
+						_List_fromArray(
+							[
+								$elm$svg$Svg$Attributes$class('void'),
+								$elm$svg$Svg$Attributes$fillRule('evenodd'),
+								$elm$svg$Svg$Attributes$d($author$project$Sign$d)
+							]),
+						_List_Nil)
+					])),
+				A2($author$project$King$path, 'shade', 'M150 200 l12 -2 l2 11 l-12 2 Z'),
+				A2($author$project$King$path, 'void', 'M92 214 l4 10 l-7 -2 Z'),
+				A2($author$project$King$path, 'robe', 'M102 128 C84 128 66 120 56 104 C52 97 60 90 67 95 C76 104 88 108 100 108 Z'),
+				A2($author$project$King$path, 'shade', 'M56 104 C52 97 60 90 67 95 L70 99 C64 100 60 103 58 107 Z'),
+				A2($author$project$King$path, 'robe', 'M158 128 C176 128 194 120 204 104 C208 97 200 90 193 95 C184 104 172 108 160 108 Z'),
+				A2($author$project$King$path, 'shade', 'M204 104 C208 97 200 90 193 95 L190 99 C196 100 200 103 202 107 Z'),
+				$author$project$King$hand('translate(54 94) rotate(-62)'),
+				$author$project$King$hand('translate(206 94) rotate(62) scale(-1 1)'),
+				A2(
+				$elm$svg$Svg$g,
+				_List_fromArray(
+					[
+						$elm$svg$Svg$Attributes$transform('rotate(-7 130 86)')
+					]),
+				_List_fromArray(
+					[
+						A2($author$project$King$path, 'robe', 'M130 28 C96 28 78 56 78 86 C78 112 96 132 130 132 C164 132 182 112 182 86 C182 56 164 28 130 28 Z'),
+						A2($author$project$King$path, 'robe', 'M128 30 C134 18 146 12 156 14 C150 20 146 26 146 34 Z'),
+						A2($author$project$King$path, 'void', 'M130 56 C108 56 98 72 98 90 C98 108 112 118 130 118 C148 118 162 108 162 90 C162 72 152 56 130 56 Z'),
+						A2($author$project$King$path, 'rim', 'M130 56 C108 56 98 72 98 90 L102 90 C102 74 112 62 130 62 C148 62 158 74 158 90 L162 90 C162 72 152 56 130 56 Z')
+					])),
+				A2($author$project$King$path, 'hand sweat', 'M184 40 C180 48 178 52 180 55 C182 58 187 58 188 54 C189 51 187 47 184 40 Z'),
+				A2($author$project$King$path, 'marks', 'M38 70 l-8 -6 M44 64 l-3 -9 M222 70 l8 -6 M216 64 l3 -9')
+			]));
+};
+var $author$project$NotFound$view = function (base) {
+	return _List_fromArray(
+		[
+			A2(
+			$elm$html$Html$div,
+			_List_fromArray(
+				[
+					$elm$html$Html$Attributes$class('lost')
+				]),
+			_List_fromArray(
+				[
+					$author$project$King$view($author$project$NotFound$alt),
+					A2(
+					$elm$html$Html$div,
+					_List_Nil,
+					_List_fromArray(
+						[
+							A2(
+							$elm$html$Html$h1,
+							_List_Nil,
+							_List_fromArray(
+								[
+									$elm$html$Html$text('Uh-oh.')
+								])),
+							A2(
+							$elm$html$Html$p,
+							_List_fromArray(
+								[
+									$elm$html$Html$Attributes$class('lede')
+								]),
+							_List_fromArray(
+								[
+									$elm$html$Html$text('The thing you\'re looking for can\'t be found.')
+								])),
+							A2(
+							$elm$html$Html$p,
+							_List_Nil,
+							_List_fromArray(
+								[
+									$elm$html$Html$text('The King in Yellow has looked everywhere, even in Carcosa. It isn\'t there either.')
+								])),
+							A2(
+							$elm$html$Html$p,
+							_List_fromArray(
+								[
+									$elm$html$Html$Attributes$class('ways')
+								]),
+							_List_fromArray(
+								[
+									A2(
+									$elm$html$Html$a,
+									_List_fromArray(
+										[
+											$elm$html$Html$Attributes$href(
+											$author$project$Href$toString(
+												A2($author$project$Route$href, base, $author$project$Route$Home)))
+										]),
+									_List_fromArray(
+										[
+											$elm$html$Html$text('Back to the start')
+										])),
+									A2(
+									$elm$html$Html$a,
+									_List_fromArray(
+										[
+											$elm$html$Html$Attributes$href(
+											$author$project$Href$toString(
+												A2($author$project$Route$href, base, $author$project$Route$Guides)))
+										]),
+									_List_fromArray(
+										[
+											$elm$html$Html$text('Browse the guides')
+										]))
+								]))
+						]))
+				]))
+		]);
+};
 var $author$project$Main$page = function (model) {
 	var _v0 = model.K;
 	switch (_v0.$) {
@@ -19708,35 +19942,7 @@ var $author$project$Main$page = function (model) {
 		case 5:
 			return $author$project$Main$editor(model.l);
 		default:
-			return _List_fromArray(
-				[
-					A2(
-					$elm$html$Html$h1,
-					_List_Nil,
-					_List_fromArray(
-						[
-							$elm$html$Html$text('Nothing here')
-						])),
-					A2(
-					$elm$html$Html$p,
-					_List_Nil,
-					_List_fromArray(
-						[
-							$elm$html$Html$text('No page at this address. '),
-							A2(
-							$elm$html$Html$a,
-							_List_fromArray(
-								[
-									$author$project$Main$href(
-									A2($author$project$Route$href, model.l, $author$project$Route$Home))
-								]),
-							_List_fromArray(
-								[
-									$elm$html$Html$text('Back to the start')
-								])),
-							$elm$html$Html$text('.')
-						]))
-				]);
+			return $author$project$NotFound$view(model.l);
 	}
 };
 var $author$project$Main$pageClass = function (route) {
