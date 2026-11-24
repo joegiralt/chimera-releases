@@ -135,6 +135,18 @@ describe("the box's own hands", () => {
     void knob;
   });
 
+  test("G4: `ERR busy` to the schema and describe asked for the box's new engine: asked again quietly, and the page read", async () => {
+    await onEngine(1, "ALGO");
+    // Part 3's VA not read yet in this file: its schema asked (and described, unless held) when the box takes it.
+    const busy = bridge.flow.rule({ match: /^ed (schema|describe) VA/, act: "answer", lines: ["ERR busy"], times: 3 });
+    await unit.ok("key B3");
+    await until("the busy answers given", () => busy.hits === 3, 10000);
+    await followPart(3, "VA");
+    await firstKnob("VA");
+    await unit.ok("key B1");
+    await followPart(1, "ALGO");
+  });
+
   test("G5: a level moved for a Part the editor doesn't follow: its MIXER strip follows", async () => {
     await onMixer();
     const was = await unit.get("PART3.LEVEL");

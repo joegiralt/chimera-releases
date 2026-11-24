@@ -8,6 +8,7 @@ import Dict
 import Expect
 import Fixture
 import FixtureData
+import Flow
 import Hash
 import Model exposing (Effect(..), Msg(..), Notice(..))
 import Protocol exposing (Clock(..), Command(..), Learn(..), MapCommand(..), MapInput(..), MapKind(..), MapRow(..), OnOff(..), OptIndex, OrbitCommand(..), Playback(..), RowStatus(..), SaveInto(..), SchemaId(..), SlotState(..), Value(..))
@@ -740,6 +741,56 @@ suite =
                     , \_ -> Expect.equal [ Since (gen 7) ] next
                     ]
                     ()
+        , describe "any read answered `ERR busy` is asked again quietly, and said only when given up"
+            (let
+                -- The project list asked at 99 (no poll owed), the unit busy.
+                asked : Model.Model
+                asked =
+                    following |> Model.step AskProjects |> Tuple.first
+
+                busyOnce : Model.Model
+                busyOnce =
+                    asked |> feed [ "ERR busy" ]
+
+                -- Busy `n` times in a row, asked again each time its wait is past.
+                busyTimes : Int -> Model.Model
+                busyTimes n =
+                    List.foldl (\i m -> m |> tick (1100 * i) |> Tuple.first |> feed [ "ERR busy" ]) busyOnce (List.range 1 (n - 1))
+
+                lists : List Command -> List Command
+                lists =
+                    List.filter ((==) ListProjects)
+
+                -- `ed schema VA` asked while the box's new engine is read, the unit busy.
+                checking : Model.Model
+                checking =
+                    following |> feed [ "OK 1", "part 2 VA", "OK 2" ] |> tick 99 |> Tuple.first |> feed [ "ERR busy" ]
+             in
+             [ test "a_busy_project_list_is_no_refusal_and_goes_again_after_its_wait" <|
+                \_ ->
+                    Expect.all
+                        [ \_ -> Expect.equal [] (Model.notices busyOnce |> List.map .notice)
+                        , \_ -> Expect.equal [] (busyOnce |> tick 132 |> Tuple.second |> lists)
+                        , \_ -> Expect.equal [ ListProjects ] (busyOnce |> tick 1000 |> Tuple.second |> lists)
+                        ]
+                        ()
+             , test "busy_past_its_tries_it_is_given_up_and_said" <|
+                \_ ->
+                    Expect.all
+                        [ \_ -> Expect.equal [] (busyTimes (Flow.busyTries - 1) |> Model.notices |> List.map .notice)
+                        , \_ -> Expect.equal [ BusyGaveUp ListProjects ] (busyTimes Flow.busyTries |> Model.notices |> List.map .notice)
+                        ]
+                        ()
+             , test "a_busy_schema_ask_while_reading_halts_nothing_and_is_asked_again" <|
+                \_ ->
+                    Expect.all
+                        [ \_ -> Expect.equal Nothing (Model.notice checking)
+                        , \_ -> Expect.equal [] (checking |> tick 132 |> Tuple.second)
+                        , \_ -> Expect.equal [ AskSchema (EngineSchema Va) ] (checking |> tick 1000 |> Tuple.second)
+                        ]
+                        ()
+             ]
+            )
         , test "following_never_halts_a_lost_answer_is_asked_for_again" <|
             \_ ->
                 let

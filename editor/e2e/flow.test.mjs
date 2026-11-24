@@ -163,10 +163,11 @@ describe("ERR busy", () => {
     assert.ok(sets.every((s) => s === sets[0]), "each send is the hand's latest value");
     assert.ok(Math.abs(now.stored - Number(tokens(sets[0])[3])) < 1e-4);
     // Backing off: each send at least its wait after the one before (50 ms, doubling; the answer's own time on top,
-    // which a slow link makes uneven).
+    // which a slow link makes uneven). The wait runs from the editor's clock (a tick every 33 ms), not the answer.
     const at = bridge.flow.sent.map((l, i) => [l, bridge.flow.sentAt[i]]).slice(from).filter(([l]) => l.startsWith(`ed set ${addr} `)).map(([, t]) => t);
     const gaps = at.slice(1).map((t, i) => t - at[i]);
-    assert.ok(gaps.every((g, i) => g >= 50 * 2 ** i - 5), `gaps ${gaps.join(" ")} ms`);
+    assert.ok(gaps.every((g, i) => g >= 50 * 2 ** i - 35), `gaps ${gaps.join(" ")} ms`);
+    assert.ok(gaps.at(-1) > gaps[0], `gaps ${gaps.join(" ")} ms: no backing off`);
     assert.ok(gaps[0] >= 20, `the first retry after ${gaps[0]} ms`);
     await sliderFollows(addr);
   });

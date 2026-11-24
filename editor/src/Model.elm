@@ -276,9 +276,11 @@ type alias Model =
     -- The edits' window: the one set on the wire, and the wants waiting.
     , flow : Flow
 
-    -- `ERR busy` to `since`: how many in a row, and the poll waits till when.
-    , sinceBusy : Int
-    , sinceShut : Maybe Time.Posix
+    -- `ERR busy` to a read (`since`, `schema`, `describe`, a list): how
+    -- many in a row, till when the reads wait, and those to ask again then.
+    , readBusy : Int
+    , readShut : Maybe Time.Posix
+    , rereads : List Command
 
     -- A hand's latest wants while the page is read (an engine change, a
     -- schema asked again), by what they edit: they go to the window once
@@ -400,8 +402,9 @@ init =
     , routes = Dict.empty
     , held = Dict.empty
     , hands = Dict.empty
-    , sinceBusy = 0
-    , sinceShut = Nothing
+    , readBusy = 0
+    , readShut = Nothing
+    , rereads = []
     , checked = Set.empty
     , restarted = False
     , incoming = Schema.empty
@@ -1410,6 +1413,11 @@ tick t m0 =
             silent : ( Model, List Command )
             silent =
                 ( { m | stage = Halted Silent, asked = Nothing }, [] )
+
+            -- The unit answered a read `ERR busy`: the reads wait a while.
+            shut : Bool
+            shut =
+                m.readShut |> Maybe.map (\u -> ms t < ms u) |> Maybe.withDefault False
         in
         case m.stage of
             Halted _ ->
@@ -1419,34 +1427,43 @@ tick t m0 =
                 let
                     ( mf, window ) =
                         expire m
-
-                    again : ( Model, List Command )
-                    again =
-                        ( { mf | asked = Just t, owed = mf.owed + 1, leftover = False }, window ++ [ Since mf.gen ] )
                 in
-                if mf.owed == 0 then
-                    -- The unit busy: the poll waits.
-                    if mf.sinceShut |> Maybe.map (\u -> ms t < ms u) |> Maybe.withDefault False then
-                        ( mf, window )
-
-                    else
-                        again
-
-                else if timedOut && mf.owed == 1 && not mf.leftover then
-                    again
-
-                else if timedOut then
-                    -- Answers still owed after a re-ask: count them lost and ask afresh.
-                    Tuple.mapFirst (\fresh -> { fresh | owed = 1, awaiting = [] }) again
-
-                else
+                if shut then
                     ( mf, window )
 
+                else
+                    let
+                        -- A poll, and any read the unit was busy for.
+                        again : ( Model, List Command )
+                        again =
+                            ( { mf | asked = Just t, owed = mf.owed + 1, leftover = False, rereads = [] }, window ++ mf.rereads ++ [ Since mf.gen ] )
+                    in
+                    if mf.owed == 0 then
+                        again
+
+                    else if timedOut && mf.owed == 1 && not mf.leftover then
+                        again
+
+                    else if timedOut then
+                        -- Answers still owed after a re-ask: count them lost and ask afresh.
+                        Tuple.mapFirst (\fresh -> { fresh | owed = 1, awaiting = [] }) again
+
+                    else
+                        ( mf, window )
+
             Greeting ->
-                connecting timedOut silent (ask Hello) m
+                if shut then
+                    ( m, [] )
+
+                else
+                    connecting timedOut silent (ask Hello) m
 
             Checking s _ ->
-                connecting timedOut silent (ask (AskSchema s)) m
+                if shut then
+                    ( m, [] )
+
+                else
+                    connecting timedOut silent (ask (AskSchema s)) m
 
             -- A store that never answers is a miss.
             Recalling _ _ ->
@@ -1457,7 +1474,11 @@ tick t m0 =
                     ( m, [] )
 
             Describing s _ n ->
-                connecting timedOut silent (ask (Describe s n)) m
+                if shut then
+                    ( m, [] )
+
+                else
+                    connecting timedOut silent (ask (Describe s n)) m
 
 
 {-| The window's clock: a set unanswered past the timeout is no longer
@@ -1788,15 +1809,16 @@ lineIn raw l m =
         Answer a ->
             ( answer a m, [] )
 
+        -- An answer: the unit is no longer busy for the reads.
         Ok_ (Just g) ->
-            ok (Just g) False (answered (\k -> k == AskedSince) m)
+            ok (Just g) False (answered (\k -> k == AskedSince) { m | readBusy = 0 })
 
         -- `OK` alone is never a `since`'s: a set's, or another command's.
         Ok_ Nothing ->
-            ok Nothing False (answered (\k -> k /= AskedSince) m)
+            ok Nothing False (answered (\k -> k /= AskedSince) { m | readBusy = 0 })
 
         OkMore g ->
-            ok (Just g) True (answered (\k -> k == AskedSince) m)
+            ok (Just g) True (answered (\k -> k == AskedSince) { m | readBusy = 0 })
 
         Err_ why ->
             case m.stage of
@@ -1809,16 +1831,16 @@ lineIn raw l m =
                         ( { m | stage = Halted UpdateUnit, asked = Nothing }, [] )
 
                     else
-                        ( refused why m, [] )
+                        ( connectBusy why m, [] )
 
                 Checking _ _ ->
-                    ( refused why m, [] )
+                    ( connectBusy why m, [] )
 
                 Recalling _ _ ->
                     ( refused why m, [] )
 
                 Describing _ _ _ ->
-                    ( refused why m, [] )
+                    ( connectBusy why m, [] )
 
                 Halted _ ->
                     ( m, [] )
@@ -1868,22 +1890,98 @@ refusedCommand why m =
             Nothing ->
                 m1
 
-    else if why == "busy" && (List.head m.awaiting |> Maybe.map askedBy) == Just AskedSince then
-        -- Nor for a poll: asked again quietly, later each time in a row.
-        let
-            inARow : Int
-            inARow =
-                m.sinceBusy + 1
-        in
-        { m
-            | awaiting = List.drop 1 m.awaiting
-            , owed = max 0 (m.owed - 1)
-            , sinceBusy = inARow
-            , sinceShut = Just (Time.millisToPosix (Time.posixToMillis m.now + Flow.busyWaitMs inARow))
-        }
+    else if why == "busy" && (List.head m.awaiting |> Maybe.map isRead) == Just True then
+        -- Nor for a read: asked again quietly, later each time in a row.
+        case List.head m.awaiting of
+            Just c ->
+                readBusy c { m | awaiting = List.drop 1 m.awaiting }
+
+            Nothing ->
+                m
 
     else
         refusedCommandOf why m
+
+
+{-| A read answered `ERR busy`: the reads wait (50 ms, doubling), then it
+goes again (a poll is simply asked again). Past `Flow.busyTries` in a row
+it is given up, and said.
+-}
+readBusy : Command -> Model -> Model
+readBusy c m =
+    let
+        inARow : Int
+        inARow =
+            m.readBusy + 1
+
+        waited : Model
+        waited =
+            { m
+                | readBusy = inARow
+                , readShut = Just (Time.millisToPosix (Time.posixToMillis m.now + Flow.busyWaitMs inARow))
+                , owed =
+                    if askedBy c == AskedSince then
+                        max 0 (m.owed - 1)
+
+                    else
+                        m.owed
+            }
+    in
+    if inARow >= Flow.busyTries then
+        keep (BusyGaveUp c) { waited | readBusy = 0 }
+
+    else if askedBy c == AskedSince then
+        waited
+
+    else
+        { waited | rereads = waited.rereads ++ [ c ] }
+
+
+{-| While connecting, its ask answered `ERR`: busy, asked again after the
+wait (the clock asks when nothing is asked), else a halt that says why.
+-}
+connectBusy : String -> Model -> Model
+connectBusy why m =
+    if why == "busy" && m.readBusy + 1 < Flow.busyTries then
+        { m
+            | asked = Nothing
+            , readBusy = m.readBusy + 1
+            , readShut = Just (Time.millisToPosix (Time.posixToMillis m.now + Flow.busyWaitMs (m.readBusy + 1)))
+        }
+
+    else
+        -- Given up (or another refusal): the halt says it.
+        refused why { m | readBusy = 0 }
+
+
+{-| A command that only reads the unit: busy, it is asked again.
+-}
+isRead : Command -> Bool
+isRead c =
+    case c of
+        Hello ->
+            True
+
+        AskSchema _ ->
+            True
+
+        Describe _ _ ->
+            True
+
+        Get _ ->
+            True
+
+        Since _ ->
+            True
+
+        ListProjects ->
+            True
+
+        MapCmd ListMaps ->
+            True
+
+        _ ->
+            False
 
 
 refusedCommandOf : String -> Model -> Model
@@ -2317,7 +2415,7 @@ ok done more m0 =
         Following ->
             case done of
                 Just g ->
-                    ( following g (max 0 (m.owed - 1)) more { m | sinceBusy = 0, sinceShut = Nothing }, [] )
+                    ( following g (max 0 (m.owed - 1)) more { m | readBusy = 0, readShut = Nothing }, [] )
 
                 Nothing ->
                     ( m, [] )
