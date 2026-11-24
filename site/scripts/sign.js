@@ -179,7 +179,7 @@ fs.writeFileSync(
   `-- SPDX-License-Identifier: GPL-3.0-or-later
 
 
-module Sign exposing (view)
+module Sign exposing (d, view)
 
 {-| The Yellow Sign, Chimera's mark (Christian Knutsson for Pelgrane Press,
 public domain): the boot splash's bitmap, traced.
@@ -193,7 +193,14 @@ import Svg.Attributes as Attr
 view : Svg msg
 view =
     Svg.svg [ Attr.viewBox "0 0 ${S} ${S}", Attr.class "sign" ]
-        [ Svg.path [ Attr.fill "currentColor", Attr.fillRule "evenodd", Attr.d "${markD}" ] [] ]
+        [ Svg.path [ Attr.fill "currentColor", Attr.fillRule "evenodd", Attr.d d ] [] ]
+
+
+{-| The mark's path, in a ${S} x ${S} box (fill it even-odd).
+-}
+d : String
+d =
+    "${markD}"
 `
 );
 

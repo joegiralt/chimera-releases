@@ -26,6 +26,7 @@ import Http
 import Json.Encode
 import Menu
 import Meta
+import NotFound
 import Release exposing (Asset, Release, Stage(..))
 import Remote exposing (Remote(..))
 import Route exposing (Base, Route(..))
@@ -368,13 +369,7 @@ page model =
             editor model.base
 
         NotFound ->
-            [ Html.h1 [] [ Html.text "Nothing here" ]
-            , Html.p []
-                [ Html.text "No page at this address. "
-                , Html.a [ href (Route.href model.base Home) ] [ Html.text "Back to the start" ]
-                , Html.text "."
-                ]
-            ]
+            NotFound.view model.base
 
 
 sourceOf : Doc -> Href

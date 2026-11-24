@@ -296,3 +296,26 @@ main:focus { outline: none; }
   cursor: pointer;
 }
 .retry:hover { background: var(--accent-soft); }
+
+/* Not found: the King in Yellow shrugs. His colours are the page's tokens. */
+:root { --yellow-shade: #d6c75c; }
+.lost { display: flex; flex-wrap: wrap; align-items: center; gap: 1rem 2.5rem; padding-top: 1.5rem; }
+.lost .king { width: min(17rem, 70vw); height: auto; flex: none; }
+.lost > div { flex: 1 1 18rem; }
+.lost h1 { font-size: 2.6rem; margin: 0 0 .4rem; }
+.lost .ways { display: flex; flex-wrap: wrap; gap: .5rem 1.5rem; margin-top: 1.5rem; }
+/* The dark under his hood and his outline stay dark, his gloves pale, on any ground. */
+.king { --void: #0a0b0d; --glove: #ecebe7; }
+.king .robe { fill: var(--yellow); stroke: var(--void); stroke-width: 2; stroke-linejoin: round; }
+.king .shade { fill: var(--yellow-shade); }
+.king .fold { fill: var(--yellow-shade); opacity: .35; }
+.king .rim { fill: var(--yellow-shade); opacity: .7; }
+.king .void { fill: var(--void); }
+.king .hand { fill: var(--glove); stroke: var(--void); stroke-width: 1.5; stroke-linejoin: round; }
+.king .floor { fill: var(--faint); }
+.king .marks { fill: none; stroke: var(--ink2); stroke-width: 3; stroke-linecap: round; }
+/* Only where motion is welcome: the bead of sweat slides a little, now and then. */
+@media (prefers-reduced-motion: no-preference) {
+  .king .sweat { animation: sweat 3.2s ease-in-out infinite; }
+}
+@keyframes sweat { 0%, 70%, 100% { transform: translateY(0); opacity: 1; } 85% { transform: translateY(5px); opacity: .5; } }
