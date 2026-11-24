@@ -1,0 +1,321 @@
+/* SPDX-License-Identifier: GPL-3.0-or-later */
+/* Chimera site: the instrument's own look (the firmware's theme).
+   Dark ground, warm greys, teal for the active element, the Yellow Sign. */
+
+:root {
+  color-scheme: dark;
+  --ground: #0a0b0d;
+  --panel: #0d1514;
+  --ink: #ecebe7;
+  --ink2: #c9c7c1;
+  --mid: #8b8a86;
+  --rest: #6c6b67;
+  --faint: #2a2b2e;
+  --edge: #3a3937;
+  --accent: #7fd4c8;
+  --accent-soft: #15201f;
+  --yellow: #f1e579;
+  --gutter: 16px;
+  --measure: 46rem;
+  --sans: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+}
+
+* { box-sizing: border-box; }
+
+html { background: var(--ground); }
+
+body {
+  margin: 0;
+  background: var(--ground);
+  color: var(--ink2);
+  font: 17px/1.6 var(--sans);
+  -webkit-text-size-adjust: 100%;
+}
+
+a { color: var(--accent); text-decoration-thickness: 1px; text-underline-offset: 3px; }
+a:hover { color: var(--ink); }
+a:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+h1, h2, h3, h4 { color: var(--ink); line-height: 1.25; font-weight: 600; }
+h1 { font-size: 2rem; margin: 0 0 1rem; letter-spacing: -0.01em; }
+h2 { font-size: 1.35rem; margin: 2.5rem 0 0.75rem; }
+h3 { font-size: 1.1rem; margin: 2rem 0 0.5rem; }
+h4 { font-size: 1rem; margin: 1.5rem 0 0.5rem; }
+
+/* A panel label: small capitals, tracked, as on the unit. */
+.label {
+  font-size: 0.75rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--mid);
+  font-weight: 600;
+}
+
+.quiet { color: var(--mid); }
+.lede { font-size: 1.15rem; color: var(--ink); }
+.problem { border-left: 3px solid var(--yellow); padding: 0.5rem 0 0.5rem 1rem; }
+
+/* --- Header ------------------------------------------------------------ */
+
+.top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem 2rem;
+  padding: 1rem var(--gutter);
+  border-bottom: 1px solid var(--faint);
+  max-width: 72rem;
+  margin: 0 auto;
+}
+
+.mark {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  color: var(--ink);
+  text-decoration: none;
+  font-weight: 700;
+  letter-spacing: 0.24em;
+  font-size: 0.95rem;
+}
+
+.tile {
+  display: inline-block;
+  width: 2rem;
+  height: 2rem;
+  background: var(--yellow);
+  color: var(--ground);
+  border-radius: 3px;
+  flex: none;
+}
+.tile .sign { display: block; width: 100%; height: 100%; }
+.tile.big { width: 9rem; height: 9rem; border-radius: 6px; }
+
+.top nav { display: flex; flex-wrap: wrap; gap: 0.25rem 1.5rem; }
+.top nav a {
+  font-size: 0.75rem;
+  letter-spacing: 0.12em;
+  font-weight: 600;
+  color: var(--mid);
+  text-decoration: none;
+  padding: 0.35rem 0;
+  border-bottom: 2px solid transparent;
+}
+.top nav a:hover { color: var(--ink); }
+.top nav a.here { color: var(--accent); border-bottom-color: var(--accent); }
+
+/* --- Pages ------------------------------------------------------------- */
+
+main {
+  max-width: 72rem;
+  margin: 0 auto;
+  padding: 2.5rem var(--gutter) 4rem;
+}
+main.page > * { max-width: var(--measure); }
+
+footer {
+  max-width: 72rem;
+  margin: 0 auto;
+  padding: 1.5rem var(--gutter) 3rem;
+  border-top: 1px solid var(--faint);
+  color: var(--mid);
+  font-size: 0.85rem;
+}
+
+/* Home */
+.hero { display: flex; gap: 2.5rem; align-items: flex-start; max-width: 56rem; }
+.hero h1 { font-size: 2.6rem; margin-top: -0.3rem; }
+.current { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.5rem 1rem; margin-top: 1.5rem; }
+.current a { color: var(--yellow); font-size: 1.35rem; font-weight: 600; text-decoration: none; }
+.current a:hover { text-decoration: underline; }
+
+.doors {
+  list-style: none;
+  padding: 0;
+  margin: 3rem 0 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+  gap: 0;
+  /* Cells draw their own rules, so a short last row leaves no grey gap. */
+  padding: 1px 0 0 1px;
+}
+main.page > .doors { max-width: 56rem; }
+.doors li { background: var(--ground); border: 1px solid var(--faint); margin: -1px 0 0 -1px; }
+.doors a {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  height: 100%;
+  padding: 1.25rem;
+  color: var(--ink2);
+  text-decoration: none;
+}
+.doors a .label { color: var(--ink); }
+.doors a:hover { background: var(--panel); }
+.doors a:hover .label { color: var(--accent); }
+
+/* Install & update: the guide beside the downloads; downloads first on a phone. */
+main.install {
+  display: grid;
+  grid-template-columns: minmax(0, var(--measure)) 17rem;
+  grid-template-areas: "doc downloads";
+  gap: 3rem;
+  align-items: start;
+}
+main.install .doc { grid-area: doc; }
+.downloads {
+  grid-area: downloads;
+  position: sticky;
+  top: 1.5rem;
+  background: var(--panel);
+  border: 1px solid var(--faint);
+  border-radius: 4px;
+  padding: 1.25rem;
+}
+.downloads h2 { margin: 0 0 0.25rem; }
+.downloads .version { color: var(--yellow); font-size: 1.6rem; font-weight: 600; margin: 0 0 1rem; display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.25rem 0.75rem; }
+.downloads .version .quiet { font-size: 0.85rem; font-weight: 400; }
+
+.assets { list-style: none; padding: 0; margin: 0 0 1rem; display: grid; gap: 0.5rem; }
+
+.button {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0 0.75rem;
+  padding: 0.6rem 0.8rem;
+  border: 1px solid var(--edge);
+  border-radius: 4px;
+  text-decoration: none;
+  color: var(--ink);
+  background: var(--ground);
+}
+.button .label { grid-column: 1 / -1; color: var(--accent); }
+.button .file { font-family: var(--mono); font-size: 0.9rem; overflow-wrap: anywhere; }
+.button .size { color: var(--mid); font-size: 0.85rem; }
+.button:hover { border-color: var(--accent); background: var(--accent-soft); color: var(--ink); }
+.button.wide { display: inline-block; padding: 0.8rem 1.4rem; border-color: var(--accent); }
+.button.wide .label { color: var(--accent); font-size: 0.85rem; }
+
+/* Releases */
+.release { border-top: 1px solid var(--faint); padding-top: 0.5rem; margin-top: 2.5rem; }
+.release h2 { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.25rem 1rem; margin-top: 1rem; }
+.release h2 .quiet { font-size: 0.9rem; font-weight: 400; }
+.release .assets { grid-template-columns: repeat(auto-fill, minmax(13rem, 1fr)); }
+.notes summary {
+  cursor: pointer;
+  font-size: 0.75rem;
+  letter-spacing: 0.12em;
+  font-weight: 600;
+  color: var(--mid);
+  padding: 0.5rem 0;
+}
+.notes summary:hover { color: var(--accent); }
+
+.source { margin-top: 3rem; }
+.source a { font-size: 0.75rem; letter-spacing: 0.12em; font-weight: 600; color: var(--mid); }
+
+/* --- Rendered Markdown ------------------------------------------------- */
+
+.doc { overflow-wrap: break-word; }
+.doc > h1:first-child { margin-top: 0; }
+.doc h2 { padding-top: 1.25rem; border-top: 1px solid var(--faint); }
+.doc hr + h2 { border-top: 0; padding-top: 0; }
+.doc img { display: block; width: 100%; max-width: 360px; height: auto; margin: 1rem 0; }
+.doc li { margin: 0.25rem 0; }
+.doc strong { color: var(--ink); }
+.doc hr { border: 0; border-top: 1px solid var(--faint); margin: 2rem 0; }
+.doc blockquote {
+  margin: 1rem 0;
+  padding: 0.25rem 1rem;
+  border-left: 3px solid var(--accent);
+  background: var(--panel);
+}
+.doc code {
+  font-family: var(--mono);
+  font-size: 0.88em;
+  color: var(--ink);
+  background: var(--faint);
+  padding: 0.1em 0.35em;
+  border-radius: 3px;
+}
+.doc pre {
+  background: var(--panel);
+  border: 1px solid var(--faint);
+  border-radius: 4px;
+  padding: 0.9rem 1rem;
+  overflow-x: auto;
+}
+.doc pre code { background: none; padding: 0; }
+.doc .table { overflow-x: auto; margin: 1rem 0; }
+.doc table { border-collapse: collapse; font-size: 0.92rem; min-width: 100%; }
+.doc th, .doc td { text-align: left; padding: 0.4rem 0.75rem 0.4rem 0; border-bottom: 1px solid var(--faint); vertical-align: top; }
+.doc th { color: var(--mid); font-size: 0.75rem; letter-spacing: 0.08em; text-transform: uppercase; }
+
+/* --- Phone ------------------------------------------------------------- */
+
+@media (max-width: 760px) {
+  body { font-size: 16px; }
+  .top { gap: 0.75rem; }
+  .top nav { gap: 0.25rem 1rem; }
+  main { padding-top: 1.75rem; }
+  h1 { font-size: 1.6rem; }
+  .hero { flex-direction: column; gap: 1.25rem; }
+  .hero h1 { font-size: 2.1rem; margin-top: 0; }
+  .tile.big { width: 6rem; height: 6rem; }
+  main.install { grid-template-columns: minmax(0, 1fr); grid-template-areas: "downloads" "doc"; gap: 2rem; }
+  .downloads { position: static; }
+}
+
+/* --- Focus ------------------------------------------------------------- */
+
+.skip {
+  position: absolute;
+  left: -9999px;
+  top: 0.5rem;
+  z-index: 1;
+  padding: 0.5rem 0.75rem;
+  background: var(--panel);
+  border: 1px solid var(--accent);
+  color: var(--accent);
+}
+.skip:focus { left: var(--gutter); }
+main:focus { outline: none; }
+
+.release .stage { color: var(--yellow); border: 1px solid var(--yellow); border-radius: 3px; padding: 0.1rem 0.4rem; }
+.notes > .doc { margin-top: 0.5rem; }
+.retry {
+  margin-left: 0.5rem;
+  font: 600 0.75rem/1 var(--sans);
+  letter-spacing: 0.12em;
+  color: var(--accent);
+  background: var(--ground);
+  border: 1px solid var(--accent);
+  border-radius: 4px;
+  padding: 0.45rem 0.7rem;
+  cursor: pointer;
+}
+.retry:hover { background: var(--accent-soft); }
+
+/* Not found: the King in Yellow shrugs. His colours are the page's tokens. */
+:root { --yellow-shade: #d6c75c; }
+.lost { display: flex; flex-wrap: wrap; align-items: center; gap: 1rem 2.5rem; padding-top: 1.5rem; }
+.lost .king { width: min(17rem, 70vw); height: auto; flex: none; }
+.lost > div { flex: 1 1 18rem; }
+.lost h1 { font-size: 2.6rem; margin: 0 0 .4rem; }
+.lost .ways { display: flex; flex-wrap: wrap; gap: .5rem 1.5rem; margin-top: 1.5rem; }
+/* The dark under his hood and his outline stay dark, his gloves pale, on any ground. */
+.king { --void: #0a0b0d; --glove: #ecebe7; }
+.king .robe { fill: var(--yellow); stroke: var(--void); stroke-width: 2; stroke-linejoin: round; }
+.king .shade { fill: var(--yellow-shade); }
+.king .fold { fill: var(--yellow-shade); opacity: .35; }
+.king .rim { fill: var(--yellow-shade); opacity: .7; }
+.king .void { fill: var(--void); }
+.king .hand { fill: var(--glove); stroke: var(--void); stroke-width: 1.5; stroke-linejoin: round; }
+.king .floor { fill: var(--faint); }
+.king .marks { fill: none; stroke: var(--ink2); stroke-width: 3; stroke-linecap: round; }
+/* Only where motion is welcome: the bead of sweat slides a little, now and then. */
+@media (prefers-reduced-motion: no-preference) {
+  .king .sweat { animation: sweat 3.2s ease-in-out infinite; }
+}
+@keyframes sweat { 0%, 70%, 100% { transform: translateY(0); opacity: 1; } 85% { transform: translateY(5px); opacity: .5; } }
