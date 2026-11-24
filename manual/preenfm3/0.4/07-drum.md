@@ -262,7 +262,7 @@ Sub kick: DECAY past 1.5 s, SWEEP low, CLICK 0. Punchy: DECAY about 300 ms, SWEE
 7. **DECAY.**
 8. **SWEEP.**
 9. **SWPT.**
-10. **NOISE.**
+10. **NOISE:** a short noise burst (about 50 ms) on top of the body, like the stick on the head, low-passed at four times PITCH. In 0.4 it is subtle: on low toms barely audible even at 127.
 11. **DAMP.**
 12. **Chain map:** MCH lit.
 13. **Sub-page row:** MACHINE MORE, MACHINE underlined.
