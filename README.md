@@ -2,19 +2,27 @@
 
 **A new way to make music with your PreenFM3.**
 
-Chimera is alternative firmware for the PreenFM3 synthesizer. It gives your synth new sound engines, effects, sequencing tools, and a different way to explore and create sounds.
+Chimera is alternative firmware for the PreenFM3, Xavier Hosxe's (IXOX) synthesizer. It gives the synth new sound engines, effects, sequencing tools, and a different way to explore and create sounds.
 
 It runs on the original PreenFM3 hardware. You don't need to modify your synth or buy anything else.
 
-And if you decide Chimera isn't for you, you can switch back to the original PreenFM3 firmware.
+And if you decide Chimera isn't for you, you can always switch back to the stock PreenFM3 firmware: your card, your bootloader and your stock patches are never touched.
 
-**Current version: Alpha 0.3.0**
+**Current version: 0.4.0 (alpha)**
 
 Chimera is still in development. Some features aren't finished, and you may run into bugs.
 
-[Download Chimera](../../releases) | [Getting Started](GETTING-STARTED.md) | [FAQ](FAQ.md) | [Website](https://joegiralt.github.io/chimera-releases/)
+**[Read the Chimera 0.4 manual](https://github.com/joegiralt/chimera-releases/blob/main/manual/preenfm3/0.4/README.md)**: every page and cell, with its screen.
+
+**[Open the browser editor](https://joegiralt.github.io/chimera-releases/editor/)** (needs Chimera 0.4 or later): a panel in Chrome or Edge that talks to the unit over USB.
+
+[Download Chimera](../../releases) | [Known issues](KNOWN-ISSUES.md) | [Getting Started](GETTING-STARTED.md) | [FAQ](FAQ.md) | [Website](https://joegiralt.github.io/chimera-releases/)
 
 ---
+
+## Coming from 0.3?
+
+Read [Upgrading from 0.3](../../releases/tag/v0.4.0) in the release notes first (what 0.4 does with your projects, Sounds and MIDI maps, and how to go back). Before you update, **copy the card's CHIMERA folder to your computer**: hold MENU while powering on, press button 3 (SD card access), and drag the whole **CHIMERA** folder across. It is the only way back to exactly what you had.
 
 ## Installing Chimera
 
@@ -54,7 +62,7 @@ See [Troubleshooting](#troubleshooting).
 ### Step 2: Download Chimera
 
 1. Open the [Chimera Releases page](../../releases).
-2. Download three files: `CHIMERA.BIN`, `CHIMERA.BK2` and `factory-v1.zip`. `CHIMERA.BIN` and `CHIMERA.BK2` are the firmware: Chimera needs both. `factory-v1.zip` holds the factory Sounds, the sources the TAPE Sounds play, four demo projects and the SUGGEST controller map.
+2. The release has five files. You need three: `CHIMERA.BIN`, `CHIMERA.BK2` and `factory-v1.zip`. `CHIMERA.BIN` and `CHIMERA.BK2` are the firmware: Chimera needs both, and both from the same release. `factory-v1.zip` holds the factory Sounds, the sources the TAPE Sounds play, four demo projects and five factory controller maps (ALGO, MODAL, VA, TAPE and DRUM). The other two are optional: `NRPN.json` is the NRPN chart as a file for scripts and controller templates, and `SHA256SUMS` lets you check your downloads. The update tool, `chimera-usb.py`, is described in the manual's [updating chapter](manual/preenfm3/0.4/19-updating-and-recovery.md).
 3. Save them somewhere easy to find, like your Downloads folder, and unzip `factory-v1.zip`. It unzips to a folder called **CHIMERA**.
 
 **Keep the names exactly as they are.** If your browser saved a second copy as `CHIMERA (1).BIN` (or `CHIMERA (1).BK2`), rename it back to `CHIMERA.BIN` in Finder or Explorer. Rename it; don't delete it. The version number is in the release title, not in the file name.
@@ -72,7 +80,7 @@ You don't have to take the SD card out of your PreenFM3.
    - **If the drive has no CHIMERA folder yet**, copy the whole **CHIMERA** folder onto the drive.
    - **If it already has one**, copy folder by folder instead: open **SOUNDS**, **TAPES**, **PROJECTS** and **MAPS** in the unzipped folder, and copy the files inside each into the folder of the same name on the drive. Copying file by file keeps your own Sounds and projects: on a Mac, replacing a whole *folder* throws away what was in it.
      - **SOUNDS** and **PROJECTS**: choose **Replace** for files with the same name.
-     - **MAPS**: if the drive has no **MAPS** folder, copy the whole folder across. If it has one, choose **Replace**: that puts back the factory SUGGEST map, and leaves your own maps as they are.
+     - **MAPS**: if the drive has no **MAPS** folder, copy the whole folder across. If it has one, choose **Replace**: that puts back the five factory maps, and leaves your own maps (and an old SUGGEST map, if you have one) as they are.
      - **TAPES**: if the drive has no **TAPES** folder (a card from 0.1.0 doesn't), copy the whole **TAPES** folder across. If it has one, choose **Skip** for any `.SRC` file that is already there. A source's name is a checksum of what's in it, so the one on the card is the same file, and Chimera keeps it read-only, so replacing it may ask for permission or stop the copy.
    - The demo projects take the first four project slots. If you saved projects of your own there (`P0000001.A` to `P0000004.A` in **PROJECTS**), copy them to your computer first.
 7. Safely eject the drive from your computer.
@@ -100,9 +108,11 @@ If the power does go off during the install, nothing is lost: the next start ins
 
 **Black screen after flashing?** The bootloader is never touched, so hold MENU while powering on and flash again with the right file.
 
-**`CHIMERA.BK2` is required.** It holds ALGO, MODAL, TAPE, ORBIT, the effects, NOISE, the low-pass gate, the SEM filter, FUZZ, the filter's FEEDBACK, VA's FM, LOOPFM, SOFT SYNC and PHASE modes, RANDOMIZE and most of MIDI, among other things. If it's missing from the card, or is from another version, those stay silent, Chimera ignores MIDI in, and their screens say **UPDATE** or **NEEDS UPDATE**. Copy the `CHIMERA.BK2` from the same release onto the card as in Step 3 and restart.
+**`CHIMERA.BK2` is required.** It holds ALGO, MODAL, TAPE, DRUM, ORBIT, the effects, NOISE, the low-pass gate, the SEM filter, FUZZ, the filter's FEEDBACK, VA's FM, LOOPFM, SOFT SYNC and PHASE modes, RANDOMIZE and most of MIDI, among other things. If it's missing from the card, or is from another version, those stay silent, Chimera ignores MIDI in, and their screens say **UPDATE** or **NEEDS UPDATE**. Copy the `CHIMERA.BK2` from the same release onto the card as in Step 3 and restart.
 
 **That's it. Chimera is installed!**
+
+If your unit already runs Chimera 0.3 or later and you use a Mac or Linux computer, the [update tool](manual/preenfm3/0.4/19-updating-and-recovery.md) does steps 3 to 8 in one command.
 
 You can now continue to the [Getting Started Guide](GETTING-STARTED.md). To find the factory Sounds, press **EDIT + B1** and turn **encoder 2** to the **FACTORY** tab.
 
@@ -201,9 +211,11 @@ We recommend starting here:
 
 **[FAQ](FAQ.md)** answers common questions.
 
+**[The 0.4 manual](https://github.com/joegiralt/chimera-releases/blob/main/manual/preenfm3/0.4/README.md)** has every page and cell.
+
 **[MIDI control](MIDI.md)** covers controllers, MPE, sequencers and USB, and **[Tuning](TUNING.md)** the tunings each Part can play in.
 
-`factory-v1.zip` holds 128 factory Sounds across ALGO, MODAL, VA and TAPE, the sources the TAPE Sounds play, four demo projects and the SUGGEST controller map. If you skipped it, copy it onto the card as in [Step 3](#step-3-copy-the-files-to-the-card) at any time.
+`factory-v1.zip` holds 128 factory Sounds across ALGO, MODAL, VA and TAPE, the sources the TAPE Sounds play, four demo projects and the five factory controller maps. For drums, press **EDIT + B1** and pick **INIT DRUM**. If you skipped it, copy it onto the card as in [Step 3](#step-3-copy-the-files-to-the-card) at any time.
 
 ---
 
@@ -213,7 +225,7 @@ Chimera doesn't replace or modify your PreenFM3's bootloader during a normal ins
 
 You can return to the original firmware whenever you like.
 
-1. Download the original PreenFM3 v1.03 firmware.
+1. Download the original PreenFM3 v1.03 firmware from Xavier Hosxe's PreenFM3 releases.
 2. Find the file named `p3_1_03.bin`.
 3. Enter the bootloader by holding MENU while powering on.
 4. Install the original firmware using either the SD card method or the USB/DFU method described above.
@@ -284,9 +296,9 @@ If the problem continues, [report a bug](../../issues).
 
 ## Reporting bugs
 
-Chimera is currently in alpha, so bug reports are extremely helpful.
+Chimera is currently in alpha, so bug reports are extremely helpful. Check the [known issues](KNOWN-ISSUES.md) first.
 
-If something goes wrong, please open a [bug report](../../issues/new/choose).
+If something goes wrong, please open a [bug report](../../issues/new/choose) in this repository's issues.
 
 Tell us which version you're using, what you were doing when the problem happened, and what you expected to happen.
 
@@ -296,30 +308,28 @@ If possible, include a photo, screenshot, or short recording.
 
 ## What's inside
 
-- **Six Parts**, each its own instrument on its own MIDI channel, with a mixer, three shared effects (chorus with FLANGER and PHASER types, delay with TAPE and GRAIN types, reverb) and a master compressor.
+- **Six Parts**, each its own instrument on its own MIDI channel, with a mixer, three shared effects (chorus with FLANGER and PHASER types, delay with TAPE and GRAIN types and a tempo SYNC, reverb with a **DUCK** control) and a master compressor with a sidechain **KEY**.
 - **ALGO**, a six-operator phase-modulation synth: two algorithms, ALG A and ALG B, with MORPH blending between them.
 - **MODAL**, struck, plucked and bowed resonators: STRING, BANK, BOWED and SYMP.
 - **VA**, two variable-wave oscillators combined by MODE (MIX, SYNC, SOFT SYNC, RING, AM, FM, PHASE, LOOPFM, MAX, XOR, BITS), with a SUB, a NOISE source and STABILITY drift.
 - **TAPE**, which plays sound sources from the card through four machines: WALK (one-shots, loops, ping-pong and Mellotron-style tapes), STRETCH, SCRUB and WAVE.
+- **DRUM**, a drum engine with twelve pads per kit, each with its own machine. Start from **INIT DRUM**.
 - **A filter for every voice**: CLEAN, 2040, DIRTY, LADDER and SEM, with an FX slot (SOFT drive, FUZZ or FOLD) before or after it, and FEEDBACK.
 - **A low-pass gate** in every voice's VCA: LPG, DECAY and STRIKE on AMP.
-- **Deep MIDI control**, per Part: the General MIDI CCs (volume, pan, expression, cutoff, resonance, attack, release, sends) with no setup; learn any knob, fader, endless encoder, button, 14-bit control, NRPN, pressure or SysEx programmer; controller maps kept on the card for every project, with SUGGEST ready for any bank of knobs; MPE; program change and bank select; channels for the mixer, ORBIT and the Part you are on; values sent back to your controller. See [MIDI control](MIDI.md).
+- **Per-Part EQ and SMART EQ**, to carve room for each Part in the mix.
+- **VOICES and RESERVE** per Part, to say how many of the eight shared voices a Part may use and how many it keeps for itself.
+- **Deep MIDI control**, per Part: the General MIDI CCs (volume, pan, expression, cutoff, resonance, attack, release, sends) with no setup; learn any knob, fader, endless encoder, button, 14-bit control, NRPN, pressure or SysEx programmer; flat controller maps of up to 90 rows kept on the card for every project, with a factory map for each engine; MPE; program change and bank select; channels for the mixer, ORBIT and the Part you are on; values sent back to your controller. See [MIDI control](MIDI.md).
 - **USB MIDI and audio**, with no driver: one MIDI port, the main out as an audio input for your DAW, and an audio output that plays your computer through Chimera.
+- **A browser editor** for every engine, the mixer, the effects, SETTINGS, MIDI MAP, ORBIT and DRUM's pads, over the USB cable. Open the [editor](https://joegiralt.github.io/chimera-releases/editor/); it needs Chimera 0.4 or later on the unit.
 - **Tunings per Part**: just, Pythagorean, meantone, Werckmeister III, Scala files from the card and MIDI Tuning Standard. See [Tuning](TUNING.md).
 - **RANDOMIZE**, which rolls a musical new Sound from a seed.
 - **ORBIT**, a ring sequencer that plays Chimera by itself: a chord progression round five rhythm rings.
-- **128 factory Sounds** in `factory-v1.zip`, with the TAPE sources they play and four demo projects.
-
-## Not in this release
-
-DRUM is marked COMING SOON in the Sound browser. It isn't in this release.
+- **128 factory Sounds** in `factory-v1.zip`, with the TAPE sources they play, four demo projects and five factory MIDI maps.
 
 Watch this repository for new releases.
 
 ## Source code and licence
 
-Chimera is © 2026 Joe Giralt. All rights reserved.
+Chimera is free software, under the GNU General Public License, version 3 or later. The source is at [github.com/joegiralt/chimera](https://github.com/joegiralt/chimera), and this release's source is tagged `preenfm3-v0.4.0` there. The browser editor and this website are GPLv3 too. See [LICENSE.md](LICENSE.md).
 
-This repository contains firmware releases, documentation, and the issue tracker. The source code is not currently public.
-
-Firmware binaries are distributed under the [tester licence](LICENSE.md).
+This repository holds the firmware releases, the manual, the editor, the website and the issue tracker.
