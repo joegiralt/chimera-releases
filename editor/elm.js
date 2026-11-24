@@ -16182,7 +16182,7 @@ var $elm$html$Html$Attributes$stringProperty = F2(
 	});
 var $elm$html$Html$Attributes$class = $elm$html$Html$Attributes$stringProperty('className');
 var $elm$html$Html$div = _VirtualDom_node('div');
-var $author$project$Model$downloadUrl = 'https://github.com/joegiralt/chimera-releases/releases';
+var $author$project$Model$downloadUrl = 'https://joegiralt.github.io/chimera-releases/install';
 var $author$project$Model$download = function (m) {
 	var _v0 = m.b;
 	_v0$2:
@@ -16734,6 +16734,7 @@ var $author$project$Ui$Tokens$themed = function (t) {
 };
 var $author$project$Ui$Tokens$themes = _List_fromArray(
 	[0, 1]);
+var $elm$html$Html$Attributes$title = $elm$html$Html$Attributes$stringProperty('title');
 var $author$project$Ui$Module$foldOf = F2(
 	function (i, _v0) {
 		var s = _v0;
@@ -17113,96 +17114,112 @@ var $author$project$Ui$Page$view = F3(
 								A2(
 									$elm$core$List$cons,
 									A2(
-										$elm$html$Html$span,
+										$elm$html$Html$a,
 										_List_fromArray(
 											[
-												$elm$html$Html$Attributes$class('brand')
+												$elm$html$Html$Attributes$class('brand'),
+												$elm$html$Html$Attributes$href('../'),
+												$elm$html$Html$Attributes$title('Chimera: the site\'s home')
 											]),
 										_List_fromArray(
 											[
 												$elm$html$Html$text('CHIMERA')
 											])),
-									_Utils_ap(
-										A2($elm$core$List$map, $author$project$Ui$Page$tab, c.c3),
-										_Utils_ap(
-											$elm$core$List$isEmpty(c.ct) ? _List_Nil : A2(
-												$elm$core$List$cons,
-												A2(
-													$elm$html$Html$span,
-													_List_fromArray(
-														[
-															$elm$html$Html$Attributes$class('sep')
-														]),
-													_List_Nil),
-												A2($elm$core$List$map, $author$project$Ui$Page$tab, c.ct)),
+									A2(
+										$elm$core$List$cons,
+										A2(
+											$elm$html$Html$a,
 											_List_fromArray(
 												[
+													$elm$html$Html$Attributes$class('manual'),
+													$elm$html$Html$Attributes$href('../guides'),
+													$elm$html$Html$Attributes$title('The guides')
+												]),
+											_List_fromArray(
+												[
+													$elm$html$Html$text('MANUAL')
+												])),
+										_Utils_ap(
+											A2($elm$core$List$map, $author$project$Ui$Page$tab, c.c3),
+											_Utils_ap(
+												$elm$core$List$isEmpty(c.ct) ? _List_Nil : A2(
+													$elm$core$List$cons,
 													A2(
-													$elm$html$Html$div,
-													_List_fromArray(
-														[
-															$elm$html$Html$Attributes$class('themesw')
-														]),
-													A2(
-														$elm$core$List$map,
-														function (t) {
-															return A2(
-																$elm$html$Html$button,
-																_List_fromArray(
-																	[
-																		$elm$html$Html$Attributes$classList(
-																		_List_fromArray(
-																			[
-																				_Utils_Tuple2(
-																				'on',
-																				_Utils_eq(t, s.bf))
-																			])),
-																		A2(
-																		$elm$html$Html$Attributes$attribute,
-																		'aria-pressed',
-																		$author$project$Ui$Page$ariaBool(
-																			_Utils_eq(t, s.bf))),
-																		$elm$html$Html$Events$onClick(
-																		toMsg(
-																			$author$project$Ui$Page$ChoseTheme(t)))
-																	]),
-																_List_fromArray(
-																	[
-																		$elm$html$Html$text(
-																		$author$project$Ui$Tokens$label(t))
-																	]));
-														},
-														$author$project$Ui$Tokens$themes)),
-													A2(
-													$elm$html$Html$span,
-													_List_fromArray(
-														[
-															$elm$html$Html$Attributes$class('unit')
-														]),
-													function () {
-														var _v2 = c.aL;
-														if (_v2.$ === 1) {
-															var l = _v2.a;
-															return _List_fromArray(
-																[
-																	A2(
-																	$elm$html$Html$i,
+														$elm$html$Html$span,
+														_List_fromArray(
+															[
+																$elm$html$Html$Attributes$class('sep')
+															]),
+														_List_Nil),
+													A2($elm$core$List$map, $author$project$Ui$Page$tab, c.ct)),
+												_List_fromArray(
+													[
+														A2(
+														$elm$html$Html$div,
+														_List_fromArray(
+															[
+																$elm$html$Html$Attributes$class('themesw')
+															]),
+														A2(
+															$elm$core$List$map,
+															function (t) {
+																return A2(
+																	$elm$html$Html$button,
 																	_List_fromArray(
 																		[
-																			$elm$html$Html$Attributes$class('live')
+																			$elm$html$Html$Attributes$classList(
+																			_List_fromArray(
+																				[
+																					_Utils_Tuple2(
+																					'on',
+																					_Utils_eq(t, s.bf))
+																				])),
+																			A2(
+																			$elm$html$Html$Attributes$attribute,
+																			'aria-pressed',
+																			$author$project$Ui$Page$ariaBool(
+																				_Utils_eq(t, s.bf))),
+																			$elm$html$Html$Events$onClick(
+																			toMsg(
+																				$author$project$Ui$Page$ChoseTheme(t)))
 																		]),
-																	_List_Nil),
-																	$elm$html$Html$text(l)
-																]);
-														} else {
-															return _List_fromArray(
-																[
-																	A2($elm$html$Html$i, _List_Nil, _List_Nil),
-																	$elm$html$Html$text('NO UNIT')
-																]);
-														}
-													}())
-												]))))),
+																	_List_fromArray(
+																		[
+																			$elm$html$Html$text(
+																			$author$project$Ui$Tokens$label(t))
+																		]));
+															},
+															$author$project$Ui$Tokens$themes)),
+														A2(
+														$elm$html$Html$span,
+														_List_fromArray(
+															[
+																$elm$html$Html$Attributes$class('unit')
+															]),
+														function () {
+															var _v2 = c.aL;
+															if (_v2.$ === 1) {
+																var l = _v2.a;
+																return _List_fromArray(
+																	[
+																		A2(
+																		$elm$html$Html$i,
+																		_List_fromArray(
+																			[
+																				$elm$html$Html$Attributes$class('live')
+																			]),
+																		_List_Nil),
+																		$elm$html$Html$text(l)
+																	]);
+															} else {
+																return _List_fromArray(
+																	[
+																		A2($elm$html$Html$i, _List_Nil, _List_Nil),
+																		$elm$html$Html$text('NO UNIT')
+																	]);
+															}
+														}())
+													])))))),
 								A2(
 								$elm$html$Html$div,
 								_List_fromArray(
@@ -19458,7 +19475,6 @@ var $author$project$Ui$Control$polarity = function (r) {
 };
 var $author$project$Ui$Control$Hero = 1;
 var $author$project$Ui$Control$Knob = 0;
-var $elm$html$Html$Attributes$title = $elm$html$Html$Attributes$stringProperty('title');
 var $author$project$Ui$Control$cell = F3(
 	function (attrs, label, body) {
 		return A2(
