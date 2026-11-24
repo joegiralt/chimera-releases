@@ -90,8 +90,9 @@ site-build base=site_base: editor-build
     rm -rf dist
     mkdir -p dist/guides/img
     npx elm make src/Main.elm --optimize --output=dist/elm.js
-    sed 's|__BASE__|{{base}}|g' public/index.html > dist/index.html
-    cp dist/index.html dist/404.html
+    # The app's shell as every route's own index.html (a deep link is a 200), and 404.html.
+    node scripts/pages.js dist {{base}}
+    rm dist/pages.json
     cp public/style.css public/favicon.svg public/favicon-32.png public/apple-touch-icon.png dist/
     cp ../*.md dist/guides/
     cp ../docs/img/* dist/guides/img/
@@ -127,7 +128,7 @@ site-serve port="8000":
 
 # The site's Elm tests (every guide at the root included) and elm-review
 site-test:
-    cd site && npm install --no-audit --no-fund --silent && node tests/gen-fixtures.js && node tests/icons.check.js && npx elm-test && npx elm-review
+    cd site && npm install --no-audit --no-fund --silent && node tests/gen-fixtures.js && node tests/icons.check.js && node tests/pages.check.js && npx elm-test && npx elm-review
 
 # Everything the editor and the site must pass
 check: editor-test site-test

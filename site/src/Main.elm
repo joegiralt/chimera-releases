@@ -25,6 +25,7 @@ import Html.Events as Events
 import Http
 import Json.Encode
 import Menu
+import Meta
 import Release exposing (Asset, Release, Stage(..))
 import Remote exposing (Remote(..))
 import Route exposing (Base, Route(..))
@@ -241,7 +242,7 @@ fromResult result =
 
 view : Model -> Browser.Document Msg
 view model =
-    { title = title model.route
+    { title = Meta.title model.route
     , body =
         [ Html.a [ Attr.class "skip", Attr.href "#content" ] [ Html.text "Skip to the page" ]
         , header model
@@ -254,36 +255,6 @@ view model =
 href : Href -> Html.Attribute msg
 href =
     Href.toString >> Attr.href
-
-
-title : Route -> String
-title route =
-    let
-        named : String -> String
-        named name =
-            name ++ " · Chimera"
-    in
-    case route of
-        Home ->
-            "Chimera"
-
-        Install ->
-            named "Install & update"
-
-        Guides ->
-            named "Guides"
-
-        Guide id ->
-            named (GuideId.title id)
-
-        Releases ->
-            named "Releases"
-
-        Editor ->
-            named "Editor"
-
-        NotFound ->
-            named "Not found"
 
 
 pageClass : Route -> String

@@ -43,6 +43,11 @@ suite =
             \_ ->
                 List.concatMap (\b -> List.map (Route.toString b >> url >> Route.parse b) routes) bases
                     |> Expect.equal (List.concat (List.repeat (List.length bases) routes))
+        , test "the router lists every page, once, NotFound not among them" <|
+            \_ ->
+                List.map (Route.toString (Route.base "/")) Route.all
+                    |> List.sort
+                    |> Expect.equal (List.sort (List.map (Route.toString (Route.base "/")) routes))
         , test "known paths" <|
             \_ ->
                 List.map parseRoot [ "/", "/install", "/guides", "/guides/midi", "/releases", "/sound-editor" ]

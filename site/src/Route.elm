@@ -1,7 +1,7 @@
 -- SPDX-License-Identifier: GPL-3.0-or-later
 
 
-module Route exposing (Base, Route(..), asset, base, doc, fromDoc, href, parse, toString)
+module Route exposing (Base, Route(..), all, asset, base, doc, fromDoc, href, parse, toString)
 
 {-| The site's pages. `/editor/` and the `/guides/…` files are static, not
 routes: an internal link that parses to `NotFound` is loaded from the
@@ -25,6 +25,53 @@ type Route
     | Releases
     | Editor
     | NotFound
+
+
+{-| Every page, NotFound aside: each gets its own `index.html` at build
+time, so a deep link is a page and not the server's 404 fallback. `next`
+walks them, and its `case` is exhaustive: a new page fails to compile
+until it is listed.
+-}
+all : List Route
+all =
+    let
+        from : Route -> List Route
+        from r =
+            -- The guides' list, then each guide.
+            (if r == Guides then
+                Guides :: List.map Guide GuideId.all
+
+             else
+                [ r ]
+            )
+                ++ (next r |> Maybe.map from |> Maybe.withDefault [])
+    in
+    from Home
+
+
+next : Route -> Maybe Route
+next r =
+    case r of
+        Home ->
+            Just Install
+
+        Install ->
+            Just Guides
+
+        Guides ->
+            Just Releases
+
+        Guide _ ->
+            Nothing
+
+        Releases ->
+            Just Editor
+
+        Editor ->
+            Nothing
+
+        NotFound ->
+            Nothing
 
 
 {-| Where the site is served from: `/` locally, `/chimera-releases/` on a
