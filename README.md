@@ -112,7 +112,7 @@ If the power does go off during the install, nothing is lost: the next start ins
 
 **That's it. Chimera is installed!**
 
-If your unit already runs Chimera 0.3 or later and you use a Mac or Linux computer, the [update tool](manual/preenfm3/0.4/19-updating-and-recovery.md) does steps 3 to 8 in one command.
+If your unit already runs Chimera 0.3 or later and you use a Mac or Linux computer, the update tool, `chimera-usb.py` (attached to each release), does steps 3 to 8 in one command; see [Updating and recovery](manual/preenfm3/0.4/19-updating-and-recovery.md).
 
 You can now continue to the [Getting Started Guide](GETTING-STARTED.md). To find the factory Sounds, press **EDIT + B1** and turn **encoder 2** to the **FACTORY** tab.
 
