@@ -1,11 +1,9 @@
-# Chimera tester licence
+# Licence
 
-Copyright © 2026 Joe Giralt. All rights reserved.
+Chimera is free software: you can redistribute it and modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
 
-You may download the Chimera firmware binaries published in this repository and install and use them on PreenFM3 hardware you own, for personal use and testing.
+Everything in this repository is GPLv3 or later: the firmware releases (their source is at https://github.com/joegiralt/chimera, tagged `preenfm3-v0.4.0` for 0.4.0), the browser editor and the website. The licence text is in [editor/LICENSE](editor/LICENSE) and [site/LICENSE](site/LICENSE), and in the firmware repository's `LICENSE`. It is also at https://www.gnu.org/licenses/gpl-3.0.html.
 
-You may not redistribute, sell, sublicense, or publish the binaries or any part of them, or reverse engineer, decompile or disassemble them, except where the law allows this despite this restriction.
+The firmware is provided without warranty of any kind, to the extent the law allows. Third-party components are listed, with their licences, in the release notes of each release.
 
-The firmware is pre-release software, provided "as is", without warranty of any kind. You install and use it at your own risk; the author is not liable for any damage, including to hardware or data.
-
-This licence ends automatically if you break its terms. Third-party components included in the firmware are listed, with their licences, in the release notes of each release.
+The earlier tester licence, which covered releases before 0.4, no longer applies.

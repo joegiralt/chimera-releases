@@ -1,0 +1,29 @@
+# Chimera 0.4 manual for the PreenFM3
+
+> The complete user manual of Chimera, multi-engine firmware for the PreenFM3 synthesizer: what every page and control does, and why it was designed that way.
+
+The whole manual is one Markdown file: [manual.md](/chimera-releases/manual/preenfm3/0.4/manual.md). Read it first; every heading is stable and every section names the screen's own labels.
+
+## Chapters
+
+- [Concepts: Parts, Sounds, projects and the voice chain](/chimera-releases/manual/preenfm3/0.4/01-concepts.md)
+- [The panel and navigation](/chimera-releases/manual/preenfm3/0.4/02-panel-and-navigation.md)
+- [ALGO, the six-operator engine](/chimera-releases/manual/preenfm3/0.4/03-algo.md)
+- [MODAL, the physical-modelling engine](/chimera-releases/manual/preenfm3/0.4/04-modal.md)
+- [VA, the variable-wave engine](/chimera-releases/manual/preenfm3/0.4/05-va.md)
+- [TAPE, the sample engine](/chimera-releases/manual/preenfm3/0.4/06-tape.md)
+- [DRUM, the kit engine](/chimera-releases/manual/preenfm3/0.4/07-drum.md)
+- [The voice chain: pitch, filter, FX, amp, stereo and sends](/chimera-releases/manual/preenfm3/0.4/08-voice-chain.md)
+- [Envelopes and LFOs](/chimera-releases/manual/preenfm3/0.4/09-envelopes-and-lfos.md)
+- [The mod matrix and routes](/chimera-releases/manual/preenfm3/0.4/10-mod-matrix.md)
+- [The MIXER and the master effects](/chimera-releases/manual/preenfm3/0.4/11-mixer-and-master-fx.md)
+- [ORBIT, the ring sequencer](/chimera-releases/manual/preenfm3/0.4/12-orbit.md)
+- [SETTINGS](/chimera-releases/manual/preenfm3/0.4/13-settings.md)
+- [MIDI, channels, maps and controllers](/chimera-releases/manual/preenfm3/0.4/14-midi.md)
+- [Tuning, temperaments, Scala files and MTS](/chimera-releases/manual/preenfm3/0.4/15-tuning.md)
+- [The SD card, projects, Sounds and the library](/chimera-releases/manual/preenfm3/0.4/16-card-sounds-library.md)
+- [USB, MIDI, audio and the console over one cable](/chimera-releases/manual/preenfm3/0.4/17-usb.md)
+- [The browser editor](/chimera-releases/manual/preenfm3/0.4/18-browser-editor.md)
+- [Updating and recovery](/chimera-releases/manual/preenfm3/0.4/19-updating-and-recovery.md)
+- [Limits: voices, CPU and memory](/chimera-releases/manual/preenfm3/0.4/20-limits.md)
+- [Glossary](/chimera-releases/manual/preenfm3/0.4/21-glossary.md)

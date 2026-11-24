@@ -1,0 +1,29 @@
+# Chimera 0.4 manual for the PreenFM3
+
+> The complete user manual of Chimera, multi-engine firmware for the PreenFM3 synthesizer: what every page and control does, and why it was designed that way.
+
+The whole manual is one Markdown file: [manual.md](manual.md). Read it first; every heading is stable and every section names the screen's own labels.
+
+## Chapters
+
+- [Concepts: Parts, Sounds, projects and the voice chain](01-concepts.md)
+- [The panel and navigation](02-panel-and-navigation.md)
+- [ALGO, the six-operator engine](03-algo.md)
+- [MODAL, the physical-modelling engine](04-modal.md)
+- [VA, the variable-wave engine](05-va.md)
+- [TAPE, the sample engine](06-tape.md)
+- [DRUM, the kit engine](07-drum.md)
+- [The voice chain: pitch, filter, FX, amp, stereo and sends](08-voice-chain.md)
+- [Envelopes and LFOs](09-envelopes-and-lfos.md)
+- [The mod matrix and routes](10-mod-matrix.md)
+- [The MIXER and the master effects](11-mixer-and-master-fx.md)
+- [ORBIT, the ring sequencer](12-orbit.md)
+- [SETTINGS](13-settings.md)
+- [MIDI, channels, maps and controllers](14-midi.md)
+- [Tuning, temperaments, Scala files and MTS](15-tuning.md)
+- [The SD card, projects, Sounds and the library](16-card-sounds-library.md)
+- [USB, MIDI, audio and the console over one cable](17-usb.md)
+- [The browser editor](18-browser-editor.md)
+- [Updating and recovery](19-updating-and-recovery.md)
+- [Limits: voices, CPU and memory](20-limits.md)
+- [Glossary](21-glossary.md)

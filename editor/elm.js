@@ -17132,8 +17132,8 @@ var $author$project$Ui$Page$view = F3(
 											_List_fromArray(
 												[
 													$elm$html$Html$Attributes$class('manual'),
-													$elm$html$Html$Attributes$href('../guides'),
-													$elm$html$Html$Attributes$title('The guides')
+													$elm$html$Html$Attributes$href('../manual/preenfm3/0.4/'),
+													$elm$html$Html$Attributes$title('The manual')
 												]),
 											_List_fromArray(
 												[

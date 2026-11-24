@@ -519,11 +519,11 @@ function _Debug_crash_UNUSED(identifier, fact1, fact2, fact3, fact4)
 
 function _Debug_regionToString(region)
 {
-	if (region.j.as === region.h.as)
+	if (region.k.at === region.h.at)
 	{
-		return 'on line ' + region.j.as;
+		return 'on line ' + region.k.at;
 	}
-	return 'on lines ' + region.j.as + ' through ' + region.h.as;
+	return 'on lines ' + region.k.at + ' through ' + region.h.at;
 }
 
 
@@ -1857,9 +1857,9 @@ var _Platform_worker = F4(function(impl, flagDecoder, debugMetadata, args)
 	return _Platform_initialize(
 		flagDecoder,
 		args,
-		impl.c1,
-		impl.dQ,
-		impl.dJ,
+		impl.c4,
+		impl.dT,
+		impl.dM,
 		function() { return function() {} }
 	);
 });
@@ -3943,11 +3943,11 @@ var _Browser_element = _Debugger_element || F4(function(impl, flagDecoder, debug
 	return _Platform_initialize(
 		flagDecoder,
 		args,
-		impl.c1,
-		impl.dQ,
-		impl.dJ,
+		impl.c4,
+		impl.dT,
+		impl.dM,
 		function(sendToApp, initialModel) {
-			var view = impl.dS;
+			var view = impl.dV;
 			/**/
 			var domNode = args['node'];
 			//*/
@@ -3979,12 +3979,12 @@ var _Browser_document = _Debugger_document || F4(function(impl, flagDecoder, deb
 	return _Platform_initialize(
 		flagDecoder,
 		args,
-		impl.c1,
-		impl.dQ,
-		impl.dJ,
+		impl.c4,
+		impl.dT,
+		impl.dM,
 		function(sendToApp, initialModel) {
 			var divertHrefToApp = impl.bg && impl.bg(sendToApp)
-			var view = impl.dS;
+			var view = impl.dV;
 			var title = _VirtualDom_doc.title;
 			var bodyNode = _VirtualDom_doc.body;
 			var currNode = _VirtualDom_virtualize(bodyNode);
@@ -3992,12 +3992,12 @@ var _Browser_document = _Debugger_document || F4(function(impl, flagDecoder, deb
 			{
 				_VirtualDom_divertHrefToApp = divertHrefToApp;
 				var doc = view(model);
-				var nextNode = _VirtualDom_node('body')(_List_Nil)(doc.cH);
+				var nextNode = _VirtualDom_node('body')(_List_Nil)(doc.cK);
 				var patches = _VirtualDom_diff(currNode, nextNode);
 				bodyNode = _VirtualDom_applyPatches(bodyNode, currNode, patches, sendToApp);
 				currNode = nextNode;
 				_VirtualDom_divertHrefToApp = 0;
-				(title !== doc.dP) && (_VirtualDom_doc.title = title = doc.dP);
+				(title !== doc.dS) && (_VirtualDom_doc.title = title = doc.dS);
 			});
 		}
 	);
@@ -4053,8 +4053,8 @@ function _Browser_makeAnimator(model, draw)
 
 function _Browser_application(impl)
 {
-	var onUrlChange = impl.$7;
-	var onUrlRequest = impl.dp;
+	var onUrlChange = impl.dr;
+	var onUrlRequest = impl.ds;
 	var key = function() { key.a(onUrlChange(_Browser_getUrl())); };
 
 	return _Browser_document({
@@ -4074,9 +4074,9 @@ function _Browser_application(impl)
 					var next = $elm$url$Url$fromString(href).a;
 					sendToApp(onUrlRequest(
 						(next
-							&& curr.b9 === next.b9
+							&& curr.cb === next.cb
 							&& curr.bR === next.bR
-							&& curr.b6.a === next.b6.a
+							&& curr.b8.a === next.b8.a
 						)
 							? $elm$browser$Browser$Internal(next)
 							: $elm$browser$Browser$External(href)
@@ -4084,13 +4084,13 @@ function _Browser_application(impl)
 				}
 			});
 		},
-		c1: function(flags)
+		c4: function(flags)
 		{
-			return A3(impl.c1, flags, _Browser_getUrl(), key);
+			return A3(impl.c4, flags, _Browser_getUrl(), key);
 		},
-		dS: impl.dS,
-		dQ: impl.dQ,
-		dJ: impl.dJ
+		dV: impl.dV,
+		dT: impl.dT,
+		dM: impl.dM
 	});
 }
 
@@ -4156,17 +4156,17 @@ var _Browser_decodeEvent = F2(function(decoder, event)
 function _Browser_visibilityInfo()
 {
 	return (typeof _VirtualDom_doc.hidden !== 'undefined')
-		? { cZ: 'hidden', cL: 'visibilitychange' }
+		? { c0: 'hidden', cO: 'visibilitychange' }
 		:
 	(typeof _VirtualDom_doc.mozHidden !== 'undefined')
-		? { cZ: 'mozHidden', cL: 'mozvisibilitychange' }
+		? { c0: 'mozHidden', cO: 'mozvisibilitychange' }
 		:
 	(typeof _VirtualDom_doc.msHidden !== 'undefined')
-		? { cZ: 'msHidden', cL: 'msvisibilitychange' }
+		? { c0: 'msHidden', cO: 'msvisibilitychange' }
 		:
 	(typeof _VirtualDom_doc.webkitHidden !== 'undefined')
-		? { cZ: 'webkitHidden', cL: 'webkitvisibilitychange' }
-		: { cZ: 'hidden', cL: 'visibilitychange' };
+		? { c0: 'webkitHidden', cO: 'webkitvisibilitychange' }
+		: { c0: 'hidden', cO: 'visibilitychange' };
 }
 
 
@@ -4247,11 +4247,11 @@ var _Browser_call = F2(function(functionName, id)
 function _Browser_getViewport()
 {
 	return {
-		ci: _Browser_getScene(),
-		cw: {
-			cz: _Browser_window.pageXOffset,
-			dU: _Browser_window.pageYOffset,
-			cy: _Browser_doc.documentElement.clientWidth,
+		ck: _Browser_getScene(),
+		cy: {
+			cB: _Browser_window.pageXOffset,
+			dX: _Browser_window.pageYOffset,
+			cA: _Browser_doc.documentElement.clientWidth,
 			bP: _Browser_doc.documentElement.clientHeight
 		}
 	};
@@ -4262,7 +4262,7 @@ function _Browser_getScene()
 	var body = _Browser_doc.body;
 	var elem = _Browser_doc.documentElement;
 	return {
-		cy: Math.max(body.scrollWidth, body.offsetWidth, elem.scrollWidth, elem.offsetWidth, elem.clientWidth),
+		cA: Math.max(body.scrollWidth, body.offsetWidth, elem.scrollWidth, elem.offsetWidth, elem.clientWidth),
 		bP: Math.max(body.scrollHeight, body.offsetHeight, elem.scrollHeight, elem.offsetHeight, elem.clientHeight)
 	};
 }
@@ -4286,14 +4286,14 @@ function _Browser_getViewportOf(id)
 	return _Browser_withNode(id, function(node)
 	{
 		return {
-			ci: {
-				cy: node.scrollWidth,
+			ck: {
+				cA: node.scrollWidth,
 				bP: node.scrollHeight
 			},
-			cw: {
-				cz: node.scrollLeft,
-				dU: node.scrollTop,
-				cy: node.clientWidth,
+			cy: {
+				cB: node.scrollLeft,
+				dX: node.scrollTop,
+				cA: node.clientWidth,
 				bP: node.clientHeight
 			}
 		};
@@ -4324,17 +4324,17 @@ function _Browser_getElement(id)
 		var x = _Browser_window.pageXOffset;
 		var y = _Browser_window.pageYOffset;
 		return {
-			ci: _Browser_getScene(),
-			cw: {
-				cz: x,
-				dU: y,
-				cy: _Browser_doc.documentElement.clientWidth,
+			ck: _Browser_getScene(),
+			cy: {
+				cB: x,
+				dX: y,
+				cA: _Browser_doc.documentElement.clientWidth,
 				bP: _Browser_doc.documentElement.clientHeight
 			},
-			cS: {
-				cz: x + rect.left,
-				dU: y + rect.top,
-				cy: rect.width,
+			cV: {
+				cB: x + rect.left,
+				dX: y + rect.top,
+				cA: rect.width,
 				bP: rect.height
 			}
 		};
@@ -4387,18 +4387,18 @@ var _Http_toTask = F3(function(router, toTask, request)
 		xhr.addEventListener('error', function() { done($elm$http$Http$NetworkError_); });
 		xhr.addEventListener('timeout', function() { done($elm$http$Http$Timeout_); });
 		xhr.addEventListener('load', function() { done(_Http_toResponse(request.bI.b, xhr)); });
-		$elm$core$Maybe$isJust(request.ct) && _Http_track(router, xhr, request.ct.a);
+		$elm$core$Maybe$isJust(request.cv) && _Http_track(router, xhr, request.cv.a);
 
 		try {
-			xhr.open(request.db, request.bu, true);
+			xhr.open(request.de, request.bu, true);
 		} catch (e) {
 			return done($elm$http$Http$BadUrl_(request.bu));
 		}
 
 		_Http_configureRequest(xhr, request);
 
-		request.cH.a && xhr.setRequestHeader('Content-Type', request.cH.a);
-		xhr.send(request.cH.b);
+		request.cK.a && xhr.setRequestHeader('Content-Type', request.cK.a);
+		xhr.send(request.cK.b);
 
 		return function() { xhr.c = true; xhr.abort(); };
 	});
@@ -4413,9 +4413,9 @@ function _Http_configureRequest(xhr, request)
 	{
 		xhr.setRequestHeader(headers.a.a, headers.a.b);
 	}
-	xhr.timeout = request.dO.a || 0;
+	xhr.timeout = request.dR.a || 0;
 	xhr.responseType = request.bI.d;
-	xhr.withCredentials = request.cC;
+	xhr.withCredentials = request.cE;
 }
 
 
@@ -4437,8 +4437,8 @@ function _Http_toMetadata(xhr)
 {
 	return {
 		bu: xhr.responseURL,
-		dH: xhr.status,
-		dI: xhr.statusText,
+		dK: xhr.status,
+		dL: xhr.statusText,
 		bO: _Http_parseHeaders(xhr.getAllResponseHeaders())
 	};
 }
@@ -4534,15 +4534,15 @@ function _Http_track(router, xhr, tracker)
 	xhr.upload.addEventListener('progress', function(event) {
 		if (xhr.c) { return; }
 		_Scheduler_rawSpawn(A2($elm$core$Platform$sendToSelf, router, _Utils_Tuple2(tracker, $elm$http$Http$Sending({
-			dD: event.loaded,
-			dE: event.total
+			dG: event.loaded,
+			dH: event.total
 		}))));
 	});
 	xhr.addEventListener('progress', function(event) {
 		if (xhr.c) { return; }
 		_Scheduler_rawSpawn(A2($elm$core$Platform$sendToSelf, router, _Utils_Tuple2(tracker, $elm$http$Http$Receiving({
-			dw: event.loaded,
-			dE: event.lengthComputable ? $elm$core$Maybe$Just(event.total) : $elm$core$Maybe$Nothing
+			dz: event.loaded,
+			dH: event.lengthComputable ? $elm$core$Maybe$Just(event.total) : $elm$core$Maybe$Nothing
 		}))));
 	});
 }
@@ -4684,8 +4684,8 @@ var _Regex_never = /.^/;
 var _Regex_fromStringWith = F2(function(options, string)
 {
 	var flags = 'g';
-	if (options.de) { flags += 'm'; }
-	if (options.cK) { flags += 'i'; }
+	if (options.dh) { flags += 'm'; }
+	if (options.cN) { flags += 'i'; }
 
 	try
 	{
@@ -5341,7 +5341,7 @@ var $elm$url$Url$Http = 0;
 var $elm$url$Url$Https = 1;
 var $elm$url$Url$Url = F6(
 	function (protocol, host, port_, path, query, fragment) {
-		return {ah: fragment, bR: host, dt: path, b6: port_, b9: protocol, ca: query};
+		return {ai: fragment, bR: host, dw: path, b8: port_, cb: protocol, cc: query};
 	});
 var $elm$core$String$contains = _String_contains;
 var $elm$core$String$length = _String_length;
@@ -5626,7 +5626,7 @@ var $author$project$Main$GotReleases = function (a) {
 	return {$: 3, a: a};
 };
 var $author$project$Remote$Loading = {$: 0};
-var $author$project$Route$NotFound = {$: 6};
+var $author$project$Route$NotFound = {$: 8};
 var $author$project$Main$Settled = {$: 5};
 var $elm$core$Basics$composeL = F3(
 	function (g, f, x) {
@@ -5655,6 +5655,10 @@ var $elm$core$Platform$Cmd$batch = _Platform_batch;
 var $author$project$Doc$GuideDoc = function (a) {
 	return {$: 1, a: a};
 };
+var $author$project$Doc$ManualChapter = function (a) {
+	return {$: 3, a: a};
+};
+var $author$project$Doc$ManualIndex = {$: 2};
 var $author$project$Doc$Readme = {$: 0};
 var $author$project$Route$doc = function (route) {
 	switch (route.$) {
@@ -5664,13 +5668,19 @@ var $author$project$Route$doc = function (route) {
 			var id = route.a;
 			return $elm$core$Maybe$Just(
 				$author$project$Doc$GuideDoc(id));
+		case 4:
+			return $elm$core$Maybe$Just($author$project$Doc$ManualIndex);
+		case 5:
+			var c = route.a;
+			return $elm$core$Maybe$Just(
+				$author$project$Doc$ManualChapter(c));
 		case 0:
 			return $elm$core$Maybe$Nothing;
 		case 2:
 			return $elm$core$Maybe$Nothing;
-		case 4:
+		case 6:
 			return $elm$core$Maybe$Nothing;
-		case 5:
+		case 7:
 			return $elm$core$Maybe$Nothing;
 		default:
 			return $elm$core$Maybe$Nothing;
@@ -5699,6 +5709,13 @@ var $author$project$Route$asset = F2(
 				$author$project$AssetPath$segments(path)));
 	});
 var $author$project$AssetPath$AssetPath = $elm$core$Basics$identity;
+var $author$project$Chapter$slug = function (_v0) {
+	var s = _v0.a;
+	return s;
+};
+var $author$project$Chapter$file = function (c) {
+	return $author$project$Chapter$slug(c) + '.md';
+};
 var $author$project$GuideId$slug = function (id) {
 	switch (id) {
 		case 0:
@@ -5727,19 +5744,44 @@ var $author$project$GuideId$file = function (id) {
 		$author$project$GuideId$slug(id)) + '.md';
 };
 var $author$project$Doc$file = function (doc) {
-	if (!doc.$) {
-		return 'README.md';
-	} else {
-		var id = doc.a;
-		return $author$project$GuideId$file(id);
+	switch (doc.$) {
+		case 0:
+			return 'README.md';
+		case 1:
+			var id = doc.a;
+			return $author$project$GuideId$file(id);
+		case 2:
+			return 'README.md';
+		default:
+			var c = doc.a;
+			return $author$project$Chapter$file(c);
 	}
 };
-var $author$project$AssetPath$doc = function (d) {
+var $author$project$AssetPath$manualFolder = function (name) {
 	return _List_fromArray(
-		[
-			'guides',
-			$author$project$Doc$file(d)
-		]);
+		['manual', 'preenfm3', '0.4', name]);
+};
+var $author$project$AssetPath$doc = function (d) {
+	switch (d.$) {
+		case 2:
+			return $author$project$AssetPath$manualFolder(
+				$author$project$Doc$file(d));
+		case 3:
+			return $author$project$AssetPath$manualFolder(
+				$author$project$Doc$file(d));
+		case 0:
+			return _List_fromArray(
+				[
+					'guides',
+					$author$project$Doc$file(d)
+				]);
+		default:
+			return _List_fromArray(
+				[
+					'guides',
+					$author$project$Doc$file(d)
+				]);
+	}
 };
 var $elm$http$Http$BadStatus_ = F2(
 	function (a, b) {
@@ -6332,7 +6374,7 @@ var $elm$http$Http$resolve = F2(
 			case 3:
 				var metadata = response.a;
 				return $elm$core$Result$Err(
-					$elm$http$Http$BadStatus(metadata.dH));
+					$elm$http$Http$BadStatus(metadata.dK));
 			default:
 				var body = response.b;
 				return A2(
@@ -6353,7 +6395,7 @@ var $elm$http$Http$Request = function (a) {
 };
 var $elm$http$Http$State = F2(
 	function (reqs, subs) {
-		return {cd: reqs, cq: subs};
+		return {cf: reqs, cs: subs};
 	});
 var $elm$http$Http$init = $elm$core$Task$succeed(
 	A2($elm$http$Http$State, $elm$core$Dict$empty, _List_Nil));
@@ -6397,7 +6439,7 @@ var $elm$http$Http$updateReqs = F3(
 					return A2(
 						$elm$core$Task$andThen,
 						function (pid) {
-							var _v4 = req.ct;
+							var _v4 = req.cv;
 							if (_v4.$ === 1) {
 								return A3($elm$http$Http$updateReqs, router, otherCmds, reqs);
 							} else {
@@ -6427,7 +6469,7 @@ var $elm$http$Http$onEffects = F4(
 				return $elm$core$Task$succeed(
 					A2($elm$http$Http$State, reqs, subs));
 			},
-			A3($elm$http$Http$updateReqs, router, cmds, state.cd));
+			A3($elm$http$Http$updateReqs, router, cmds, state.cf));
 	});
 var $elm$core$List$maybeCons = F3(
 	function (f, mx, xs) {
@@ -6470,7 +6512,7 @@ var $elm$http$Http$onSelfMsg = F3(
 				A2(
 					$elm$core$List$filterMap,
 					A3($elm$http$Http$maybeSend, router, tracker, progress),
-					state.cq)));
+					state.cs)));
 	});
 var $elm$http$Http$Cancel = function (a) {
 	return {$: 0, a: a};
@@ -6484,13 +6526,13 @@ var $elm$http$Http$cmdMap = F2(
 			var r = cmd.a;
 			return $elm$http$Http$Request(
 				{
-					cC: r.cC,
-					cH: r.cH,
+					cE: r.cE,
+					cK: r.cK,
 					bI: A2(_Http_mapExpect, func, r.bI),
 					bO: r.bO,
-					db: r.db,
-					dO: r.dO,
-					ct: r.ct,
+					de: r.de,
+					dR: r.dR,
+					cv: r.cv,
 					bu: r.bu
 				});
 		}
@@ -6514,47 +6556,71 @@ var $elm$http$Http$subscription = _Platform_leaf('Http');
 var $elm$http$Http$request = function (r) {
 	return $elm$http$Http$command(
 		$elm$http$Http$Request(
-			{cC: false, cH: r.cH, bI: r.bI, bO: r.bO, db: r.db, dO: r.dO, ct: r.ct, bu: r.bu}));
+			{cE: false, cK: r.cK, bI: r.bI, bO: r.bO, de: r.de, dR: r.dR, cv: r.cv, bu: r.bu}));
 };
 var $elm$http$Http$get = function (r) {
 	return $elm$http$Http$request(
-		{cH: $elm$http$Http$emptyBody, bI: r.bI, bO: _List_Nil, db: 'GET', dO: $elm$core$Maybe$Nothing, ct: $elm$core$Maybe$Nothing, bu: r.bu});
+		{cK: $elm$http$Http$emptyBody, bI: r.bI, bO: _List_Nil, de: 'GET', dR: $elm$core$Maybe$Nothing, cv: $elm$core$Maybe$Nothing, bu: r.bu});
 };
+var $elm$core$Maybe$andThen = F2(
+	function (callback, maybeValue) {
+		if (!maybeValue.$) {
+			var value = maybeValue.a;
+			return callback(value);
+		} else {
+			return $elm$core$Maybe$Nothing;
+		}
+	});
 var $author$project$Docs$get = F2(
 	function (doc, _v0) {
 		var d = _v0;
-		if (!doc.$) {
-			return d.bf;
-		} else {
-			switch (doc.a) {
-				case 0:
-					var _v2 = doc.a;
-					return d.aY;
-				case 1:
-					var _v3 = doc.a;
-					return d.be;
-				case 2:
-					var _v4 = doc.a;
-					return d.aW;
-				case 3:
-					var _v5 = doc.a;
-					return d.a5;
-				case 4:
-					var _v6 = doc.a;
-					return d.a8;
-				case 5:
-					var _v7 = doc.a;
-					return d.br;
-				case 6:
-					var _v8 = doc.a;
-					return d.a$;
-				case 7:
-					var _v9 = doc.a;
-					return d.a2;
-				default:
-					var _v10 = doc.a;
-					return d.a3;
-			}
+		switch (doc.$) {
+			case 0:
+				return d.bf;
+			case 1:
+				switch (doc.a) {
+					case 0:
+						var _v2 = doc.a;
+						return d.aY;
+					case 1:
+						var _v3 = doc.a;
+						return d.be;
+					case 2:
+						var _v4 = doc.a;
+						return d.aW;
+					case 3:
+						var _v5 = doc.a;
+						return d.a5;
+					case 4:
+						var _v6 = doc.a;
+						return d.a8;
+					case 5:
+						var _v7 = doc.a;
+						return d.br;
+					case 6:
+						var _v8 = doc.a;
+						return d.a$;
+					case 7:
+						var _v9 = doc.a;
+						return d.a2;
+					default:
+						var _v10 = doc.a;
+						return d.a3;
+				}
+			case 2:
+				return A2(
+					$elm$core$Maybe$andThen,
+					$elm$core$Basics$identity,
+					A2($elm$core$Dict$get, '', d.Z));
+			default:
+				var c = doc.a;
+				return A2(
+					$elm$core$Maybe$andThen,
+					$elm$core$Basics$identity,
+					A2(
+						$elm$core$Dict$get,
+						$author$project$Chapter$slug(c),
+						d.Z));
 		}
 	});
 var $author$project$Docs$needsFetch = F2(
@@ -6579,58 +6645,76 @@ var $author$project$Docs$Docs = $elm$core$Basics$identity;
 var $author$project$Docs$set = F3(
 	function (doc, slot, _v0) {
 		var d = _v0;
-		if (!doc.$) {
-			return _Utils_update(
-				d,
-				{bf: slot});
-		} else {
-			switch (doc.a) {
-				case 0:
-					var _v2 = doc.a;
-					return _Utils_update(
-						d,
-						{aY: slot});
-				case 1:
-					var _v3 = doc.a;
-					return _Utils_update(
-						d,
-						{be: slot});
-				case 2:
-					var _v4 = doc.a;
-					return _Utils_update(
-						d,
-						{aW: slot});
-				case 3:
-					var _v5 = doc.a;
-					return _Utils_update(
-						d,
-						{a5: slot});
-				case 4:
-					var _v6 = doc.a;
-					return _Utils_update(
-						d,
-						{a8: slot});
-				case 5:
-					var _v7 = doc.a;
-					return _Utils_update(
-						d,
-						{br: slot});
-				case 6:
-					var _v8 = doc.a;
-					return _Utils_update(
-						d,
-						{a$: slot});
-				case 7:
-					var _v9 = doc.a;
-					return _Utils_update(
-						d,
-						{a2: slot});
-				default:
-					var _v10 = doc.a;
-					return _Utils_update(
-						d,
-						{a3: slot});
-			}
+		switch (doc.$) {
+			case 0:
+				return _Utils_update(
+					d,
+					{bf: slot});
+			case 1:
+				switch (doc.a) {
+					case 0:
+						var _v2 = doc.a;
+						return _Utils_update(
+							d,
+							{aY: slot});
+					case 1:
+						var _v3 = doc.a;
+						return _Utils_update(
+							d,
+							{be: slot});
+					case 2:
+						var _v4 = doc.a;
+						return _Utils_update(
+							d,
+							{aW: slot});
+					case 3:
+						var _v5 = doc.a;
+						return _Utils_update(
+							d,
+							{a5: slot});
+					case 4:
+						var _v6 = doc.a;
+						return _Utils_update(
+							d,
+							{a8: slot});
+					case 5:
+						var _v7 = doc.a;
+						return _Utils_update(
+							d,
+							{br: slot});
+					case 6:
+						var _v8 = doc.a;
+						return _Utils_update(
+							d,
+							{a$: slot});
+					case 7:
+						var _v9 = doc.a;
+						return _Utils_update(
+							d,
+							{a2: slot});
+					default:
+						var _v10 = doc.a;
+						return _Utils_update(
+							d,
+							{a3: slot});
+				}
+			case 2:
+				return _Utils_update(
+					d,
+					{
+						Z: A3($elm$core$Dict$insert, '', slot, d.Z)
+					});
+			default:
+				var c = doc.a;
+				return _Utils_update(
+					d,
+					{
+						Z: A3(
+							$elm$core$Dict$insert,
+							$author$project$Chapter$slug(c),
+							slot,
+							d.Z)
+					});
 		}
 	});
 var $author$project$Href$toString = function (_v0) {
@@ -6690,14 +6774,84 @@ var $elm$core$List$drop = F2(
 			}
 		}
 	});
-var $author$project$Route$Editor = {$: 5};
+var $author$project$Route$Chapter = function (a) {
+	return {$: 5, a: a};
+};
+var $author$project$Route$Editor = {$: 7};
 var $author$project$Route$Guide = function (a) {
 	return {$: 3, a: a};
 };
 var $author$project$Route$Guides = {$: 2};
 var $author$project$Route$Home = {$: 0};
 var $author$project$Route$Install = {$: 1};
-var $author$project$Route$Releases = {$: 4};
+var $author$project$Route$Manual = {$: 4};
+var $author$project$Route$Releases = {$: 6};
+var $author$project$Chapter$Chapter = F2(
+	function (a, b) {
+		return {$: 0, a: a, b: b};
+	});
+var $author$project$Chapter$all = A2(
+	$elm$core$List$map,
+	function (_v0) {
+		var s = _v0.a;
+		var t = _v0.b;
+		return A2($author$project$Chapter$Chapter, s, t);
+	},
+	_List_fromArray(
+		[
+			_Utils_Tuple2('01-concepts', 'Concepts: Parts, Sounds, projects and the voice chain'),
+			_Utils_Tuple2('02-panel-and-navigation', 'The panel and navigation'),
+			_Utils_Tuple2('03-algo', 'ALGO'),
+			_Utils_Tuple2('04-modal', 'MODAL'),
+			_Utils_Tuple2('05-va', 'VA'),
+			_Utils_Tuple2('06-tape', 'TAPE'),
+			_Utils_Tuple2('07-drum', 'DRUM'),
+			_Utils_Tuple2('08-voice-chain', 'The voice chain: pitch, filter, FX, amp, stereo and sends'),
+			_Utils_Tuple2('09-envelopes-and-lfos', 'Envelopes and LFOs'),
+			_Utils_Tuple2('10-mod-matrix', 'The mod matrix'),
+			_Utils_Tuple2('11-mixer-and-master-fx', 'The MIXER and the master effects'),
+			_Utils_Tuple2('12-orbit', 'ORBIT, the ring sequencer'),
+			_Utils_Tuple2('13-settings', 'SETTINGS'),
+			_Utils_Tuple2('14-midi', 'MIDI'),
+			_Utils_Tuple2('15-tuning', 'Tuning'),
+			_Utils_Tuple2('16-card-sounds-library', 'The SD card, Sounds and the library'),
+			_Utils_Tuple2('17-usb', 'USB: audio, MIDI and the console'),
+			_Utils_Tuple2('18-browser-editor', 'The browser editor'),
+			_Utils_Tuple2('19-updating-and-recovery', 'Updating and recovery'),
+			_Utils_Tuple2('20-limits', 'Limits: voices, CPU and memory'),
+			_Utils_Tuple2('21-glossary', 'Glossary')
+		]));
+var $elm$core$List$filter = F2(
+	function (isGood, list) {
+		return A3(
+			$elm$core$List$foldr,
+			F2(
+				function (x, xs) {
+					return isGood(x) ? A2($elm$core$List$cons, x, xs) : xs;
+				}),
+			_List_Nil,
+			list);
+	});
+var $elm$core$List$head = function (list) {
+	if (list.b) {
+		var x = list.a;
+		var xs = list.b;
+		return $elm$core$Maybe$Just(x);
+	} else {
+		return $elm$core$Maybe$Nothing;
+	}
+};
+var $author$project$Chapter$fromSlug = function (s) {
+	return $elm$core$List$head(
+		A2(
+			$elm$core$List$filter,
+			function (c) {
+				return _Utils_eq(
+					$author$project$Chapter$slug(c),
+					s);
+			},
+			$author$project$Chapter$all));
+};
 var $author$project$GuideId$GettingStarted = 0;
 var $author$project$GuideId$Faq = 2;
 var $author$project$GuideId$KnownIssues = 6;
@@ -6753,26 +6907,6 @@ var $author$project$GuideId$all = function () {
 	};
 	return from(0);
 }();
-var $elm$core$List$filter = F2(
-	function (isGood, list) {
-		return A3(
-			$elm$core$List$foldr,
-			F2(
-				function (x, xs) {
-					return isGood(x) ? A2($elm$core$List$cons, x, xs) : xs;
-				}),
-			_List_Nil,
-			list);
-	});
-var $elm$core$List$head = function (list) {
-	if (list.b) {
-		var x = list.a;
-		var xs = list.b;
-		return $elm$core$Maybe$Just(x);
-	} else {
-		return $elm$core$Maybe$Nothing;
-	}
-};
 var $author$project$GuideId$fromSlug = function (s) {
 	return $elm$core$List$head(
 		A2(
@@ -6785,24 +6919,52 @@ var $author$project$GuideId$fromSlug = function (s) {
 			$author$project$GuideId$all));
 };
 var $author$project$Route$fromSegments = function (path) {
-	_v0$6:
+	_v0$8:
 	while (true) {
 		if (!path.b) {
 			return $author$project$Route$Home;
 		} else {
 			if (path.b.b) {
-				if ((path.a === 'guides') && (!path.b.b.b)) {
-					var _v1 = path.b;
-					var slug = _v1.a;
-					return A2(
-						$elm$core$Maybe$withDefault,
-						$author$project$Route$NotFound,
-						A2(
-							$elm$core$Maybe$map,
-							$author$project$Route$Guide,
-							$author$project$GuideId$fromSlug(slug)));
+				if (!path.b.b.b) {
+					if (path.a === 'guides') {
+						var _v1 = path.b;
+						var slug = _v1.a;
+						return A2(
+							$elm$core$Maybe$withDefault,
+							$author$project$Route$NotFound,
+							A2(
+								$elm$core$Maybe$map,
+								$author$project$Route$Guide,
+								$author$project$GuideId$fromSlug(slug)));
+					} else {
+						break _v0$8;
+					}
 				} else {
-					break _v0$6;
+					if (((path.a === 'manual') && (path.b.a === 'preenfm3')) && (path.b.b.a === '0.4')) {
+						if (!path.b.b.b.b) {
+							var _v2 = path.b;
+							var _v3 = _v2.b;
+							return $author$project$Route$Manual;
+						} else {
+							if (!path.b.b.b.b.b) {
+								var _v4 = path.b;
+								var _v5 = _v4.b;
+								var _v6 = _v5.b;
+								var slug = _v6.a;
+								return A2(
+									$elm$core$Maybe$withDefault,
+									$author$project$Route$NotFound,
+									A2(
+										$elm$core$Maybe$map,
+										$author$project$Route$Chapter,
+										$author$project$Chapter$fromSlug(slug)));
+							} else {
+								break _v0$8;
+							}
+						}
+					} else {
+						break _v0$8;
+					}
 				}
 			} else {
 				switch (path.a) {
@@ -6815,7 +6977,7 @@ var $author$project$Route$fromSegments = function (path) {
 					case 'sound-editor':
 						return $author$project$Route$Editor;
 					default:
-						break _v0$6;
+						break _v0$8;
 				}
 			}
 		}
@@ -6958,7 +7120,7 @@ var $elm$core$List$take = F2(
 var $author$project$Route$parse = F2(
 	function (_v0, url) {
 		var root = _v0;
-		var path = $author$project$Route$segments(url.dt);
+		var path = $author$project$Route$segments(url.dw);
 		return _Utils_eq(
 			A2(
 				$elm$core$List$take,
@@ -6980,7 +7142,7 @@ var $author$project$Main$scrollTask = function (id) {
 	return A2(
 		$elm$core$Task$andThen,
 		function (e) {
-			return A2($elm$browser$Browser$Dom$setViewport, 0, e.cS.dU - 16);
+			return A2($elm$browser$Browser$Dom$setViewport, 0, e.cV.dX - 16);
 		},
 		$elm$browser$Browser$Dom$getElement(
 			$author$project$Anchor$toString(id)));
@@ -6988,7 +7150,7 @@ var $author$project$Main$scrollTask = function (id) {
 var $author$project$Menu$shows = F2(
 	function (editor, route) {
 		switch (route.$) {
-			case 5:
+			case 7:
 				return editor === 1;
 			case 0:
 				return true;
@@ -7000,6 +7162,10 @@ var $author$project$Menu$shows = F2(
 				return true;
 			case 4:
 				return true;
+			case 5:
+				return true;
+			case 6:
+				return true;
 			default:
 				return true;
 		}
@@ -7009,8 +7175,8 @@ var $author$project$Main$arrive = F3(
 		var route = function (parsed) {
 			return A2($author$project$Menu$shows, $author$project$Features$editor, parsed) ? parsed : $author$project$Route$NotFound;
 		}(
-			A2($author$project$Route$parse, model.l, url));
-		var fragment = A2($elm$core$Maybe$map, $author$project$Anchor$fromFragment, url.ah);
+			A2($author$project$Route$parse, model.j, url));
+		var fragment = A2($elm$core$Maybe$map, $author$project$Anchor$fromFragment, url.ai);
 		var settle = function () {
 			if (!arrival) {
 				return $elm$core$Platform$Cmd$none;
@@ -7042,7 +7208,7 @@ var $author$project$Main$arrive = F3(
 			A2(
 				$elm$core$Maybe$map,
 				function (doc) {
-					return A3($author$project$Main$fetchDoc, model.l, doc, model.E);
+					return A3($author$project$Main$fetchDoc, model.j, doc, model.E);
 				},
 				$author$project$Route$doc(route)));
 		var docs = _v0.a;
@@ -7050,7 +7216,7 @@ var $author$project$Main$arrive = F3(
 		return _Utils_Tuple2(
 			_Utils_update(
 				model,
-				{E: docs, ah: fragment, K: route}),
+				{E: docs, ai: fragment, K: route}),
 			$elm$core$Platform$Cmd$batch(
 				_List_fromArray(
 					[fetch, settle])));
@@ -7059,7 +7225,7 @@ var $author$project$Route$Base = $elm$core$Basics$identity;
 var $author$project$Route$base = function (path) {
 	return $author$project$Route$segments(path);
 };
-var $author$project$Docs$empty = {aW: $elm$core$Maybe$Nothing, aY: $elm$core$Maybe$Nothing, a$: $elm$core$Maybe$Nothing, a2: $elm$core$Maybe$Nothing, a3: $elm$core$Maybe$Nothing, a5: $elm$core$Maybe$Nothing, a8: $elm$core$Maybe$Nothing, be: $elm$core$Maybe$Nothing, bf: $elm$core$Maybe$Nothing, br: $elm$core$Maybe$Nothing};
+var $author$project$Docs$empty = {aW: $elm$core$Maybe$Nothing, aY: $elm$core$Maybe$Nothing, a$: $elm$core$Maybe$Nothing, a2: $elm$core$Maybe$Nothing, a3: $elm$core$Maybe$Nothing, Z: $elm$core$Dict$empty, a5: $elm$core$Maybe$Nothing, a8: $elm$core$Maybe$Nothing, be: $elm$core$Maybe$Nothing, bf: $elm$core$Maybe$Nothing, br: $elm$core$Maybe$Nothing};
 var $elm$json$Json$Decode$decodeString = _Json_runOnString;
 var $elm$http$Http$expectJson = F2(
 	function (toMsg, decoder) {
@@ -7077,7 +7243,7 @@ var $elm$http$Http$expectJson = F2(
 var $elm$json$Json$Decode$decodeValue = _Json_run;
 var $author$project$Release$Asset = F4(
 	function (name, kind, url, size) {
-		return {c4: kind, a6: name, dE: size, bu: url};
+		return {c7: kind, a6: name, dH: size, bu: url};
 	});
 var $elm$json$Json$Decode$fail = _Json_fail;
 var $author$project$ByteSize$ByteSize = $elm$core$Basics$identity;
@@ -7267,7 +7433,7 @@ var $rtfeldman$elm_iso8601_date_strings$DeadEnds$problemToString = function (p) 
 	}
 };
 var $rtfeldman$elm_iso8601_date_strings$DeadEnds$deadEndToString = function (deadend) {
-	return $rtfeldman$elm_iso8601_date_strings$DeadEnds$problemToString(deadend.du) + (' at row ' + ($elm$core$String$fromInt(deadend.dC) + (', col ' + $elm$core$String$fromInt(deadend.bC))));
+	return $rtfeldman$elm_iso8601_date_strings$DeadEnds$problemToString(deadend.dx) + (' at row ' + ($elm$core$String$fromInt(deadend.dF) + (', col ' + $elm$core$String$fromInt(deadend.bC))));
 };
 var $elm$core$List$intersperse = F2(
 	function (sep, xs) {
@@ -7340,7 +7506,7 @@ var $elm$parser$Parser$Advanced$AddRight = F2(
 	});
 var $elm$parser$Parser$Advanced$DeadEnd = F4(
 	function (row, col, problem, contextStack) {
-		return {bC: col, cN: contextStack, du: problem, dC: row};
+		return {bC: col, cQ: contextStack, dx: problem, dF: row};
 	});
 var $elm$parser$Parser$Advanced$Empty = {$: 0};
 var $elm$parser$Parser$Advanced$fromState = F2(
@@ -7348,12 +7514,12 @@ var $elm$parser$Parser$Advanced$fromState = F2(
 		return A2(
 			$elm$parser$Parser$Advanced$AddRight,
 			$elm$parser$Parser$Advanced$Empty,
-			A4($elm$parser$Parser$Advanced$DeadEnd, s.dC, s.bC, x, s.g));
+			A4($elm$parser$Parser$Advanced$DeadEnd, s.dF, s.bC, x, s.g));
 	});
 var $elm$parser$Parser$Advanced$end = function (x) {
 	return function (s) {
 		return _Utils_eq(
-			$elm$core$String$length(s.dF),
+			$elm$core$String$length(s.dI),
 			s.d) ? A3($elm$parser$Parser$Advanced$Good, false, 0, s) : A2(
 			$elm$parser$Parser$Advanced$Bad,
 			false,
@@ -7366,13 +7532,13 @@ var $elm$parser$Parser$Advanced$chompWhileHelp = F5(
 	function (isGood, offset, row, col, s0) {
 		chompWhileHelp:
 		while (true) {
-			var newOffset = A3($elm$parser$Parser$Advanced$isSubChar, isGood, offset, s0.dF);
+			var newOffset = A3($elm$parser$Parser$Advanced$isSubChar, isGood, offset, s0.dI);
 			if (_Utils_eq(newOffset, -1)) {
 				return A3(
 					$elm$parser$Parser$Advanced$Good,
 					_Utils_cmp(s0.d, offset) < 0,
 					0,
-					{bC: col, g: s0.g, i: s0.i, d: offset, dC: row, dF: s0.dF});
+					{bC: col, g: s0.g, i: s0.i, d: offset, dF: row, dI: s0.dI});
 			} else {
 				if (_Utils_eq(newOffset, -2)) {
 					var $temp$isGood = isGood,
@@ -7404,7 +7570,7 @@ var $elm$parser$Parser$Advanced$chompWhileHelp = F5(
 	});
 var $elm$parser$Parser$Advanced$chompWhile = function (isGood) {
 	return function (s) {
-		return A5($elm$parser$Parser$Advanced$chompWhileHelp, isGood, s.d, s.dC, s.bC, s);
+		return A5($elm$parser$Parser$Advanced$chompWhileHelp, isGood, s.d, s.dF, s.bC, s);
 	};
 };
 var $elm$parser$Parser$chompWhile = $elm$parser$Parser$Advanced$chompWhile;
@@ -7430,7 +7596,7 @@ var $elm$parser$Parser$Advanced$mapChompedString = F2(
 					p,
 					A2(
 						func,
-						A3($elm$core$String$slice, s0.d, s1.d, s0.dF),
+						A3($elm$core$String$slice, s0.d, s1.d, s0.dI),
 						a),
 					s1);
 			}
@@ -7584,7 +7750,7 @@ var $elm$parser$Parser$UnexpectedChar = {$: 11};
 var $elm$parser$Parser$Advanced$chompIf = F2(
 	function (isGood, expecting) {
 		return function (s) {
-			var newOffset = A3($elm$parser$Parser$Advanced$isSubChar, isGood, s.d, s.dF);
+			var newOffset = A3($elm$parser$Parser$Advanced$isSubChar, isGood, s.d, s.dI);
 			return _Utils_eq(newOffset, -1) ? A2(
 				$elm$parser$Parser$Advanced$Bad,
 				false,
@@ -7592,11 +7758,11 @@ var $elm$parser$Parser$Advanced$chompIf = F2(
 				$elm$parser$Parser$Advanced$Good,
 				true,
 				0,
-				{bC: 1, g: s.g, i: s.i, d: s.d + 1, dC: s.dC + 1, dF: s.dF}) : A3(
+				{bC: 1, g: s.g, i: s.i, d: s.d + 1, dF: s.dF + 1, dI: s.dI}) : A3(
 				$elm$parser$Parser$Advanced$Good,
 				true,
 				0,
-				{bC: s.bC + 1, g: s.g, i: s.i, d: newOffset, dC: s.dC, dF: s.dF}));
+				{bC: s.bC + 1, g: s.g, i: s.i, d: newOffset, dF: s.dF, dI: s.dI}));
 		};
 	});
 var $elm$parser$Parser$chompIf = function (isGood) {
@@ -7731,7 +7897,7 @@ var $elm$parser$Parser$Advanced$token = function (_v0) {
 	var expecting = _v0.b;
 	var progress = !$elm$core$String$isEmpty(str);
 	return function (s) {
-		var _v1 = A5($elm$parser$Parser$Advanced$isSubString, str, s.d, s.dC, s.bC, s.dF);
+		var _v1 = A5($elm$parser$Parser$Advanced$isSubString, str, s.d, s.dF, s.bC, s.dI);
 		var newOffset = _v1.a;
 		var newRow = _v1.b;
 		var newCol = _v1.c;
@@ -7742,7 +7908,7 @@ var $elm$parser$Parser$Advanced$token = function (_v0) {
 			$elm$parser$Parser$Advanced$Good,
 			progress,
 			0,
-			{bC: newCol, g: s.g, i: s.i, d: newOffset, dC: newRow, dF: s.dF});
+			{bC: newCol, g: s.g, i: s.i, d: newOffset, dF: newRow, dI: s.dI});
 	};
 };
 var $elm$parser$Parser$Advanced$symbol = $elm$parser$Parser$Advanced$token;
@@ -7981,10 +8147,10 @@ var $rtfeldman$elm_iso8601_date_strings$Iso8601$iso8601 = A2(
 	$rtfeldman$elm_iso8601_date_strings$Iso8601$monthYearDayInMs);
 var $elm$parser$Parser$DeadEnd = F3(
 	function (row, col, problem) {
-		return {bC: col, du: problem, dC: row};
+		return {bC: col, dx: problem, dF: row};
 	});
 var $elm$parser$Parser$problemToDeadEnd = function (p) {
-	return A3($elm$parser$Parser$DeadEnd, p.dC, p.bC, p.du);
+	return A3($elm$parser$Parser$DeadEnd, p.dF, p.bC, p.dx);
 };
 var $elm$parser$Parser$Advanced$bagToList = F2(
 	function (bag, list) {
@@ -8016,7 +8182,7 @@ var $elm$parser$Parser$Advanced$run = F2(
 	function (_v0, src) {
 		var parse = _v0;
 		var _v1 = parse(
-			{bC: 1, g: _List_Nil, i: 1, d: 0, dC: 1, dF: src});
+			{bC: 1, g: _List_Nil, i: 1, d: 0, dF: 1, dI: src});
 		if (!_v1.$) {
 			var value = _v1.b;
 			return $elm$core$Result$Ok(value);
@@ -8093,7 +8259,7 @@ var $author$project$Release$decoder = A8(
 		function (v, name, st, published, notes, _v0, page) {
 			var files = _v0.a;
 			var unreadable = _v0.b;
-			return {bx: files, a6: name, b2: notes, b4: page, bd: published, dG: st, bt: unreadable, ad: v};
+			return {bx: files, a6: name, b4: notes, b6: page, bd: published, dJ: st, bt: unreadable, ae: v};
 		}),
 	A2($elm$json$Json$Decode$field, 'tag_name', $author$project$Release$version),
 	A2(
@@ -8118,7 +8284,7 @@ var $author$project$Release$skipped = function (value) {
 				$elm$json$Json$Decode$decodeValue,
 				A2($elm$json$Json$Decode$field, 'published_at', $rtfeldman$elm_iso8601_date_strings$Iso8601$decoder),
 				value)),
-		dG: $elm$core$Result$toMaybe(
+		dJ: $elm$core$Result$toMaybe(
 			A2(
 				$elm$json$Json$Decode$decodeValue,
 				A2($elm$json$Json$Decode$field, 'prerelease', $author$project$Release$stage),
@@ -8137,7 +8303,7 @@ var $author$project$Release$listDecoder = A2(
 					return _Utils_update(
 						acc,
 						{
-							ab: A2($elm$core$List$cons, r, acc.ab)
+							ac: A2($elm$core$List$cons, r, acc.ac)
 						});
 				} else {
 					return _Utils_update(
@@ -8150,7 +8316,7 @@ var $author$project$Release$listDecoder = A2(
 						});
 				}
 			}),
-		{ab: _List_Nil, bh: _List_Nil}),
+		{ac: _List_Nil, bh: _List_Nil}),
 	$elm$json$Json$Decode$list($elm$json$Json$Decode$value));
 var $author$project$Main$init = F3(
 	function (flags, url, key) {
@@ -8159,11 +8325,11 @@ var $author$project$Main$init = F3(
 			0,
 			url,
 			{
-				l: $author$project$Route$base(flags.l),
+				j: $author$project$Route$base(flags.j),
 				E: $author$project$Docs$empty,
-				ah: $elm$core$Maybe$Nothing,
+				ai: $elm$core$Maybe$Nothing,
 				a_: key,
-				ab: $author$project$Remote$Loading,
+				ac: $author$project$Remote$Loading,
 				K: $author$project$Route$NotFound
 			});
 		var model = _v0.a;
@@ -8213,30 +8379,30 @@ var $elm$core$Result$map = F2(
 	});
 var $elm$core$String$lines = _String_lines;
 var $author$project$Guide$close = function (match) {
-	var _v0 = match.cp;
+	var _v0 = match.cr;
 	if (((_v0.b && (!_v0.a.$)) && _v0.b.b) && (!_v0.b.b.b)) {
 		var name = _v0.a.a;
 		var _v1 = _v0.b;
 		var attributes = _v1.a;
 		return '<' + (name + (A2($elm$core$Maybe$withDefault, '', attributes) + ' />'));
 	} else {
-		return match.Z;
+		return match._;
 	}
 };
 var $author$project$Guide$quote = function (match) {
-	var _v0 = match.cp;
+	var _v0 = match.cr;
 	if ((((_v0.b && (!_v0.a.$)) && _v0.b.b) && (!_v0.b.a.$)) && (!_v0.b.b.b)) {
 		var name = _v0.a.a;
 		var _v1 = _v0.b;
 		var value = _v1.a.a;
 		return name + ('=\"' + (value + '\"'));
 	} else {
-		return match.Z;
+		return match._;
 	}
 };
 var $elm$regex$Regex$Match = F4(
 	function (match, index, number, submatches) {
-		return {aE: index, Z: match, dn: number, cp: submatches};
+		return {aF: index, _: match, dq: number, cr: submatches};
 	});
 var $elm$regex$Regex$replace = _Regex_replaceAtMost(_Regex_infinity);
 var $elm$regex$Regex$fromStringWith = _Regex_fromStringWith;
@@ -8247,7 +8413,7 @@ var $author$project$Guide$regex = function (pattern) {
 		$elm$regex$Regex$never,
 		A2(
 			$elm$regex$Regex$fromStringWith,
-			{cK: true, de: false},
+			{cN: true, dh: false},
 			pattern));
 };
 var $author$project$Guide$backticks = $author$project$Guide$regex('`+');
@@ -8259,8 +8425,8 @@ var $author$project$Guide$closer = F2(
 				var next = runs.a;
 				var rest = runs.b;
 				if (_Utils_eq(
-					$elm$core$String$length(next.Z),
-					$elm$core$String$length(opening.Z))) {
+					$elm$core$String$length(next._),
+					$elm$core$String$length(opening._))) {
 					return $elm$core$Maybe$Just(
 						_Utils_Tuple2(next, rest));
 				} else {
@@ -8293,19 +8459,19 @@ var $author$project$Guide$spans = function (line) {
 							$elm$core$List$cons,
 							_Utils_Tuple2(
 								false,
-								A3($elm$core$String$slice, from, opening.aE, line)),
+								A3($elm$core$String$slice, from, opening.aF, line)),
 							A2(
 								$elm$core$List$cons,
 								_Utils_Tuple2(
 									true,
 									A3(
 										$elm$core$String$slice,
-										opening.aE,
-										closing.aE + $elm$core$String$length(closing.Z),
+										opening.aF,
+										closing.aF + $elm$core$String$length(closing._),
 										line)),
 								A2(
 									go,
-									closing.aE + $elm$core$String$length(closing.Z),
+									closing.aF + $elm$core$String$length(closing._),
 									after)));
 					} else {
 						var $temp$from = from,
@@ -8349,7 +8515,7 @@ var $author$project$Guide$closeInLine = function (line) {
 						A2(
 							$elm$core$Basics$composeR,
 							function ($) {
-								return $.Z;
+								return $._;
 							},
 							A2($elm$regex$Regex$replace, $author$project$Guide$unquoted, $author$project$Guide$quote)),
 						text));
@@ -8411,11 +8577,11 @@ var $author$project$Guide$step = F2(
 			return _Utils_update(
 				s,
 				{
-					ap: blank,
+					aq: blank,
 					W: A2($elm$core$List$cons, line, s.W)
 				});
 		};
-		var _v0 = scan.ar;
+		var _v0 = scan.as;
 		if (!_v0.$) {
 			var _v1 = _v0.a;
 			var c = _v1.a;
@@ -8430,31 +8596,31 @@ var $author$project$Guide$step = F2(
 						trimmed))))) ? kept(
 				_Utils_update(
 					scan,
-					{ar: $elm$core$Maybe$Nothing})) : kept(scan);
+					{as: $elm$core$Maybe$Nothing})) : kept(scan);
 		} else {
 			return ((indent < 4) && ((A2($author$project$Guide$run, '`', trimmed) >= 3) || (A2($author$project$Guide$run, '~', trimmed) >= 3))) ? kept(
 				_Utils_update(
 					scan,
 					{
-						ar: $elm$core$Maybe$Just(
+						as: $elm$core$Maybe$Just(
 							(A2($author$project$Guide$run, '`', trimmed) >= 3) ? _Utils_Tuple2(
 								'`',
 								A2($author$project$Guide$run, '`', trimmed)) : _Utils_Tuple2(
 								'~',
 								A2($author$project$Guide$run, '~', trimmed))),
-						ai: false
-					})) : (blank ? kept(scan) : (((indent >= 4) && (scan.ap || scan.ai)) ? kept(
+						aj: false
+					})) : (blank ? kept(scan) : (((indent >= 4) && (scan.aq || scan.aj)) ? kept(
 				_Utils_update(
 					scan,
-					{ai: true})) : _Utils_update(
+					{aj: true})) : _Utils_update(
 				scan,
 				{
-					ap: blank,
+					aq: blank,
 					W: A2(
 						$elm$core$List$cons,
 						$author$project$Guide$closeInLine(line),
 						scan.W),
-					ai: false
+					aj: false
 				})));
 		}
 	});
@@ -8466,7 +8632,7 @@ var $author$project$Guide$closeVoidTags = function (markdown) {
 			A3(
 				$elm$core$List$foldl,
 				$author$project$Guide$step,
-				{ap: true, W: _List_Nil, ar: $elm$core$Maybe$Nothing, ai: false},
+				{aq: true, W: _List_Nil, as: $elm$core$Maybe$Nothing, aj: false},
 				$elm$core$String$lines(markdown)).W));
 };
 var $dillonkearns$elm_markdown$Markdown$Parser$problemToString = function (problem) {
@@ -8506,7 +8672,7 @@ var $dillonkearns$elm_markdown$Markdown$Parser$problemToString = function (probl
 	}
 };
 var $dillonkearns$elm_markdown$Markdown$Parser$deadEndToString = function (deadEnd) {
-	return 'Problem at row ' + ($elm$core$String$fromInt(deadEnd.dC) + ('\n' + $dillonkearns$elm_markdown$Markdown$Parser$problemToString(deadEnd.du)));
+	return 'Problem at row ' + ($elm$core$String$fromInt(deadEnd.dF) + ('\n' + $dillonkearns$elm_markdown$Markdown$Parser$problemToString(deadEnd.dx)));
 };
 var $dillonkearns$elm_markdown$Markdown$Block$BlockQuote = function (a) {
 	return {$: 3, a: a};
@@ -9528,23 +9694,23 @@ var $dillonkearns$elm_markdown$HtmlParser$attributes = A2(
 			function (key, value, accum) {
 				return A2(
 					$elm$core$List$cons,
-					{a6: key, dR: value},
+					{a6: key, dU: value},
 					accum);
 			}),
 		_List_Nil),
 	A2($elm$parser$Parser$Advanced$loop, $elm$core$Dict$empty, $dillonkearns$elm_markdown$HtmlParser$attributesStep));
 var $elm$parser$Parser$Advanced$chompUntilEndOr = function (str) {
 	return function (s) {
-		var _v0 = A5(_Parser_findSubString, str, s.d, s.dC, s.bC, s.dF);
+		var _v0 = A5(_Parser_findSubString, str, s.d, s.dF, s.bC, s.dI);
 		var newOffset = _v0.a;
 		var newRow = _v0.b;
 		var newCol = _v0.c;
-		var adjustedOffset = (newOffset < 0) ? $elm$core$String$length(s.dF) : newOffset;
+		var adjustedOffset = (newOffset < 0) ? $elm$core$String$length(s.dI) : newOffset;
 		return A3(
 			$elm$parser$Parser$Advanced$Good,
 			_Utils_cmp(s.d, adjustedOffset) < 0,
 			0,
-			{bC: newCol, g: s.g, i: s.i, d: adjustedOffset, dC: newRow, dF: s.dF});
+			{bC: newCol, g: s.g, i: s.i, d: adjustedOffset, dF: newRow, dI: s.dI});
 	};
 };
 var $dillonkearns$elm_markdown$HtmlParser$cdata = A2(
@@ -9889,7 +10055,7 @@ var $dillonkearns$elm_markdown$Markdown$Parser$innerParagraphParser = A2(
 var $dillonkearns$elm_markdown$Markdown$Parser$openBlockOrParagraphParser = A2($elm$parser$Parser$Advanced$ignorer, $dillonkearns$elm_markdown$Markdown$Parser$innerParagraphParser, $dillonkearns$elm_markdown$Helpers$lineEndOrEnd);
 var $dillonkearns$elm_markdown$Markdown$OrderedList$ListItem = F4(
 	function (order, intended, marker, body) {
-		return {cH: body, c2: intended, da: marker, ds: order};
+		return {cK: body, c5: intended, dd: marker, dv: order};
 	});
 var $elm$parser$Parser$Advanced$getCol = function (s) {
 	return A3($elm$parser$Parser$Advanced$Good, false, s.bC, s);
@@ -10094,7 +10260,7 @@ var $dillonkearns$elm_markdown$Markdown$Parser$orderedListBlock = function (prev
 	return A2(
 		$elm$parser$Parser$Advanced$map,
 		function (item) {
-			return A6($dillonkearns$elm_markdown$Markdown$RawBlock$OrderedListBlock, true, item.c2, item.da, item.ds, _List_Nil, item.cH);
+			return A6($dillonkearns$elm_markdown$Markdown$RawBlock$OrderedListBlock, true, item.c5, item.dd, item.dv, _List_Nil, item.cK);
 		},
 		$dillonkearns$elm_markdown$Markdown$OrderedList$parser(previousWasBody));
 };
@@ -10124,11 +10290,11 @@ var $dillonkearns$elm_markdown$Markdown$InlineParser$matchToInline = function (_
 	var _v1 = match.n;
 	switch (_v1.$) {
 		case 0:
-			return $dillonkearns$elm_markdown$Markdown$Inline$Text(match.dN);
+			return $dillonkearns$elm_markdown$Markdown$Inline$Text(match.dQ);
 		case 1:
 			return $dillonkearns$elm_markdown$Markdown$Inline$HardLineBreak;
 		case 2:
-			return $dillonkearns$elm_markdown$Markdown$Inline$CodeInline(match.dN);
+			return $dillonkearns$elm_markdown$Markdown$Inline$CodeInline(match.dQ);
 		case 3:
 			var _v2 = _v1.a;
 			var text = _v2.a;
@@ -10179,7 +10345,7 @@ var $dillonkearns$elm_markdown$Markdown$InlineParser$matchesToInlines = function
 var $dillonkearns$elm_markdown$Markdown$InlineParser$Match = $elm$core$Basics$identity;
 var $dillonkearns$elm_markdown$Markdown$InlineParser$prepareChildMatch = F2(
 	function (parentMatch, childMatch) {
-		return {h: childMatch.h - parentMatch.v, t: childMatch.t, j: childMatch.j - parentMatch.v, dN: childMatch.dN, D: childMatch.D - parentMatch.v, v: childMatch.v - parentMatch.v, n: childMatch.n};
+		return {h: childMatch.h - parentMatch.v, t: childMatch.t, k: childMatch.k - parentMatch.v, dQ: childMatch.dQ, D: childMatch.D - parentMatch.v, v: childMatch.v - parentMatch.v, n: childMatch.n};
 	});
 var $dillonkearns$elm_markdown$Markdown$InlineParser$addChild = F2(
 	function (parentMatch, childMatch) {
@@ -10189,8 +10355,8 @@ var $dillonkearns$elm_markdown$Markdown$InlineParser$addChild = F2(
 				$elm$core$List$cons,
 				A2($dillonkearns$elm_markdown$Markdown$InlineParser$prepareChildMatch, parentMatch, childMatch),
 				parentMatch.t),
-			j: parentMatch.j,
-			dN: parentMatch.dN,
+			k: parentMatch.k,
+			dQ: parentMatch.dQ,
 			D: parentMatch.D,
 			v: parentMatch.v,
 			n: parentMatch.n
@@ -10202,8 +10368,8 @@ var $dillonkearns$elm_markdown$Markdown$InlineParser$organizeChildren = function
 	return {
 		h: match.h,
 		t: $dillonkearns$elm_markdown$Markdown$InlineParser$organizeMatches(match.t),
-		j: match.j,
-		dN: match.dN,
+		k: match.k,
+		dQ: match.dQ,
 		D: match.D,
 		v: match.v,
 		n: match.n
@@ -10214,7 +10380,7 @@ var $dillonkearns$elm_markdown$Markdown$InlineParser$organizeMatches = function 
 		$elm$core$List$sortBy,
 		function (_v3) {
 			var match = _v3;
-			return match.j;
+			return match.k;
 		},
 		matches);
 	if (!_v2.b) {
@@ -10238,7 +10404,7 @@ var $dillonkearns$elm_markdown$Markdown$InlineParser$organizeMatchesHelp = F3(
 			} else {
 				var match = remaining.a;
 				var rest = remaining.b;
-				if (_Utils_cmp(prevMatch.h, match.j) < 1) {
+				if (_Utils_cmp(prevMatch.h, match.k) < 1) {
 					var $temp$remaining = rest,
 						$temp$_v0 = match,
 						$temp$matchesTail = A2(
@@ -10250,7 +10416,7 @@ var $dillonkearns$elm_markdown$Markdown$InlineParser$organizeMatchesHelp = F3(
 					matchesTail = $temp$matchesTail;
 					continue organizeMatchesHelp;
 				} else {
-					if ((_Utils_cmp(prevMatch.j, match.j) < 0) && (_Utils_cmp(prevMatch.h, match.h) > 0)) {
+					if ((_Utils_cmp(prevMatch.k, match.k) < 0) && (_Utils_cmp(prevMatch.h, match.h) > 0)) {
 						var $temp$remaining = rest,
 							$temp$_v0 = A2($dillonkearns$elm_markdown$Markdown$InlineParser$addChild, prevMatch, match),
 							$temp$matchesTail = matchesTail;
@@ -10278,7 +10444,7 @@ var $dillonkearns$elm_markdown$Markdown$Helpers$containsAmpersand = function (st
 var $elm$regex$Regex$fromString = function (string) {
 	return A2(
 		$elm$regex$Regex$fromStringWith,
-		{cK: false, de: false},
+		{cN: false, dh: false},
 		string);
 };
 var $dillonkearns$elm_markdown$Markdown$Entity$decimalRegex = A2(
@@ -10299,7 +10465,7 @@ var $dillonkearns$elm_markdown$Markdown$Entity$validUnicode = function (_int) {
 		$elm$core$Char$fromCode(65533));
 };
 var $dillonkearns$elm_markdown$Markdown$Entity$replaceDecimal = function (match) {
-	var _v0 = match.cp;
+	var _v0 = match.cr;
 	if (_v0.b && (!_v0.a.$)) {
 		var first = _v0.a.a;
 		var _v1 = $elm$core$String$toInt(first);
@@ -10307,10 +10473,10 @@ var $dillonkearns$elm_markdown$Markdown$Entity$replaceDecimal = function (match)
 			var v = _v1.a;
 			return $dillonkearns$elm_markdown$Markdown$Entity$validUnicode(v);
 		} else {
-			return match.Z;
+			return match._;
 		}
 	} else {
-		return match.Z;
+		return match._;
 	}
 };
 var $dillonkearns$elm_markdown$Markdown$Entity$replaceDecimals = A2($elm$regex$Regex$replace, $dillonkearns$elm_markdown$Markdown$Entity$decimalRegex, $dillonkearns$elm_markdown$Markdown$Entity$replaceDecimal);
@@ -10576,7 +10742,7 @@ var $dillonkearns$elm_markdown$Markdown$Entity$entities = $elm$core$Dict$fromLis
 			_Utils_Tuple2('diams', 9830)
 		]));
 var $dillonkearns$elm_markdown$Markdown$Entity$replaceEntity = function (match) {
-	var _v0 = match.cp;
+	var _v0 = match.cr;
 	if (_v0.b && (!_v0.a.$)) {
 		var first = _v0.a.a;
 		var _v1 = A2($elm$core$Dict$get, first, $dillonkearns$elm_markdown$Markdown$Entity$entities);
@@ -10585,10 +10751,10 @@ var $dillonkearns$elm_markdown$Markdown$Entity$replaceEntity = function (match) 
 			return $elm$core$String$fromChar(
 				$elm$core$Char$fromCode(code));
 		} else {
-			return match.Z;
+			return match._;
 		}
 	} else {
-		return match.Z;
+		return match._;
 	}
 };
 var $dillonkearns$elm_markdown$Markdown$Entity$replaceEntities = A2($elm$regex$Regex$replace, $dillonkearns$elm_markdown$Markdown$Entity$entitiesRegex, $dillonkearns$elm_markdown$Markdown$Entity$replaceEntity);
@@ -10600,7 +10766,7 @@ var $dillonkearns$elm_markdown$Markdown$Helpers$replaceEscapable = A2(
 	$elm$regex$Regex$replace,
 	$dillonkearns$elm_markdown$Markdown$Helpers$escapableRegex,
 	function (regexMatch) {
-		var _v0 = regexMatch.cp;
+		var _v0 = regexMatch.cr;
 		if (((_v0.b && (!_v0.a.$)) && _v0.b.b) && (!_v0.b.a.$)) {
 			var backslashes = _v0.a.a;
 			var _v1 = _v0.b;
@@ -10612,7 +10778,7 @@ var $dillonkearns$elm_markdown$Markdown$Helpers$replaceEscapable = A2(
 					'\\'),
 				escapedStr);
 		} else {
-			return regexMatch.Z;
+			return regexMatch._;
 		}
 	});
 var $dillonkearns$elm_markdown$Markdown$Entity$hexadecimalRegex = A2(
@@ -10635,13 +10801,13 @@ var $dillonkearns$elm_markdown$Markdown$Entity$hexToInt = function (string) {
 		$elm$core$String$toLower(string));
 };
 var $dillonkearns$elm_markdown$Markdown$Entity$replaceHexadecimal = function (match) {
-	var _v0 = match.cp;
+	var _v0 = match.cr;
 	if (_v0.b && (!_v0.a.$)) {
 		var first = _v0.a.a;
 		return $dillonkearns$elm_markdown$Markdown$Entity$validUnicode(
 			$dillonkearns$elm_markdown$Markdown$Entity$hexToInt(first));
 	} else {
-		return match.Z;
+		return match._;
 	}
 };
 var $dillonkearns$elm_markdown$Markdown$Entity$replaceHexadecimals = A2($elm$regex$Regex$replace, $dillonkearns$elm_markdown$Markdown$Entity$hexadecimalRegex, $dillonkearns$elm_markdown$Markdown$Entity$replaceHexadecimal);
@@ -10655,8 +10821,8 @@ var $dillonkearns$elm_markdown$Markdown$InlineParser$normalMatch = function (tex
 	return {
 		h: 0,
 		t: _List_Nil,
-		j: 0,
-		dN: $dillonkearns$elm_markdown$Markdown$Helpers$formatStr(text),
+		k: 0,
+		dQ: $dillonkearns$elm_markdown$Markdown$Helpers$formatStr(text),
 		D: 0,
 		v: 0,
 		n: $dillonkearns$elm_markdown$Markdown$InlineParser$NormalType
@@ -10667,9 +10833,9 @@ var $dillonkearns$elm_markdown$Markdown$InlineParser$parseTextMatch = F3(
 		var matchModel = _v2;
 		var updtMatch = {
 			h: matchModel.h,
-			t: A3($dillonkearns$elm_markdown$Markdown$InlineParser$parseTextMatches, matchModel.dN, _List_Nil, matchModel.t),
-			j: matchModel.j,
-			dN: matchModel.dN,
+			t: A3($dillonkearns$elm_markdown$Markdown$InlineParser$parseTextMatches, matchModel.dQ, _List_Nil, matchModel.t),
+			k: matchModel.k,
+			dQ: matchModel.dQ,
 			D: matchModel.D,
 			v: matchModel.v,
 			n: matchModel.n
@@ -10688,13 +10854,13 @@ var $dillonkearns$elm_markdown$Markdown$InlineParser$parseTextMatch = F3(
 			if (!_v4.$) {
 				return A2($elm$core$List$cons, updtMatch, parsedMatches);
 			} else {
-				return _Utils_eq(matchModel.h, matchHead.j) ? A2($elm$core$List$cons, updtMatch, parsedMatches) : ((_Utils_cmp(matchModel.h, matchHead.j) < 0) ? A2(
+				return _Utils_eq(matchModel.h, matchHead.k) ? A2($elm$core$List$cons, updtMatch, parsedMatches) : ((_Utils_cmp(matchModel.h, matchHead.k) < 0) ? A2(
 					$elm$core$List$cons,
 					updtMatch,
 					A2(
 						$elm$core$List$cons,
 						$dillonkearns$elm_markdown$Markdown$InlineParser$normalMatch(
-							A3($elm$core$String$slice, matchModel.h, matchHead.j, rawText)),
+							A3($elm$core$String$slice, matchModel.h, matchHead.k, rawText)),
 						parsedMatches)) : parsedMatches);
 			}
 		}
@@ -10711,10 +10877,10 @@ var $dillonkearns$elm_markdown$Markdown$InlineParser$parseTextMatches = F3(
 						]);
 				} else {
 					var matchModel = parsedMatches.a;
-					return (matchModel.j > 0) ? A2(
+					return (matchModel.k > 0) ? A2(
 						$elm$core$List$cons,
 						$dillonkearns$elm_markdown$Markdown$InlineParser$normalMatch(
-							A2($elm$core$String$left, matchModel.j, rawText)),
+							A2($elm$core$String$left, matchModel.k, rawText)),
 						parsedMatches) : parsedMatches;
 				}
 			} else {
@@ -10767,7 +10933,7 @@ var $dillonkearns$elm_markdown$Markdown$InlineParser$cleanAngleBracketTokens = F
 				} else {
 					var hd = tokensL.a;
 					var rest = tokensL.b;
-					if (_Utils_cmp(hd.aE, hd1.aE) < 0) {
+					if (_Utils_cmp(hd.aF, hd1.aF) < 0) {
 						if (!countL) {
 							return A2(
 								$elm$core$List$cons,
@@ -10818,7 +10984,7 @@ var $dillonkearns$elm_markdown$Markdown$InlineParser$angleBracketLTokenRegex = A
 	$elm$regex$Regex$fromString('(\\\\*)(\\<)'));
 var $dillonkearns$elm_markdown$Markdown$InlineParser$AngleBracketOpen = {$: 4};
 var $dillonkearns$elm_markdown$Markdown$InlineParser$regMatchToAngleBracketLToken = function (regMatch) {
-	var _v0 = regMatch.cp;
+	var _v0 = regMatch.cr;
 	if ((_v0.b && _v0.b.b) && (!_v0.b.a.$)) {
 		var maybeBackslashes = _v0.a;
 		var _v1 = _v0.b;
@@ -10827,7 +10993,7 @@ var $dillonkearns$elm_markdown$Markdown$InlineParser$regMatchToAngleBracketLToke
 			0,
 			A2($elm$core$Maybe$map, $elm$core$String$length, maybeBackslashes));
 		return $dillonkearns$elm_markdown$Markdown$Helpers$isEven(backslashesLength) ? $elm$core$Maybe$Just(
-			{aE: regMatch.aE + backslashesLength, a1: 1, e: $dillonkearns$elm_markdown$Markdown$InlineParser$AngleBracketOpen}) : $elm$core$Maybe$Nothing;
+			{aF: regMatch.aF + backslashesLength, a1: 1, e: $dillonkearns$elm_markdown$Markdown$InlineParser$AngleBracketOpen}) : $elm$core$Maybe$Nothing;
 	} else {
 		return $elm$core$Maybe$Nothing;
 	}
@@ -10848,7 +11014,7 @@ var $dillonkearns$elm_markdown$Markdown$InlineParser$AngleBracketClose = functio
 var $dillonkearns$elm_markdown$Markdown$InlineParser$Escaped = 0;
 var $dillonkearns$elm_markdown$Markdown$InlineParser$NotEscaped = 1;
 var $dillonkearns$elm_markdown$Markdown$InlineParser$regMatchToAngleBracketRToken = function (regMatch) {
-	var _v0 = regMatch.cp;
+	var _v0 = regMatch.cr;
 	if ((_v0.b && _v0.b.b) && (!_v0.b.a.$)) {
 		var maybeBackslashes = _v0.a;
 		var _v1 = _v0.b;
@@ -10858,7 +11024,7 @@ var $dillonkearns$elm_markdown$Markdown$InlineParser$regMatchToAngleBracketRToke
 			A2($elm$core$Maybe$map, $elm$core$String$length, maybeBackslashes));
 		return $elm$core$Maybe$Just(
 			{
-				aE: regMatch.aE + backslashesLength,
+				aF: regMatch.aF + backslashesLength,
 				a1: 1,
 				e: $dillonkearns$elm_markdown$Markdown$Helpers$isEven(backslashesLength) ? $dillonkearns$elm_markdown$Markdown$InlineParser$AngleBracketClose(1) : $dillonkearns$elm_markdown$Markdown$InlineParser$AngleBracketClose(0)
 			});
@@ -10980,7 +11146,7 @@ var $dillonkearns$elm_markdown$Markdown$InlineParser$getFringeRank = function (m
 };
 var $dillonkearns$elm_markdown$Markdown$InlineParser$regMatchToEmphasisToken = F3(
 	function (_char, rawText, regMatch) {
-		var _v0 = regMatch.cp;
+		var _v0 = regMatch.cr;
 		if ((((_v0.b && _v0.b.b) && _v0.b.b.b) && (!_v0.b.b.a.$)) && _v0.b.b.b.b) {
 			var maybeBackslashes = _v0.a;
 			var _v1 = _v0.b;
@@ -10998,8 +11164,8 @@ var $dillonkearns$elm_markdown$Markdown$InlineParser$regMatchToEmphasisToken = F
 					return 0;
 				}
 			}();
-			var mLeftFringe = ((!(!regMatch.aE)) && (!leftFringeLength)) ? $elm$core$Maybe$Just(
-				A3($elm$core$String$slice, regMatch.aE - 1, regMatch.aE, rawText)) : maybeLeftFringe;
+			var mLeftFringe = ((!(!regMatch.aF)) && (!leftFringeLength)) ? $elm$core$Maybe$Just(
+				A3($elm$core$String$slice, regMatch.aF - 1, regMatch.aF, rawText)) : maybeLeftFringe;
 			var backslashesLength = function () {
 				if (!maybeBackslashes.$) {
 					var backslashes = maybeBackslashes.a;
@@ -11020,15 +11186,15 @@ var $dillonkearns$elm_markdown$Markdown$InlineParser$regMatchToEmphasisToken = F
 			if ((delimiterLength <= 0) || ((_char === '_') && ((lFringeRank === 2) && (rFringeRank === 2)))) {
 				return $elm$core$Maybe$Nothing;
 			} else {
-				var index = ((regMatch.aE + backslashesLength) + leftFringeLength) + (isEscaped ? 1 : 0);
+				var index = ((regMatch.aF + backslashesLength) + leftFringeLength) + (isEscaped ? 1 : 0);
 				return $elm$core$Maybe$Just(
 					{
-						aE: index,
+						aF: index,
 						a1: delimiterLength,
 						e: A2(
 							$dillonkearns$elm_markdown$Markdown$InlineParser$EmphasisToken,
 							_char,
-							{aF: lFringeRank, aI: rFringeRank})
+							{aG: lFringeRank, aJ: rFringeRank})
 					});
 			}
 		} else {
@@ -11049,7 +11215,7 @@ var $dillonkearns$elm_markdown$Markdown$InlineParser$CodeToken = function (a) {
 	return {$: 0, a: a};
 };
 var $dillonkearns$elm_markdown$Markdown$InlineParser$regMatchToCodeToken = function (regMatch) {
-	var _v0 = regMatch.cp;
+	var _v0 = regMatch.cr;
 	if ((_v0.b && _v0.b.b) && (!_v0.b.a.$)) {
 		var maybeBackslashes = _v0.a;
 		var _v1 = _v0.b;
@@ -11060,7 +11226,7 @@ var $dillonkearns$elm_markdown$Markdown$InlineParser$regMatchToCodeToken = funct
 			A2($elm$core$Maybe$map, $elm$core$String$length, maybeBackslashes));
 		return $elm$core$Maybe$Just(
 			{
-				aE: regMatch.aE + backslashesLength,
+				aF: regMatch.aF + backslashesLength,
 				a1: $elm$core$String$length(backtick),
 				e: $dillonkearns$elm_markdown$Markdown$Helpers$isEven(backslashesLength) ? $dillonkearns$elm_markdown$Markdown$InlineParser$CodeToken(1) : $dillonkearns$elm_markdown$Markdown$InlineParser$CodeToken(0)
 			});
@@ -11080,7 +11246,7 @@ var $dillonkearns$elm_markdown$Markdown$InlineParser$hardBreakTokenRegex = A2(
 	$elm$regex$Regex$fromString('(?:(\\\\+)|( {2,}))\\n'));
 var $dillonkearns$elm_markdown$Markdown$InlineParser$HardLineBreakToken = {$: 8};
 var $dillonkearns$elm_markdown$Markdown$InlineParser$regMatchToHardBreakToken = function (regMatch) {
-	var _v0 = regMatch.cp;
+	var _v0 = regMatch.cr;
 	_v0$2:
 	while (true) {
 		if (_v0.b) {
@@ -11088,14 +11254,14 @@ var $dillonkearns$elm_markdown$Markdown$InlineParser$regMatchToHardBreakToken = 
 				var backslashes = _v0.a.a;
 				var backslashesLength = $elm$core$String$length(backslashes);
 				return (!$dillonkearns$elm_markdown$Markdown$Helpers$isEven(backslashesLength)) ? $elm$core$Maybe$Just(
-					{aE: (regMatch.aE + backslashesLength) - 1, a1: 2, e: $dillonkearns$elm_markdown$Markdown$InlineParser$HardLineBreakToken}) : $elm$core$Maybe$Nothing;
+					{aF: (regMatch.aF + backslashesLength) - 1, a1: 2, e: $dillonkearns$elm_markdown$Markdown$InlineParser$HardLineBreakToken}) : $elm$core$Maybe$Nothing;
 			} else {
 				if (_v0.b.b && (!_v0.b.a.$)) {
 					var _v1 = _v0.b;
 					return $elm$core$Maybe$Just(
 						{
-							aE: regMatch.aE,
-							a1: $elm$core$String$length(regMatch.Z),
+							aF: regMatch.aF,
+							a1: $elm$core$String$length(regMatch._),
 							e: $dillonkearns$elm_markdown$Markdown$InlineParser$HardLineBreakToken
 						});
 				} else {
@@ -11109,7 +11275,7 @@ var $dillonkearns$elm_markdown$Markdown$InlineParser$regMatchToHardBreakToken = 
 	return $elm$core$Maybe$Nothing;
 };
 var $dillonkearns$elm_markdown$Markdown$InlineParser$regMatchToSoftHardBreakToken = function (regMatch) {
-	var _v0 = regMatch.cp;
+	var _v0 = regMatch.cr;
 	_v0$2:
 	while (true) {
 		if (_v0.b) {
@@ -11117,15 +11283,15 @@ var $dillonkearns$elm_markdown$Markdown$InlineParser$regMatchToSoftHardBreakToke
 				var backslashes = _v0.a.a;
 				var backslashesLength = $elm$core$String$length(backslashes);
 				return $dillonkearns$elm_markdown$Markdown$Helpers$isEven(backslashesLength) ? $elm$core$Maybe$Just(
-					{aE: regMatch.aE + backslashesLength, a1: 1, e: $dillonkearns$elm_markdown$Markdown$InlineParser$HardLineBreakToken}) : $elm$core$Maybe$Just(
-					{aE: (regMatch.aE + backslashesLength) - 1, a1: 2, e: $dillonkearns$elm_markdown$Markdown$InlineParser$HardLineBreakToken});
+					{aF: regMatch.aF + backslashesLength, a1: 1, e: $dillonkearns$elm_markdown$Markdown$InlineParser$HardLineBreakToken}) : $elm$core$Maybe$Just(
+					{aF: (regMatch.aF + backslashesLength) - 1, a1: 2, e: $dillonkearns$elm_markdown$Markdown$InlineParser$HardLineBreakToken});
 			} else {
 				if (_v0.b.b) {
 					var _v1 = _v0.b;
 					return $elm$core$Maybe$Just(
 						{
-							aE: regMatch.aE,
-							a1: $elm$core$String$length(regMatch.Z),
+							aF: regMatch.aF,
+							a1: $elm$core$String$length(regMatch._),
 							e: $dillonkearns$elm_markdown$Markdown$InlineParser$HardLineBreakToken
 						});
 				} else {
@@ -11158,7 +11324,7 @@ var $dillonkearns$elm_markdown$Markdown$InlineParser$linkImageCloseTokenRegex = 
 	$elm$regex$Regex$fromString('(\\\\*)(\\])'));
 var $dillonkearns$elm_markdown$Markdown$InlineParser$SquareBracketClose = {$: 3};
 var $dillonkearns$elm_markdown$Markdown$InlineParser$regMatchToLinkImageCloseToken = function (regMatch) {
-	var _v0 = regMatch.cp;
+	var _v0 = regMatch.cr;
 	if ((_v0.b && _v0.b.b) && (!_v0.b.a.$)) {
 		var maybeBackslashes = _v0.a;
 		var _v1 = _v0.b;
@@ -11167,7 +11333,7 @@ var $dillonkearns$elm_markdown$Markdown$InlineParser$regMatchToLinkImageCloseTok
 			0,
 			A2($elm$core$Maybe$map, $elm$core$String$length, maybeBackslashes));
 		return $dillonkearns$elm_markdown$Markdown$Helpers$isEven(backslashesLength) ? $elm$core$Maybe$Just(
-			{aE: regMatch.aE + backslashesLength, a1: 1, e: $dillonkearns$elm_markdown$Markdown$InlineParser$SquareBracketClose}) : $elm$core$Maybe$Nothing;
+			{aF: regMatch.aF + backslashesLength, a1: 1, e: $dillonkearns$elm_markdown$Markdown$InlineParser$SquareBracketClose}) : $elm$core$Maybe$Nothing;
 	} else {
 		return $elm$core$Maybe$Nothing;
 	}
@@ -11188,7 +11354,7 @@ var $dillonkearns$elm_markdown$Markdown$InlineParser$LinkOpenToken = function (a
 	return {$: 1, a: a};
 };
 var $dillonkearns$elm_markdown$Markdown$InlineParser$regMatchToLinkImageOpenToken = function (regMatch) {
-	var _v0 = regMatch.cp;
+	var _v0 = regMatch.cr;
 	if (((_v0.b && _v0.b.b) && _v0.b.b.b) && (!_v0.b.b.a.$)) {
 		var maybeBackslashes = _v0.a;
 		var _v1 = _v0.b;
@@ -11199,12 +11365,12 @@ var $dillonkearns$elm_markdown$Markdown$InlineParser$regMatchToLinkImageOpenToke
 			0,
 			A2($elm$core$Maybe$map, $elm$core$String$length, maybeBackslashes));
 		var isEscaped = !$dillonkearns$elm_markdown$Markdown$Helpers$isEven(backslashesLength);
-		var index = isEscaped ? ((regMatch.aE + backslashesLength) + 1) : (regMatch.aE + backslashesLength);
+		var index = isEscaped ? ((regMatch.aF + backslashesLength) + 1) : (regMatch.aF + backslashesLength);
 		if (isEscaped) {
 			if (!maybeImageOpen.$) {
 				return $elm$core$Maybe$Just(
 					{
-						aE: index,
+						aF: index,
 						a1: 1,
 						e: $dillonkearns$elm_markdown$Markdown$InlineParser$LinkOpenToken(0)
 					});
@@ -11214,11 +11380,11 @@ var $dillonkearns$elm_markdown$Markdown$InlineParser$regMatchToLinkImageOpenToke
 		} else {
 			if (!maybeImageOpen.$) {
 				return $elm$core$Maybe$Just(
-					{aE: index, a1: 2, e: $dillonkearns$elm_markdown$Markdown$InlineParser$ImageOpenToken});
+					{aF: index, a1: 2, e: $dillonkearns$elm_markdown$Markdown$InlineParser$ImageOpenToken});
 			} else {
 				return $elm$core$Maybe$Just(
 					{
-						aE: index,
+						aF: index,
 						a1: 1,
 						e: $dillonkearns$elm_markdown$Markdown$InlineParser$LinkOpenToken(0)
 					});
@@ -11238,7 +11404,7 @@ var $dillonkearns$elm_markdown$Markdown$InlineParser$StrikethroughToken = functi
 	return {$: 9, a: a};
 };
 var $dillonkearns$elm_markdown$Markdown$InlineParser$regMatchToStrikethroughToken = function (regMatch) {
-	var _v0 = regMatch.cp;
+	var _v0 = regMatch.cr;
 	if ((_v0.b && _v0.b.b) && (!_v0.b.a.$)) {
 		var maybeBackslashes = _v0.a;
 		var _v1 = _v0.b;
@@ -11255,7 +11421,7 @@ var $dillonkearns$elm_markdown$Markdown$InlineParser$regMatchToStrikethroughToke
 		var length = _v2.a;
 		var meaning = _v2.b;
 		return $elm$core$Maybe$Just(
-			{aE: regMatch.aE + backslashesLength, a1: length, e: meaning});
+			{aF: regMatch.aF + backslashesLength, a1: length, e: meaning});
 	} else {
 		return $elm$core$Maybe$Nothing;
 	}
@@ -11288,7 +11454,7 @@ var $dillonkearns$elm_markdown$Markdown$InlineParser$mergeByIndex = F2(
 			if (right.b) {
 				var rfirst = right.a;
 				var rrest = right.b;
-				return (_Utils_cmp(lfirst.aE, rfirst.aE) < 0) ? A2(
+				return (_Utils_cmp(lfirst.aF, rfirst.aF) < 0) ? A2(
 					$elm$core$List$cons,
 					lfirst,
 					A2($dillonkearns$elm_markdown$Markdown$InlineParser$mergeByIndex, lrest, right)) : A2(
@@ -11310,13 +11476,13 @@ var $dillonkearns$elm_markdown$Markdown$InlineParser$tokenize = function (rawTex
 			A2(
 				$elm$core$List$sortBy,
 				function ($) {
-					return $.aE;
+					return $.aF;
 				},
 				$dillonkearns$elm_markdown$Markdown$InlineParser$findAngleBracketLTokens(rawText)),
 			A2(
 				$elm$core$List$sortBy,
 				function ($) {
-					return $.aE;
+					return $.aF;
 				},
 				$dillonkearns$elm_markdown$Markdown$InlineParser$findAngleBracketRTokens(rawText)),
 			0),
@@ -11374,8 +11540,8 @@ var $dillonkearns$elm_markdown$Markdown$InlineParser$encodeUrl = A2(
 		function (match) {
 			return A2(
 				$elm$core$Maybe$withDefault,
-				match.Z,
-				$elm$url$Url$percentDecode(match.Z));
+				match._,
+				$elm$url$Url$percentDecode(match._));
 		}));
 var $dillonkearns$elm_markdown$Markdown$InlineParser$urlRegex = A2(
 	$elm$core$Maybe$withDefault,
@@ -11383,14 +11549,14 @@ var $dillonkearns$elm_markdown$Markdown$InlineParser$urlRegex = A2(
 	$elm$regex$Regex$fromString('^([A-Za-z][A-Za-z0-9.+\\-]{1,31}:[^<>\\x00-\\x20]*)$'));
 var $dillonkearns$elm_markdown$Markdown$InlineParser$autolinkToMatch = function (_v0) {
 	var match = _v0;
-	return A2($elm$regex$Regex$contains, $dillonkearns$elm_markdown$Markdown$InlineParser$urlRegex, match.dN) ? $elm$core$Result$Ok(
+	return A2($elm$regex$Regex$contains, $dillonkearns$elm_markdown$Markdown$InlineParser$urlRegex, match.dQ) ? $elm$core$Result$Ok(
 		_Utils_update(
 			match,
 			{
 				n: $dillonkearns$elm_markdown$Markdown$InlineParser$AutolinkType(
 					_Utils_Tuple2(
-						match.dN,
-						$dillonkearns$elm_markdown$Markdown$InlineParser$encodeUrl(match.dN)))
+						match.dQ,
+						$dillonkearns$elm_markdown$Markdown$InlineParser$encodeUrl(match.dQ)))
 			})) : $elm$core$Result$Err(match);
 };
 var $elm$regex$Regex$findAtMost = _Regex_findAtMost;
@@ -11399,15 +11565,6 @@ var $dillonkearns$elm_markdown$Markdown$InlineParser$refLabelRegex = A2(
 	$elm$core$Maybe$withDefault,
 	$elm$regex$Regex$never,
 	$elm$regex$Regex$fromString('^\\[\\s*(' + ($dillonkearns$elm_markdown$Markdown$Helpers$insideSquareBracketRegex + ')\\s*\\]')));
-var $elm$core$Maybe$andThen = F2(
-	function (callback, maybeValue) {
-		if (!maybeValue.$) {
-			var value = maybeValue.a;
-			return callback(value);
-		} else {
-			return $elm$core$Maybe$Nothing;
-		}
-	});
 var $dillonkearns$elm_markdown$Markdown$Helpers$cleanWhitespaces = function (original) {
 	return original;
 };
@@ -11422,11 +11579,11 @@ var $dillonkearns$elm_markdown$Markdown$InlineParser$prepareUrlAndTitle = F2(
 var $dillonkearns$elm_markdown$Markdown$InlineParser$refRegexToMatch = F3(
 	function (matchModel, references, maybeRegexMatch) {
 		var refLabel = function (str) {
-			return $elm$core$String$isEmpty(str) ? matchModel.dN : str;
+			return $elm$core$String$isEmpty(str) ? matchModel.dQ : str;
 		}(
 			A2(
 				$elm$core$Maybe$withDefault,
-				matchModel.dN,
+				matchModel.dQ,
 				A2(
 					$elm$core$Maybe$withDefault,
 					$elm$core$Maybe$Nothing,
@@ -11435,7 +11592,7 @@ var $dillonkearns$elm_markdown$Markdown$InlineParser$refRegexToMatch = F3(
 						A2(
 							$elm$core$Basics$composeR,
 							function ($) {
-								return $.cp;
+								return $.cr;
 							},
 							$elm$core$List$head),
 						maybeRegexMatch))));
@@ -11461,7 +11618,7 @@ var $dillonkearns$elm_markdown$Markdown$InlineParser$refRegexToMatch = F3(
 			}();
 			var regexMatchLength = function () {
 				if (!maybeRegexMatch.$) {
-					var match = maybeRegexMatch.a.Z;
+					var match = maybeRegexMatch.a._;
 					return $elm$core$String$length(match);
 				} else {
 					return 0;
@@ -11505,7 +11662,7 @@ var $dillonkearns$elm_markdown$Markdown$Helpers$returnFirstJust = function (mayb
 };
 var $dillonkearns$elm_markdown$Markdown$InlineParser$inlineLinkTypeOrImageTypeRegexToMatch = F2(
 	function (matchModel, regexMatch) {
-		var _v0 = regexMatch.cp;
+		var _v0 = regexMatch.cr;
 		if ((((_v0.b && _v0.b.b) && _v0.b.b.b) && _v0.b.b.b.b) && _v0.b.b.b.b.b) {
 			var maybeRawUrlAngleBrackets = _v0.a;
 			var _v1 = _v0.b;
@@ -11523,7 +11680,7 @@ var $dillonkearns$elm_markdown$Markdown$InlineParser$inlineLinkTypeOrImageTypeRe
 				return _Utils_update(
 					matchModel,
 					{
-						h: matchModel.h + $elm$core$String$length(regexMatch.Z),
+						h: matchModel.h + $elm$core$String$length(regexMatch._),
 						n: function () {
 							var _v5 = matchModel.n;
 							if (_v5.$ === 5) {
@@ -11575,7 +11732,7 @@ var $dillonkearns$elm_markdown$Markdown$InlineParser$checkParsedAheadOverlapping
 		var overlappingMatches = $elm$core$List$filter(
 			function (_v1) {
 				var testMatch = _v1;
-				return (_Utils_cmp(match.h, testMatch.j) > 0) && (_Utils_cmp(match.h, testMatch.h) < 0);
+				return (_Utils_cmp(match.h, testMatch.k) > 0) && (_Utils_cmp(match.h, testMatch.h) < 0);
 			});
 		return ($elm$core$List$isEmpty(remainMatches) || $elm$core$List$isEmpty(
 			overlappingMatches(remainMatches))) ? $elm$core$Maybe$Just(
@@ -11587,14 +11744,14 @@ var $dillonkearns$elm_markdown$Markdown$InlineParser$emailRegex = A2(
 	$elm$regex$Regex$fromString('^([a-zA-Z0-9.!#$%&\'*+\\/=?^_`{|}~\\-]+@[a-zA-Z0-9](?:[a-zA-Z0-9\\-]{0,61}[a-zA-Z0-9])?(?:\\.[a-zA-Z0-9](?:[a-zA-Z0-9\\-]{0,61}[a-zA-Z0-9])?)*)$'));
 var $dillonkearns$elm_markdown$Markdown$InlineParser$emailAutolinkTypeToMatch = function (_v0) {
 	var match = _v0;
-	return A2($elm$regex$Regex$contains, $dillonkearns$elm_markdown$Markdown$InlineParser$emailRegex, match.dN) ? $elm$core$Result$Ok(
+	return A2($elm$regex$Regex$contains, $dillonkearns$elm_markdown$Markdown$InlineParser$emailRegex, match.dQ) ? $elm$core$Result$Ok(
 		_Utils_update(
 			match,
 			{
 				n: $dillonkearns$elm_markdown$Markdown$InlineParser$AutolinkType(
 					_Utils_Tuple2(
-						match.dN,
-						'mailto:' + $dillonkearns$elm_markdown$Markdown$InlineParser$encodeUrl(match.dN)))
+						match.dQ,
+						'mailto:' + $dillonkearns$elm_markdown$Markdown$InlineParser$encodeUrl(match.dQ)))
 			})) : $elm$core$Result$Err(match);
 };
 var $dillonkearns$elm_markdown$Markdown$InlineParser$findTokenHelp = F3(
@@ -11656,13 +11813,13 @@ var $dillonkearns$elm_markdown$Markdown$InlineParser$htmlToToken = F2(
 		var parsed = A2(
 			$elm$parser$Parser$Advanced$run,
 			consumedCharacters,
-			A2($elm$core$String$dropLeft, match.j, rawText));
+			A2($elm$core$String$dropLeft, match.k, rawText));
 		if (!parsed.$) {
 			var htmlTag = parsed.a.bS;
 			var length = parsed.a.a1;
 			var htmlToken = A2($dillonkearns$elm_markdown$Markdown$InlineParser$HtmlToken, 0, htmlTag);
 			return $elm$core$Maybe$Just(
-				{aE: match.j, a1: length, e: htmlToken});
+				{aF: match.k, a1: length, e: htmlToken});
 		} else {
 			return $elm$core$Maybe$Nothing;
 		}
@@ -11712,7 +11869,7 @@ var $dillonkearns$elm_markdown$Markdown$InlineParser$isOpenEmphasisToken = F2(
 			if (_v1.$ === 7) {
 				var closeChar = _v1.a;
 				var close = _v1.b;
-				return _Utils_eq(openChar, closeChar) ? ((_Utils_eq(open.aF, open.aI) || _Utils_eq(close.aF, close.aI)) ? ((!(!A2($elm$core$Basics$modBy, 3, closeToken.a1 + openToken.a1))) || ((!A2($elm$core$Basics$modBy, 3, closeToken.a1)) && (!A2($elm$core$Basics$modBy, 3, openToken.a1)))) : true) : false;
+				return _Utils_eq(openChar, closeChar) ? ((_Utils_eq(open.aG, open.aJ) || _Utils_eq(close.aG, close.aJ)) ? ((!(!A2($elm$core$Basics$modBy, 3, closeToken.a1 + openToken.a1))) || ((!A2($elm$core$Basics$modBy, 3, closeToken.a1)) && (!A2($elm$core$Basics$modBy, 3, openToken.a1)))) : true) : false;
 			} else {
 				return false;
 			}
@@ -11759,7 +11916,7 @@ var $dillonkearns$elm_markdown$Markdown$InlineParser$isStrikethroughTokenPair = 
 var $dillonkearns$elm_markdown$Markdown$InlineParser$HardLineBreakType = {$: 1};
 var $dillonkearns$elm_markdown$Markdown$InlineParser$tokenToMatch = F2(
 	function (token, type_) {
-		return {h: token.aE + token.a1, t: _List_Nil, j: token.aE, dN: '', D: 0, v: 0, n: type_};
+		return {h: token.aF + token.a1, t: _List_Nil, k: token.aF, dQ: '', D: 0, v: 0, n: type_};
 	});
 var $dillonkearns$elm_markdown$Markdown$InlineParser$lineBreakTTM = F2(
 	function (remaining, matches) {
@@ -11796,7 +11953,7 @@ var $dillonkearns$elm_markdown$Markdown$InlineParser$removeParsedAheadTokens = F
 		return A2(
 			$elm$core$List$filter,
 			function (token) {
-				return _Utils_cmp(token.aE, match.h) > -1;
+				return _Utils_cmp(token.aF, match.h) > -1;
 			},
 			tokensTail);
 	});
@@ -11984,7 +12141,7 @@ var $dillonkearns$elm_markdown$Markdown$InlineParser$codeToMatch = F5(
 				var _v34 = _v33.a;
 				return _Utils_update(
 					openToken,
-					{aE: openToken.aE + 1, a1: openToken.a1 - 1});
+					{aF: openToken.aF + 1, a1: openToken.a1 - 1});
 			} else {
 				return openToken;
 			}
@@ -12012,8 +12169,8 @@ var $dillonkearns$elm_markdown$Markdown$InlineParser$emphasisTTM = F5(
 				var _v27 = token.e;
 				if (_v27.$ === 7) {
 					var _char = _v27.a;
-					var leftFringeRank = _v27.b.aF;
-					var rightFringeRank = _v27.b.aI;
+					var leftFringeRank = _v27.b.aG;
+					var rightFringeRank = _v27.b.aJ;
 					if (_Utils_eq(leftFringeRank, rightFringeRank)) {
 						if ((!(!rightFringeRank)) && ((_char !== '_') || (rightFringeRank === 1))) {
 							var _v28 = A2(
@@ -12135,29 +12292,29 @@ var $dillonkearns$elm_markdown$Markdown$InlineParser$emphasisToMatch = F5(
 		var innerTokens = _v25.b;
 		var remainTokens = _v25.c;
 		var remainLength = openToken.a1 - closeToken.a1;
-		var updt = (!remainLength) ? {aC: closeToken, au: openToken, aH: remainTokens, aP: tokensTail} : ((remainLength > 0) ? {
-			aC: closeToken,
-			au: _Utils_update(
+		var updt = (!remainLength) ? {aD: closeToken, av: openToken, aI: remainTokens, aQ: tokensTail} : ((remainLength > 0) ? {
+			aD: closeToken,
+			av: _Utils_update(
 				openToken,
-				{aE: openToken.aE + remainLength, a1: closeToken.a1}),
-			aH: A2(
+				{aF: openToken.aF + remainLength, a1: closeToken.a1}),
+			aI: A2(
 				$elm$core$List$cons,
 				_Utils_update(
 					openToken,
 					{a1: remainLength}),
 				remainTokens),
-			aP: tokensTail
+			aQ: tokensTail
 		} : {
-			aC: _Utils_update(
+			aD: _Utils_update(
 				closeToken,
 				{a1: openToken.a1}),
-			au: openToken,
-			aH: remainTokens,
-			aP: A2(
+			av: openToken,
+			aI: remainTokens,
+			aQ: A2(
 				$elm$core$List$cons,
 				_Utils_update(
 					closeToken,
-					{aE: closeToken.aE + openToken.a1, a1: -remainLength}),
+					{aF: closeToken.aF + openToken.a1, a1: -remainLength}),
 				tokensTail)
 		});
 		var match = A7(
@@ -12167,11 +12324,11 @@ var $dillonkearns$elm_markdown$Markdown$InlineParser$emphasisToMatch = F5(
 			function (s) {
 				return s;
 			},
-			$dillonkearns$elm_markdown$Markdown$InlineParser$EmphasisType(updt.au.a1),
-			updt.au,
-			updt.aC,
+			$dillonkearns$elm_markdown$Markdown$InlineParser$EmphasisType(updt.av.a1),
+			updt.av,
+			updt.aD,
 			$elm$core$List$reverse(innerTokens));
-		return _Utils_Tuple3(updt.aP, match, updt.aH);
+		return _Utils_Tuple3(updt.aQ, match, updt.aI);
 	});
 var $dillonkearns$elm_markdown$Markdown$InlineParser$htmlElementTTM = F5(
 	function (remaining, tokens, matches, references, rawText) {
@@ -12313,7 +12470,7 @@ var $dillonkearns$elm_markdown$Markdown$InlineParser$linkOrImageTypeToMatch = F6
 			tokensTail,
 			oldMatches,
 			_Utils_ap(innerTokens, remainTokens));
-		var remainText = A2($elm$core$String$dropLeft, closeToken.aE + 1, rawText);
+		var remainText = A2($elm$core$String$dropLeft, closeToken.aF + 1, rawText);
 		var inactivateLinkOpenToken = function (token) {
 			var _v16 = token.e;
 			if (_v16.$ === 1) {
@@ -12464,7 +12621,7 @@ var $dillonkearns$elm_markdown$Markdown$InlineParser$strikethroughToMatch = F5(
 				var _v3 = _v2.a;
 				return _Utils_update(
 					openToken,
-					{aE: openToken.aE + 1, a1: openToken.a1 - 1});
+					{aF: openToken.aF + 1, a1: openToken.a1 - 1});
 			} else {
 				return openToken;
 			}
@@ -12476,13 +12633,13 @@ var $dillonkearns$elm_markdown$Markdown$InlineParser$strikethroughToMatch = F5(
 	});
 var $dillonkearns$elm_markdown$Markdown$InlineParser$tokenPairToMatch = F7(
 	function (references, rawText, processText, type_, openToken, closeToken, innerTokens) {
-		var textStart = openToken.aE + openToken.a1;
-		var textEnd = closeToken.aE;
+		var textStart = openToken.aF + openToken.a1;
+		var textEnd = closeToken.aF;
 		var text = processText(
 			A3($elm$core$String$slice, textStart, textEnd, rawText));
-		var start = openToken.aE;
-		var end = closeToken.aE + closeToken.a1;
-		var match = {h: end, t: _List_Nil, j: start, dN: text, D: textEnd, v: textStart, n: type_};
+		var start = openToken.aF;
+		var end = closeToken.aF + closeToken.a1;
+		var match = {h: end, t: _List_Nil, k: start, dQ: text, D: textEnd, v: textStart, n: type_};
 		var matches = A2(
 			$elm$core$List$map,
 			function (_v0) {
@@ -12490,7 +12647,7 @@ var $dillonkearns$elm_markdown$Markdown$InlineParser$tokenPairToMatch = F7(
 				return A2($dillonkearns$elm_markdown$Markdown$InlineParser$prepareChildMatch, match, matchModel);
 			},
 			A4($dillonkearns$elm_markdown$Markdown$InlineParser$tokensToMatches, innerTokens, _List_Nil, references, rawText));
-		return {h: end, t: matches, j: start, dN: text, D: textEnd, v: textStart, n: type_};
+		return {h: end, t: matches, k: start, dQ: text, D: textEnd, v: textStart, n: type_};
 	});
 var $dillonkearns$elm_markdown$Markdown$InlineParser$tokensToMatches = F4(
 	function (tokens, matches, references, rawText) {
@@ -12723,7 +12880,7 @@ var $dillonkearns$elm_markdown$Markdown$TableParser$parseHeader = F2(
 				$elm$core$List$map2,
 				F2(
 					function (headerCell, alignment) {
-						return {az: alignment, a0: headerCell};
+						return {aA: alignment, a0: headerCell};
 					}),
 				headers,
 				columnAlignments);
@@ -12747,7 +12904,7 @@ var $dillonkearns$elm_markdown$Markdown$TableParser$parseHeader = F2(
 	});
 var $dillonkearns$elm_markdown$Markdown$CodeBlock$CodeBlock = F2(
 	function (language, body) {
-		return {cH: body, c5: language};
+		return {cK: body, c8: language};
 	});
 var $dillonkearns$elm_markdown$Markdown$CodeBlock$infoString = function (fenceCharacter) {
 	var toInfoString = F2(
@@ -12760,7 +12917,7 @@ var $dillonkearns$elm_markdown$Markdown$CodeBlock$infoString = function (fenceCh
 				return $elm$core$Maybe$Just(trimmed);
 			}
 		});
-	var _v0 = fenceCharacter.c4;
+	var _v0 = fenceCharacter.c7;
 	if (!_v0) {
 		return A2(
 			$elm$parser$Parser$Advanced$mapChompedString,
@@ -12782,7 +12939,7 @@ var $dillonkearns$elm_markdown$Parser$Token$backtick = A2(
 	$elm$parser$Parser$Advanced$Token,
 	'`',
 	$elm$parser$Parser$Expecting('a \'`\''));
-var $dillonkearns$elm_markdown$Markdown$CodeBlock$backtick = {aA: '`', c4: 0, aO: $dillonkearns$elm_markdown$Parser$Token$backtick};
+var $dillonkearns$elm_markdown$Markdown$CodeBlock$backtick = {aB: '`', c7: 0, aP: $dillonkearns$elm_markdown$Parser$Token$backtick};
 var $dillonkearns$elm_markdown$Markdown$CodeBlock$colToIndentation = function (_int) {
 	switch (_int) {
 		case 1:
@@ -12810,7 +12967,7 @@ var $dillonkearns$elm_markdown$Markdown$CodeBlock$fenceOfAtLeast = F2(
 			A2(
 				$elm$core$List$repeat,
 				minLength,
-				$elm$parser$Parser$Advanced$token(fenceCharacter.aO)));
+				$elm$parser$Parser$Advanced$token(fenceCharacter.aP)));
 		return A2(
 			$elm$parser$Parser$Advanced$mapChompedString,
 			F2(
@@ -12823,14 +12980,14 @@ var $dillonkearns$elm_markdown$Markdown$CodeBlock$fenceOfAtLeast = F2(
 				$elm$parser$Parser$Advanced$ignorer,
 				builtTokens,
 				$elm$parser$Parser$Advanced$chompWhile(
-					$elm$core$Basics$eq(fenceCharacter.aA))));
+					$elm$core$Basics$eq(fenceCharacter.aB))));
 	});
 var $dillonkearns$elm_markdown$Markdown$CodeBlock$Tilde = 1;
 var $dillonkearns$elm_markdown$Parser$Token$tilde = A2(
 	$elm$parser$Parser$Advanced$Token,
 	'~',
 	$elm$parser$Parser$Expecting('a `~`'));
-var $dillonkearns$elm_markdown$Markdown$CodeBlock$tilde = {aA: '~', c4: 1, aO: $dillonkearns$elm_markdown$Parser$Token$tilde};
+var $dillonkearns$elm_markdown$Markdown$CodeBlock$tilde = {aB: '~', c7: 1, aP: $dillonkearns$elm_markdown$Parser$Token$tilde};
 var $dillonkearns$elm_markdown$Whitespace$upToThreeSpaces = $elm$parser$Parser$Advanced$oneOf(
 	_List_fromArray(
 		[
@@ -12864,7 +13021,7 @@ var $dillonkearns$elm_markdown$Markdown$CodeBlock$openingFence = A2(
 					function (indent, _v0) {
 						var character = _v0.a;
 						var length = _v0.b;
-						return {aB: character, ai: indent, a1: length};
+						return {aC: character, aj: indent, a1: length};
 					})),
 			$dillonkearns$elm_markdown$Whitespace$upToThreeSpaces),
 		A2($elm$parser$Parser$Advanced$andThen, $dillonkearns$elm_markdown$Markdown$CodeBlock$colToIndentation, $elm$parser$Parser$Advanced$getCol)),
@@ -12904,7 +13061,7 @@ var $dillonkearns$elm_markdown$Markdown$CodeBlock$codeBlockLine = function (inde
 			$dillonkearns$elm_markdown$Helpers$lineEndOrEnd));
 };
 var $elm$parser$Parser$Advanced$getSource = function (s) {
-	return A3($elm$parser$Parser$Advanced$Good, false, s.dF, s);
+	return A3($elm$parser$Parser$Advanced$Good, false, s.dI, s);
 };
 var $dillonkearns$elm_markdown$Markdown$CodeBlock$remainingBlockHelp = function (_v0) {
 	var fence = _v0.a;
@@ -12932,7 +13089,7 @@ var $dillonkearns$elm_markdown$Markdown$CodeBlock$remainingBlockHelp = function 
 					$elm$parser$Parser$Advanced$ignorer,
 					$elm$parser$Parser$Advanced$succeed(
 						$elm$parser$Parser$Advanced$Done(body)),
-					A2($dillonkearns$elm_markdown$Markdown$CodeBlock$closingFence, fence.a1, fence.aB))),
+					A2($dillonkearns$elm_markdown$Markdown$CodeBlock$closingFence, fence.a1, fence.aC))),
 				A2(
 				$elm$parser$Parser$Advanced$keeper,
 				A2(
@@ -12949,7 +13106,7 @@ var $dillonkearns$elm_markdown$Markdown$CodeBlock$remainingBlockHelp = function 
 												body,
 												A3($elm$core$String$slice, start, end, source))));
 								})),
-						$dillonkearns$elm_markdown$Markdown$CodeBlock$codeBlockLine(fence.ai)),
+						$dillonkearns$elm_markdown$Markdown$CodeBlock$codeBlockLine(fence.aj)),
 					$elm$parser$Parser$Advanced$getOffset),
 				$elm$parser$Parser$Advanced$getSource)
 			]));
@@ -12970,7 +13127,7 @@ var $dillonkearns$elm_markdown$Markdown$CodeBlock$parser = A2(
 				$elm$parser$Parser$Advanced$succeed($dillonkearns$elm_markdown$Markdown$CodeBlock$CodeBlock),
 				A2(
 					$elm$parser$Parser$Advanced$ignorer,
-					$dillonkearns$elm_markdown$Markdown$CodeBlock$infoString(fence.aB),
+					$dillonkearns$elm_markdown$Markdown$CodeBlock$infoString(fence.aC),
 					$dillonkearns$elm_markdown$Helpers$lineEndOrEnd)),
 			$dillonkearns$elm_markdown$Markdown$CodeBlock$remainingBlock(fence));
 	},
@@ -13077,7 +13234,7 @@ var $elm$parser$Parser$Advanced$chompUntil = function (_v0) {
 	var str = _v0.a;
 	var expecting = _v0.b;
 	return function (s) {
-		var _v1 = A5($elm$parser$Parser$Advanced$findSubString, str, s.d, s.dC, s.bC, s.dF);
+		var _v1 = A5($elm$parser$Parser$Advanced$findSubString, str, s.d, s.dF, s.bC, s.dI);
 		var newOffset = _v1.a;
 		var newRow = _v1.b;
 		var newCol = _v1.c;
@@ -13088,7 +13245,7 @@ var $elm$parser$Parser$Advanced$chompUntil = function (_v0) {
 			$elm$parser$Parser$Advanced$Good,
 			_Utils_cmp(s.d, newOffset) < 0,
 			0,
-			{bC: newCol, g: s.g, i: s.i, d: newOffset, dC: newRow, dF: s.dF});
+			{bC: newCol, g: s.g, i: s.i, d: newOffset, dF: newRow, dI: s.dI});
 	};
 };
 var $dillonkearns$elm_markdown$Parser$Token$greaterThan = A2(
@@ -13097,11 +13254,11 @@ var $dillonkearns$elm_markdown$Parser$Token$greaterThan = A2(
 	$elm$parser$Parser$Expecting('a `>`'));
 var $elm$parser$Parser$Advanced$Located = F3(
 	function (row, col, context) {
-		return {bC: col, g: context, dC: row};
+		return {bC: col, g: context, dF: row};
 	});
 var $elm$parser$Parser$Advanced$changeContext = F2(
 	function (newContext, s) {
-		return {bC: s.bC, g: newContext, i: s.i, d: s.d, dC: s.dC, dF: s.dF};
+		return {bC: s.bC, g: newContext, i: s.i, d: s.d, dF: s.dF, dI: s.dI};
 	});
 var $elm$parser$Parser$Advanced$inContext = F2(
 	function (context, _v0) {
@@ -13112,7 +13269,7 @@ var $elm$parser$Parser$Advanced$inContext = F2(
 					$elm$parser$Parser$Advanced$changeContext,
 					A2(
 						$elm$core$List$cons,
-						A3($elm$parser$Parser$Advanced$Located, s0.dC, s0.bC, context),
+						A3($elm$parser$Parser$Advanced$Located, s0.dF, s0.bC, context),
 						s0.g),
 					s0));
 			if (!_v1.$) {
@@ -13299,7 +13456,7 @@ var $dillonkearns$elm_markdown$Markdown$LinkReferenceDefinition$parser = A2(
 							function (label, destination, title) {
 								return _Utils_Tuple2(
 									label,
-									{cP: destination, dP: title});
+									{cS: destination, dS: title});
 							})),
 					$dillonkearns$elm_markdown$Whitespace$upToThreeSpaces),
 				A2(
@@ -13555,7 +13712,7 @@ var $dillonkearns$elm_markdown$Markdown$TableParser$delimiterToAlignment = funct
 var $dillonkearns$elm_markdown$Markdown$TableParser$delimiterRowParser = A2(
 	$elm$parser$Parser$Advanced$andThen,
 	function (delimiterRow) {
-		var trimmed = delimiterRow.a.cv;
+		var trimmed = delimiterRow.a.cx;
 		var headers = delimiterRow.b;
 		return $elm$core$List$isEmpty(headers) ? $elm$parser$Parser$Advanced$problem(
 			$elm$parser$Parser$Expecting('Must have at least one column in delimiter row.')) : ((($elm$core$List$length(headers) === 1) && (!(A2($elm$core$String$startsWith, '|', trimmed) && A2($elm$core$String$endsWith, '|', trimmed)))) ? $elm$parser$Parser$Advanced$problem(
@@ -13568,8 +13725,8 @@ var $dillonkearns$elm_markdown$Markdown$TableParser$delimiterRowParser = A2(
 				return A2(
 					$dillonkearns$elm_markdown$Markdown$Table$TableDelimiterRow,
 					{
-						cb: delimiterText,
-						cv: $elm$core$String$trim(delimiterText)
+						cd: delimiterText,
+						cx: $elm$core$String$trim(delimiterText)
 					},
 					A2(
 						$elm$core$List$map,
@@ -13822,8 +13979,8 @@ var $dillonkearns$elm_markdown$Markdown$Parser$unorderedListBlock = function (pr
 					var completion = unparsedListItem.a;
 					var body = unparsedListItem.b;
 					return {
-						cH: body,
-						da: listmarker,
+						cK: body,
+						dd: listmarker,
 						o: $elm$core$Maybe$Just(
 							function () {
 								if (completion === 1) {
@@ -13835,9 +13992,9 @@ var $dillonkearns$elm_markdown$Markdown$Parser$unorderedListBlock = function (pr
 					};
 				case 1:
 					var body = unparsedListItem.a;
-					return {cH: body, da: listmarker, o: $elm$core$Maybe$Nothing};
+					return {cK: body, dd: listmarker, o: $elm$core$Maybe$Nothing};
 				default:
-					return {cH: '', da: listmarker, o: $elm$core$Maybe$Nothing};
+					return {cK: '', dd: listmarker, o: $elm$core$Maybe$Nothing};
 			}
 		});
 	return A2(
@@ -13974,7 +14131,7 @@ var $dillonkearns$elm_markdown$Markdown$Parser$completeBlocks = function (state)
 					var _v94 = A2(
 						$elm$parser$Parser$Advanced$run,
 						$dillonkearns$elm_markdown$Markdown$Parser$cyclic$rawBlockParser(),
-						openListItem.cH);
+						openListItem.cK);
 					if (!_v94.$) {
 						var value = _v94.a;
 						var tight2 = A2($elm$core$List$member, $dillonkearns$elm_markdown$Markdown$RawBlock$BlankLine, value.b) ? false : tight;
@@ -13989,7 +14146,7 @@ var $dillonkearns$elm_markdown$Markdown$Parser$completeBlocks = function (state)
 										intended,
 										A2(
 											$elm$core$List$cons,
-											{cH: value.b, o: openListItem.o},
+											{cK: value.b, o: openListItem.o},
 											closeListItems),
 										openListItem),
 									rest)
@@ -14052,7 +14209,7 @@ var $dillonkearns$elm_markdown$Markdown$Parser$completeBlocks = function (state)
 								var _v98 = A2(
 									$elm$parser$Parser$Advanced$run,
 									$dillonkearns$elm_markdown$Markdown$Parser$cyclic$rawBlockParser(),
-									openListItem.cH);
+									openListItem.cK);
 								if (!_v98.$) {
 									var value = _v98.a;
 									var tight2 = A2($elm$core$List$member, $dillonkearns$elm_markdown$Markdown$RawBlock$BlankLine, value.b) ? false : tight;
@@ -14067,7 +14224,7 @@ var $dillonkearns$elm_markdown$Markdown$Parser$completeBlocks = function (state)
 													intended,
 													A2(
 														$elm$core$List$cons,
-														{cH: value.b, o: openListItem.o},
+														{cK: value.b, o: openListItem.o},
 														closeListItems),
 													openListItem),
 												rest)
@@ -14152,8 +14309,8 @@ var $dillonkearns$elm_markdown$Markdown$Parser$completeOrMergeBlocks = F2(
 										$elm$core$List$cons,
 										$dillonkearns$elm_markdown$Markdown$RawBlock$CodeBlock(
 											{
-												cH: A2($dillonkearns$elm_markdown$Markdown$Parser$joinStringsPreserveAll, block2.cH, block1.cH),
-												c5: $elm$core$Maybe$Nothing
+												cK: A2($dillonkearns$elm_markdown$Markdown$Parser$joinStringsPreserveAll, block2.cK, block1.cK),
+												c8: $elm$core$Maybe$Nothing
 											}),
 										rest)
 								});
@@ -14373,11 +14530,11 @@ var $dillonkearns$elm_markdown$Markdown$Parser$completeOrMergeBlocks = F2(
 							case 3:
 								var intended2 = newRawBlock.b;
 								var openListItem1 = newRawBlock.d;
-								if (_Utils_eq(openListItem2.da, openListItem1.da)) {
+								if (_Utils_eq(openListItem2.dd, openListItem1.dd)) {
 									var _v59 = A2(
 										$elm$parser$Parser$Advanced$run,
 										$dillonkearns$elm_markdown$Markdown$Parser$cyclic$rawBlockParser(),
-										openListItem2.cH);
+										openListItem2.cK);
 									if (!_v59.$) {
 										var value = _v59.a;
 										return A2($elm$core$List$member, $dillonkearns$elm_markdown$Markdown$RawBlock$BlankLine, value.b) ? $elm$parser$Parser$Advanced$succeed(
@@ -14391,7 +14548,7 @@ var $dillonkearns$elm_markdown$Markdown$Parser$completeOrMergeBlocks = F2(
 														intended2,
 														A2(
 															$elm$core$List$cons,
-															{cH: value.b, o: openListItem2.o},
+															{cK: value.b, o: openListItem2.o},
 															closeListItems2),
 														openListItem1),
 													rest)
@@ -14406,7 +14563,7 @@ var $dillonkearns$elm_markdown$Markdown$Parser$completeOrMergeBlocks = F2(
 														intended2,
 														A2(
 															$elm$core$List$cons,
-															{cH: value.b, o: openListItem2.o},
+															{cK: value.b, o: openListItem2.o},
 															closeListItems2),
 														openListItem1),
 													rest)
@@ -14421,7 +14578,7 @@ var $dillonkearns$elm_markdown$Markdown$Parser$completeOrMergeBlocks = F2(
 									var _v60 = A2(
 										$elm$parser$Parser$Advanced$run,
 										$dillonkearns$elm_markdown$Markdown$Parser$cyclic$rawBlockParser(),
-										openListItem2.cH);
+										openListItem2.cK);
 									if (!_v60.$) {
 										var value = _v60.a;
 										var tight2 = A2($elm$core$List$member, $dillonkearns$elm_markdown$Markdown$RawBlock$BlankLine, value.b) ? false : tight;
@@ -14439,7 +14596,7 @@ var $dillonkearns$elm_markdown$Markdown$Parser$completeOrMergeBlocks = F2(
 															intended1,
 															A2(
 																$elm$core$List$cons,
-																{cH: value.b, o: openListItem2.o},
+																{cK: value.b, o: openListItem2.o},
 																closeListItems2),
 															openListItem1),
 														rest))
@@ -14466,7 +14623,7 @@ var $dillonkearns$elm_markdown$Markdown$Parser$completeOrMergeBlocks = F2(
 												_Utils_update(
 													openListItem2,
 													{
-														cH: A3($dillonkearns$elm_markdown$Markdown$Parser$joinRawStringsWith, '\n', openListItem2.cH, body1)
+														cK: A3($dillonkearns$elm_markdown$Markdown$Parser$joinRawStringsWith, '\n', openListItem2.cK, body1)
 													})),
 											rest)
 									});
@@ -14474,7 +14631,7 @@ var $dillonkearns$elm_markdown$Markdown$Parser$completeOrMergeBlocks = F2(
 								var _v61 = A2(
 									$elm$parser$Parser$Advanced$run,
 									$dillonkearns$elm_markdown$Markdown$Parser$cyclic$rawBlockParser(),
-									openListItem2.cH);
+									openListItem2.cK);
 								if (!_v61.$) {
 									var value = _v61.a;
 									var tight2 = A2($elm$core$List$member, $dillonkearns$elm_markdown$Markdown$RawBlock$BlankLine, value.b) ? false : tight;
@@ -14492,7 +14649,7 @@ var $dillonkearns$elm_markdown$Markdown$Parser$completeOrMergeBlocks = F2(
 														intended1,
 														A2(
 															$elm$core$List$cons,
-															{cH: value.b, o: openListItem2.o},
+															{cK: value.b, o: openListItem2.o},
 															closeListItems2),
 														openListItem2),
 													rest))
@@ -14699,7 +14856,7 @@ var $dillonkearns$elm_markdown$Markdown$Parser$completeOrMergeBlocks = F2(
 											b: A2(
 												$elm$core$List$cons,
 												$dillonkearns$elm_markdown$Markdown$RawBlock$OpenBlockOrParagraph(
-													A3($dillonkearns$elm_markdown$Markdown$Parser$joinRawStringsWith, '\n', rawHeaders, text.cb)),
+													A3($dillonkearns$elm_markdown$Markdown$Parser$joinRawStringsWith, '\n', rawHeaders, text.cd)),
 												rest)
 										});
 								}
@@ -14803,7 +14960,7 @@ var $dillonkearns$elm_markdown$Markdown$Parser$completeOrMergeBlocks = F2(
 									var _v89 = A2(
 										$elm$parser$Parser$Advanced$run,
 										$dillonkearns$elm_markdown$Markdown$Parser$cyclic$rawBlockParser(),
-										openListItem2.cH);
+										openListItem2.cK);
 									if (!_v89.$) {
 										var value = _v89.a;
 										if (newRawBlock.$ === 3) {
@@ -14819,7 +14976,7 @@ var $dillonkearns$elm_markdown$Markdown$Parser$completeOrMergeBlocks = F2(
 															intended1,
 															A2(
 																$elm$core$List$cons,
-																{cH: value.b, o: openListItem2.o},
+																{cK: value.b, o: openListItem2.o},
 																closeListItems2),
 															openListItem),
 														rest)
@@ -14842,7 +14999,7 @@ var $dillonkearns$elm_markdown$Markdown$Parser$completeOrMergeBlocks = F2(
 																	intended1,
 																	A2(
 																		$elm$core$List$cons,
-																		{cH: value.b, o: openListItem2.o},
+																		{cK: value.b, o: openListItem2.o},
 																		closeListItems2),
 																	openListItem2),
 																rest)))
@@ -14881,8 +15038,8 @@ var $dillonkearns$elm_markdown$Markdown$Parser$inlineParseHelper = F2(
 				$elm$core$List$map,
 				$elm$core$Tuple$mapSecond(
 					function (_v37) {
-						var destination = _v37.cP;
-						var title = _v37.dP;
+						var destination = _v37.cS;
+						var title = _v37.dS;
 						return _Utils_Tuple2(destination, title);
 					}),
 				referencesDict));
@@ -15098,12 +15255,12 @@ var $dillonkearns$elm_markdown$Markdown$Parser$parseHeaderInlines = F2(
 			$elm$core$List$map,
 			function (_v24) {
 				var label = _v24.a0;
-				var alignment = _v24.az;
+				var alignment = _v24.aA;
 				return A3(
 					$dillonkearns$elm_markdown$Markdown$Parser$parseRawInline,
 					linkReferences,
 					function (parsedHeaderLabel) {
-						return {az: alignment, a0: parsedHeaderLabel};
+						return {aA: alignment, a0: parsedHeaderLabel};
 					},
 					label);
 			},
@@ -15172,7 +15329,7 @@ var $dillonkearns$elm_markdown$Markdown$Parser$parseInlines = F2(
 							A2(
 								$elm$core$List$map,
 								function (item) {
-									return A2(parseItem, item.o, item.cH);
+									return A2(parseItem, item.o, item.cK);
 								},
 								unparsedItems))));
 			case 4:
@@ -15222,7 +15379,7 @@ var $dillonkearns$elm_markdown$Markdown$Parser$parseInlines = F2(
 				var codeBlockBody = rawBlock.a;
 				return $dillonkearns$elm_markdown$Markdown$Parser$ParsedBlock(
 					$dillonkearns$elm_markdown$Markdown$Block$CodeBlock(
-						{cH: codeBlockBody, c5: $elm$core$Maybe$Nothing}));
+						{cK: codeBlockBody, c8: $elm$core$Maybe$Nothing}));
 			case 8:
 				var _v22 = rawBlock.a;
 				var header = _v22.a;
@@ -15237,7 +15394,7 @@ var $dillonkearns$elm_markdown$Markdown$Parser$parseInlines = F2(
 				var text = _v23.a;
 				return $dillonkearns$elm_markdown$Markdown$Parser$ParsedBlock(
 					$dillonkearns$elm_markdown$Markdown$Block$Paragraph(
-						A2($dillonkearns$elm_markdown$Markdown$Parser$inlineParseHelper, linkReferences, text.cb)));
+						A2($dillonkearns$elm_markdown$Markdown$Parser$inlineParseHelper, linkReferences, text.cd)));
 			default:
 				var raw = rawBlock.b;
 				return $dillonkearns$elm_markdown$Markdown$Parser$ParsedBlock(
@@ -15338,7 +15495,7 @@ var $dillonkearns$elm_markdown$Markdown$Parser$stepRawBlock = function (revStmts
 															_Utils_update(
 																openListItem,
 																{
-																	cH: A3($dillonkearns$elm_markdown$Markdown$Parser$joinRawStringsWith, '', openListItem.cH, newString)
+																	cK: A3($dillonkearns$elm_markdown$Markdown$Parser$joinRawStringsWith, '', openListItem.cK, newString)
 																})),
 														rest))
 											});
@@ -15358,7 +15515,7 @@ var $dillonkearns$elm_markdown$Markdown$Parser$stepRawBlock = function (revStmts
 														_Utils_update(
 															openListItem,
 															{
-																cH: A3($dillonkearns$elm_markdown$Markdown$Parser$joinRawStringsWith, '\n', openListItem.cH, newString)
+																cK: A3($dillonkearns$elm_markdown$Markdown$Parser$joinRawStringsWith, '\n', openListItem.cK, newString)
 															})),
 													rest)
 											});
@@ -15519,7 +15676,7 @@ var $dillonkearns$elm_markdown$Markdown$Parser$stepRawBlock = function (revStmts
 																		_Utils_update(
 																			openListItem,
 																			{
-																				cH: A3($dillonkearns$elm_markdown$Markdown$Parser$joinRawStringsWith, '', openListItem.cH, newString)
+																				cK: A3($dillonkearns$elm_markdown$Markdown$Parser$joinRawStringsWith, '', openListItem.cK, newString)
 																			})),
 																	rest))
 														});
@@ -15539,12 +15696,12 @@ var $dillonkearns$elm_markdown$Markdown$Parser$stepRawBlock = function (revStmts
 																	_Utils_update(
 																		openListItem,
 																		{
-																			cH: A3($dillonkearns$elm_markdown$Markdown$Parser$joinRawStringsWith, '\n', openListItem.cH, newString)
+																			cK: A3($dillonkearns$elm_markdown$Markdown$Parser$joinRawStringsWith, '\n', openListItem.cK, newString)
 																		})),
 																rest)
 														});
 												});
-											return ($elm$core$String$trim(openListItem.cH) === '') ? A2(
+											return ($elm$core$String$trim(openListItem.cK) === '') ? A2(
 												$elm$parser$Parser$Advanced$map,
 												function (block) {
 													return $elm$parser$Parser$Advanced$Loop(block);
@@ -15888,6 +16045,311 @@ var $author$project$Guide$parse = function (markdown) {
 			$dillonkearns$elm_markdown$Markdown$Parser$parse(
 				$author$project$Guide$closeVoidTags(markdown))));
 };
+var $author$project$Link$manualDir = 'manual/preenfm3/0.4/';
+var $author$project$Link$inManual = function (dest) {
+	return A2(
+		$elm$core$List$any,
+		function (prefix) {
+			return A2($elm$core$String$startsWith, prefix, dest);
+		},
+		_List_fromArray(
+			['https://', 'http://', 'mailto:', '#', '/', '.', $author$project$Link$manualDir])) ? dest : _Utils_ap($author$project$Link$manualDir, dest);
+};
+var $dillonkearns$elm_markdown$Markdown$Block$walk = F2(
+	function (_function, block) {
+		switch (block.$) {
+			case 3:
+				var blocks = block.a;
+				return _function(
+					$dillonkearns$elm_markdown$Markdown$Block$BlockQuote(
+						A2(
+							$elm$core$List$map,
+							$dillonkearns$elm_markdown$Markdown$Block$walk(_function),
+							blocks)));
+			case 0:
+				var html = block.a;
+				if (!html.$) {
+					var string = html.a;
+					var htmlAttributes = html.b;
+					var blocks = html.c;
+					return _function(
+						$dillonkearns$elm_markdown$Markdown$Block$HtmlBlock(
+							A3(
+								$dillonkearns$elm_markdown$Markdown$Block$HtmlElement,
+								string,
+								htmlAttributes,
+								A2(
+									$elm$core$List$map,
+									$dillonkearns$elm_markdown$Markdown$Block$walk(_function),
+									blocks))));
+				} else {
+					return _function(block);
+				}
+			case 1:
+				return _function(block);
+			case 2:
+				return _function(block);
+			case 4:
+				return _function(block);
+			case 5:
+				return _function(block);
+			case 6:
+				return _function(block);
+			case 7:
+				return _function(block);
+			default:
+				return _function(block);
+		}
+	});
+var $dillonkearns$elm_markdown$Markdown$Block$inlineParserWalk = F2(
+	function (_function, inline) {
+		switch (inline.$) {
+			case 1:
+				var url = inline.a;
+				var maybeTitle = inline.b;
+				var inlines = inline.c;
+				return _function(
+					A3(
+						$dillonkearns$elm_markdown$Markdown$Block$Link,
+						url,
+						maybeTitle,
+						A2(
+							$elm$core$List$map,
+							$dillonkearns$elm_markdown$Markdown$Block$inlineParserWalk(_function),
+							inlines)));
+			case 2:
+				var url = inline.a;
+				var maybeTitle = inline.b;
+				var inlines = inline.c;
+				return _function(
+					A3(
+						$dillonkearns$elm_markdown$Markdown$Block$Image,
+						url,
+						maybeTitle,
+						A2(
+							$elm$core$List$map,
+							$dillonkearns$elm_markdown$Markdown$Block$inlineParserWalk(_function),
+							inlines)));
+			case 3:
+				var inlines = inline.a;
+				return _function(
+					$dillonkearns$elm_markdown$Markdown$Block$Emphasis(
+						A2(
+							$elm$core$List$map,
+							$dillonkearns$elm_markdown$Markdown$Block$inlineParserWalk(_function),
+							inlines)));
+			case 5:
+				var inlines = inline.a;
+				return _function(
+					$dillonkearns$elm_markdown$Markdown$Block$Strikethrough(
+						A2(
+							$elm$core$List$map,
+							$dillonkearns$elm_markdown$Markdown$Block$inlineParserWalk(_function),
+							inlines)));
+			case 0:
+				var html = inline.a;
+				if (!html.$) {
+					var string = html.a;
+					var htmlAttributes = html.b;
+					var children = html.c;
+					return $dillonkearns$elm_markdown$Markdown$Block$HtmlInline(
+						A3(
+							$dillonkearns$elm_markdown$Markdown$Block$HtmlElement,
+							string,
+							htmlAttributes,
+							A2(
+								$elm$core$List$map,
+								$dillonkearns$elm_markdown$Markdown$Block$walkInlines(_function),
+								children)));
+				} else {
+					return _function(inline);
+				}
+			case 4:
+				var inlines = inline.a;
+				return $dillonkearns$elm_markdown$Markdown$Block$Strong(
+					A2(
+						$elm$core$List$map,
+						$dillonkearns$elm_markdown$Markdown$Block$inlineParserWalk(_function),
+						inlines));
+			case 6:
+				return _function(inline);
+			case 7:
+				return _function(inline);
+			default:
+				return _function(inline);
+		}
+	});
+var $dillonkearns$elm_markdown$Markdown$Block$walkInlines = F2(
+	function (_function, block) {
+		return A2(
+			$dillonkearns$elm_markdown$Markdown$Block$walk,
+			$dillonkearns$elm_markdown$Markdown$Block$walkInlinesHelp(_function),
+			block);
+	});
+var $dillonkearns$elm_markdown$Markdown$Block$walkInlinesHelp = F2(
+	function (_function, block) {
+		switch (block.$) {
+			case 5:
+				var inlines = block.a;
+				return $dillonkearns$elm_markdown$Markdown$Block$Paragraph(
+					A2(
+						$elm$core$List$map,
+						$dillonkearns$elm_markdown$Markdown$Block$inlineParserWalk(_function),
+						inlines));
+			case 1:
+				var tight = block.a;
+				var listItems = block.b;
+				return A2(
+					$dillonkearns$elm_markdown$Markdown$Block$UnorderedList,
+					tight,
+					A2(
+						$elm$core$List$map,
+						function (_v1) {
+							var task = _v1.a;
+							var children = _v1.b;
+							return A2(
+								$dillonkearns$elm_markdown$Markdown$Block$ListItem,
+								task,
+								A2(
+									$elm$core$List$map,
+									function (child) {
+										return A2($dillonkearns$elm_markdown$Markdown$Block$walkInlinesHelp, _function, child);
+									},
+									children));
+						},
+						listItems));
+			case 2:
+				var tight = block.a;
+				var startIndex = block.b;
+				var listItems = block.c;
+				return A3(
+					$dillonkearns$elm_markdown$Markdown$Block$OrderedList,
+					tight,
+					startIndex,
+					A2(
+						$elm$core$List$map,
+						function (blocks) {
+							return A2(
+								$elm$core$List$map,
+								function (child) {
+									return A2($dillonkearns$elm_markdown$Markdown$Block$walkInlinesHelp, _function, child);
+								},
+								blocks);
+						},
+						listItems));
+			case 3:
+				var children = block.a;
+				return $dillonkearns$elm_markdown$Markdown$Block$BlockQuote(
+					A2(
+						$elm$core$List$map,
+						$dillonkearns$elm_markdown$Markdown$Block$walkInlinesHelp(_function),
+						children));
+			case 4:
+				var level = block.a;
+				var children = block.b;
+				return A2(
+					$dillonkearns$elm_markdown$Markdown$Block$Heading,
+					level,
+					A2($elm$core$List$map, _function, children));
+			case 6:
+				var header = block.a;
+				var rows = block.b;
+				return A2(
+					$dillonkearns$elm_markdown$Markdown$Block$Table,
+					A2(
+						$elm$core$List$map,
+						function (_v2) {
+							var alignment = _v2.aA;
+							var label = _v2.a0;
+							return {
+								aA: alignment,
+								a0: A2($elm$core$List$map, _function, label)
+							};
+						},
+						header),
+					A2(
+						$elm$core$List$map,
+						$elm$core$List$map(
+							$elm$core$List$map(_function)),
+						rows));
+			case 0:
+				var html = block.a;
+				if (!html.$) {
+					var string = html.a;
+					var htmlAttributes = html.b;
+					var blocks = html.c;
+					return $dillonkearns$elm_markdown$Markdown$Block$HtmlBlock(
+						A3(
+							$dillonkearns$elm_markdown$Markdown$Block$HtmlElement,
+							string,
+							htmlAttributes,
+							A2(
+								$elm$core$List$map,
+								$dillonkearns$elm_markdown$Markdown$Block$walkInlinesHelp(_function),
+								blocks)));
+				} else {
+					return block;
+				}
+			case 7:
+				return block;
+			default:
+				return block;
+		}
+	});
+var $author$project$Guide$parseManual = A2(
+	$elm$core$Basics$composeR,
+	$author$project$Guide$parse,
+	$elm$core$Result$map(
+		$elm$core$List$map(
+			$dillonkearns$elm_markdown$Markdown$Block$walkInlines(
+				function (inline) {
+					switch (inline.$) {
+						case 1:
+							var dest = inline.a;
+							var title = inline.b;
+							var children = inline.c;
+							return A3(
+								$dillonkearns$elm_markdown$Markdown$Block$Link,
+								$author$project$Link$inManual(dest),
+								title,
+								children);
+						case 2:
+							var src = inline.a;
+							var title = inline.b;
+							var children = inline.c;
+							return A3(
+								$dillonkearns$elm_markdown$Markdown$Block$Image,
+								$author$project$Link$inManual(src),
+								title,
+								children);
+						case 0:
+							return inline;
+						case 3:
+							return inline;
+						case 4:
+							return inline;
+						case 5:
+							return inline;
+						case 6:
+							return inline;
+						case 7:
+							return inline;
+						default:
+							return inline;
+					}
+				}))));
+var $author$project$Main$parseDoc = function (doc) {
+	switch (doc.$) {
+		case 2:
+			return $author$project$Guide$parseManual;
+		case 3:
+			return $author$project$Guide$parseManual;
+		case 0:
+			return $author$project$Guide$parse;
+		default:
+			return $author$project$Guide$parse;
+	}
+};
 var $elm$browser$Browser$Navigation$pushUrl = _Browser_pushUrl;
 var $author$project$Main$scrollTo = function (id) {
 	return A2(
@@ -15919,7 +16381,7 @@ var $elm$url$Url$addPrefixed = F3(
 	});
 var $elm$url$Url$toString = function (url) {
 	var http = function () {
-		var _v0 = url.b9;
+		var _v0 = url.cb;
 		if (!_v0) {
 			return 'http://';
 		} else {
@@ -15929,17 +16391,17 @@ var $elm$url$Url$toString = function (url) {
 	return A3(
 		$elm$url$Url$addPrefixed,
 		'#',
-		url.ah,
+		url.ai,
 		A3(
 			$elm$url$Url$addPrefixed,
 			'?',
-			url.ca,
+			url.cc,
 			_Utils_ap(
 				A2(
 					$elm$url$Url$addPort,
-					url.b6,
+					url.b8,
 					_Utils_ap(http, url.bR)),
-				url.dt)));
+				url.dw)));
 };
 var $author$project$Main$update = F2(
 	function (msg, model) {
@@ -15948,7 +16410,7 @@ var $author$project$Main$update = F2(
 				if (!msg.a.$) {
 					var url = msg.a.a;
 					return _Utils_eq(
-						A2($author$project$Route$parse, model.l, url),
+						A2($author$project$Route$parse, model.j, url),
 						$author$project$Route$NotFound) ? _Utils_Tuple2(
 						model,
 						$elm$browser$Browser$Navigation$load(
@@ -15981,13 +16443,16 @@ var $author$project$Main$update = F2(
 								doc,
 								$elm$core$Maybe$Just(
 									$author$project$Main$fromResult(
-										A2($elm$core$Result$map, $author$project$Guide$parse, result))),
+										A2(
+											$elm$core$Result$map,
+											$author$project$Main$parseDoc(doc),
+											result))),
 								model.E)
 						}),
 					A2(
 						$elm$core$Maybe$withDefault,
 						$elm$core$Platform$Cmd$none,
-						A2($elm$core$Maybe$map, $author$project$Main$scrollTo, model.ah))) : _Utils_Tuple2(
+						A2($elm$core$Maybe$map, $author$project$Main$scrollTo, model.ai))) : _Utils_Tuple2(
 					_Utils_update(
 						model,
 						{
@@ -16000,11 +16465,11 @@ var $author$project$Main$update = F2(
 					_Utils_update(
 						model,
 						{
-							ab: $author$project$Main$fromResult(result)
+							ac: $author$project$Main$fromResult(result)
 						}),
 					function () {
-						var _v1 = _Utils_Tuple2(model.K, model.ah);
-						if ((_v1.a.$ === 4) && (!_v1.b.$)) {
+						var _v1 = _Utils_Tuple2(model.K, model.ai);
+						if ((_v1.a.$ === 6) && (!_v1.b.$)) {
 							var _v2 = _v1.a;
 							var id = _v1.b.a;
 							return $author$project$Main$scrollTo(id);
@@ -16014,7 +16479,7 @@ var $author$project$Main$update = F2(
 					}());
 			case 4:
 				var doc = msg.a;
-				var _v3 = A3($author$project$Main$fetchDoc, model.l, doc, model.E);
+				var _v3 = A3($author$project$Main$fetchDoc, model.j, doc, model.E);
 				var docs = _v3.a;
 				var fetch = _v3.b;
 				return _Utils_Tuple2(
@@ -16070,8 +16535,21 @@ var $author$project$Route$href = F2(
 								]);
 						case 4:
 							return _List_fromArray(
-								['releases']);
+								['manual', 'preenfm3', '0.4', '']);
 						case 5:
+							var c = route.a;
+							return _List_fromArray(
+								[
+									'manual',
+									'preenfm3',
+									'0.4',
+									$author$project$Chapter$slug(c),
+									''
+								]);
+						case 6:
+							return _List_fromArray(
+								['releases']);
+						case 7:
 							return _List_fromArray(
 								['sound-editor']);
 						default:
@@ -16152,15 +16630,16 @@ var $author$project$Menu$doors = function (editor) {
 	return _Utils_ap(
 		_List_fromArray(
 			[
-				{a0: 'INSTALL & UPDATE', K: $author$project$Route$Install, dN: 'The latest release to download, and the steps to put it on the unit. The same steps update an earlier version.'},
-				{a0: 'GUIDES', K: $author$project$Route$Guides, dN: 'Getting started, a tour of every page, the FAQ, MIDI control, tuning and the known issues.'},
-				{a0: 'RELEASES', K: $author$project$Route$Releases, dN: 'Every release, its notes and its files.'}
+				{a0: 'INSTALL & UPDATE', K: $author$project$Route$Install, dQ: 'The latest release to download, and the steps to put it on the unit. The same steps update an earlier version.'},
+				{a0: 'GUIDES', K: $author$project$Route$Guides, dQ: 'Getting started, a tour of every page, the FAQ, MIDI control, tuning and the known issues.'},
+				{a0: 'MANUAL', K: $author$project$Route$Manual, dQ: 'The complete reference for Chimera 0.4: every page, cell and gesture, and why the instrument works as it does.'},
+				{a0: 'RELEASES', K: $author$project$Route$Releases, dQ: 'Every release, its notes and its files.'}
 			]),
 		function () {
 			if (editor === 1) {
 				return _List_fromArray(
 					[
-						{a0: 'EDITOR', K: $author$project$Route$Editor, dN: 'A sound editor in the browser that talks to the unit over USB.'}
+						{a0: 'EDITOR', K: $author$project$Route$Editor, dQ: 'A sound editor in the browser that talks to the unit over USB.'}
 					]);
 			} else {
 				return _List_Nil;
@@ -16200,8 +16679,12 @@ var $author$project$Main$section = function (route) {
 		case 3:
 			return $elm$core$Maybe$Just($author$project$Route$Guides);
 		case 4:
-			return $elm$core$Maybe$Just($author$project$Route$Releases);
+			return $elm$core$Maybe$Just($author$project$Route$Manual);
 		case 5:
+			return $elm$core$Maybe$Just($author$project$Route$Manual);
+		case 6:
+			return $elm$core$Maybe$Just($author$project$Route$Releases);
+		case 7:
 			return $elm$core$Maybe$Just($author$project$Route$Editor);
 		default:
 			return $elm$core$Maybe$Nothing;
@@ -16216,7 +16699,7 @@ var $author$project$Main$navLink = F2(
 			_List_fromArray(
 				[
 					$author$project$Main$href(
-					A2($author$project$Route$href, model.l, route)),
+					A2($author$project$Route$href, model.j, route)),
 					$elm$html$Html$Attributes$classList(
 					_List_fromArray(
 						[
@@ -16276,7 +16759,7 @@ var $author$project$Main$header = function (model) {
 					[
 						$elm$html$Html$Attributes$class('mark'),
 						$author$project$Main$href(
-						A2($author$project$Route$href, model.l, $author$project$Route$Home))
+						A2($author$project$Route$href, model.j, $author$project$Route$Home))
 					]),
 				_List_fromArray(
 					[
@@ -16302,6 +16785,115 @@ var $author$project$Main$header = function (model) {
 var $elm$html$Html$Attributes$id = $elm$html$Html$Attributes$stringProperty('id');
 var $elm$html$Html$main_ = _VirtualDom_node('main');
 var $elm$html$Html$article = _VirtualDom_node('article');
+var $elm$virtual_dom$VirtualDom$attribute = F2(
+	function (key, value) {
+		return A2(
+			_VirtualDom_attribute,
+			_VirtualDom_noOnOrFormAction(key),
+			_VirtualDom_noJavaScriptOrHtmlUri(value));
+	});
+var $elm$html$Html$Attributes$attribute = $elm$virtual_dom$VirtualDom$attribute;
+var $elm$core$Tuple$pair = F2(
+	function (a, b) {
+		return _Utils_Tuple2(a, b);
+	});
+var $author$project$Chapter$neighbours = function (c) {
+	var index = A2(
+		$elm$core$Maybe$withDefault,
+		0,
+		A2(
+			$elm$core$Maybe$map,
+			$elm$core$Tuple$first,
+			$elm$core$List$head(
+				A2(
+					$elm$core$List$filter,
+					function (_v0) {
+						var other = _v0.b;
+						return _Utils_eq(other, c);
+					},
+					A2($elm$core$List$indexedMap, $elm$core$Tuple$pair, $author$project$Chapter$all)))));
+	var at = function (i) {
+		return $elm$core$List$head(
+			A2($elm$core$List$drop, i, $author$project$Chapter$all));
+	};
+	return _Utils_Tuple2(
+		(!index) ? $elm$core$Maybe$Nothing : at(index - 1),
+		at(index + 1));
+};
+var $author$project$Chapter$title = function (_v0) {
+	var t = _v0.b;
+	return t;
+};
+var $author$project$Main$chapterNav = F2(
+	function (base, c) {
+		var entry = F2(
+			function (cls, label) {
+				return A2(
+					$elm$core$Basics$composeR,
+					$elm$core$Maybe$map(
+						function (n) {
+							return _List_fromArray(
+								[
+									A2(
+									$elm$html$Html$a,
+									_List_fromArray(
+										[
+											$elm$html$Html$Attributes$class(cls),
+											$author$project$Main$href(
+											A2(
+												$author$project$Route$href,
+												base,
+												$author$project$Route$Chapter(n)))
+										]),
+									_List_fromArray(
+										[
+											A2(
+											$elm$html$Html$span,
+											_List_fromArray(
+												[
+													$elm$html$Html$Attributes$class('label')
+												]),
+											_List_fromArray(
+												[
+													$elm$html$Html$text(label)
+												])),
+											$elm$html$Html$text(
+											$author$project$Chapter$title(n))
+										]))
+								]);
+						}),
+					$elm$core$Maybe$withDefault(_List_Nil));
+			});
+		var _v0 = $author$project$Chapter$neighbours(c);
+		var before = _v0.a;
+		var after = _v0.b;
+		return A2(
+			$elm$html$Html$nav,
+			_List_fromArray(
+				[
+					$elm$html$Html$Attributes$class('chapters'),
+					A2($elm$html$Html$Attributes$attribute, 'aria-label', 'Chapters')
+				]),
+			_Utils_ap(
+				A3(entry, 'prev', 'PREVIOUS', before),
+				_Utils_ap(
+					_List_fromArray(
+						[
+							A2(
+							$elm$html$Html$a,
+							_List_fromArray(
+								[
+									$elm$html$Html$Attributes$class('all'),
+									$author$project$Main$href(
+									A2($author$project$Route$href, base, $author$project$Route$Manual))
+								]),
+							_List_fromArray(
+								[
+									$elm$html$Html$text('ALL CHAPTERS')
+								]))
+						]),
+					A3(entry, 'next', 'NEXT', after))));
+	});
 var $author$project$Main$Retry = function (a) {
 	return {$: 4, a: a};
 };
@@ -16341,13 +16933,46 @@ var $author$project$Main$problem = function (e) {
 	}
 };
 var $author$project$Main$sourceOf = function (doc) {
-	return $author$project$Href$repo(
-		_List_fromArray(
-			[
-				'blob',
-				'main',
-				$author$project$Doc$file(doc)
-			]));
+	switch (doc.$) {
+		case 2:
+			return $author$project$Href$repo(
+				_List_fromArray(
+					[
+						'blob',
+						'main',
+						'manual',
+						'preenfm3',
+						'0.4',
+						$author$project$Doc$file(doc)
+					]));
+		case 3:
+			return $author$project$Href$repo(
+				_List_fromArray(
+					[
+						'blob',
+						'main',
+						'manual',
+						'preenfm3',
+						'0.4',
+						$author$project$Doc$file(doc)
+					]));
+		case 0:
+			return $author$project$Href$repo(
+				_List_fromArray(
+					[
+						'blob',
+						'main',
+						$author$project$Doc$file(doc)
+					]));
+		default:
+			return $author$project$Href$repo(
+				_List_fromArray(
+					[
+						'blob',
+						'main',
+						$author$project$Doc$file(doc)
+					]));
+	}
 };
 var $elm$html$Html$button = _VirtualDom_node('button');
 var $elm$virtual_dom$VirtualDom$Normal = function (a) {
@@ -16416,6 +17041,35 @@ var $author$project$Main$unavailable = F4(
 					}()))
 			]);
 	});
+var $author$project$Guide$isDesignNote = function (block) {
+	switch (block.$) {
+		case 3:
+			if (((((((block.a.b && (block.a.a.$ === 5)) && block.a.a.a.b) && (block.a.a.a.a.$ === 4)) && block.a.a.a.a.a.b) && (block.a.a.a.a.a.a.$ === 7)) && (block.a.a.a.a.a.a.a === 'Design note:')) && (!block.a.a.a.a.a.b.b)) {
+				var _v1 = block.a;
+				var _v2 = _v1.a.a;
+				var _v3 = _v2.a.a;
+				return true;
+			} else {
+				return false;
+			}
+		case 0:
+			return false;
+		case 1:
+			return false;
+		case 2:
+			return false;
+		case 4:
+			return false;
+		case 5:
+			return false;
+		case 6:
+			return false;
+		case 7:
+			return false;
+		default:
+			return false;
+	}
+};
 var $elm$core$Result$map2 = F3(
 	function (func, ra, rb) {
 		if (ra.$ === 1) {
@@ -16642,7 +17296,7 @@ var $dillonkearns$elm_markdown$Markdown$Block$extractInlineBlockText = function 
 								rows))
 						])));
 		case 7:
-			var body = block.a.cH;
+			var body = block.a.cK;
 			return body;
 		default:
 			return '';
@@ -16706,10 +17360,6 @@ var $dillonkearns$elm_markdown$Markdown$Block$extractTextHelp = F2(
 					$dillonkearns$elm_markdown$Markdown$Block$extractInlineText(inlines));
 		}
 	});
-var $elm$core$Tuple$pair = F2(
-	function (a, b) {
-		return _Utils_Tuple2(a, b);
-	});
 var $dillonkearns$elm_markdown$Markdown$Renderer$renderHtml = F5(
 	function (tagName, attributes, children, _v0, renderedChildren) {
 		var htmlRenderer = _v0;
@@ -16756,11 +17406,11 @@ var $dillonkearns$elm_markdown$Markdown$Renderer$renderHelperSingle = function (
 					A2(
 						$elm$core$Result$map,
 						function (children) {
-							return renderer.cY(
+							return renderer.c$(
 								{
-									cM: children,
-									c8: level,
-									dv: $dillonkearns$elm_markdown$Markdown$Block$extractInlineText(content)
+									cP: children,
+									db: level,
+									dy: $dillonkearns$elm_markdown$Markdown$Block$extractInlineText(content)
 								});
 						},
 						A2($dillonkearns$elm_markdown$Markdown$Renderer$renderStyled, renderer, content)));
@@ -16890,7 +17540,7 @@ var $dillonkearns$elm_markdown$Markdown$Renderer$renderHelperSingle = function (
 				return $elm$core$Maybe$Just(
 					A2(
 						$elm$core$Result$map,
-						renderer.aR,
+						renderer.cJ,
 						$dillonkearns$elm_markdown$Markdown$Renderer$combineResults(
 							A2($dillonkearns$elm_markdown$Markdown$Renderer$renderHelper, renderer, nestedBlocks))));
 			default:
@@ -16901,7 +17551,7 @@ var $dillonkearns$elm_markdown$Markdown$Renderer$renderHelperSingle = function (
 						$elm$core$List$map,
 						function (_v11) {
 							var label = _v11.a0;
-							var alignment = _v11.az;
+							var alignment = _v11.aA;
 							return A2(
 								$elm$core$Result$map,
 								$elm$core$Tuple$pair(alignment),
@@ -16913,7 +17563,7 @@ var $dillonkearns$elm_markdown$Markdown$Renderer$renderHelperSingle = function (
 					function (listListView) {
 						return renderer.bn(
 							$elm$core$List$singleton(
-								renderer.aM(
+								renderer.aN(
 									A2(
 										$elm$core$List$map,
 										function (_v10) {
@@ -16934,7 +17584,7 @@ var $dillonkearns$elm_markdown$Markdown$Renderer$renderHelperSingle = function (
 					return A2(
 						$elm$core$Maybe$andThen,
 						function ($) {
-							return $.az;
+							return $.aA;
 						},
 						$elm$core$List$head(
 							A2($elm$core$List$drop, columnIndex, header)));
@@ -16942,7 +17592,7 @@ var $dillonkearns$elm_markdown$Markdown$Renderer$renderHelperSingle = function (
 				var renderRow = function (cells) {
 					return A2(
 						$elm$core$Result$map,
-						renderer.aM,
+						renderer.aN,
 						A2(
 							$elm$core$Result$map,
 							$elm$core$List$indexedMap(
@@ -16966,7 +17616,7 @@ var $dillonkearns$elm_markdown$Markdown$Renderer$renderHelperSingle = function (
 						$elm$core$Result$map2,
 						F2(
 							function (h, r) {
-								return renderer.dK(
+								return renderer.dN(
 									A2(
 										$elm$core$List$cons,
 										h,
@@ -16984,7 +17634,7 @@ var $dillonkearns$elm_markdown$Markdown$Renderer$renderHtmlNode = F4(
 			tag,
 			attributes,
 			children,
-			renderer.c_,
+			renderer.c1,
 			A2($dillonkearns$elm_markdown$Markdown$Renderer$renderHelper, renderer, children));
 	});
 var $dillonkearns$elm_markdown$Markdown$Renderer$renderSingleInline = F2(
@@ -17017,17 +17667,17 @@ var $dillonkearns$elm_markdown$Markdown$Renderer$renderSingleInline = F2(
 				var children = inline.c;
 				return $elm$core$Maybe$Just(
 					$elm$core$Result$Ok(
-						renderer.c$(
+						renderer.c2(
 							{
-								cD: $dillonkearns$elm_markdown$Markdown$Block$extractInlineText(children),
-								dF: src,
-								dP: title
+								cF: $dillonkearns$elm_markdown$Markdown$Block$extractInlineText(children),
+								dI: src,
+								dS: title
 							})));
 			case 7:
 				var string = inline.a;
 				return $elm$core$Maybe$Just(
 					$elm$core$Result$Ok(
-						renderer.dN(string)));
+						renderer.dQ(string)));
 			case 6:
 				var string = inline.a;
 				return $elm$core$Maybe$Just(
@@ -17043,8 +17693,8 @@ var $dillonkearns$elm_markdown$Markdown$Renderer$renderSingleInline = F2(
 						function (children) {
 							return $elm$core$Result$Ok(
 								A2(
-									renderer.c9,
-									{cP: destination, dP: title},
+									renderer.dc,
+									{cS: destination, dS: title},
 									children));
 						},
 						A2($dillonkearns$elm_markdown$Markdown$Renderer$renderStyled, renderer, inlines)));
@@ -17088,9 +17738,9 @@ var $dillonkearns$elm_markdown$Markdown$Renderer$renderWithMeta = F2(
 				},
 				blocksWithMeta));
 	});
+var $elm$html$Html$blockquote = _VirtualDom_node('blockquote');
 var $elm$html$Html$Attributes$align = $elm$html$Html$Attributes$stringProperty('align');
 var $elm$html$Html$Attributes$alt = $elm$html$Html$Attributes$stringProperty('alt');
-var $elm$html$Html$blockquote = _VirtualDom_node('blockquote');
 var $elm$html$Html$br = _VirtualDom_node('br');
 var $elm$json$Json$Encode$bool = _Json_wrap;
 var $elm$html$Html$Attributes$boolProperty = F2(
@@ -17142,7 +17792,7 @@ var $dillonkearns$elm_markdown$Markdown$Html$attributesToString = function (attr
 			$elm$core$List$map,
 			function (_v0) {
 				var name = _v0.a6;
-				var value = _v0.dR;
+				var value = _v0.dU;
 				return name + ('=\"' + (value + '\"'));
 			},
 			attributes));
@@ -17231,10 +17881,10 @@ var $elm$html$Html$Attributes$type_ = $elm$html$Html$Attributes$stringProperty('
 var $elm$html$Html$ul = _VirtualDom_node('ul');
 var $elm$core$String$words = _String_words;
 var $dillonkearns$elm_markdown$Markdown$Renderer$defaultHtmlRenderer = {
-	aR: $elm$html$Html$blockquote(_List_Nil),
+	cJ: $elm$html$Html$blockquote(_List_Nil),
 	aS: function (_v0) {
-		var body = _v0.cH;
-		var language = _v0.c5;
+		var body = _v0.cK;
+		var language = _v0.c8;
 		var classes = function () {
 			var _v1 = A2($elm$core$Maybe$map, $elm$core$String$words, language);
 			if ((!_v1.$) && _v1.a.b) {
@@ -17275,9 +17925,9 @@ var $dillonkearns$elm_markdown$Markdown$Renderer$defaultHtmlRenderer = {
 		return A2($elm$html$Html$em, _List_Nil, children);
 	},
 	aZ: A2($elm$html$Html$br, _List_Nil, _List_Nil),
-	cY: function (_v3) {
-		var level = _v3.c8;
-		var children = _v3.cM;
+	c$: function (_v3) {
+		var level = _v3.db;
+		var children = _v3.cP;
 		switch (level) {
 			case 0:
 				return A2($elm$html$Html$h1, _List_Nil, children);
@@ -17293,17 +17943,17 @@ var $dillonkearns$elm_markdown$Markdown$Renderer$defaultHtmlRenderer = {
 				return A2($elm$html$Html$h6, _List_Nil, children);
 		}
 	},
-	c_: $dillonkearns$elm_markdown$Markdown$Html$oneOf(_List_Nil),
-	c$: function (imageInfo) {
-		var _v5 = imageInfo.dP;
+	c1: $dillonkearns$elm_markdown$Markdown$Html$oneOf(_List_Nil),
+	c2: function (imageInfo) {
+		var _v5 = imageInfo.dS;
 		if (!_v5.$) {
 			var title = _v5.a;
 			return A2(
 				$elm$html$Html$img,
 				_List_fromArray(
 					[
-						$elm$html$Html$Attributes$src(imageInfo.dF),
-						$elm$html$Html$Attributes$alt(imageInfo.cD),
+						$elm$html$Html$Attributes$src(imageInfo.dI),
+						$elm$html$Html$Attributes$alt(imageInfo.cF),
 						$elm$html$Html$Attributes$title(title)
 					]),
 				_List_Nil);
@@ -17312,22 +17962,22 @@ var $dillonkearns$elm_markdown$Markdown$Renderer$defaultHtmlRenderer = {
 				$elm$html$Html$img,
 				_List_fromArray(
 					[
-						$elm$html$Html$Attributes$src(imageInfo.dF),
-						$elm$html$Html$Attributes$alt(imageInfo.cD)
+						$elm$html$Html$Attributes$src(imageInfo.dI),
+						$elm$html$Html$Attributes$alt(imageInfo.cF)
 					]),
 				_List_Nil);
 		}
 	},
-	c9: F2(
+	dc: F2(
 		function (link, content) {
-			var _v6 = link.dP;
+			var _v6 = link.dS;
 			if (!_v6.$) {
 				var title = _v6.a;
 				return A2(
 					$elm$html$Html$a,
 					_List_fromArray(
 						[
-							$elm$html$Html$Attributes$href(link.cP),
+							$elm$html$Html$Attributes$href(link.cS),
 							$elm$html$Html$Attributes$title(title)
 						]),
 					content);
@@ -17336,7 +17986,7 @@ var $dillonkearns$elm_markdown$Markdown$Renderer$defaultHtmlRenderer = {
 					$elm$html$Html$a,
 					_List_fromArray(
 						[
-							$elm$html$Html$Attributes$href(link.cP)
+							$elm$html$Html$Attributes$href(link.cS)
 						]),
 					content);
 			}
@@ -17369,7 +18019,7 @@ var $dillonkearns$elm_markdown$Markdown$Renderer$defaultHtmlRenderer = {
 	bk: function (children) {
 		return A2($elm$html$Html$strong, _List_Nil, children);
 	},
-	dK: $elm$html$Html$table(_List_Nil),
+	dN: $elm$html$Html$table(_List_Nil),
 	bl: $elm$html$Html$tbody(_List_Nil),
 	bm: function (maybeAlignment) {
 		var attrs = A2(
@@ -17422,8 +18072,8 @@ var $dillonkearns$elm_markdown$Markdown$Renderer$defaultHtmlRenderer = {
 						maybeAlignment))));
 		return $elm$html$Html$th(attrs);
 	},
-	aM: $elm$html$Html$tr(_List_Nil),
-	dN: $elm$html$Html$text,
+	aN: $elm$html$Html$tr(_List_Nil),
+	dQ: $elm$html$Html$text,
 	bq: A2($elm$html$Html$hr, _List_Nil, _List_Nil),
 	bs: function (items) {
 		return A2(
@@ -17491,14 +18141,6 @@ var $author$project$Anchor$fromHeading = function (heading) {
 			$author$project$Anchor$kept,
 			$elm$core$String$toLower(heading)));
 };
-var $elm$virtual_dom$VirtualDom$attribute = F2(
-	function (key, value) {
-		return A2(
-			_VirtualDom_attribute,
-			_VirtualDom_noOnOrFormAction(key),
-			_VirtualDom_noJavaScriptOrHtmlUri(value));
-	});
-var $elm$html$Html$Attributes$attribute = $elm$virtual_dom$VirtualDom$attribute;
 var $author$project$Href$inPage = function (id) {
 	return '#' + $author$project$Anchor$toString(id);
 };
@@ -17550,10 +18192,18 @@ var $author$project$Link$File = function (a) {
 var $author$project$Link$Unresolved = function (a) {
 	return {$: 4, a: a};
 };
+var $author$project$AssetPath$plainName = function (name) {
+	return !($elm$core$String$isEmpty(name) || (A2($elm$core$String$contains, '/', name) || (A2($elm$core$String$contains, '\\', name) || A2($elm$core$String$startsWith, '.', name))));
+};
 var $author$project$AssetPath$image = function (name) {
-	return ($elm$core$String$isEmpty(name) || (A2($elm$core$String$contains, '/', name) || (A2($elm$core$String$contains, '\\', name) || A2($elm$core$String$startsWith, '.', name)))) ? $elm$core$Maybe$Nothing : $elm$core$Maybe$Just(
+	return $author$project$AssetPath$plainName(name) ? $elm$core$Maybe$Just(
 		_List_fromArray(
-			['guides', 'img', name]));
+			['guides', 'img', name])) : $elm$core$Maybe$Nothing;
+};
+var $author$project$AssetPath$manualImage = function (name) {
+	return $author$project$AssetPath$plainName(name) ? $elm$core$Maybe$Just(
+		_List_fromArray(
+			['manual', 'preenfm3', '0.4', 'img', name])) : $elm$core$Maybe$Nothing;
 };
 var $author$project$Link$image = function (src) {
 	var _v0 = $author$project$Href$web(src);
@@ -17561,14 +18211,24 @@ var $author$project$Link$image = function (src) {
 		var web = _v0.a;
 		return A2($elm$core$String$startsWith, 'https://', src) ? $author$project$Link$External(web) : $author$project$Link$Unresolved(src);
 	} else {
-		return A2($elm$core$String$startsWith, 'docs/img/', src) ? A2(
+		return A2($elm$core$String$startsWith, $author$project$Link$manualDir + 'img/', src) ? A2(
+			$elm$core$Maybe$withDefault,
+			$author$project$Link$Unresolved(src),
+			A2(
+				$elm$core$Maybe$map,
+				$author$project$Link$File,
+				$author$project$AssetPath$manualImage(
+					A2(
+						$elm$core$String$dropLeft,
+						$elm$core$String$length($author$project$Link$manualDir) + 4,
+						src)))) : (A2($elm$core$String$startsWith, 'docs/img/', src) ? A2(
 			$elm$core$Maybe$withDefault,
 			$author$project$Link$Unresolved(src),
 			A2(
 				$elm$core$Maybe$map,
 				$author$project$Link$File,
 				$author$project$AssetPath$image(
-					A2($elm$core$String$dropLeft, 9, src)))) : $author$project$Link$Unresolved(src);
+					A2($elm$core$String$dropLeft, 9, src)))) : $author$project$Link$Unresolved(src));
 	}
 };
 var $author$project$Guide$image = F3(
@@ -17643,11 +18303,17 @@ var $author$project$Link$Page = F2(
 	});
 var $author$project$Link$repo = 'https://github.com/joegiralt/chimera-releases';
 var $author$project$Route$fromDoc = function (d) {
-	if (!d.$) {
-		return $author$project$Route$Install;
-	} else {
-		var id = d.a;
-		return $author$project$Route$Guide(id);
+	switch (d.$) {
+		case 0:
+			return $author$project$Route$Install;
+		case 1:
+			var id = d.a;
+			return $author$project$Route$Guide(id);
+		case 2:
+			return $author$project$Route$Manual;
+		default:
+			var c = d.a;
+			return $author$project$Route$Chapter(c);
 	}
 };
 var $author$project$Doc$all = A2(
@@ -17665,7 +18331,7 @@ var $author$project$Doc$fromFile = function (f) {
 			},
 			$author$project$Doc$all));
 };
-var $author$project$Link$toDoc = function (dest) {
+var $author$project$Link$toGuide = function (dest) {
 	var _v0 = function () {
 		var _v1 = $elm$core$List$head(
 			A2($elm$core$String$indexes, '#', dest));
@@ -17692,6 +18358,81 @@ var $author$project$Link$toDoc = function (dest) {
 	} else {
 		return $author$project$Link$Unresolved(dest);
 	}
+};
+var $author$project$Chapter$fromFile = function (f) {
+	return $elm$core$List$head(
+		A2(
+			$elm$core$List$filter,
+			function (c) {
+				return _Utils_eq(
+					$author$project$Chapter$file(c),
+					f);
+			},
+			$author$project$Chapter$all));
+};
+var $author$project$AssetPath$manualFile = function (name) {
+	return $author$project$AssetPath$plainName(name) ? $elm$core$Maybe$Just(
+		$author$project$AssetPath$manualFolder(name)) : $elm$core$Maybe$Nothing;
+};
+var $author$project$Link$toManual = F2(
+	function (dest, rest) {
+		var _v0 = function () {
+			var _v1 = A2($elm$core$String$split, '#', rest);
+			if (_v1.b) {
+				if (_v1.b.b) {
+					var n = _v1.a;
+					var _v2 = _v1.b;
+					var f = _v2.a;
+					return _Utils_Tuple2(
+						n,
+						$elm$core$Maybe$Just(
+							$author$project$Anchor$fromFragment(f)));
+				} else {
+					var n = _v1.a;
+					return _Utils_Tuple2(n, $elm$core$Maybe$Nothing);
+				}
+			} else {
+				return _Utils_Tuple2(rest, $elm$core$Maybe$Nothing);
+			}
+		}();
+		var name = _v0.a;
+		var fragment = _v0.b;
+		if (name === 'README.md') {
+			return A2($author$project$Link$Page, $author$project$Route$Manual, fragment);
+		} else {
+			var _v3 = $author$project$Chapter$fromFile(name);
+			if (!_v3.$) {
+				var c = _v3.a;
+				return A2(
+					$author$project$Link$Page,
+					$author$project$Route$Chapter(c),
+					fragment);
+			} else {
+				return A2(
+					$elm$core$Maybe$withDefault,
+					$author$project$Link$Unresolved(dest),
+					A2(
+						$elm$core$Maybe$andThen,
+						function (path) {
+							return A2(
+								$elm$core$List$member,
+								name,
+								_List_fromArray(
+									['manual.md', 'llms.txt'])) ? $elm$core$Maybe$Just(
+								$author$project$Link$File(path)) : $elm$core$Maybe$Nothing;
+						},
+						$author$project$AssetPath$manualFile(name)));
+			}
+		}
+	});
+var $author$project$Link$toDoc = function (dest) {
+	return A2($elm$core$String$startsWith, $author$project$Link$manualDir, dest) ? A2(
+		$author$project$Link$toManual,
+		dest,
+		A2(
+			$elm$core$String$dropLeft,
+			$elm$core$String$length($author$project$Link$manualDir),
+			dest)) : $author$project$Link$toGuide(dest);
 };
 var $author$project$Link$fromRepo = F2(
 	function (dest, path) {
@@ -17725,27 +18466,43 @@ var $author$project$Link$link = function (dest) {
 			$author$project$Anchor$fromFragment(
 				A2($elm$core$String$dropLeft, 1, dest)));
 	} else {
-		if (A2($elm$core$String$startsWith, $author$project$Link$repo, dest)) {
+		if (A2(
+			$elm$core$List$any,
+			function (dir) {
+				return A2($elm$core$String$startsWith, dir, dest);
+			},
+			_List_fromArray(
+				['editor/', 'site/']))) {
 			return A2(
-				$author$project$Link$fromRepo,
-				dest,
+				$elm$core$Maybe$withDefault,
+				$author$project$Link$Unresolved(dest),
 				A2(
-					$elm$core$String$dropLeft,
-					$elm$core$String$length($author$project$Link$repo),
-					dest));
+					$elm$core$Maybe$map,
+					$author$project$Link$External,
+					$author$project$Href$web($author$project$Link$repo + ('/blob/main/' + dest))));
 		} else {
-			if (A2($elm$core$String$startsWith, '../../', dest)) {
+			if (A2($elm$core$String$startsWith, $author$project$Link$repo, dest)) {
 				return A2(
 					$author$project$Link$fromRepo,
 					dest,
-					A2($elm$core$String$dropLeft, 5, dest));
+					A2(
+						$elm$core$String$dropLeft,
+						$elm$core$String$length($author$project$Link$repo),
+						dest));
 			} else {
-				var _v0 = $author$project$Href$web(dest);
-				if (!_v0.$) {
-					var web = _v0.a;
-					return $author$project$Link$External(web);
+				if (A2($elm$core$String$startsWith, '../../', dest)) {
+					return A2(
+						$author$project$Link$fromRepo,
+						dest,
+						A2($elm$core$String$dropLeft, 5, dest));
 				} else {
-					return $author$project$Link$toDoc(dest);
+					var _v0 = $author$project$Href$web(dest);
+					if (!_v0.$) {
+						var web = _v0.a;
+						return $author$project$Link$External(web);
+					} else {
+						return $author$project$Link$toDoc(dest);
+					}
 				}
 			}
 		}
@@ -17798,7 +18555,7 @@ var $dillonkearns$elm_markdown$Markdown$Html$withAttribute = F2(
 						},
 						attributes);
 					if (!_v1.$) {
-						var value = _v1.a.dR;
+						var value = _v1.a.dU;
 						return $elm$core$Result$map(
 							$elm$core$Basics$apR(value));
 					} else {
@@ -17824,7 +18581,7 @@ var $dillonkearns$elm_markdown$Markdown$Html$withOptionalAttribute = F2(
 						},
 						attributes);
 					if (!_v1.$) {
-						var value = _v1.a.dR;
+						var value = _v1.a.dU;
 						return $elm$core$Result$map(
 							$elm$core$Basics$apR(
 								$elm$core$Maybe$Just(value)));
@@ -17837,14 +18594,25 @@ var $dillonkearns$elm_markdown$Markdown$Html$withOptionalAttribute = F2(
 			});
 	});
 var $author$project$Guide$renderer = F2(
-	function (base, id) {
+	function (base, _v0) {
+		var id = _v0.bT;
+		var note = _v0.b3;
 		return _Utils_update(
 			$dillonkearns$elm_markdown$Markdown$Renderer$defaultHtmlRenderer,
 			{
-				cY: function (_v0) {
-					var level = _v0.c8;
-					var rawText = _v0.dv;
-					var children = _v0.cM;
+				cJ: $elm$html$Html$blockquote(
+					_List_fromArray(
+						[
+							$elm$html$Html$Attributes$classList(
+							_List_fromArray(
+								[
+									_Utils_Tuple2('design-note', note)
+								]))
+						])),
+				c$: function (_v1) {
+					var level = _v1.db;
+					var rawText = _v1.dy;
+					var children = _v1.cP;
 					var tag = function () {
 						switch (level) {
 							case 0:
@@ -17874,7 +18642,7 @@ var $author$project$Guide$renderer = F2(
 							]),
 						children);
 				},
-				c_: $dillonkearns$elm_markdown$Markdown$Html$oneOf(
+				c1: $dillonkearns$elm_markdown$Markdown$Html$oneOf(
 					_Utils_ap(
 						A2(
 							$elm$core$List$map,
@@ -17894,7 +18662,7 @@ var $author$project$Guide$renderer = F2(
 								A2(
 								$dillonkearns$elm_markdown$Markdown$Html$tag,
 								'img',
-								function (_v2) {
+								function (_v3) {
 									return $elm$html$Html$text('');
 								}),
 								A2(
@@ -17919,7 +18687,7 @@ var $author$project$Guide$renderer = F2(
 										$dillonkearns$elm_markdown$Markdown$Html$tag,
 										'img',
 										F3(
-											function (src, alt, _v3) {
+											function (src, alt, _v4) {
 												return A3(
 													$author$project$Guide$image,
 													base,
@@ -17927,19 +18695,19 @@ var $author$project$Guide$renderer = F2(
 													src);
 											}))))
 							]))),
-				c$: function (_v4) {
-					var alt = _v4.cD;
-					var src = _v4.dF;
+				c2: function (_v5) {
+					var alt = _v5.cF;
+					var src = _v5.dI;
 					return A3($author$project$Guide$image, base, alt, src);
 				},
-				c9: function (_v5) {
-					var destination = _v5.cP;
+				dc: function (_v6) {
+					var destination = _v6.cS;
 					return A2(
 						$author$project$Guide$link,
 						base,
 						$author$project$Link$link(destination));
 				},
-				dK: A2(
+				dN: A2(
 					$elm$core$Basics$composeL,
 					A2(
 						$elm$core$Basics$composeL,
@@ -18062,7 +18830,19 @@ var $author$project$Guide$render = F2(
 		return A2(
 			$dillonkearns$elm_markdown$Markdown$Renderer$renderWithMeta,
 			$author$project$Guide$renderer(base),
-			$author$project$Guide$withIds(blocks));
+			A2(
+				$elm$core$List$map,
+				function (_v0) {
+					var block = _v0.a;
+					var id = _v0.b;
+					return _Utils_Tuple2(
+						block,
+						{
+							bT: id,
+							b3: $author$project$Guide$isDesignNote(block)
+						});
+				},
+				$author$project$Guide$withIds(blocks)));
 	});
 var $author$project$Guide$view = F2(
 	function (base, blocks) {
@@ -18100,7 +18880,7 @@ var $author$project$Main$docView = F2(
 				case 2:
 					if (!_v0.a.a.$) {
 						var blocks = _v0.a.a.a;
-						return A2($author$project$Guide$view, model.l, blocks);
+						return A2($author$project$Guide$view, model.j, blocks);
 					} else {
 						return A4(
 							$author$project$Main$unavailable,
@@ -18434,12 +19214,12 @@ var $author$project$Release$latest = function (releases) {
 			$elm$core$List$sortWith,
 			F2(
 				function (a, b) {
-					return A2($author$project$Version$compare, b.ad, a.ad);
+					return A2($author$project$Version$compare, b.ae, a.ae);
 				}),
 			A2(
 				$elm$core$List$filter,
 				function (r) {
-					return !r.dG;
+					return !r.dJ;
 				},
 				releases)));
 };
@@ -18462,10 +19242,10 @@ var $author$project$Release$newer = F2(
 var $author$project$Release$current = function (list) {
 	var maybeStable = function (s) {
 		return !_Utils_eq(
-			s.dG,
+			s.dJ,
 			$elm$core$Maybe$Just(1));
 	};
-	var _v0 = $author$project$Release$latest(list.ab);
+	var _v0 = $author$project$Release$latest(list.ac);
 	if (!_v0.$) {
 		var r = _v0.a;
 		return A2(
@@ -18519,7 +19299,7 @@ var $elm$time$Time$toAdjustedMinutesHelp = F3(
 			} else {
 				var era = eras.a;
 				var olderEras = eras.b;
-				if (_Utils_cmp(era.j, posixMinutes) < 0) {
+				if (_Utils_cmp(era.k, posixMinutes) < 0) {
 					return posixMinutes + era.d;
 				} else {
 					var $temp$defaultOffset = defaultOffset,
@@ -18557,8 +19337,8 @@ var $elm$time$Time$toCivil = function (minutes) {
 	var year = yearOfEra + (era * 400);
 	return {
 		bE: (dayOfYear - ((((153 * mp) + 2) / 5) | 0)) + 1,
-		bZ: month,
-		cA: year + ((month <= 2) ? 1 : 0)
+		b_: month,
+		cC: year + ((month <= 2) ? 1 : 0)
 	};
 };
 var $elm$time$Time$toDay = F2(
@@ -18581,7 +19361,7 @@ var $elm$time$Time$Sep = 8;
 var $elm$time$Time$toMonth = F2(
 	function (zone, time) {
 		var _v0 = $elm$time$Time$toCivil(
-			A2($elm$time$Time$toAdjustedMinutes, zone, time)).bZ;
+			A2($elm$time$Time$toAdjustedMinutes, zone, time)).b_;
 		switch (_v0) {
 			case 1:
 				return 0;
@@ -18612,7 +19392,7 @@ var $elm$time$Time$toMonth = F2(
 var $elm$time$Time$toYear = F2(
 	function (zone, time) {
 		return $elm$time$Time$toCivil(
-			A2($elm$time$Time$toAdjustedMinutes, zone, time)).cA;
+			A2($elm$time$Time$toAdjustedMinutes, zone, time)).cC;
 	});
 var $elm$time$Time$Zone = F2(
 	function (a, b) {
@@ -18668,7 +19448,7 @@ var $author$project$Main$currentLine = F2(
 					_List_fromArray(
 						[
 							$elm$html$Html$text(
-							$author$project$Version$toString(r.ad))
+							$author$project$Version$toString(r.ae))
 						])),
 					A2(
 					$elm$html$Html$span,
@@ -18717,7 +19497,7 @@ var $author$project$Main$noneReadable = _List_fromArray(
 		$elm$html$Html$text('.')
 	]);
 var $author$project$Main$current = function (model) {
-	var _v0 = model.ab;
+	var _v0 = model.ac;
 	switch (_v0.$) {
 		case 2:
 			var list = _v0.a;
@@ -18725,7 +19505,7 @@ var $author$project$Main$current = function (model) {
 			switch (_v1.$) {
 				case 0:
 					var r = _v1.a;
-					return A2($author$project$Main$currentLine, model.l, r);
+					return A2($author$project$Main$currentLine, model.j, r);
 				case 1:
 					var r = _v1.a;
 					return A2(
@@ -18733,7 +19513,7 @@ var $author$project$Main$current = function (model) {
 						_List_Nil,
 						_List_fromArray(
 							[
-								A2($author$project$Main$currentLine, model.l, r),
+								A2($author$project$Main$currentLine, model.j, r),
 								A2(
 								$elm$html$Html$p,
 								_List_fromArray(
@@ -18763,7 +19543,7 @@ var $author$project$Main$door = F2(
 	function (base, _v0) {
 		var route = _v0.K;
 		var label = _v0.a0;
-		var text = _v0.dN;
+		var text = _v0.dQ;
 		return A2(
 			$elm$html$Html$li,
 			_List_Nil,
@@ -18858,7 +19638,7 @@ var $author$project$Main$home = function (model) {
 				]),
 			A2(
 				$elm$core$List$map,
-				$author$project$Main$door(model.l),
+				$author$project$Main$door(model.j),
 				$author$project$Menu$doors($author$project$Features$editor)))
 		]);
 };
@@ -18908,7 +19688,7 @@ var $author$project$Main$asset = function (a) {
 						_List_fromArray(
 							[
 								$elm$html$Html$text(
-								$author$project$Release$kindLabel(a.c4))
+								$author$project$Release$kindLabel(a.c7))
 							])),
 						A2(
 						$elm$html$Html$span,
@@ -18929,7 +19709,7 @@ var $author$project$Main$asset = function (a) {
 						_List_fromArray(
 							[
 								$elm$html$Html$text(
-								$author$project$ByteSize$toString(a.dE))
+								$author$project$ByteSize$toString(a.dH))
 							]))
 					]))
 			]));
@@ -18972,7 +19752,7 @@ var $author$project$Main$assets = function (r) {
 							$elm$html$Html$a,
 							_List_fromArray(
 								[
-									$author$project$Main$href(r.b4)
+									$author$project$Main$href(r.b6)
 								]),
 							_List_fromArray(
 								[
@@ -18998,7 +19778,7 @@ var $author$project$Main$offer = F2(
 				_List_fromArray(
 					[
 						$elm$html$Html$text(
-						$author$project$Version$toString(r.ad)),
+						$author$project$Version$toString(r.ae)),
 						A2(
 						$elm$html$Html$span,
 						_List_fromArray(
@@ -19027,7 +19807,7 @@ var $author$project$Main$offer = F2(
 								$author$project$Main$href(
 								A2(
 									$author$project$Href$withFragment,
-									$author$project$Anchor$release(r.ad),
+									$author$project$Anchor$release(r.ae),
 									A2($author$project$Route$href, base, $author$project$Route$Releases)))
 							]),
 						_List_fromArray(
@@ -19039,7 +19819,7 @@ var $author$project$Main$offer = F2(
 						$elm$html$Html$a,
 						_List_fromArray(
 							[
-								$author$project$Main$href(r.b4)
+								$author$project$Main$href(r.b6)
 							]),
 						_List_fromArray(
 							[
@@ -19072,7 +19852,7 @@ var $author$project$Main$downloads = function (model) {
 					$elm$html$Html$text('LATEST RELEASE')
 				])),
 		function () {
-			var _v0 = model.ab;
+			var _v0 = model.ac;
 			switch (_v0.$) {
 				case 0:
 					return $author$project$Main$loading;
@@ -19097,7 +19877,7 @@ var $author$project$Main$downloads = function (model) {
 					switch (_v1.$) {
 						case 0:
 							var r = _v1.a;
-							return A2($author$project$Main$offer, model.l, r);
+							return A2($author$project$Main$offer, model.j, r);
 						case 1:
 							var r = _v1.a;
 							return A2(
@@ -19109,7 +19889,7 @@ var $author$project$Main$downloads = function (model) {
 											$elm$html$Html$Attributes$class('problem')
 										]),
 									$author$project$Main$newerSkipped),
-								A2($author$project$Main$offer, model.l, r));
+								A2($author$project$Main$offer, model.j, r));
 						case 2:
 							return _List_fromArray(
 								[
@@ -19471,11 +20251,11 @@ var $author$project$Main$releaseView = F3(
 						$elm$html$Html$text(
 							A2(
 								$elm$core$Maybe$withDefault,
-								'Chimera ' + $author$project$Version$toString(r.ad),
+								'Chimera ' + $author$project$Version$toString(r.ae),
 								r.a6)),
 						_Utils_ap(
 							function () {
-								var _v1 = r.dG;
+								var _v1 = r.dJ;
 								if (_v1 === 1) {
 									return _List_fromArray(
 										[
@@ -19535,7 +20315,7 @@ var $author$project$Main$releaseView = F3(
 									$elm$html$Html$Attributes$class('doc')
 								]),
 							function () {
-								var _v2 = $author$project$Guide$parse(r.b2);
+								var _v2 = $author$project$Guide$parse(r.b4);
 								if (!_v2.$) {
 									var blocks = _v2.a;
 									return A2($author$project$Guide$view, base, blocks);
@@ -19547,7 +20327,7 @@ var $author$project$Main$releaseView = F3(
 											_List_Nil,
 											_List_fromArray(
 												[
-													$elm$html$Html$text(r.b2)
+													$elm$html$Html$text(r.b4)
 												]))
 										]);
 								}
@@ -19596,7 +20376,7 @@ var $author$project$Main$releases = function (model) {
 					$elm$html$Html$text('Releases')
 				])),
 		function () {
-			var _v0 = model.ab;
+			var _v0 = model.ac;
 			switch (_v0.$) {
 				case 0:
 					return $author$project$Main$loading;
@@ -19614,16 +20394,16 @@ var $author$project$Main$releases = function (model) {
 						$elm$core$List$sortWith,
 						F2(
 							function (a, b) {
-								return A2($author$project$Version$compare, b.ad, a.ad);
+								return A2($author$project$Version$compare, b.ae, a.ae);
 							}),
-						list.ab);
+						list.ac);
 					var ids = $author$project$Anchor$unique(
 						A2(
 							$elm$core$List$map,
 							A2(
 								$elm$core$Basics$composeR,
 								function ($) {
-									return $.ad;
+									return $.ae;
 								},
 								$author$project$Anchor$release),
 							sorted));
@@ -19634,10 +20414,10 @@ var $author$project$Main$releases = function (model) {
 							var rest = _v1.b;
 							return A2(
 								$elm$core$List$cons,
-								A3($author$project$Main$releaseView, model.l, 0, first),
+								A3($author$project$Main$releaseView, model.j, 0, first),
 								A2(
 									$elm$core$List$map,
-									A2($author$project$Main$releaseView, model.l, 1),
+									A2($author$project$Main$releaseView, model.j, 1),
 									rest));
 						} else {
 							return _List_fromArray(
@@ -19899,7 +20679,7 @@ var $author$project$Main$page = function (model) {
 		case 1:
 			return $author$project$Main$install(model);
 		case 2:
-			return $author$project$Main$guides(model.l);
+			return $author$project$Main$guides(model.j);
 		case 3:
 			var id = _v0.a;
 			return _List_fromArray(
@@ -19938,11 +20718,100 @@ var $author$project$Main$page = function (model) {
 						]))
 				]);
 		case 4:
-			return $author$project$Main$releases(model);
+			return _List_fromArray(
+				[
+					A2(
+					$elm$html$Html$article,
+					_List_fromArray(
+						[
+							$elm$html$Html$Attributes$class('doc')
+						]),
+					A2($author$project$Main$docView, model, $author$project$Doc$ManualIndex)),
+					A2(
+					$elm$html$Html$p,
+					_List_fromArray(
+						[
+							$elm$html$Html$Attributes$class('source')
+						]),
+					function () {
+						var _v1 = $author$project$AssetPath$manualFile('manual.md');
+						if (!_v1.$) {
+							var whole = _v1.a;
+							return _List_fromArray(
+								[
+									A2(
+									$elm$html$Html$a,
+									_List_fromArray(
+										[
+											$author$project$Main$href(
+											A2($author$project$Route$asset, model.j, whole))
+										]),
+									_List_fromArray(
+										[
+											$elm$html$Html$text('THE WHOLE MANUAL AS ONE FILE')
+										])),
+									$elm$html$Html$text(' · '),
+									A2(
+									$elm$html$Html$a,
+									_List_fromArray(
+										[
+											$author$project$Main$href(
+											$author$project$Main$sourceOf($author$project$Doc$ManualIndex))
+										]),
+									_List_fromArray(
+										[
+											$elm$html$Html$text('READ IT ON GITHUB')
+										]))
+								]);
+						} else {
+							return _List_Nil;
+						}
+					}())
+				]);
 		case 5:
-			return $author$project$Main$editor(model.l);
+			var c = _v0.a;
+			return _List_fromArray(
+				[
+					A2(
+					$elm$html$Html$article,
+					_List_fromArray(
+						[
+							$elm$html$Html$Attributes$class('doc')
+						]),
+					A2(
+						$author$project$Main$docView,
+						model,
+						$author$project$Doc$ManualChapter(c))),
+					A2($author$project$Main$chapterNav, model.j, c),
+					A2(
+					$elm$html$Html$p,
+					_List_fromArray(
+						[
+							$elm$html$Html$Attributes$class('source')
+						]),
+					_List_fromArray(
+						[
+							A2(
+							$elm$html$Html$a,
+							_List_fromArray(
+								[
+									$author$project$Main$href(
+									$author$project$Main$sourceOf(
+										$author$project$Doc$ManualChapter(c)))
+								]),
+							_List_fromArray(
+								[
+									$elm$html$Html$text(
+									'READ ' + ($author$project$Chapter$file(c) + ' ON GITHUB'))
+								]))
+						]))
+				]);
+		case 6:
+			return $author$project$Main$releases(model);
+		case 7:
+			return $author$project$Main$editor(model.j);
 		default:
-			return $author$project$NotFound$view(model.l);
+			return $author$project$NotFound$view(model.j);
 	}
 };
 var $author$project$Main$pageClass = function (route) {
@@ -19958,6 +20827,10 @@ var $author$project$Main$pageClass = function (route) {
 		case 4:
 			return 'page';
 		case 5:
+			return 'page';
+		case 6:
+			return 'page';
+		case 7:
 			return 'page';
 		default:
 			return 'page';
@@ -19985,8 +20858,14 @@ var $author$project$Meta$title = function (route) {
 			return named(
 				$author$project$GuideId$title(id));
 		case 4:
-			return named('Releases');
+			return named('Manual');
 		case 5:
+			var c = route.a;
+			return named(
+				$author$project$Chapter$title(c) + ' (manual)');
+		case 6:
+			return named('Releases');
+		case 7:
 			return named('Editor');
 		default:
 			return named('Not found');
@@ -19994,7 +20873,7 @@ var $author$project$Meta$title = function (route) {
 };
 var $author$project$Main$view = function (model) {
 	return {
-		cH: _List_fromArray(
+		cK: _List_fromArray(
 			[
 				A2(
 				$elm$html$Html$a,
@@ -20018,27 +20897,27 @@ var $author$project$Main$view = function (model) {
 						$author$project$Main$pageClass(model.K))
 					]),
 				$author$project$Main$page(model)),
-				$author$project$Main$footer(model.l)
+				$author$project$Main$footer(model.j)
 			]),
-		dP: $author$project$Meta$title(model.K)
+		dS: $author$project$Meta$title(model.K)
 	};
 };
 var $author$project$Main$main = $elm$browser$Browser$application(
 	{
-		c1: $author$project$Main$init,
-		$7: $author$project$Main$UrlChanged,
-		dp: $author$project$Main$UrlRequested,
-		dJ: function (_v0) {
+		c4: $author$project$Main$init,
+		dr: $author$project$Main$UrlChanged,
+		ds: $author$project$Main$UrlRequested,
+		dM: function (_v0) {
 			return $elm$core$Platform$Sub$none;
 		},
-		dQ: $author$project$Main$update,
-		dS: $author$project$Main$view
+		dT: $author$project$Main$update,
+		dV: $author$project$Main$view
 	});
 _Platform_export({'Main':{'init':$author$project$Main$main(
 	A2(
 		$elm$json$Json$Decode$andThen,
 		function (base) {
 			return $elm$json$Json$Decode$succeed(
-				{l: base});
+				{j: base});
 		},
 		A2($elm$json$Json$Decode$field, 'base', $elm$json$Json$Decode$string)))(0)}});}(this));
