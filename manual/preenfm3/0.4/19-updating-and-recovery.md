@@ -1,281 +1,222 @@
 # Updating and recovery
 
-This chapter covers installing and updating Chimera, the install screen, the stock bootloader it relies on, DFU mode, going back to the stock PreenFM3 firmware, getting a unit back when something goes wrong, and what to put in a bug report. Copying files to the card is also in [the SD card chapter](16-card-sounds-library.md#card-copying-files-from-a-computer); the USB port is in [USB](17-usb.md).
+This chapter covers installing and updating Chimera, the install screen, the stock bootloader it relies on, DFU mode, going back to the stock PreenFM3 firmware, recovery, and bug reports. Copying files to the card is in [the SD card chapter](16-card-sounds-library.md#card-copying-files-from-a-computer); the USB port is in [USB](17-usb.md).
 
 ## Updating: the two halves of the firmware
 
 Chimera comes as two files, and needs both:
 
-- `CHIMERA.BIN`, the first half. The bootloader writes it.
-- `CHIMERA.BK2`, the second half. Chimera installs it itself when it starts and finds one on the card (or from the update tool) that it hasn't installed yet.
+- `CHIMERA.BIN`, the first half, written by the bootloader;
+- `CHIMERA.BK2`, the second half, which Chimera installs itself when it finds a new one on the card or from the update tool.
 
-The release also has the factory zip (`factory-v1.zip`): the factory Sounds, the TAPE sources they play, four demo projects and the SUGGEST controller map. And it has the update tool, `chimera-usb.py`.
+A release also has the factory zip (`factory-v1.zip`: factory Sounds, their TAPE sources, four demo projects and the five factory controller maps) and the update tool, `chimera-usb.py`.
 
-The file names never carry a version. The version is in the release title, on the boot splash, and at SETTINGS › SYSTEM › ABOUT. Keep the names exactly as they are. If your browser saved a second copy as `CHIMERA (1).BIN` (or `CHIMERA (1).BK2`), rename it back to `CHIMERA.BIN` in Finder or Explorer. Rename it; don't delete it.
+File names never carry a version (that is in the release title, the boot splash and SETTINGS › SYSTEM › ABOUT). Keep them exactly as they are: if your browser saved `CHIMERA (1).BIN` or `CHIMERA (1).BK2`, rename it back in Finder or Explorer rather than deleting it.
 
-There are three ways to install. All of them end on the same install screen.
-
-| Way | When to use it |
+| Way | When |
 |---|---|
-| [The update tool over USB](#updating-with-the-update-tool-over-usb) | The unit already runs Chimera 0.3 or later, and the computer is a Mac or runs Linux. One command |
-| [The SD card](#updating-from-the-sd-card) | A first install, any computer, Windows, or if the tool stops |
-| [USB DFU with dfu-util](#updating-over-usb-dfu-with-dfu-util) | When the card method can't be used, on macOS or Linux |
+| [The update tool over USB](#updating-with-the-update-tool-over-usb) | The unit runs Chimera 0.3 or later, on macOS or Linux. One command |
+| [The SD card](#updating-from-the-sd-card) | A first install, Windows, or if the tool stops |
+| [USB DFU with dfu-util](#updating-over-usb-dfu-with-dfu-util) | When the card can't be used, on macOS or Linux |
 
-Your projects and Sounds on the card stay through an update.
+All three end on the same install screen, and your projects and Sounds stay on the card.
 
-**Why two halves:** the first part of the chip's flash, which the bootloader writes, is too small for everything Chimera does. The rest lives in a second area the bootloader doesn't reach, so Chimera writes it itself. The update tool and the install screen make the two halves one step for you.
+**Why two halves:** the flash area the bootloader writes is too small for Chimera; the rest lives where the bootloader doesn't reach, so Chimera writes it itself. The tool and install screen make the two halves one step.
 
 ## Updating with the update tool over USB
 
-A PreenFM3 running Chimera 0.3 or later updates with the update tool, `chimera-usb.py`, over the USB cable. You type the command once, the tool puts both halves on the unit, and you see one install screen. The tool runs on macOS and Linux. On Windows, use [the SD card](#updating-from-the-sd-card).
+You need the PreenFM3 running Chimera 0.3 or later, a data USB cable, and `CHIMERA.BIN`, `CHIMERA.BK2` and `chimera-usb.py` in your Downloads folder, names unchanged. On Windows, use [the SD card](#updating-from-the-sd-card).
 
-You'll need:
+**Once, on a Mac:**
 
-- Your PreenFM3, running Chimera.
-- A USB cable that carries data.
-- Three files from the release: `CHIMERA.BIN`, `CHIMERA.BK2` and `chimera-usb.py`, saved in your Downloads folder with their names exactly as they are.
-
-**Once, on a Mac: open Terminal and add two helpers.**
-
-1. Open Terminal: press **Command + Space**, type **Terminal** and press **Return**. Each command below is typed (or pasted) on the line ending in `%` or `$`, then run with Return. When the line comes back, the command has finished.
-2. If you don't have Homebrew yet, install it with the one command shown on brew.sh. When it asks for your password, type your Mac's password: nothing shows as you type, which is normal.
-3. Install dfu-util, which the tool uses to write the firmware:
+1. Open Terminal (**Command + Space**, type **Terminal**, **Return**). Type each command on the line ending in `%` or `$` and press Return; when the line comes back, it has finished.
+2. Install Homebrew with the one command on brew.sh if you don't have it. Your password doesn't show as you type; that is normal.
+3. Install dfu-util, which writes the firmware:
 
    ```bash
    brew install dfu-util
    ```
 
-4. Install pyserial, which the tool uses to find the PreenFM3:
+4. Install pyserial, which finds the PreenFM3 (if the Mac offers the command line developer tools, install them and run this again):
 
    ```bash
    python3 -m pip install --user pyserial
    ```
 
-   If the Mac offers to install the command line developer tools, press Install, wait for it to finish, and run the command again.
-
-On Linux, install `dfu-util` with your distribution's package manager (for example `sudo apt install dfu-util`).
+On Linux, install `dfu-util` with your package manager (`sudo apt install dfu-util`).
 
 **The update:**
 
-1. Save your project on the PreenFM3 (**hold MENU**). The tool won't start while the project has unsaved changes: it says so and changes nothing.
-2. Connect the PreenFM3 to the computer and turn it on as usual, so it plays Chimera (not the bootloader screen).
-3. In Terminal, go to your Downloads folder:
+1. **Hold MENU** to save your project: the tool won't start with unsaved changes.
+2. Connect the PreenFM3 and turn it on as usual, playing Chimera.
+3. In Terminal:
 
    ```bash
    cd ~/Downloads
-   ```
-
-4. Run the update:
-
-   ```bash
    python3 chimera-usb.py update CHIMERA.BIN CHIMERA.BK2
    ```
 
-5. Wait. The tool checks both files first, then writes the firmware. The PreenFM3 restarts and shows **DON'T POWER OFF** while it installs the second half. Leave the cable in, the power on and the Terminal window open until Terminal prints `OK updated` and the version. That can take a few minutes. Never stop the tool or pull the cable while it runs.
+4. Wait. The tool checks both files, writes the firmware, and the PreenFM3 restarts showing **DON'T POWER OFF**. Leave cable, power and Terminal alone until it prints `OK updated` and the version, which can take a few minutes.
 
-The tool updates the firmware only. To add the factory Sounds, copy the factory zip's folders onto the card as in [the SD card chapter](16-card-sounds-library.md#card-copying-files-from-a-computer).
+The tool updates firmware only; add the factory Sounds as in [the SD card chapter](16-card-sounds-library.md#card-copying-files-from-a-computer). Close the [browser editor](18-browser-editor.md) first: only one program can hold the port.
 
-**If it stops:**
+**If it stops** before the restart, nothing has changed: fix what the last line names and run it again. After the restart, the bootloader is untouched: hold **MENU** at power-on and use [the SD card](#updating-from-the-sd-card).
 
-- Before the PreenFM3 restarts, nothing on the unit has changed. Read the tool's last line, fix what it names (an unsaved project, a missing file, the cable), and run the update again.
-- After the restart, the bootloader is untouched: Chimera never writes it. Turn the PreenFM3 off, hold **MENU** while you turn it on, and install with [the SD card](#updating-from-the-sd-card).
-
-While the tool runs, nothing else can use the unit's USB port: close the [browser editor](18-browser-editor.md) first.
-
-**Why one command:** an update should be one package, one command and one install screen, never two separate jobs you could do in the wrong order or half-finish.
+**Why one command:** an update is one package, one command and one install screen, never two jobs you could do in the wrong order.
 
 ## Updating from the SD card
 
-This way needs no software on the computer. The card stays inside the PreenFM3: your computer reaches it over USB.
+No software is needed on the computer.
 
-**Step 1: check the bootloader.**
+**Step 1: check the bootloader.** Turn the unit off, hold **MENU**, turn it on, and hold until the screen lights. The top line must read `pfm3 BootLoader 1.09`; if older, [update it](#updating-an-older-bootloader) once. If nothing appears, see [Recovery: the bootloader screen doesn't appear](#recovery-the-bootloader-screen-doesnt-appear).
 
-1. Turn off the PreenFM3.
-2. Hold **MENU** and turn it on. Keep holding until the screen lights up.
-3. The screen shows the bootloader's version at the top. It must say `pfm3 BootLoader 1.09`. If it shows an older version, [update the bootloader](#updating-an-older-bootloader) first, once. If nothing happens, see [Recovery: the bootloader screen doesn't appear](#recovery-the-bootloader-screen-doesnt-appear).
+**Step 2: download** `CHIMERA.BIN`, `CHIMERA.BK2` and the factory zip, and unzip it (to a folder called **CHIMERA**).
 
-**Step 2: download** `CHIMERA.BIN`, `CHIMERA.BK2` and the factory zip from the releases page, and unzip the factory zip. It unzips to a folder called **CHIMERA**.
+**Step 3: copy the files.**
 
-**Step 3: copy the files to the card.**
-
-1. Connect the PreenFM3 to the computer with a USB cable.
-2. Enter the bootloader (hold **MENU** while turning it on).
-3. Press **button 3 (SD card access)**. The card appears on the computer like a USB drive.
-4. Copy `CHIMERA.BIN` and `CHIMERA.BK2` into the drive's main folder (not inside another folder). If older copies are already there, choose **Replace**.
-5. Copy the factory set from the unzipped **CHIMERA** folder, as [the SD card chapter](16-card-sounds-library.md#card-copying-files-from-a-computer) describes (whole folder on a new card, folder by folder on a card that already has one).
-6. Safely eject the drive.
-7. Press **MENU** on the PreenFM3 to leave SD card access.
+1. Connect the PreenFM3 by USB, enter the bootloader (hold **MENU** at power-on) and press **button 3 (SD card access)**.
+2. Copy `CHIMERA.BIN` and `CHIMERA.BK2` into the drive's main folder; choose **Replace** over older copies.
+3. Copy the factory set as [the SD card chapter](16-card-sounds-library.md#card-copying-files-from-a-computer) describes.
+4. Eject the drive, then press **MENU** on the PreenFM3.
 
 **Step 4: flash and install.**
 
-1. Under **Firmware to flash**, press **−** and **+** to step through the files on the card until it shows `CHIMERA.BIN`.
+1. Under **Firmware to flash**, press **−** / **+** until it shows `CHIMERA.BIN`.
 2. Press **button 1 (flash)**.
-3. When Chimera starts, it finds `CHIMERA.BK2` on the card and installs it (see [Updating: the install screen](#updating-the-install-screen)). Leave the power on until it's done.
+3. Chimera starts, finds `CHIMERA.BK2` and installs it ([the install screen](#updating-the-install-screen)). Leave the power on.
 
-**Pick `CHIMERA.BIN`, the big file.** The bootloader shows every `.bin` on the card, one at a time, and Chimera's may not be the first. On a Mac, copying also leaves a small hidden twin, `._CHIMERA.BIN`, which the bootloader lists as `CHIMER~1.BIN`. It isn't firmware: flashing it leaves a black screen. You can leave it on the card; just pick the real one. Copying from Windows or Linux doesn't make the twin.
+**Pick `CHIMERA.BIN`, the big file.** The bootloader lists every `.bin`. A Mac also leaves a hidden twin, `._CHIMERA.BIN`, listed as `CHIMER~1.BIN`: it isn't firmware, and flashing it gives a black screen. Leave it; just pick the real one.
 
-You can leave `CHIMERA.BIN` and `CHIMERA.BK2` on the card. The next release uses the same two names: copy the new ones over them and choose **Replace**.
+The two files can stay on the card; next time, copy the new ones over them with **Replace**.
 
-**On Windows**, the first time you connect the unit over USB after an update, Windows may set up its driver again. Let it finish, then pick **Chimera** again in your music software.
+**On Windows**, the first USB connection after an update may set up the driver again; let it finish, then pick **Chimera** again in your music software.
 
 ## Updating over USB DFU with dfu-util
 
-If you can't use the SD card, `CHIMERA.BIN` can go over USB with `dfu-util`, on macOS or Linux. On Windows, use the SD card.
+On macOS or Linux, `CHIMERA.BIN` can go over USB.
 
-1. Install `dfu-util` (`brew install dfu-util` on a Mac, your package manager on Linux).
-2. Put the PreenFM3 in DFU mode: connect it with a USB cable, turn it off, hold **MENU** while turning it on, and when the bootloader appears press **button 2 (DFU Mode)**. From Chimera itself, SETTINGS › SYSTEM › **OS UPGRADE** does the same (see [Updating: DFU from SETTINGS](#updating-dfu-from-settings)).
-3. In a terminal, in the folder with the firmware, run exactly:
+1. Install `dfu-util` (`brew install dfu-util`, or your package manager).
+2. Enter DFU: with USB connected, hold **MENU** at power-on and press **button 2 (DFU Mode)**, or use SETTINGS › SYSTEM › **OS UPGRADE** ([DFU from SETTINGS](#updating-dfu-from-settings)).
+3. In the firmware's folder, run exactly:
 
    ```bash
    dfu-util -a 0 -d 0483:df11 -D CHIMERA.BIN -s 0x08020000:leave
    ```
 
-   The PreenFM3 restarts into Chimera. `Error during download get_status` after the transfer is normal if the unit has already restarted.
+   The unit restarts into Chimera. `Error during download get_status` afterwards is normal.
 
-4. Then add `CHIMERA.BK2` and the factory set: hold **MENU** while powering on, press **button 3 (SD card access)**, copy them onto the card as in [Updating from the SD card](#updating-from-the-sd-card), eject, press **MENU**, and turn the PreenFM3 off and on. Chimera installs `CHIMERA.BK2` on that start.
+4. Copy `CHIMERA.BK2` and the factory set to the card as in [Updating from the SD card](#updating-from-the-sd-card), then power-cycle; Chimera installs `CHIMERA.BK2` on that start.
 
-**Only ever use that command.** Chimera always goes to address `0x08020000`. Never write it to `0x08000000` (that's the bootloader), and never use `-a 1` (that writes the chip's option bytes, which can lock the chip for good).
+**Only ever use that command.** Chimera always goes to `0x08020000`. Never write it to `0x08000000` (the bootloader), and never use `-a 1` (the chip's option bytes, which can lock the chip for good).
 
-If Linux says it can't access the DFU device, run the command with `sudo`, or allow your user once:
+If Linux can't access the DFU device, use `sudo`, or allow your user once and replug:
 
 ```bash
 echo 'SUBSYSTEM=="usb", ATTRS{idVendor}=="0483", ATTRS{idProduct}=="df11", TAG+="uaccess"' | sudo tee /etc/udev/rules.d/70-stm32-dfu.rules && sudo udevadm control --reload
 ```
 
-Then unplug the PreenFM3 and plug it back in.
-
 ## Updating: DFU from SETTINGS
 
-SETTINGS › SYSTEM › **OS UPGRADE** restarts the unit into DFU mode, ready for `dfu-util`, without the power-on MENU hold. It asks first: **ENTER DFU? PLAY STOPS UNTIL FLASHED OR POWER-CYCLED**, with **ENTER DFU** and **CANCEL**. The bar starts on **CANCEL**, so a quick **EDIT** does no harm.
+SETTINGS › SYSTEM › **OS UPGRADE** restarts into DFU without the power-on hold. It asks **ENTER DFU? PLAY STOPS UNTIL FLASHED OR POWER-CYCLED** (**ENTER DFU**, **CANCEL**), opening on **CANCEL**.
 
 ![ENTER DFU, asked by OS UPGRADE](img/settings_prompt_enter_dfu.png)
 
-In DFU mode nothing plays. Flash with the command above, or turn the unit off and on to go back to Chimera unchanged.
+Nothing plays in DFU. Flash with the command above, or power-cycle to return unchanged.
 
 ## Updating: the install screen
 
-When Chimera starts with a new second half to install, it shows the install screen.
-
 ![The install screen, annotated](img/install.png)
 
-1. **DON'T POWER OFF.** Chimera is writing the second half of its firmware. Your sound keeps playing, but leave the power on.
-2. The version it is installing, with its build number.
-3. What it is doing: **ERASING**, then **WRITING**, then **SEALING**. When it's done, Chimera carries on by itself.
+1. **DON'T POWER OFF.** Chimera is writing its second half; sound keeps playing.
+2. The version being installed, with its build.
+3. The step: **ERASING**, **WRITING**, **SEALING**. Then Chimera carries on.
 
-The panel's buttons and knobs wait until the install ends.
+Buttons and knobs wait until it ends. If the power goes off, the next start installs again from the beginning; the bootloader and first half are never touched.
 
-If the power does go off during the install, nothing is lost: the next start installs it again, from the beginning. The bootloader and the first half are never touched by it.
+**Why it survives a power cut:** the seal is written last, and until it is, Chimera treats the second half as absent. A half-written install never runs.
 
-**Why it can survive a power cut:** the install writes the second half first and its seal last. Until the seal is written, Chimera treats the second half as not there and installs it again on the next start. A half-written install is never run.
-
-> **Design note:** Chimera rides on the stock PreenFM3 bootloader, Ixox's, version 1.09, and never writes a byte of it. That is a deliberate act of humility: the bootloader is the one program that can always bring the synth back, so Chimera treats it like a landlord's wiring. Look, admire, do not rewire. Everything that can go wrong during an update happens in Chimera's own rooms.
+> **Design note:** Chimera rides on the stock PreenFM3 bootloader, Ixox's, version 1.09, and never writes a byte of it. The bootloader is the one program that can always bring the synth back, so Chimera treats it like a landlord's wiring. Look, admire, do not rewire.
 
 ### Updating: when the install is refused
 
 ![NOT INSTALLED](img/install_refused.png)
 
-If the screen shows **NOT INSTALLED · THE MIXER SLOT HOLDS OTHER CODE. · NOTHING WAS WRITTEN.** (or **THE EDIT SLOT**), Chimera found another program in a flash area the bootloader keeps for optional extra programs, the ones it starts when **MIXER** or **EDIT** is held at power-on. Chimera writes nothing over someone else's program. The screen stays for 5 seconds or until you press a button, then Chimera starts without its second half: Parts and effects that need it stay silent and say **UPDATE**, and SETTINGS › SYSTEM › ABOUT reads **SLOT IN USE**. Please [report it](#recovery-reporting-a-bug), with the version you were installing.
+**NOT INSTALLED · THE MIXER SLOT HOLDS OTHER CODE. · NOTHING WAS WRITTEN.** (or **THE EDIT SLOT**) means another program sits in a flash area the bootloader keeps for optional programs (started by holding **MIXER** or **EDIT** at power-on). Chimera won't overwrite it. After 5 seconds or a button, Chimera starts without its second half: those Parts and effects say **UPDATE**, and ABOUT reads **SLOT IN USE**. Please [report it](#recovery-reporting-a-bug) with the version.
 
 ### Updating: a Part or effect says UPDATE or NEEDS UPDATE
 
-`CHIMERA.BK2` isn't installed, or it's from another version than `CHIMERA.BIN`. Without it, the engines, effects, ORBIT and most of MIDI stay silent, and Chimera ignores MIDI in. Copy the `CHIMERA.BK2` from the same release as your `CHIMERA.BIN` to the main folder of the card (hold **MENU** at power-on, then button 3), eject, and restart. The screen says **DON'T POWER OFF** while it installs.
+`CHIMERA.BK2` is missing or from another version. Without it, the engines, effects, ORBIT and most of MIDI stay silent, and MIDI in is ignored. Copy the matching `CHIMERA.BK2` to the card's main folder (hold **MENU** at power-on, button 3), eject and restart.
 
 ## Updating an older bootloader
 
-Chimera needs the stock PreenFM3 bootloader **1.09**. Chimera never changes the bootloader, so a unit that already has 1.09 keeps it.
+Chimera needs the stock bootloader **1.09** and never changes it. If yours is older, update it once: `p3_boot_1_09.bin` is in `pfm3_firmware_1_03.zip` on the PreenFM3 v1.03 release page, with its own instructions.
 
-If yours is older, update it once, before installing Chimera. The bootloader is Ixox's, from the stock PreenFM3 firmware: `p3_boot_1_09.bin` is inside `pfm3_firmware_1_03.zip`, on the PreenFM3 v1.03 release page, with Ixox's instructions.
-
-1. Put the unit in DFU mode (see [Updating over USB DFU with dfu-util](#updating-over-usb-dfu-with-dfu-util), step 2).
+1. Enter DFU ([step 2 above](#updating-over-usb-dfu-with-dfu-util)).
 2. Run:
 
    ```bash
    dfu-util -a 0 -d 0483:df11 -D p3_boot_1_09.bin -s 0x08000000
    ```
 
-   This is the only time you ever write to `0x08000000`, and only with this file.
+   The only time you write to `0x08000000`, and only with this file. Don't interrupt it: an interrupted bootloader update can stop the unit starting.
 
-3. Don't disconnect the synth or turn off its power while it runs: an interrupted bootloader update can stop the PreenFM3 from starting normally.
-4. Restart, hold **MENU**, and check the screen says 1.09. Then install Chimera as usual.
+3. Restart holding **MENU** and check it says 1.09.
 
-**Why 1.09:** Chimera is software on someone else's hardware. It uses the bootloader every PreenFM3 owner already has, so installing and leaving Chimera are the same steps as for the stock firmware, and the stock bootloader is always there to take you back.
+**Why 1.09:** it is the bootloader PreenFM3 owners already have, so installing and leaving Chimera are the same steps as for the stock firmware.
 
 ## Going back to the stock PreenFM3 firmware
 
-You can return to the original firmware whenever you like.
+Download the stock v1.03 firmware and install `p3_1_03.bin` with the SD card or DFU method above, in place of `CHIMERA.BIN`. Your stock patches and settings were never touched, and Chimera's files stay in `/CHIMERA/` for when you come back.
 
-1. Download the stock PreenFM3 v1.03 firmware and find `p3_1_03.bin`.
-2. Enter the bootloader by holding **MENU** while powering on.
-3. Install it with the SD card method (copy it to the card, pick it with **−** / **+**, press button 1) or the USB DFU method above, with `p3_1_03.bin` in place of `CHIMERA.BIN`.
+## Recovery: what to do when something goes wrong
 
-Your stock patches and settings were never touched: Chimera keeps its files in `/CHIMERA/` on the card. They stay there for when you come back.
+Never power off, pull the cable or stop the tool while `dfu-util` or the update tool writes, or while the screen says **DON'T POWER OFF**. If it happens anyway: during the install screen, the next start installs again; during a `CHIMERA.BIN` write, hold **MENU** at power-on and flash again.
 
-## Recovery: never interrupt an update
+| Symptom | What to do |
+|---|---|
+| Black screen after flashing | Hold **MENU** at power-on and flash again, picking `CHIMERA.BIN`, not `CHIMER~1.BIN` |
+| The computer doesn't see the card | Use a data cable, and press **button 3 (SD card access)** in the bootloader |
+| Dark screen at every power-on, computer sees a DFU device | The BOOT0 jumper inside must sit fully on its **NORMAL** pins. Bridged, or hanging on one pin, it starts the chip's own DFU |
+| The unit starts in DFU again once after a flash (flashed with BOOT0 bridged) | Leave DFU without flashing: `dfu-util -a 0 -d 0483:df11 -s 0x08020000:leave` (an error on exit is expected), then set the jumper to NORMAL |
 
-- Don't turn the power off or pull the USB cable while `dfu-util` or the update tool is writing, or while the screen says **DON'T POWER OFF**.
-- Never stop the update tool or `dfu-util` part way: let it finish.
-- If the power does go off anyway: during the install screen, the next start installs again. During a `CHIMERA.BIN` write, the bootloader is untouched, so hold **MENU** at power-on and flash again.
+### Recovery: the bootloader screen doesn't appear
 
-## Recovery: the BOOT0 jumper stays in NORMAL
+Turn the unit fully off, hold **MENU** before turning it on, and keep holding. If it still doesn't appear, check the BOOT0 jumper, then [open an issue](#recovery-reporting-a-bug) before trying anything else.
 
-Inside the PreenFM3 is a BOOT0 jumper. Leave it in its **NORMAL** position. Bridged, or left hanging on a single pin, it can make the unit start in the chip's own DFU mode at power-on (a dark screen, and the computer sees a DFU device) instead of starting the bootloader and Chimera. If your unit starts dark every time, check the jumper is fully on its NORMAL pins.
+### Recovery: a damaged bootloader
 
-## Recovery: black screen after flashing
+A Chimera install never writes the bootloader. If it is ever lost (say, after an interrupted bootloader update), the chip's own DFU, in memory that can't be written, brings the unit back:
 
-The bootloader is never touched by a Chimera install, so it is always there. Turn the unit off, hold **MENU** while powering on, and flash again, making sure you pick `CHIMERA.BIN` (the big file) and not `CHIMER~1.BIN` or another `.bin`.
-
-## Recovery: the bootloader screen doesn't appear
-
-Turn the PreenFM3 off completely. Hold **MENU** before turning it back on, and keep holding until the bootloader screen appears. If it still doesn't, check the BOOT0 jumper (above), then [open an issue](#recovery-reporting-a-bug) before trying anything else.
-
-## Recovery: the computer doesn't see the SD card
-
-Check the USB cable (some only carry power) and that you pressed **button 3 (SD card access)** in the bootloader.
-
-## Recovery: the unit starts in DFU again after a flash
-
-If the unit was flashed with the BOOT0 jumper bridged, it can go back into DFU mode once after the flash. Leave DFU a second time, flashing nothing:
-
-```bash
-dfu-util -a 0 -d 0483:df11 -s 0x08020000:leave
-```
-
-`dfu-util` may report an error as it exits, because the unit restarts under it. That is expected. Then put the jumper back in NORMAL.
-
-## Recovery: a damaged bootloader
-
-A Chimera install never writes the bootloader, so this should never happen. If the bootloader is ever lost (for example after an interrupted bootloader update), the chip's own DFU mode, which lives in memory that can't be written, can still bring the unit back:
-
-1. Bridge the BOOT0 jumper and plug the unit in. The computer sees it as a DFU device (`dfu-util -l` lists `0483:df11`).
-2. Write the stock bootloader back from Ixox's v1.03 release:
+1. Bridge BOOT0 and plug in; `dfu-util -l` lists `0483:df11`.
+2. Write the stock bootloader:
 
    ```bash
    dfu-util -a 0 -d 0483:df11 -D p3_boot_1_09.bin -s 0x08000000
    ```
 
-3. Write Chimera, and leave DFU:
+3. Write Chimera and leave DFU:
 
    ```bash
    dfu-util -a 0 -d 0483:df11 -D CHIMERA.BIN -s 0x08020000:leave
    ```
 
-4. Put the BOOT0 jumper back in NORMAL and turn the unit off and on. The bootloader runs and starts Chimera, which installs `CHIMERA.BK2` from the card.
+4. Put BOOT0 back to NORMAL and power-cycle; Chimera installs `CHIMERA.BK2` from the card.
 
-Never write with `-a 1`: that alternate setting is the chip's option bytes, and a bad write there can lock the chip for good. Every command in this chapter uses `-a 0`.
+Every command here uses `-a 0`; never `-a 1`.
 
 ## Recovery: reporting a bug
 
-Check [Known issues](https://joegiralt.github.io/chimera-releases/guides/known-issues) first: it lists what is known and being worked on. Then open **Issues › New issue › Bug report** on the releases page. The form asks for:
+Check [Known issues](https://joegiralt.github.io/chimera-releases/guides/known-issues) first, then open **Issues › New issue › Bug report** on the releases page. The form asks for:
 
-- **Which build are you on?** From SETTINGS › SYSTEM › ABOUT or the boot splash, for example `0.4.0 a1b2c3d4`.
-- **Board.** The **CHIP** cell on SETTINGS › SYSTEM › ABOUT, for example `V 176`.
-- **What were you doing when you first noticed it?** Which Part and engine, which Sound or project, what you were playing or turning.
-- **How can we make it happen?** Steps in order, from a fresh start if you can. If you can't make it happen again, say so.
-- **What did you expect to happen?** and **What actually happened?** What you heard or saw.
-- **How often?** Every time, sometimes, or once so far.
-- **Your setup** (optional): MIDI controller or sequencer, how it's powered (9 V supply or USB), anything else connected.
-- **Attachments** (optional): a recording, a photo of the screen, or the project file. A short recording or phone video helps a lot.
+- **Which build are you on?** From ABOUT or the boot splash (`0.4.0 a1b2c3d4`).
+- **Board.** The **CHIP** cell on ABOUT (`V 176`).
+- **What were you doing when you first noticed it?** Part, engine, Sound or project, what you played.
+- **How can we make it happen?** Steps, from a fresh start if you can.
+- **What did you expect to happen?** and **What actually happened?**
+- **How often?** Every time, sometimes, once.
+- **Your setup** (optional): controller, power (9 V or USB), other gear.
+- **Attachments** (optional): a recording, a screen photo or the project file.
 
 ![SETTINGS › SYSTEM › ABOUT](img/settings_system_about.png)
 
-A faint buzz with the unit powered over USB from the computer your audio interface is on is a ground loop, not a bug: power the PreenFM3 from its 9 V supply instead.
+A faint buzz when powered over USB from the computer your audio interface is on is a ground loop, not a bug: use the 9 V supply.
