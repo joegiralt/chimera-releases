@@ -358,6 +358,22 @@ for (const engine of ENGINES) {
 
 // ---- the Part tabs ----
 
+test("the way back: CHIMERA goes to the site's home, MANUAL to its guides, under any base path", async () => {
+  await followPart(1, "ALGO");
+  const home = page.locator(".ptop a.brand");
+  const manual = page.locator(".ptop a.manual");
+  assert.equal((await home.innerText()).trim(), "CHIMERA");
+  assert.equal((await manual.innerText()).trim(), "MANUAL");
+  // Relative, so they hold on GitHub Pages (/chimera-releases/editor/) and at a site's root alike.
+  const pages = "https://joegiralt.github.io/chimera-releases/editor/";
+  assert.equal(new URL(await home.getAttribute("href"), pages).href, "https://joegiralt.github.io/chimera-releases/");
+  assert.equal(new URL(await manual.getAttribute("href"), pages).href, "https://joegiralt.github.io/chimera-releases/guides");
+  // Seen at a narrow window too: the way home is never hidden.
+  await page.setViewportSize({ width: 900, height: 800 });
+  assert.ok(await home.isVisible() && (await manual.isVisible()), "hidden at 900 px");
+  await page.setViewportSize({ width: 1400, height: 1000 });
+});
+
 test("a Part the editor isn't following shows the engine the unit loads onto it", async () => {
   await followPart(1, "ALGO");
   const tab = page.locator(".ptop .tab", { hasText: "P6" });

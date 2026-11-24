@@ -40,7 +40,9 @@ html, body { margin: 0; background: #121212; }
 .ui .ptop { position: sticky; top: 0; z-index: 50; background: var(--pn); border-bottom: 2px solid var(--ink); }
 .ui .ptop .row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 10px 16px; }
 .ui .ptop .row + .row { padding-top: 0; }
-.ui .brand { font: 700 15px/1 var(--mono); letter-spacing: .18em; color: var(--ink); margin-right: 8px; }
+.ui .brand { font: 700 15px/1 var(--mono); letter-spacing: .18em; color: var(--ink); margin-right: 8px; text-decoration: none; }
+.ui .manual { font: 600 11px/1 var(--mono); letter-spacing: .12em; color: var(--mid); margin-right: 10px; text-decoration: none; }
+.ui .brand:hover, .ui .manual:hover { text-decoration: underline; }
 .ui .tab { display: flex; flex-direction: column; gap: 3px; min-width: 0; padding: 7px 10px; border: 1px solid var(--ink); border-radius: 3px; background: transparent; color: var(--ink); cursor: pointer; text-align: left; }
 .ui .tab b { font: 600 12px/1.1 var(--sans); letter-spacing: .08em; color: var(--mid); }
 .ui .tab span { font: 600 14px/1 var(--sans); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 16ch; }
@@ -61,7 +63,7 @@ html, body { margin: 0; background: #121212; }
 .ui .pagehead { display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px 16px; margin: 4px 0 14px; }
 .ui .pagehead h1 { margin: 0; font: 700 26px/1 var(--sans); letter-spacing: .02em; }
 .ui .pagehead .meta { font: 600 12px/1.1 var(--sans); letter-spacing: .1em; color: var(--mid); }
-@media (max-width: 1300px) { .ui .unit, .ui .brand { display: none; } }
+@media (max-width: 1300px) { .ui .unit { display: none; } .ui .brand { font-size: 12px; letter-spacing: .1em; margin-right: 2px; } }
 
 /* rows of two: one grid row per pair, so both modules share its height */
 .ui .prows { border: 2px solid var(--ink); }

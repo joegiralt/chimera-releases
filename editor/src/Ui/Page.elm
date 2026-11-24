@@ -28,8 +28,8 @@ link), the chip bar (show or hide a group, fold all), and the modules in
 rows of two below.
 -}
 
-import Html exposing (Html, button, div, h1, main_, span, text)
-import Html.Attributes exposing (attribute, class, classList)
+import Html exposing (Html, a, button, div, h1, main_, span, text)
+import Html.Attributes exposing (attribute, class, classList, href, title)
 import Html.Events exposing (onClick)
 import Ui.Chip as Chip exposing (Chip, Chips)
 import Ui.Module as Module exposing (Fold(..), Folds)
@@ -180,7 +180,10 @@ view toMsg (State s) (Config c) =
     div [ class "ui page", Tokens.themed s.theme ]
         [ div [ class "ptop" ]
             ([ div [ class "row" ]
-                (span [ class "brand" ] [ text "CHIMERA" ]
+                -- The way back to the site: its home, and its guides (relative: the
+                -- editor sits at <site>/editor/, whatever the site's base).
+                (a [ class "brand", href "../", title "Chimera: the site's home" ] [ text "CHIMERA" ]
+                    :: a [ class "manual", href "../guides", title "The guides" ] [ text "MANUAL" ]
                     :: List.map tab c.parts
                     ++ (if List.isEmpty c.units then
                             []

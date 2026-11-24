@@ -890,7 +890,7 @@ editor base =
     , Html.p []
         [ Html.text "It edits the current Part's Sound on every engine, and reaches the mixer, the mod matrix, MIDI MAP, ORBIT and the settings. It needs Chimera 0.4 or later on the unit: when the unit's firmware is older, the editor says "
         , Html.span [ Attr.class "label" ] [ Html.text "THIS EDITOR NEEDS CHIMERA 0.4 OR LATER" ]
-        , Html.text ", names the version the unit runs, and links the releases page."
+        , Html.text ", names the version the unit runs, and links the Install & update page."
         ]
     , Html.h2 [] [ Html.text "What you need" ]
     , Html.ul []

@@ -21,12 +21,12 @@ editor-test: kit
 
 # The editor, optimised, into editor/dist/
 editor-build: kit
-    cd editor && npm install --no-audit --no-fund --silent && rm -rf dist && mkdir -p dist/glyphs && npx elm make src/Main.elm --optimize --output=dist/elm.js && cp public/index.html public/ports.js public/theme.js public/style.css public/screen.js public/screen.wasm dist/ && cp public/glyphs/*.png dist/glyphs/
+    cd editor && npm install --no-audit --no-fund --silent && rm -rf dist && mkdir -p dist/glyphs && npx elm make src/Main.elm --optimize --output=dist/elm.js && cp public/index.html public/ports.js public/theme.js public/style.css public/screen.js public/screen.wasm dist/ && cp public/glyphs/*.png dist/glyphs/ && cp ../site/public/favicon.svg ../site/public/favicon-32.png ../site/public/apple-touch-icon.png dist/
 
 # The UI component gallery (every component, every state, DAY and NIGHT, and
 # the JITTER probe), into editor/gallery/
 editor-gallery: kit
-    cd editor && npm install --no-audit --no-fund --silent && mkdir -p gallery/glyphs && npx elm make src/Gallery.elm --optimize --output=gallery/gallery.js && cp public/gallery.html gallery/index.html && cp public/style.css public/theme.js gallery/ && cp public/glyphs/*.png gallery/glyphs/
+    cd editor && npm install --no-audit --no-fund --silent && mkdir -p gallery/glyphs && npx elm make src/Gallery.elm --optimize --output=gallery/gallery.js && cp public/gallery.html gallery/index.html && cp public/style.css public/theme.js gallery/ && cp public/glyphs/*.png gallery/glyphs/ && cp ../site/public/favicon.svg ../site/public/favicon-32.png ../site/public/apple-touch-icon.png gallery/
 
 # The editor's protocol end to end, against the firmware's simulator
 # (`just editor-sim` in the firmware repo)
@@ -92,7 +92,7 @@ site-build base=site_base: editor-build
     npx elm make src/Main.elm --optimize --output=dist/elm.js
     sed 's|__BASE__|{{base}}|g' public/index.html > dist/index.html
     cp dist/index.html dist/404.html
-    cp public/style.css public/favicon.svg dist/
+    cp public/style.css public/favicon.svg public/favicon-32.png public/apple-touch-icon.png dist/
     cp ../*.md dist/guides/
     cp ../docs/img/* dist/guides/img/
     cp -r ../editor/dist dist/editor
@@ -127,7 +127,7 @@ site-serve port="8000":
 
 # The site's Elm tests (every guide at the root included) and elm-review
 site-test:
-    cd site && npm install --no-audit --no-fund --silent && node tests/gen-fixtures.js && npx elm-test && npx elm-review
+    cd site && npm install --no-audit --no-fund --silent && node tests/gen-fixtures.js && node tests/icons.check.js && npx elm-test && npx elm-review
 
 # Everything the editor and the site must pass
 check: editor-test site-test

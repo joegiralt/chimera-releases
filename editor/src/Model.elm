@@ -2039,11 +2039,12 @@ needsNewer =
     "THIS EDITOR NEEDS CHIMERA 0.4 OR LATER."
 
 
-{-| Where to get the firmware this editor needs.
+{-| Where to get the firmware this editor needs: the site's INSTALL & UPDATE
+page (the latest release, and the steps that also update an older one).
 -}
 downloadUrl : String
 downloadUrl =
-    "https://github.com/joegiralt/chimera-releases/releases"
+    "https://joegiralt.github.io/chimera-releases/install"
 
 
 {-| The download page, while the unit is too old for this editor.

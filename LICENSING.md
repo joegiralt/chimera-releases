@@ -6,4 +6,6 @@ Copyright © 2026 Joe Giralt.
 
 It is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 
+The Yellow Sign (the site's mark and the browser tab icon, traced from the firmware's boot splash) is Christian Knutsson's design for Pelgrane Press, released into the public domain in 2020: [Our Yellow Sign is your Yellow Sign](https://pelgranepress.com/2020/02/06/our-yellow-sign-is-your-yellow-sign/). Attribution is not required; it is credited here with thanks.
+
 Releases before 0.4 were distributed under the tester licence in [LICENSE.md](LICENSE.md).

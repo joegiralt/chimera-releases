@@ -183,7 +183,7 @@ describe("the unit's hello", () => {
     await reconnect("socket");
     await until("the halt", async () => (await connectSays()).includes("THIS EDITOR NEEDS CHIMERA 0.4 OR LATER."), 5000);
     assert.ok(!(await connectSays()).includes("THIS UNIT IS RUNNING"), "a version it was never told");
-    assert.equal(await page.locator(".download a").getAttribute("href"), "https://github.com/joegiralt/chimera-releases/releases");
+    assert.equal(await page.locator(".download a").getAttribute("href"), "https://joegiralt.github.io/chimera-releases/install");
   });
 
   test("A11: a 0.3 unit (no `ed`): its version asked of `status`, nothing else sent, and the download linked", async () => {
@@ -195,7 +195,7 @@ describe("the unit's hello", () => {
     await reconnect("socket");
     await until("the halt", async () => (await connectSays()).includes("THIS EDITOR NEEDS CHIMERA 0.4 OR LATER. THIS UNIT IS RUNNING 0.3.0."), 5000);
     const link = page.locator(".download a");
-    assert.equal(await link.getAttribute("href"), "https://github.com/joegiralt/chimera-releases/releases");
+    assert.equal(await link.getAttribute("href"), "https://joegiralt.github.io/chimera-releases/install");
     assert.equal((await link.innerText()).trim(), "DOWNLOAD CHIMERA 0.4 OR LATER");
     await new Promise((r) => setTimeout(r, 500));
     assert.deepEqual(bridge.flow.sent.slice(from), ["ed hello", "status"], "sent besides hello and status");
