@@ -7314,12 +7314,14 @@ var $author$project$Protocol$encode = function (c) {
 		case 8:
 			return $elm$core$Maybe$Just('ed projects');
 		case 9:
-			return $elm$core$Maybe$Just('ed project save');
+			return $elm$core$Maybe$Just('status');
 		case 10:
+			return $elm$core$Maybe$Just('ed project save');
+		case 11:
 			var n = c.a;
 			return $elm$core$Maybe$Just(
 				'ed project saveas ' + $author$project$Protocol$namedOnWire(n));
-		case 11:
+		case 12:
 			var id = c.a;
 			var g = c.b;
 			var over = c.c;
@@ -7331,7 +7333,7 @@ var $author$project$Protocol$encode = function (c) {
 						return ' discard';
 					}
 				}()))));
-		case 12:
+		case 13:
 			var mc = c.a;
 			return $author$project$Protocol$encodeMap(mc);
 		default:
@@ -8333,17 +8335,20 @@ var $author$project$Protocol$Index = function (a) {
 var $author$project$Protocol$ListProjects = {$: 8};
 var $author$project$Protocol$LoadProject = F3(
 	function (a, b, c) {
-		return {$: 11, a: a, b: b, c: c};
+		return {$: 12, a: a, b: b, c: c};
 	});
 var $author$project$Protocol$OrbitCmd = function (a) {
-	return {$: 13, a: a};
+	return {$: 14, a: a};
 };
-var $author$project$Protocol$SaveProject = {$: 9};
+var $author$project$Protocol$SaveProject = {$: 10};
 var $author$project$Protocol$SaveProjectAs = function (a) {
-	return {$: 10, a: a};
+	return {$: 11, a: a};
 };
 var $author$project$Model$Unsent = function (a) {
 	return {$: 3, a: a};
+};
+var $author$project$Model$AskingVersion = function (a) {
+	return {$: 0, a: a};
 };
 var $author$project$Model$BadSchema = F2(
 	function (a, b) {
@@ -8352,12 +8357,20 @@ var $author$project$Model$BadSchema = F2(
 var $author$project$Model$Halted = function (a) {
 	return {$: 5, a: a};
 };
+var $author$project$Model$NoVersion = {$: 2};
+var $author$project$Model$OldUnit = function (a) {
+	return {$: 1, a: a};
+};
 var $author$project$Model$Refusal = function (a) {
 	return {$: 0, a: a};
 };
 var $author$project$Model$Unreadable = function (a) {
 	return {$: 0, a: a};
 };
+var $author$project$Model$Version = function (a) {
+	return {$: 1, a: a};
+};
+var $author$project$Protocol$AskStatus = {$: 9};
 var $author$project$Model$AskedSet = function (a) {
 	return {$: 1, a: a};
 };
@@ -8366,7 +8379,6 @@ var $author$project$Protocol$Num = function (a) {
 	return {$: 0, a: a};
 };
 var $author$project$Model$TooLarge = {$: 5};
-var $author$project$Model$UpdateUnit = {$: 1};
 var $author$project$Model$Checking = F2(
 	function (a, b) {
 		return {$: 1, a: a, b: b};
@@ -9678,6 +9690,8 @@ var $author$project$Model$askedBy = function (c) {
 			return $author$project$Model$AskedOther;
 		case 12:
 			return $author$project$Model$AskedOther;
+		case 13:
+			return $author$project$Model$AskedOther;
 		default:
 			return $author$project$Model$AskedOther;
 	}
@@ -10299,7 +10313,7 @@ var $author$project$Model$isRead = function (c) {
 				return true;
 			case 8:
 				return true;
-			case 12:
+			case 13:
 				if (c.a.$ === 7) {
 					var _v1 = c.a;
 					return true;
@@ -10512,9 +10526,14 @@ var $author$project$Model$lineIn = F3(
 								m,
 								{
 									f: $elm$core$Maybe$Nothing,
-									b: $author$project$Model$Halted($author$project$Model$UpdateUnit)
+									b: $author$project$Model$Halted(
+										$author$project$Model$OldUnit(
+											$author$project$Model$AskingVersion($elm$core$Maybe$Nothing)))
 								}),
-							_List_Nil) : _Utils_Tuple2(
+							_List_fromArray(
+								[
+									$author$project$Model$Say($author$project$Protocol$AskStatus)
+								])) : _Utils_Tuple2(
 							A2($author$project$Model$connectBusy, why, m),
 							_List_Nil);
 					case 1:
@@ -10598,41 +10617,103 @@ var $author$project$Model$lineIn = F3(
 					_List_Nil);
 		}
 	});
+var $elm$core$String$words = _String_words;
 var $author$project$Model$line = F3(
 	function (raw, l, m) {
 		var _v0 = m.b;
 		switch (_v0.$) {
 			case 5:
-				switch (l.$) {
-					case 4:
-						var why = l.a;
-						return _Utils_Tuple2(
-							A2(
-								$author$project$Model$keep,
-								$author$project$Model$Refusal(
-									{ba: $elm$core$Maybe$Nothing, aT: why}),
-								m),
-							_List_Nil);
-					case 7:
-						return _Utils_Tuple2(
-							A2($author$project$Model$unread, raw, m),
-							_List_Nil);
-					case 0:
-						return _Utils_Tuple2(m, _List_Nil);
-					case 1:
-						return _Utils_Tuple2(m, _List_Nil);
-					case 2:
-						return _Utils_Tuple2(m, _List_Nil);
-					case 3:
-						return _Utils_Tuple2(m, _List_Nil);
-					case 5:
-						var a = l.a;
-						var why = l.b;
-						return _Utils_Tuple2(
-							A4($author$project$Model$setRefused, $elm$core$Maybe$Nothing, a, why, m),
-							_List_Nil);
-					default:
-						return _Utils_Tuple2(m, _List_Nil);
+				if ((_v0.a.$ === 1) && (!_v0.a.a.$)) {
+					var seen = _v0.a.a.a;
+					var _v1 = _Utils_Tuple2(
+						$elm$core$String$words(raw),
+						l);
+					_v1$0:
+					while (true) {
+						switch (_v1.b.$) {
+							case 1:
+								if ((_v1.a.b && (_v1.a.a === 'firmware')) && _v1.a.b.b) {
+									break _v1$0;
+								} else {
+									return _Utils_Tuple2(
+										_Utils_update(
+											m,
+											{
+												b: $author$project$Model$Halted(
+													$author$project$Model$OldUnit(
+														A2(
+															$elm$core$Maybe$withDefault,
+															$author$project$Model$NoVersion,
+															A2($elm$core$Maybe$map, $author$project$Model$Version, seen))))
+											}),
+										_List_Nil);
+								}
+							case 4:
+								if ((_v1.a.b && (_v1.a.a === 'firmware')) && _v1.a.b.b) {
+									break _v1$0;
+								} else {
+									return _Utils_Tuple2(
+										_Utils_update(
+											m,
+											{
+												b: $author$project$Model$Halted(
+													$author$project$Model$OldUnit($author$project$Model$NoVersion))
+											}),
+										_List_Nil);
+								}
+							default:
+								if ((_v1.a.b && (_v1.a.a === 'firmware')) && _v1.a.b.b) {
+									break _v1$0;
+								} else {
+									return _Utils_Tuple2(m, _List_Nil);
+								}
+						}
+					}
+					var _v2 = _v1.a;
+					var _v3 = _v2.b;
+					var v = _v3.a;
+					return _Utils_Tuple2(
+						_Utils_update(
+							m,
+							{
+								b: $author$project$Model$Halted(
+									$author$project$Model$OldUnit(
+										$author$project$Model$AskingVersion(
+											$elm$core$Maybe$Just(v))))
+							}),
+						_List_Nil);
+				} else {
+					switch (l.$) {
+						case 4:
+							var why = l.a;
+							return _Utils_Tuple2(
+								A2(
+									$author$project$Model$keep,
+									$author$project$Model$Refusal(
+										{ba: $elm$core$Maybe$Nothing, aT: why}),
+									m),
+								_List_Nil);
+						case 7:
+							return _Utils_Tuple2(
+								A2($author$project$Model$unread, raw, m),
+								_List_Nil);
+						case 0:
+							return _Utils_Tuple2(m, _List_Nil);
+						case 1:
+							return _Utils_Tuple2(m, _List_Nil);
+						case 2:
+							return _Utils_Tuple2(m, _List_Nil);
+						case 3:
+							return _Utils_Tuple2(m, _List_Nil);
+						case 5:
+							var a = l.a;
+							var why = l.b;
+							return _Utils_Tuple2(
+								A4($author$project$Model$setRefused, $elm$core$Maybe$Nothing, a, why, m),
+								_List_Nil);
+						default:
+							return _Utils_Tuple2(m, _List_Nil);
+					}
 				}
 			case 0:
 				return A3($author$project$Model$lineIn, raw, l, m);
@@ -10684,7 +10765,7 @@ var $author$project$Model$line = F3(
 		}
 	});
 var $author$project$Protocol$MapCmd = function (a) {
-	return {$: 12, a: a};
+	return {$: 13, a: a};
 };
 var $author$project$Model$projectCommand = F2(
 	function (c, m) {
@@ -12726,7 +12807,6 @@ var $author$project$Protocol$SetRefused = F2(
 	function (a, b) {
 		return {$: 5, a: a, b: b};
 	});
-var $elm$core$String$words = _String_words;
 var $author$project$Protocol$setRefusal = function (rest) {
 	var plain = $author$project$Protocol$Err_('ed set ' + rest);
 	var _v0 = $elm$core$String$words(rest);
@@ -16083,6 +16163,7 @@ var $author$project$View$EnginePage$Unit = function (a) {
 };
 var $author$project$Model$ViaSimulator = 1;
 var $author$project$Model$ViaUnit = 0;
+var $elm$html$Html$a = _VirtualDom_node('a');
 var $author$project$Ui$Module$Config = $elm$core$Basics$identity;
 var $author$project$Ui$Module$body = F2(
 	function (b, _v0) {
@@ -16101,6 +16182,33 @@ var $elm$html$Html$Attributes$stringProperty = F2(
 	});
 var $elm$html$Html$Attributes$class = $elm$html$Html$Attributes$stringProperty('className');
 var $elm$html$Html$div = _VirtualDom_node('div');
+var $author$project$Model$downloadUrl = 'https://github.com/joegiralt/chimera-releases/releases';
+var $author$project$Model$download = function (m) {
+	var _v0 = m.b;
+	_v0$2:
+	while (true) {
+		if (_v0.$ === 5) {
+			switch (_v0.a.$) {
+				case 1:
+					return $elm$core$Maybe$Just($author$project$Model$downloadUrl);
+				case 2:
+					var n = _v0.a.a;
+					return (_Utils_cmp(n, $author$project$Protocol$supported) < 0) ? $elm$core$Maybe$Just($author$project$Model$downloadUrl) : $elm$core$Maybe$Nothing;
+				default:
+					break _v0$2;
+			}
+		} else {
+			break _v0$2;
+		}
+	}
+	return $elm$core$Maybe$Nothing;
+};
+var $elm$html$Html$Attributes$href = function (url) {
+	return A2(
+		$elm$html$Html$Attributes$stringProperty,
+		'href',
+		_VirtualDom_noJavaScriptUri(url));
+};
 var $author$project$Ui$Page$Config = $elm$core$Basics$identity;
 var $author$project$Ui$Page$meta = F2(
 	function (s, _v0) {
@@ -16146,66 +16254,86 @@ var $author$project$Transport$linkText = function (l) {
 			return $elm$core$Maybe$Just('USE CHROME OR EDGE');
 	}
 };
+var $author$project$Model$needsNewer = 'THIS EDITOR NEEDS CHIMERA 0.4 OR LATER.';
+var $elm$core$String$toUpper = _String_toUpper;
 var $author$project$Model$stageNotice = function (m) {
 	var _v0 = m.b;
-	switch (_v0.$) {
-		case 5:
-			switch (_v0.a.$) {
-				case 0:
-					var _v1 = _v0.a;
-					return $elm$core$Maybe$Just('UPDATE THE EDITOR');
-				case 1:
-					var _v2 = _v0.a;
-					return $elm$core$Maybe$Just('UPDATE THE UNIT');
-				case 2:
-					var n = _v0.a.a;
-					return $elm$core$Maybe$Just(
-						((_Utils_cmp(n, $author$project$Protocol$supported) > 0) ? 'UPDATE THE EDITOR' : 'UPDATE THE UNIT') + (': THE UNIT SPEAKS PROTOCOL ' + ($elm$core$String$fromInt(n) + (', THIS EDITOR ' + $elm$core$String$fromInt($author$project$Protocol$supported)))));
-				case 3:
-					var t = _v0.a.a;
-					return $elm$core$Maybe$Just('THE UNIT REFUSED: ' + t);
-				case 4:
-					var _v3 = _v0.a;
-					return $elm$core$Maybe$Just('THE UNIT STOPPED ANSWERING');
-				case 5:
-					var _v4 = _v0.a;
-					return $elm$core$Maybe$Just('THE UNIT\'S ANSWER IS TOO LARGE FOR ONE READ');
-				case 6:
-					if (!_v0.a.b.$) {
-						var _v5 = _v0.a;
-						var s = _v5.a;
-						var l = _v5.b.a;
-						return $elm$core$Maybe$Just(
-							'THE UNIT\'S ' + ($author$project$Protocol$schemaToken(s) + (' SCHEMA HAS A LINE THIS EDITOR CAN\'T READ: ' + l)));
-					} else {
-						var _v6 = _v0.a;
-						var s = _v6.a;
-						var _v7 = _v6.b;
-						var said = _v7.a;
-						var read_ = _v7.b;
-						return $elm$core$Maybe$Just(
-							'THE UNIT\'S ' + ($author$project$Protocol$schemaToken(s) + (' SCHEMA IS NOT THE TEXT ITS HASH NAMES: ' + ($author$project$Hash$toHex(said) + (', READ ' + $author$project$Hash$toHex(read_))))));
-					}
-				default:
-					if (!_v0.a.a.$) {
-						var n = _v0.a.a.a;
-						return $elm$core$Maybe$Just('THE UNIT NAMED PART ' + (n + ': THIS EDITOR KNOWS PARTS 1 TO 6'));
-					} else {
-						var e = _v0.a.a.a;
-						return $elm$core$Maybe$Just('THE UNIT NAMED AN ENGINE THIS EDITOR DOESN\'T KNOW: ' + (e + '. UPDATE THE EDITOR'));
-					}
-			}
-		case 0:
-			return $elm$core$Maybe$Nothing;
-		case 1:
-			return $elm$core$Maybe$Nothing;
-		case 2:
-			return $elm$core$Maybe$Nothing;
-		case 3:
-			return $elm$core$Maybe$Nothing;
-		default:
-			return $elm$core$Maybe$Nothing;
+	_v0$3:
+	while (true) {
+		switch (_v0.$) {
+			case 5:
+				switch (_v0.a.$) {
+					case 0:
+						var _v1 = _v0.a;
+						return $elm$core$Maybe$Just('UPDATE THE EDITOR');
+					case 1:
+						switch (_v0.a.a.$) {
+							case 1:
+								var v = _v0.a.a.a;
+								return $elm$core$Maybe$Just(
+									$author$project$Model$needsNewer + (' THIS UNIT IS RUNNING ' + ($elm$core$String$toUpper(v) + '.')));
+							case 0:
+								if (!_v0.a.a.a.$) {
+									var v = _v0.a.a.a.a;
+									return $elm$core$Maybe$Just(
+										$author$project$Model$needsNewer + (' THIS UNIT IS RUNNING ' + ($elm$core$String$toUpper(v) + '.')));
+								} else {
+									break _v0$3;
+								}
+							default:
+								break _v0$3;
+						}
+					case 2:
+						var n = _v0.a.a;
+						return (_Utils_cmp(n, $author$project$Protocol$supported) > 0) ? $elm$core$Maybe$Just(
+							'UPDATE THE EDITOR: THE UNIT SPEAKS PROTOCOL ' + ($elm$core$String$fromInt(n) + (', THIS EDITOR ' + $elm$core$String$fromInt($author$project$Protocol$supported)))) : $elm$core$Maybe$Just($author$project$Model$needsNewer);
+					case 3:
+						var t = _v0.a.a;
+						return $elm$core$Maybe$Just('THE UNIT REFUSED: ' + t);
+					case 4:
+						var _v2 = _v0.a;
+						return $elm$core$Maybe$Just('THE UNIT STOPPED ANSWERING');
+					case 5:
+						var _v3 = _v0.a;
+						return $elm$core$Maybe$Just('THE UNIT\'S ANSWER IS TOO LARGE FOR ONE READ');
+					case 6:
+						if (!_v0.a.b.$) {
+							var _v4 = _v0.a;
+							var s = _v4.a;
+							var l = _v4.b.a;
+							return $elm$core$Maybe$Just(
+								'THE UNIT\'S ' + ($author$project$Protocol$schemaToken(s) + (' SCHEMA HAS A LINE THIS EDITOR CAN\'T READ: ' + l)));
+						} else {
+							var _v5 = _v0.a;
+							var s = _v5.a;
+							var _v6 = _v5.b;
+							var said = _v6.a;
+							var read_ = _v6.b;
+							return $elm$core$Maybe$Just(
+								'THE UNIT\'S ' + ($author$project$Protocol$schemaToken(s) + (' SCHEMA IS NOT THE TEXT ITS HASH NAMES: ' + ($author$project$Hash$toHex(said) + (', READ ' + $author$project$Hash$toHex(read_))))));
+						}
+					default:
+						if (!_v0.a.a.$) {
+							var n = _v0.a.a.a;
+							return $elm$core$Maybe$Just('THE UNIT NAMED PART ' + (n + ': THIS EDITOR KNOWS PARTS 1 TO 6'));
+						} else {
+							var e = _v0.a.a.a;
+							return $elm$core$Maybe$Just('THE UNIT NAMED AN ENGINE THIS EDITOR DOESN\'T KNOW: ' + (e + '. UPDATE THE EDITOR'));
+						}
+				}
+			case 0:
+				return $elm$core$Maybe$Nothing;
+			case 1:
+				return $elm$core$Maybe$Nothing;
+			case 2:
+				return $elm$core$Maybe$Nothing;
+			case 3:
+				return $elm$core$Maybe$Nothing;
+			default:
+				return $elm$core$Maybe$Nothing;
+		}
 	}
+	return $elm$core$Maybe$Just($author$project$Model$needsNewer);
 };
 var $author$project$Model$notice = function (m) {
 	var _v0 = m.aL;
@@ -16233,6 +16361,7 @@ var $elm$html$Html$Events$onClick = function (msg) {
 		'click',
 		$elm$json$Json$Decode$succeed(msg));
 };
+var $elm$html$Html$Attributes$rel = _VirtualDom_attribute('rel');
 var $author$project$Model$SeenNotices = {$: 17};
 var $author$project$Ui$Module$Whole = 1;
 var $author$project$Ui$Module$full = function (_v0) {
@@ -16263,12 +16392,12 @@ var $author$project$Protocol$sketch = function (c) {
 		case 3:
 			var a = c.a;
 			return 'ed get ' + $author$project$Addr$key(a);
-		case 12:
+		case 13:
 			return A2(
 				$elm$core$Maybe$withDefault,
 				'ed map',
 				$author$project$Protocol$encode(c));
-		case 10:
+		case 11:
 			var n = c.a;
 			return 'ed project saveas ' + n;
 		case 0:
@@ -16307,11 +16436,13 @@ var $author$project$Protocol$sketch = function (c) {
 				'ed projects',
 				$author$project$Protocol$encode(c));
 		case 9:
+			return 'status';
+		case 10:
 			return A2(
 				$elm$core$Maybe$withDefault,
 				'ed project save',
 				$author$project$Protocol$encode(c));
-		case 11:
+		case 12:
 			return A2(
 				$elm$core$Maybe$withDefault,
 				'ed project load',
@@ -16455,6 +16586,7 @@ var $author$project$View$EnginePage$saidModule = function (m) {
 			]);
 	}
 };
+var $elm$html$Html$Attributes$target = $elm$html$Html$Attributes$stringProperty('target');
 var $author$project$Ui$Page$ChoseTheme = function (a) {
 	return {$: 0, a: a};
 };
@@ -16505,7 +16637,6 @@ var $author$project$Ui$Module$idOf = function (_v0) {
 	var c = _v0;
 	return A2($author$project$Ui$Module$Id, c.cC, c.bV);
 };
-var $elm$core$String$toUpper = _String_toUpper;
 var $author$project$Ui$Tokens$label = A2($elm$core$Basics$composeR, $author$project$Ui$Tokens$name, $elm$core$String$toUpper);
 var $elm$html$Html$main_ = _VirtualDom_node('main');
 var $author$project$Ui$Chip$member = F2(
@@ -17226,9 +17357,9 @@ var $author$project$Ui$Page$view = F3(
 var $author$project$View$EnginePage$connectPage = F2(
 	function (m, s) {
 		var says = function () {
-			var _v0 = $author$project$Model$notice(m);
-			if (!_v0.$) {
-				var n = _v0.a;
+			var _v1 = $author$project$Model$notice(m);
+			if (!_v1.$) {
+				var n = _v1.a;
 				return n;
 			} else {
 				return _Utils_eq(
@@ -17248,9 +17379,9 @@ var $author$project$View$EnginePage$connectPage = F2(
 						[
 							A2(
 							$author$project$Ui$Module$body,
-							_List_fromArray(
-								[
-									A2(
+							A2(
+								$elm$core$List$cons,
+								A2(
 									$elm$html$Html$div,
 									_List_fromArray(
 										[
@@ -17284,8 +17415,41 @@ var $author$project$View$EnginePage$connectPage = F2(
 												[
 													$elm$html$Html$text('CONNECT SIMULATOR')
 												]))
-										]))
-								]),
+										])),
+								function () {
+									var _v0 = $author$project$Model$download(m);
+									if (!_v0.$) {
+										var url = _v0.a;
+										return _List_fromArray(
+											[
+												A2(
+												$elm$html$Html$div,
+												_List_fromArray(
+													[
+														$elm$html$Html$Attributes$class('download')
+													]),
+												_List_fromArray(
+													[
+														A2(
+														$elm$html$Html$a,
+														_List_fromArray(
+															[
+																$elm$html$Html$Attributes$href(url),
+																$elm$html$Html$Attributes$target('_blank'),
+																$elm$html$Html$Attributes$rel('noopener')
+															]),
+														_List_fromArray(
+															[
+																$elm$html$Html$text('DOWNLOAD CHIMERA 0.4 OR LATER')
+															])),
+														$elm$html$Html$text(
+														' ' + A3($elm$core$String$replace, 'https://', '', url))
+													]))
+											]);
+									} else {
+										return _List_Nil;
+									}
+								}()),
 							A2(
 								$author$project$Ui$Module$note,
 								says,

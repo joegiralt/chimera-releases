@@ -18154,9 +18154,9 @@ var $author$project$Main$editor = function (base) {
 						]),
 					_List_fromArray(
 						[
-							$elm$html$Html$text('UPDATE THE UNIT')
+							$elm$html$Html$text('THIS EDITOR NEEDS CHIMERA 0.4 OR LATER')
 						])),
-					$elm$html$Html$text('.')
+					$elm$html$Html$text(', names the version the unit runs, and links the releases page.')
 				])),
 			A2(
 			$elm$html$Html$h2,
