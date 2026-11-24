@@ -3,7 +3,7 @@
 // loaded on the followed Part, a project loaded, a Part taken by its key, a
 // level moved on a Part the editor doesn't follow, a prompt up while the
 // editor edits, ORBIT, scenes and learn on the box, and names: the longest a
-// project takes, and (a known failure) one holding a quote mark.
+// project takes, and one holding a quote mark.
 //
 // INIT ALGO, MODAL and VA on Parts 1 to 3 (the box's keys); Part 6 the new
 // project's.
@@ -11,7 +11,7 @@
 import assert from "node:assert/strict";
 import { describe, test } from "node:test";
 import {
-  bridge, choice, expectNotice, settled, firstKnob, followPart, loadInit, newProject, noticesOn, onEngine, onMixer, page, polled, setup, showCell, simOnly, slider, sliderFollows, slidersAgainstUnit,
+  bridge, choice, settled, firstKnob, followPart, loadInit, newProject, noticesOn, onEngine, onMixer, page, polled, setup, showCell, simOnly, slider, sliderFollows, slidersAgainstUnit,
   statusText, tokens, tryGet, unit, unitRoutes, until, wheel,
 } from "./harness.mjs";
 
@@ -188,14 +188,12 @@ describe("names", () => {
     assert.deepEqual(await noticesOn(), []);
   });
 
-  // The firmware's `quoted()` writes a name's text raw: a quote mark followed
-  // by a space inside it ends the quoted word early. Names saved on the unit
-  // are A-Z a-z 0-9, space and '-' today, so it can't write one yet; the
-  // line here is the one it would write for a Sound named `AB" CD`.
-  test("G8: a name holding a quote mark is read whole (firmware fix pending)", { todo: "firmware fix pending: ed's quoted() writes a quote mark raw, so the line splits" }, async () => {
+  // A quoted field escapes its quote (ADR 0336). Names saved on the unit are
+  // A-Z a-z 0-9, space and '-', so it can't write one; the line here is the
+  // one it would write for a Sound named `AB" CD`.
+  test("G8: a name holding a quote mark is read whole", async () => {
     await onMixer();
-    expectNotice(/CAN'T READ/);
-    bridge.inject('sound 1 "AB" CD" clean');
+    bridge.inject('sound 1 "AB\\" CD" clean');
     await polled(3);
     assert.deepEqual(await noticesOn(), [], "the line was not read");
     await until("the strip names the Sound", async () => (await page.locator('[data-strip="PART1"] h2 small').innerText()).trim() === 'AB" CD', 2000);

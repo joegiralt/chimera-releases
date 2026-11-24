@@ -117,6 +117,11 @@ suite =
             , p "val text with a space and sign" "val PIT.NOTE 0.5 60 \"C4 +12ct\"" (Answer (Val { addr = addr "PIT.NOTE", norm = 0.5, stored = 60, text = "C4 +12ct" }))
             , p "val empty text" "val A.B 0 0 \"\"" (Answer (Val { addr = addr "A.B", norm = 0, stored = 0, text = "" }))
             , p "val inner quote not before a space" "val A.B 0 0 \"5\" wide\"" Unknown
+            , p "a quote, a backslash and control bytes escaped" "val A.B 0 0 \"A\\\"B\\\\C\\x0AD\\x7F \\x01\"" (Answer (Val { addr = addr "A.B", norm = 0, stored = 0, text = "A\"B\\C\nD\u{007F} \u{0001}" }))
+            , p "an escaped quote before a space does not close" "sound 1 \"AB\\\" CD\" clean" (Unit.partFromInt 1 |> Maybe.map (\pt -> Answer (SoundIs { part = pt, name = "AB\" CD", status = SoundClean })) |> Maybe.withDefault Unknown)
+            , p "a field closes at its first unescaped quote" "val A.B 0 0 \"5\"wide\"" Unknown
+            , p "no other escape" "val A.B 0 0 \"\\n\"" Unknown
+            , p "an escape's hex is uppercase" "val A.B 0 0 \"\\x0a\"" Unknown
             , p "val signed text" "val VOICEFX.MIX 1 1 \"+63\"" (Answer (Val { addr = addr "VOICEFX.MIX", norm = 1, stored = 1, text = "+63" }))
             , p "since part" "part 1 ALGO" (Unit.partFromInt 1 |> Maybe.map (\pt -> Answer (PartIs pt Unit.Algo)) |> Maybe.withDefault Unknown)
             , p "since panel" "panel LFO3 CLASSIC" (Answer (Panel { name = "LFO3", variant = Protocol.variantName "CLASSIC" }))

@@ -752,7 +752,11 @@ noticeText n =
             "THE UNIT WAS BUSY FOR " ++ Protocol.sketch c ++ ", ASKED " ++ String.fromInt Flow.busyTries ++ " TIMES: GIVEN UP"
 
         Untaken c ->
-            "THE UNIT DID NOT TAKE " ++ Protocol.sketch c ++ ": IT KEPT ITS VALUE, AND NAMED NO REFUSAL (IT NAMES ONLY ITS NEWEST)"
+            if String.startsWith "ed route " (Protocol.sketch c) then
+                "THE UNIT DID NOT TAKE " ++ Protocol.sketch c ++ ": THE ROUTE IS AS IT WAS, AND NAMED NO REFUSAL (IT NAMES ONLY ITS NEWEST)"
+
+            else
+                "THE UNIT DID NOT TAKE " ++ Protocol.sketch c ++ ": IT KEPT ITS VALUE, AND NAMED NO REFUSAL (IT NAMES ONLY ITS NEWEST)"
 
         Declined why ->
             why
@@ -1332,11 +1336,24 @@ untakenSet e m =
             else
                 m
 
-        -- The box says nothing of a route it drops at its turn (a full
-        -- matrix), but a hand can only patch to a column the box takes:
-        -- nothing to tell here.
-        Flow.RouteOf _ _ ->
-            m
+        -- A route the box didn't make (or didn't remove) at its turn, and
+        -- named no refusal of (it names only its newest): the routes it
+        -- reports are the only word of it.
+        Flow.RouteOf c to ->
+            let
+                made : Bool
+                made =
+                    Dict.member (cellKey c) m.routes
+
+                dest : String
+                dest =
+                    cellKey c |> String.split ":" |> List.reverse |> List.head |> Maybe.withDefault ""
+            in
+            if made == (to == Protocol.RouteOff) && not (Dict.member dest m.refusals) then
+                keep (Untaken (SetRoute c to)) { m | refusals = Dict.insert dest "NOT TAKEN: THE ROUTE IS AS IT WAS" m.refusals }
+
+            else
+                m
 
 
 removeFirst : a -> List a -> List a
@@ -1802,7 +1819,8 @@ answer a m =
                 m
 
             else
-                setRefused Nothing at why { m | refusals = Dict.insert (Addr.key at) why m.refusals, flow = Flow.forget (Flow.SetTo at (Protocol.Num 0)) m.flow }
+                -- A set's refusal, or a route's to it (a full matrix): either way said here once.
+                setRefused Nothing at why { m | refusals = Dict.insert (Addr.key at) why m.refusals, flow = m.flow |> Flow.forget (Flow.SetTo at (Protocol.Num 0)) |> Flow.forgetRoutesTo (Addr.key at) }
 
         Source text ->
             if m.stage == Following then

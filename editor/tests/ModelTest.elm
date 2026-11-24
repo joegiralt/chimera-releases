@@ -1671,6 +1671,31 @@ suite =
                     \_ -> Expect.equal Nothing (Model.pending cutoff (run [ Tick (at (now + 1000)) ] queued |> Tuple.first))
                  ]
                 )
+             , describe "a route the unit queued and never made is said"
+                (case ( Protocol.cell "LFO1:FILTER.CUTOFF", Protocol.amount 10 ) of
+                    ( Just c, Just ten ) ->
+                        let
+                            queued : Model.Model
+                            queued =
+                                run [ EditRoute c (Protocol.RouteAmount ten), Line "OK queued" ] following |> Tuple.first
+
+                            later : Model.Model -> List Notice
+                            later m =
+                                run [ Tick (at (now + 1000)) ] m |> Tuple.first |> Model.notices |> List.map .notice
+                        in
+                        [ test "not_taken_when_the_routes_never_show_it" <|
+                            \_ -> Expect.equal [ Untaken (SetRoute c (Protocol.RouteAmount ten)) ] (later (feed [ "OK 3" ] queued))
+                        , test "nothing_said_when_the_routes_show_it" <|
+                            \_ -> Expect.equal [] (later (feed [ "route LFO1:FILTER.CUTOFF 10 \"+10\"", "OK 3" ] queued))
+                        , test "its_refusal_said_once_and_not_again_as_not_taken" <|
+                            \_ ->
+                                later (feed [ "refused FILTER.CUTOFF \"MATRIX FULL\"", "OK 3" ] queued)
+                                    |> Expect.equal [ Refusal { sent = Nothing, why = "FILTER.CUTOFF: MATRIX FULL" } ]
+                        ]
+
+                    _ ->
+                        [ test "a_cell_and_an_amount" <| \_ -> Expect.fail "no cell" ]
+                )
              , test "a_set_the_unit_cant_read_is_said_never_sent" <|
                 \_ ->
                     let

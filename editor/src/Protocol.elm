@@ -2343,9 +2343,10 @@ kindOf s =
             Nothing
 
 
-{-| Split on spaces; a `"quoted"` run is one token, quotes dropped. A quote
-closes only before a space or the end, so a quote inside a text survives.
-`Nothing` for an unterminated quote.
+{-| Split on spaces; a `"quoted"` run is one token, quotes dropped and its
+escapes read (ADR 0336): `\\` a backslash, `\"` a quote, `\xHH` a control
+byte. It closes at its first unescaped quote, before a space or the end.
+`Nothing` for an unterminated quote, or any other escape.
 -}
 tokens : String -> Maybe (List String)
 tokens s =
@@ -2397,5 +2398,35 @@ quoted cs w =
         '"' :: ' ' :: rest ->
             Just ( String.fromList (List.reverse w), ' ' :: rest )
 
+        '"' :: _ ->
+            Nothing
+
+        '\\' :: '\\' :: rest ->
+            quoted rest ('\\' :: w)
+
+        '\\' :: '"' :: rest ->
+            quoted rest ('"' :: w)
+
+        '\\' :: 'x' :: h :: l :: rest ->
+            Maybe.map2 (\a b -> Char.fromCode (16 * a + b)) (hexDigit h) (hexDigit l)
+                |> Maybe.andThen (\c -> quoted rest (c :: w))
+
+        '\\' :: _ ->
+            Nothing
+
         c :: rest ->
             quoted rest (c :: w)
+
+
+{-| An uppercase hex digit's value.
+-}
+hexDigit : Char -> Maybe Int
+hexDigit c =
+    if Char.isDigit c then
+        Just (Char.toCode c - 48)
+
+    else if c >= 'A' && c <= 'F' then
+        Just (Char.toCode c - 55)
+
+    else
+        Nothing

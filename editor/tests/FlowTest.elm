@@ -125,6 +125,17 @@ suite =
                     |> Flow.want (at 6) (SetTo a (Num 1))
                     |> Tuple.second
                     |> Expect.equal Nothing
+        , test "a_want_answered_and_since_reported_otherwise_is_sent_again" <|
+            \_ ->
+                Flow.idle
+                    |> Flow.want (at 0) (SetTo a (Num 1))
+                    |> Tuple.first
+                    |> Flow.acked (at 5)
+                    |> Tuple.first
+                    |> Flow.heard (SetTo a (Num 1)) (\_ -> False)
+                    |> Flow.want (at 6) (SetTo a (Num 1))
+                    |> Tuple.second
+                    |> Expect.equal (Just (Set a (Num 1)))
         , test "an_answer_lost_is_late_at_once" <|
             \_ -> Expect.equal (Resent (Set a (Num 1)) (Set a (Num 2))) (Flow.expire (at 20) 1000 (Flow.answerLost busy) |> Tuple.second)
         , test "waiting_wants_go_in_the_order_they_first_waited" <|

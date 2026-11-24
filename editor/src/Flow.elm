@@ -1,7 +1,7 @@
 -- SPDX-License-Identifier: GPL-3.0-or-later
 
 
-module Flow exposing (Edit(..), Expiry(..), Flow, acked, answerLost, busy, busyTries, expire, forget, heard, idle, inFlight, target, untaken, want)
+module Flow exposing (Edit(..), Expiry(..), Flow, acked, answerLost, busy, busyTries, expire, forget, forgetRoutesTo, heard, idle, inFlight, target, untaken, want)
 
 {-| The edits' window: one edit on the wire at a time (an `ed set`, or an
 `ed route` of a matrix cell). A hand moves faster than the unit answers, so
@@ -101,8 +101,10 @@ want : Time.Posix -> Edit -> Flow -> ( Flow, Maybe Command )
 want now e (Flow f) =
     case f.wire of
         Nothing ->
-            if (Dict.get (keyOf e) f.landed |> Maybe.map .edit) == Just e && not (Dict.member (keyOf e) f.pending) then
-                -- Answered already, and not yet reported: asking again says nothing new.
+            if (Dict.get (keyOf e) f.landed |> Maybe.map (\l -> l.edit == e && not l.heard)) == Just True && not (Dict.member (keyOf e) f.pending) then
+                -- Answered already, and the unit has said nothing of it since:
+                -- asking again says nothing new. Once it reports another
+                -- value (another hand's), it is asked again.
                 ( Flow f, Nothing )
 
             else if f.shut == Nothing then
@@ -246,6 +248,23 @@ heard like took (Flow f) =
 forget : Edit -> Flow -> Flow
 forget like (Flow f) =
     Flow { f | landed = Dict.remove (keyOf like) f.landed }
+
+
+{-| The unit refused the routes to `dest` (a full matrix): their landed edits go.
+-}
+forgetRoutesTo : String -> Flow -> Flow
+forgetRoutesTo dest (Flow f) =
+    let
+        to : Landed -> Bool
+        to l =
+            case l.edit of
+                RouteOf c _ ->
+                    String.endsWith (":" ++ dest) (Protocol.cellKey c)
+
+                SetTo _ _ ->
+                    False
+    in
+    Flow { f | landed = Dict.filter (\_ l -> not (to l)) f.landed }
 
 
 {-| The landed edits past `ms` that the unit never said a word of, not a

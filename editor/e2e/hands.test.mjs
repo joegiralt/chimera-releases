@@ -92,7 +92,10 @@ describe("choices", () => {
     const knob = s.el.locator("[data-addr]").first();
     const from = bridge.flow.sent.length;
     await wheel(knob, n + 3);
-    await until("at its last", async () => (await unit.get(s.addr)).text === (await s.el.getByRole("radio").last().innerText()).trim(), 5000);
+    await until("at its last", async () => (await unit.get(s.addr)).text === (await s.el.getByRole("radio").last().innerText()).trim(), 5000).catch(async (e) => {
+      const got = bridge.flow.got.slice(-40).map((g) => `${g.line} => ${g.lines.join(" | ")}`);
+      throw new Error(`${e.message}: ${s.addr} unit ${JSON.stringify(await unit.get(s.addr))}, last ${(await s.el.getByRole("radio").last().innerText()).trim()}, n ${n}\nsent ${bridge.flow.sent.slice(from).join(" ; ")}\n${got.join("\n")}`);
+    });
     await wheel(knob, -(n + 3));
     await until("at its first", async () => (await unit.get(s.addr)).text === (await s.el.getByRole("radio").first().innerText()).trim(), 5000);
     const sent = bridge.flow.sent.slice(from).filter((l) => l.startsWith(`ed set ${s.addr} `)).map((l) => Number(tokens(l)[3].slice(1)));
@@ -166,7 +169,7 @@ describe("knobs", () => {
     }
   });
 
-  test("E8: describe's defaults against a fresh INIT's values (what a double click resets to vs the INIT Sound)", async (t) => {
+  test("E8: describe's defaults are a fresh INIT's values (what a double click resets to is the INIT Sound)", async () => {
     // A fresh INIT ALGO on Part 6 (clean: this file never edits it).
     await loadInit(6, "ALGO");
     await unit.ok("ed part 6");
@@ -185,9 +188,9 @@ describe("knobs", () => {
       if (v === undefined || (p.panel.variant !== "-" && panels[p.panel.name] !== p.panel.variant)) continue;
       if (Math.abs(v - p.def) > Math.max(p.step / 2, 1e-4 * Math.abs(p.def))) drift.add(`${p.addr} default ${p.def}, INIT ${v}`);
     }
-    // INIT is a voiced Sound, not every default: the differences are said, the reset itself is E7's.
-    t.diagnostic(`${drift.size} params whose describe default is not INIT ALGO's${drift.size ? `: ${[...drift].join("; ")}` : ""}`);
     await followPart(1, "ALGO");
+    // describe's defaults are INIT's (ADR 0337): a double click resets a param to the INIT Sound's value.
+    assert.deepEqual([...drift], [], "params whose describe default is not INIT ALGO's");
   });
 
   test("E9: a hand held while the box takes another Part: nothing more sent for the old Part", async () => {
@@ -291,6 +294,7 @@ describe("the Part's MOD bay", () => {
     // The params a route may take (describe's flags: `d`), off the matrix's fixed columns.
     const dests = (await describedParams("ALGO")).filter((p) => (p.words[9] ?? "").includes("d") && !p.addr.startsWith("FILTER.") && !p.addr.startsWith("OUT.")).map((p) => p.addr);
     let full = null;
+    expectNotice(/^THE UNIT REFUSED: \S+: MATRIX FULL$/);
     for (const d of [...new Set(dests)]) {
       const got = await unit.ask(`ed route ENV2:${d} 30`);
       if (!got.at(-1).startsWith("OK")) {
@@ -302,11 +306,22 @@ describe("the Part's MOD bay", () => {
     }
     try {
       if (!full) {
-        // Routes are queued: the box refuses past its limit at its turn, quietly. Count what it kept.
+        // Routes are queued: the box takes them at its turn, and refuses those past its limit in `since`.
         await until("the routes landed", async () => Object.keys(await unitRoutes()).length >= 4);
       }
       const routes = await unitRoutes();
       const kept = Object.keys(routes).length;
+      const dropped = made.filter((c) => !routes[c]).map((c) => c.slice("ENV2:".length));
+      assert.ok(dropped.length > 0, `${made.length} routes asked, all kept: the matrix never filled`);
+      const said = async () => (await noticesOn()).join("\n");
+      // Each said once, as a set's refusal is; the editor keeps its newest notices, the newest refusal among them.
+      await until("the dropped routes' refusals said", async () => {
+        const n = await noticesOn();
+        const refusals = n.filter((x) => x.endsWith(": MATRIX FULL"));
+        return n.includes(`THE UNIT REFUSED: ${dropped.at(-1)}: MATRIX FULL`) && refusals.every((x) => dropped.some((d) => x === `THE UNIT REFUSED: ${d}: MATRIX FULL`));
+      }, 5000).catch(async () => {
+        throw new Error(`dropped ${dropped.join(" ")}; the editor said: ${await said()}`);
+      });
       const cables = () => bay().locator(".att").count();
       await until("the editor draws the unit's routes", async () => (await cables()) === kept, 5000).catch(async () => {
         throw new Error(`the unit has ${kept} routes, the editor ${await cables()} cables`);
@@ -317,11 +332,10 @@ describe("the Part's MOD bay", () => {
       await until("the route made", async () => !!(await unitRoutes())["VEL:OUT.VCA"], 5000);
       await until("the editor still draws only the unit's", async () => (await cables()) === Object.keys(await unitRoutes()).length, 5000);
       made.push("VEL:OUT.VCA");
-      t.diagnostic(`${made.length} routes asked, the unit kept ${kept}${full ? `, then said ${full}` : ""}`);
+      t.diagnostic(`${made.length} routes asked, the unit kept ${kept} and refused ${dropped.length}${full ? `, then said ${full}` : ""}`);
     } finally {
       for (const c of made) await unit.ask(`ed route ${c} off`);
     }
     await until("the routes gone", async () => !Object.keys(await unitRoutes()).some((c) => c.startsWith("ENV2:")), 10000);
-    void noticesOn;
   });
 });
