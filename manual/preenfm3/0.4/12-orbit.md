@@ -39,18 +39,19 @@ The header names the ring or scene: `RING 3  RHYTHM`, `SCENE 1  CHORDS`.
 ![ORB page, annotated](img/orbit_orb.png)
 
 1. Header: `SCENE 1  ORBIT`, the sounding dot.
-2. Ring 1's track: an empty step, marked `+`.
-3. Frame line: `A MINOR · 4 BARS · 120 INT`, key, scale, bars and tempo with its source (`INT` own clock, `MIDI` followed clock).
-4. A hit on ring 1, filled.
-5. Another empty step on ring 1.
-6. **RING**: `3 › P3`.
-7. **KEY**: A.
-8. **SCALE**: MINOR.
-9. **BARS**: 4.
-10. **SCENE**: 1.
-11. **BPM**: 120.
-12. Chain map, ORB lit.
-13. Sub-page row: ORB CUSTOM, ORB underlined.
+2. Frame line: `A MINOR · 4 BARS · 120 INT`, key, scale, bars and tempo with its source (`INT` own clock, `MIDI` followed clock).
+3. The chord progression: the thick arc round the outside.
+4. Part numbers at each ring's step 1 (`1 2 3 3` up the top).
+5. A hit on ring 2.
+6. A hit on ring 1, the outermost ring (2 steps, 2 hits).
+7. **RING**: `3 › P3`.
+8. **KEY**: A.
+9. **SCALE**: MINOR.
+10. **BARS**: 4.
+11. **SCENE**: 1.
+12. **BPM**: 120.
+13. Chain map, ORB lit.
+14. Sub-page row: ORB CUSTOM, ORB underlined.
 
 The thick arc round the outside is the chord progression, one piece per segment, the playing one lit. Inside it the rings, ring 1 outermost: hits filled, empty steps `+`, accents ringed, the playing step lit, each Part number at step 1 (the `1 2 3 3` up the top); a muted ring is dark, as ring 5 at the centre.
 

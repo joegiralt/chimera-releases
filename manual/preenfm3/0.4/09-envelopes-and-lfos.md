@@ -14,7 +14,7 @@ From MATRIX, **SEQ** steps on through ENV1 to LFO3 and wraps back to the matrix;
 
 **Why:** instead of a fixed "filter envelope", "amp envelope" and "vibrato LFO", a Sound gets six slots, each a choice of kind, and any of them can drive anything through the matrix.
 
-> **Design note:** the envelope slots follow the behaviour and ranges of the Intellijel Cascadia's Envelopes A and B, taken from its manual: no code, just the published ranges and how each mode behaves. A is its AHDSR with speed switch and hold position; B its function generator, which can be an envelope, an LFO or a burst of pulses. The stages charge like a capacitor toward a rail, which is why they sound like an analogue envelope rather than a ruler.
+> **Design note:** the envelope slots are modelled on the behaviour and ranges of the Intellijel Cascadia's Envelopes A and B, after its manual: no code, just the published ranges and how each mode behaves. A is after its AHDSR with speed switch and hold position; B after its function generator, which can be an envelope, an LFO or a burst of pulses. The stages charge like a capacitor toward a rail, which is why they sound like an analogue envelope rather than a ruler.
 
 ## Envelopes: the three slots
 
@@ -118,7 +118,7 @@ With TYPE **B** the page reads **MODE · (two times or rates) / (a shape) · FOR
 
 | Cell | Range | Default | What it does |
 |---|---|---|---|
-| **RATE** | 0.05 Hz to 800 Hz | 1.00 Hz | The speed |
+| **RATE** | 0.05 Hz to 800 Hz | 0.37 Hz | The speed |
 | **PHASE** | 0 to 360 | 230 | Where the wave starts (FREE, SYNC) |
 | **TILT** | SAW, TRI, RAMP | TRI | Slope: falling saw, triangle, rising ramp |
 | **DELTA** | 0 to 100 % | 64 % | LFV: how far each new random target may land from the last |
@@ -133,7 +133,7 @@ With TYPE **B** the page reads **MODE · (two times or rates) / (a shape) · FOR
 
 | Cell | Range | Default | What it does |
 |---|---|---|---|
-| **RATE** | 0.05 Hz to 1 kHz | about 0.9 Hz | Pulse rate within the burst |
+| **RATE** | 0.05 Hz to 1 kHz | 0.38 Hz | Pulse rate within the burst |
 | **LENGTH** | 10 ms to 20 s | about 1.3 s | How long the burst lasts |
 | **TILT** | SAW, TRI, RAMP | TRI | The burst's shape over its length |
 | **FORM** | AD, AHR, CYCLE | AD | AD: one burst a note. AHR: goes on while held. CYCLE: repeats while held; on key up the running burst is the last |

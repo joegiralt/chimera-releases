@@ -13,7 +13,7 @@ A note strikes a pad; the hit takes a copy of the pad at that moment and plays i
 
 **Why:** a full Sound per pad would take more memory than six Parts have. A compact pad, as on an Analog Rytm, gives each drum what makes it a different drum, while the costly parts of the chain (FX slot, matrix) stay one per Part.
 
-> **Design note:** The pads' layout, the choke groups and the way notes reach pads follow the Elektron Analog Rytm. The machines' names and knob sets take their shape from the Elektron Machinedrum's machine reference, read from its manual only: no Elektron code, ROM or samples, and every algorithm is Chimera's own. Each machine was first built on a computer, auditioned by ear, then ported to the instrument line for line, so the firmware's output matches the prototype sample for sample. Think of it as a drum machine that grew up reading other drum machines' manuals, and never their diaries.
+> **Design note:** The pads' layout, the choke groups and the way notes reach pads are inspired by the Elektron Analog Rytm. The machines' names and knob sets are in the spirit of the Elektron Machinedrum's machines, after its manual only: no Elektron code, ROM or samples, and every algorithm is Chimera's own. Each machine was first built on a computer, auditioned by ear, then ported to the instrument line for line, so the firmware's output matches the prototype sample for sample. Think of it as a drum machine that grew up reading other drum machines' manuals, and never their diaries.
 
 ## DRUM: the chain map
 
@@ -158,7 +158,7 @@ Every pad's sound starts as CLEAN LP4 at 20.0 kHz, Q 0; an open AMP (DECAY INF, 
 ![MORE page, annotated](img/drum_more.png)
 
 1. **Header:** `PART 1 · 01 TONE KICK`, page MORE.
-2. **Focused cell:** MACHINE, full name TONE KICK (the dot sits just above it).
+2. **Focused cell:** MACHINE, full name TONE KICK (the dot sits to the left of it).
 3. **Machine icon.**
 4. **Hint:** `MIX + -/+ PAD`.
 5. **Picture band:** a test wave.
@@ -752,7 +752,7 @@ CUTOFF and RESO move at audio rate. **VOLUME** never boosts: positive opens with
 - **Set at the strike:** MACHINE and knobs, LEVEL, PAN, VEL, CHOKE, RETRIG, filter TYPE and MODE/VOICE, PLFO WAVE and MODE, route SOURCE and DEST, both SPEEDs, AMP MODE.
 - **Glide on a ringing hit:** CUTOFF/FREQ, Q/RES, SEM's MODE sweep, AMP and PENV times, LPG, gate DECAY and STRIKE, PLFO SPEED, DEPTH, PHASE, route AMOUNT.
 
-**Why:** the Analog Rytm's split: continuous values glide so a sweep is smooth on a ringing cymbal; choices latch so nothing clicks.
+**Why:** after the Analog Rytm's split: continuous values glide so a sweep is smooth on a ringing cymbal; choices latch so nothing clicks.
 
 ## DRUM: the Part's own pages on a kit
 

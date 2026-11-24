@@ -246,7 +246,7 @@ The right side reads on the inverted sweep, so it is wide in stereo and safe in 
 
 1. Header: `PART 6 · MIX CHORUS`.
 2. Focused cell: TYPE PHASER.
-3. Glyph: a ray gun.
+3. Glyph: a ray gun; the small dot under it marks TYPE as the focused cell.
 4. Hint: `MIX + B1-6 PART`.
 5. Effects flow, CHR lit.
 6. **TYPE**.
@@ -267,7 +267,7 @@ The right side reads on the inverted sweep, so it is wide in stereo and safe in 
 8. **MIX**.
 9. Chain map: CHR lit (no sub-pages).
 
-> **Design note:** I, II and I+II are the Juno-60's chorus buttons: two bucket-brigade lines on triangles, I at 0.513 Hz and II at 0.863 Hz at the default RATE. FLANGER is the feedback comb from Jon Dattorro's "Effect Design Part 2" (1997); PHASER the all-pass phaser of Julius O. Smith's "An Allpass Approach to Digital Phasing and Flanging" (1984). Both borrow the chorus's own delay lines, so they cost no memory at all.
+> **Design note:** I, II and I+II are inspired by the Juno-60's chorus buttons: two bucket-brigade lines on triangles, I at 0.513 Hz and II at 0.863 Hz at the default RATE. FLANGER is the feedback comb from Jon Dattorro's "Effect Design Part 2" (1997); PHASER the all-pass phaser of Julius O. Smith's "An Allpass Approach to Digital Phasing and Flanging" (1984). Both borrow the chorus's own delay lines, so they cost no memory at all.
 
 ## MIXER: the DLY page
 
@@ -409,7 +409,7 @@ Each grain reads the cells when it starts, through a smooth bell, so nothing zip
 
 Starting points: shimmer, PITCH +12, FDBK high, TEXTURE low, some REV. Haze: DENSITY high, SIZE short, TEXTURE high.
 
-> **Design note:** GRAIN is a port of the grain engine in Émilie Gillet's Mutable Instruments Beads: the pulse-train clock, grains starting behind the write head, the bell, the grain-stealing fades and the four-point read are hers. Chimera plays six grains, not thirty-two, from the delay's half-second line, so no freeze, reverse or stereo spray. TEXTURE does one job where Beads splits DENSITY in two, and grains are scaled by how many overlap, so FDBK under the top always dies away. We tried hard to make it not. The same core runs TAPE's STRETCH machine ([TAPE](06-tape.md)).
+> **Design note:** GRAIN uses code adapted from the grain engine in Émilie Gillet's Mutable Instruments Beads (MIT licence): the pulse-train clock, grains starting behind the write head, the bell, the grain-stealing fades and the four-point read. Chimera plays six grains, not thirty-two, from the delay's half-second line, so no freeze, reverse or stereo spray. TEXTURE does one job where Beads splits DENSITY in two, and grains are scaled by how many overlap, so FDBK under the top always dies away. We tried hard to make it not. The same core runs TAPE's STRETCH machine ([TAPE](06-tape.md)).
 
 ## MIXER: the REV page
 
@@ -537,7 +537,7 @@ Starting points: drum room, ROOM, SIZE low, DECAY short. Pad, HALL or BLOOM, lon
 11. Chain map: REV lit.
 12. Sub-page row: REVERB underlined.
 
-> **Design note:** ROOM, HALL, BLOOM, GATE and REVERSE were derived from, and A/B-matched against, thement's open-source midiverb_emulator, which recreates a classic hardware reverb from its decompiled programs. ROOM's and BLOOM's structures and HALL's diffuser start from numbers read out of it; the engine, the knobs and everything between the reference settings are Chimera's. Each starting setting was fitted until decay per octave, pre-delay, early energy, echo density and brightness matched within a few percent. QUAD is Chimera's original ring; SMEAR is ours too, a wander bounded to a few cents. Fitting reverbs by octave-band decay is a strange way to spend an evening, but the GATE does sound right.
+> **Design note:** ROOM, HALL, BLOOM, GATE and REVERSE were voiced and A/B-tuned against thement's open-source midiverb_emulator. ROOM's and BLOOM's structures and HALL's diffuser start from values in it; the engine, the knobs and everything between the reference settings are Chimera's. Each starting setting was fitted until decay per octave, pre-delay, early energy, echo density and brightness matched within a few percent. QUAD is Chimera's original ring; SMEAR is ours too, a wander bounded to a few cents. Fitting reverbs by octave-band decay is a strange way to spend an evening, but the GATE does sound right.
 
 ## MIXER: the MORE sub-page
 
@@ -750,7 +750,7 @@ Under PART *n*, the key Part passes unducked at full level (its effect returns s
 
 Starting points: pumping from a DRUM Part 1, KEY PART 1, RATIO 4:1+, THRESH low, ATK fast, REL with the tempo. Glue, KEY HIGH, RATIO 2:1, THRESH just under the loud parts.
 
-> **Design note:** KEY follows how Elektron's Analog Rytm keys its compressor: fixed curves on the detector, then the Parts themselves. LOW's and HIGH's 150 Hz are Chimera's own guess, since no manual publishes the corners. HIT is the K-weighting of ITU-R BS.1770, the curve broadcast loudness meters use, built from its analogue prototype so it holds at any sample rate.
+> **Design note:** KEY is inspired by how Elektron's Analog Rytm keys its compressor: fixed curves on the detector, then the Parts themselves. LOW's and HIGH's 150 Hz are Chimera's own guess, since no manual publishes the corners. HIT is the K-weighting of ITU-R BS.1770, the curve broadcast loudness meters use, built from its analogue prototype so it holds at any sample rate.
 
 ## MIXER: the LVL sub-page
 

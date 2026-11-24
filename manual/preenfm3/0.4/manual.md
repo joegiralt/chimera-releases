@@ -141,7 +141,7 @@ Every engine's chain map ends in **FLT** (FILTER), **AMP** and **MOD**, and ever
 
 **Why:** one chain means one set of pages to learn. A filter sweep or a low-pass gate works the same on an FM bell, a string or a recording.
 
-> **Design note:** the voice chain reads like a Eurorack row: oscillator, wavefolder or fuzz, filter, low-pass gate. The low-pass gate is a port of the one in Émilie Gillet's Mutable Instruments Plaits; FUZZ is modelled from the circuit of a Big Muff pedal; SEM is the SEM-1A filter, from a published circuit-model paper; 2040 models the SSM2040 chip. No soldering iron was harmed.
+> **Design note:** the voice chain reads like a Eurorack row: oscillator, wavefolder or fuzz, filter, low-pass gate. The low-pass gate uses code adapted from Émilie Gillet's Mutable Instruments Plaits (MIT licence); FUZZ is modelled on the circuit of a Big Muff pedal; SEM is modelled on the behaviour of the Oberheim SEM-1A filter, after a published circuit-model paper; 2040 models the SSM2040 chip. No soldering iron was harmed.
 
 ## Concepts: modulation
 
@@ -159,7 +159,7 @@ Everything that moves a setting over time is a **route** in the Part's **MOD mat
 | [TAPE](#tape-the-sample-engine) | Plays recordings (sources) from memory or streamed from the card; the DECK machine is **WALK**, **STRETCH**, **SCRUB** or **WAVE** |
 | [DRUM](#drum-the-kit-engine) | A kit on one Part: twelve pads, each with its own machine (TONE KICK, METAL HAT, PLAIN NOISE…), filter, amp, modulation and keys |
 
-> **Design note:** the engines have known ancestors, and none of them is a copy. MODAL builds on the maths of Émilie Gillet's Mutable Instruments Rings and Elements. ALGO's factory set includes Sounds ported from Yamaha TX81Z patches, which then wander off on six operators instead of four. TAPE's STRETCH follows the way a classic Akai S950 stretched time. VA is a clean-room design, meant to feel analogue while still able to go West Coast or East Coast. DRUM borrows the shape of an Analog Rytm kit and the structure of the Machinedrum's machines, from their manuals only.
+> **Design note:** the engines have known ancestors, and none of them is a copy. MODAL builds on the maths of Émilie Gillet's Mutable Instruments Rings and Elements, and uses code adapted from Rings (MIT licence). ALGO's factory set includes Sounds inspired by Yamaha TX81Z presets, which then wander off on six operators instead of four. TAPE's STRETCH is inspired by the way a classic Akai S950 stretched time. VA is a clean-room design, meant to feel analogue while still able to go West Coast or East Coast. DRUM is after the architecture of an Analog Rytm kit and in the spirit of the Machinedrum's machines, from their manuals only.
 
 ## Concepts: design ideas you will meet everywhere
 
@@ -408,7 +408,7 @@ A turn while SEQ is held cancels SEQ's own press: it neither changes sub-page no
 
 ## Panel: hints in the focus band
 
-Touch a cell and the focus band's bottom line lists its combos, keys in bold (`MIX + SEQ LEARNS A CC`). Arrows show which way to turn: `◂▸` along, `▴▾` up and down. A cell's own words (a reason, a note) take the line instead.
+Touch a cell and the focus band's bottom line lists its combos, keys in bold: a choice cell reads `MIX + SEQ LEARNS A CC`, a continuous cell `SEQ+TURN FINE  MIX + SEQ LEARN`. Arrows show which way to turn: `◂▸` along, `▴▾` up and down. A cell's own words (a reason, a note) take the line instead.
 
 ![The FILTER MOD sub-page, annotated](img/sub-page-hint.png)
 
@@ -537,7 +537,7 @@ Every Sound stores two algorithms, **ALG A** and **ALG B**; **MORPH** blends one
 
 **Why phase modulation:** operators modulate each other's phase, not their frequency, so a carrier's pitch stays centred however deep the modulation goes. The stock PreenFM3 firmware does true FM; Chimera is phase modulation throughout.
 
-> **Design note:** ALGO began as a faithful four-operator TX81Z engine that cost more than the whole chip could spend on one voice: every FM note was refused. It was replaced with a six-operator engine written from scratch. The TX81Z is still in its bones: the 64 COARSE ratios, FINE, the 0.75 dB LEVEL step, the four-rate envelope and the feedback steps were re-entered by hand from its owner's manual, and T1 to T8 are its eight algorithms. The waves were redrawn as formulas. The other 24 algorithms are Chimera's own, because six operators deserve more than eight ways to meet.
+> **Design note:** ALGO began as a four-operator engine modelled on the behaviour of the TX81Z, and it cost more than the whole chip could spend on one voice: every FM note was refused. It was replaced with a six-operator engine written from scratch. The TX81Z's spirit is still in its bones: the 64 COARSE ratios, FINE, the 0.75 dB LEVEL step, the four-rate envelope and the feedback steps follow the behaviour its owner's manual describes, and T1 to T8 are after its eight algorithms. The waves were redrawn as formulas. The other 24 algorithms are Chimera's own, because six operators deserve more than eight ways to meet.
 
 ## ALGO: the chain and its pages
 
@@ -650,7 +650,7 @@ A higher-numbered operator always modulates a lower one; "4→3" means 4 modulat
 | A23 | 6 into 2, 3, 4, 5; each of those into 1 | 1 |
 | A24 | 6→5; 5 into 2, 3, 4; each of those into 1 | 1 |
 
-T1–T8 are the TX81Z's eight on operators 1–4, plus a 6→5 pair; with 5 and 6 at LEVEL 0 they play as the TX81Z's. A1 is an additive organ, A17 the deepest stack; A16, A18 and A23 pile modulators onto one or two carriers. A16 with A17 is the costliest pair to morph.
+T1–T8 are after the TX81Z's eight algorithms, on operators 1–4, plus a 6→5 pair; with 5 and 6 at LEVEL 0 they behave like its four-operator originals. A1 is an additive organ, A17 the deepest stack; A16, A18 and A23 pile modulators onto one or two carriers. A16 with A17 is the costliest pair to morph.
 
 ## ALGO: the OSC node and the group pages
 
@@ -714,11 +714,11 @@ The envelope pages draw the touched operator's envelope; the others show the liv
 | **FRMT** | Formant operator (FORMANT in the band) |
 | **NOISE** | Noise band |
 
-W1–W8 are the TX81Z's waves; W3, W4, W7 and W8 keep their DC offset as on the TX81Z. All tables are band-limited. A WAVE change under a held note crossfades. A choice the [formant budget](#algo-the-formant-budget) refuses shows dimmed and writes nothing.
+W1–W8 are modelled on the TX81Z's eight waves; W3, W4, W7 and W8 keep a DC offset, as its waves do. All tables are band-limited. A WAVE change under a held note crossfades. A choice the [formant budget](#algo-the-formant-budget) refuses shows dimmed and writes nothing.
 
 ### ALGO: COARSE, FINE and DETUNE, the ratio
 
-An operator plays at the note's frequency times its ratio. **COARSE** picks one of the TX81Z's 64:
+An operator plays at the note's frequency times its ratio. **COARSE** picks one of 64 ratios, after the TX81Z's set:
 
 | | | | | | | | |
 |---|---|---|---|---|---|---|---|
@@ -731,7 +731,7 @@ An operator plays at the note's frequency times its ratio. **COARSE** picks one 
 | 15.70 | 16.96 | 17.27 | 17.30 | 18.37 | 18.84 | 19.03 | 19.78 |
 | 20.41 | 20.76 | 21.20 | 21.98 | 22.49 | 23.55 | 24.22 | 25.95 |
 
-- Whole numbers give harmonic tones; the rest give bells and metals. 3.14 and 6.28 are TX81Z ratios, not π and 2π.
+- Whole numbers give harmonic tones; the rest give bells and metals. 3.14 and 6.28 are ratios after the TX81Z's, not π and 2π.
 - **FINE** raises the ratio in 16 steps towards the next region (8 below 1.00; FINE 8–15 then hold the top).
 - **DETUNE** moves ±4.5 cents at most; detuned carriers beat slowly.
 - The focus band shows where the operator lands: `RATIO 1.41, DETUNE +4.5 CENTS`. COARSE steps; FINE and DETUNE glide.
@@ -820,7 +820,7 @@ An operator plays at the note's frequency times its ratio. **COARSE** picks one 
 
 ### ALGO: FEEDBACK
 
-**FDBK** feeds an operator's output into its own phase: a sine gains harmonics, turns towards a saw and at the top breaks into grit. The whole numbers are the TX81Z's eight steps, each doubling the swing from step 1; one detent is a tenth of a step. **MIX + turn** jumps to the next whole number, **SEQ + turn** steps by tenths. A noise band ignores FDBK.
+**FDBK** feeds an operator's output into its own phase: a sine gains harmonics, turns towards a saw and at the top breaks into grit. The whole numbers follow the TX81Z's eight steps, each doubling the swing from step 1; one detent is a tenth of a step. **MIX + turn** jumps to the next whole number, **SEQ + turn** steps by tenths. A noise band ignores FDBK.
 
 ![FEEDBACK (FBK) page, annotated](img/algo_fbk.png)
 
@@ -1154,7 +1154,7 @@ A MIDI control or load that lands on a refused choice shows the toast `FORMANT B
 > - **FOF** (Xavier Rodet's *fonctions d'onde formantique*, IRCAM's CHANT, 1984) made the grain-per-period formant famous, and sang opera with it.
 > - **The FS1R** (Yamaha, 1998) put formant operators inside an FM algorithm, so a formant could be modulated like any operator.
 >
-> Chimera's structure follows the FS1R's expired patent (US 5,610,354). The window, the width floor, the level law (an FS1R gets louder as BW widens; this does not), VOWEL and its slots are Chimera's own. The vowel table is Peterson and Barney's 1952 data, so somewhere in the firmware a committee of mid-century American men is still saying "hod", "head" and "hid" on your behalf.
+> Chimera's formant operator is inspired by the FS1R, and its structure follows the FS1R's expired patent (US 5,610,354). The window, the width floor, the level law (an FS1R gets louder as BW widens; this does not), VOWEL and its slots are Chimera's own. The vowel table is Peterson and Barney's 1952 data, so somewhere in the firmware a committee of mid-century American men is still saying "hod", "head" and "hid" on your behalf.
 
 ## ALGO: the shared pages on an ALGO Part
 
@@ -1210,7 +1210,7 @@ A MODAL Part's chain is **EXC · RES · FLT · AMP · MOD**, and it opens on EXC
 | BOWED | BOW | A bowed string: sounds while the key is held, rings when the bow lifts. |
 | SYMP | PLUCK | A plucked string with seven sympathetic strings (the halo) tuned to a chord. |
 
-> **Design note:** MODAL builds on the maths of Émilie Gillet's Mutable Instruments Rings and Elements, which are open source. The modal bank's band-pass filters, its strike-position weights, its stiffness curve and SYMP's chord table follow Rings, and keep its MIT notice. The plucked string itself is Chimera's own code: it began life in an alternative Ambika firmware by Chimera's author, long before it met a PreenFM3. Where Rings is one module with a fixed voice count, MODAL is one engine among several in a six-Part synth, so it had to learn to share: memory, CPU and, in SYMP's case, its sympathetic strings.
+> **Design note:** MODAL builds on the maths of Émilie Gillet's Mutable Instruments Rings and Elements, which are open source. The modal bank's band-pass filters, its strike-position weights, its stiffness curve and SYMP's chord table use code adapted from Émilie Gillet's Mutable Instruments Rings (MIT licence). The plucked string itself is Chimera's own code: it began life in an alternative Ambika firmware by Chimera's author, long before it met a PreenFM3. Where Rings is one module with a fixed voice count, MODAL is one engine among several in a six-Part synth, so it had to learn to share: memory, CPU and, in SYMP's case, its sympathetic strings.
 
 ## MODAL: notes ring free
 
@@ -1505,7 +1505,7 @@ Then the filter (the 2040 by default), the FX slot and the amp, as on every engi
 
 **Why:** the digital oscillators that don't sound sterile build movement into the oscillator itself. Every wave, at every SHAPE, plays at the same level, so WAVE, SHAPE and MODE never jump in loudness and every continuous control modulates without clicks.
 
-> **Design note:** VA's layout is an open nod to the Mutable Instruments Ambika: two variable-waveform oscillators, a digital operator between them and a sub locked to the first. Only the architecture came over, from the Ambika's manual; the code is Chimera's own, written clean-room. It goes East Coast (saws, SUB, the 2040 or LADDER with an envelope) or West Coast (sines bent by FM, PHASE and LOOPFM, folded and closed by the low-pass gate). The waves are kept clean with polyBLEP and polyBLAMP, the techniques of Välimäki and Huovilainen and of Esqueda, Välimäki and Bilbao. No oscillators were harmed, but several were made deliberately unstable.
+> **Design note:** VA's layout is an open nod to the Mutable Instruments Ambika: two variable-waveform oscillators, a digital operator between them and a sub locked to the first. It is after the Ambika's architecture, as its manual describes it; the code is Chimera's own, written clean-room. It goes East Coast (saws, SUB, the 2040 or LADDER with an envelope) or West Coast (sines bent by FM, PHASE and LOOPFM, folded and closed by the low-pass gate). The waves are kept clean with polyBLEP and polyBLAMP, the techniques of Välimäki and Huovilainen and of Esqueda, Välimäki and Bilbao. No oscillators were harmed, but several were made deliberately unstable.
 
 ## VA: the chain and its pages
 
@@ -2034,7 +2034,7 @@ The other TYPE's cells are dimmed: `GRAIN TYPE ONLY` or `CLASSIC TYPE ONLY`.
 
 These are GRAIN's; a turn affects grains to come. Key up is the amp envelope's.
 
-> **Design note:** CLASSIC is the Akai S950's time-stretch done in real time: the S950 had to render a stretched copy and make you wait, while CLASSIC stretches as you play. GRAIN's grain core is a port of Émilie Gillet's Mutable Instruments Beads (its pulse-train clock, bell-shaped window and grain stealing), the same core as the delay's GRAIN type. Around it, Chimera adds what a sampler needs and Beads doesn't: a pointer that reaches the end in exactly LENGTH seconds on every key, grains that lock to the source's pitch so a stretched tone stays a tone, and levels that hold steady whether the grains agree or not. It is an accordion for sound, minus the folk club.
+> **Design note:** CLASSIC is inspired by the Akai S950's time-stretch, done in real time: the S950 had to render a stretched version and make you wait, while CLASSIC stretches as you play. GRAIN's grain core uses code adapted from Émilie Gillet's Mutable Instruments Beads (MIT licence): its pulse-train clock, bell-shaped window and grain stealing. The delay's GRAIN type runs the same core. Around it, Chimera adds what a sampler needs and Beads doesn't: a pointer that reaches the end in exactly LENGTH seconds on every key, grains that lock to the source's pitch so a stretched tone stays a tone, and levels that hold steady whether the grains agree or not. It is an accordion for sound, minus the folk club.
 
 ## TAPE: SCRUB
 
@@ -2125,7 +2125,7 @@ All three are matrix destinations: an LFO on FRAME is the classic sweep. Each fr
 9. Chain map, DECK lit.
 10. Sub-page row: DECK WAVE PITCH, WAVE underlined.
 
-> **Design note:** WAVE follows the wavetable synths of the 80s and 90s: single-cycle frames, scanned, each kept at a ladder of octave-spaced versions so a high note never folds, the way the PPG Wave and the Waldorf Microwave did it. The factory WAVE sources are transwave-style tables made from Chimera's own engines (morphing, saw, bowed, brass). Somewhere, a 1990s workstation is feeling very flattered.
+> **Design note:** WAVE follows the wavetable synths of the 80s and 90s: single-cycle frames, scanned, each kept at a ladder of octave-spaced versions so a high note never folds, in the spirit of the PPG Wave and the Waldorf Microwave. The factory WAVE sources are transwave-style tables made from Chimera's own engines (morphing, saw, bowed, brass). Somewhere, a 1990s workstation is feeling very flattered.
 
 ## TAPE: the pitch page
 
@@ -2192,7 +2192,7 @@ A note strikes a pad; the hit takes a copy of the pad at that moment and plays i
 
 **Why:** a full Sound per pad would take more memory than six Parts have. A compact pad, as on an Analog Rytm, gives each drum what makes it a different drum, while the costly parts of the chain (FX slot, matrix) stay one per Part.
 
-> **Design note:** The pads' layout, the choke groups and the way notes reach pads follow the Elektron Analog Rytm. The machines' names and knob sets take their shape from the Elektron Machinedrum's machine reference, read from its manual only: no Elektron code, ROM or samples, and every algorithm is Chimera's own. Each machine was first built on a computer, auditioned by ear, then ported to the instrument line for line, so the firmware's output matches the prototype sample for sample. Think of it as a drum machine that grew up reading other drum machines' manuals, and never their diaries.
+> **Design note:** The pads' layout, the choke groups and the way notes reach pads are inspired by the Elektron Analog Rytm. The machines' names and knob sets are in the spirit of the Elektron Machinedrum's machines, after its manual only: no Elektron code, ROM or samples, and every algorithm is Chimera's own. Each machine was first built on a computer, auditioned by ear, then ported to the instrument line for line, so the firmware's output matches the prototype sample for sample. Think of it as a drum machine that grew up reading other drum machines' manuals, and never their diaries.
 
 ## DRUM: the chain map
 
@@ -2337,7 +2337,7 @@ Every pad's sound starts as CLEAN LP4 at 20.0 kHz, Q 0; an open AMP (DECAY INF, 
 ![MORE page, annotated](img/drum_more.png)
 
 1. **Header:** `PART 1 · 01 TONE KICK`, page MORE.
-2. **Focused cell:** MACHINE, full name TONE KICK (the dot sits just above it).
+2. **Focused cell:** MACHINE, full name TONE KICK (the dot sits to the left of it).
 3. **Machine icon.**
 4. **Hint:** `MIX + -/+ PAD`.
 5. **Picture band:** a test wave.
@@ -2931,7 +2931,7 @@ CUTOFF and RESO move at audio rate. **VOLUME** never boosts: positive opens with
 - **Set at the strike:** MACHINE and knobs, LEVEL, PAN, VEL, CHOKE, RETRIG, filter TYPE and MODE/VOICE, PLFO WAVE and MODE, route SOURCE and DEST, both SPEEDs, AMP MODE.
 - **Glide on a ringing hit:** CUTOFF/FREQ, Q/RES, SEM's MODE sweep, AMP and PENV times, LPG, gate DECAY and STRIKE, PLFO SPEED, DEPTH, PHASE, route AMOUNT.
 
-**Why:** the Analog Rytm's split: continuous values glide so a sweep is smooth on a ringing cymbal; choices latch so nothing clicks.
+**Why:** after the Analog Rytm's split: continuous values glide so a sweep is smooth on a ringing cymbal; choices latch so nothing clicks.
 
 ## DRUM: the Part's own pages on a kit
 
@@ -3163,7 +3163,7 @@ A clean state-variable filter in the manner of the Cascadia's VCF; the home filt
 
 At high Q, CLEAN self-oscillates (not in NOTCH2). LP4 fully open passes its input untouched. The NOTCH2 picture is a sketch, not the real response.
 
-> **Design note:** CLEAN takes its controls and words from the Intellijel Cascadia's VCF: modes named by what they do (LP1, BP4, NOTCH2), not by a datasheet. Under it runs a zero-delay state-variable filter that can self-oscillate. NOTCH2 is four all-pass stages around the dry signal, after an application circuit in the SSM2040's own data sheet: a nice bit of family history for a filter that sits next to a 2040.
+> **Design note:** CLEAN's controls and words are inspired by the Intellijel Cascadia's VCF: modes named by what they do (LP1, BP4, NOTCH2), not by a datasheet. Under it runs a zero-delay state-variable filter that can self-oscillate. NOTCH2 is four all-pass stages around the dry signal, after an application circuit in the SSM2040's own data sheet: a nice bit of family history for a filter that sits next to a 2040.
 
 ### FILTER: 2040
 
@@ -3184,8 +3184,8 @@ A four-pole low-pass modelled on the SSM2040 filter chip; VA's home filter. Its 
 
 | VOICE | What it is |
 |---|---|
-| REV2 | The chip as the Prophet-5 used it: linear resonance, bounded by the chip's own clip |
-| EXPNDR | The chip as the Kobol Expander uses it, a CA3080 in the resonance loop: squelches as RES rises, keeps more bass, rings over its input at full RES |
+| REV2 | Modelled on the chip as the Prophet-5 used it: linear resonance, bounded by the chip's own clip |
+| EXPNDR | Modelled on the chip as the Kobol Expander uses it, a CA3080 in the resonance loop: squelches as RES rises, keeps more bass, rings over its input at full RES |
 
 > **Design note:** the 2040 is a circuit model of the SSM2040, each VOICE solving the loop through its own resonance part. EXPNDR's bass and ring were then measured against a recording of a real Kobol Expander at three resonance settings, and its make-up gain fitted to match. REV2 was left exactly as modelled.
 
@@ -3221,7 +3221,7 @@ A Chamberlin state-variable filter that drives hard: the cheapest and edgiest. M
 9. Chain map, FLT lit.
 10. Sub-page row, FILTER underlined.
 
-The Moog transistor ladder, four poles, with Xpander-style modes (**LP2**, **LP4** default, **BP2**, **BP4**, **HP4**) and INPUT as its drive. Like the original it loses some bass as resonance rises. Its modulation page is titled LADDER MOD.
+Modelled on the Moog transistor ladder, four poles, with Xpander-style modes (**LP2**, **LP4** default, **BP2**, **BP4**, **HP4**) and INPUT as its drive. Like the original it loses some bass as resonance rises. Its modulation page is titled LADDER MOD.
 
 > **Design note:** LADDER is Vadim Zavalishin's topology-preserving ladder from *The Art of VA Filter Design*, its feedback loop solved in closed form. Three published Moog models were weighed first. A benchmark paper against a transistor-level simulation settled where the saturation goes: five saturators, one at the input and one a stage, because distributed saturation matches the real circuit far better than one clipper at the end.
 
@@ -3240,7 +3240,7 @@ The Moog transistor ladder, four poles, with Xpander-style modes (**LP2**, **LP4
 9. Chain map, FLT lit.
 10. Sub-page row, FILTER underlined.
 
-The Oberheim SEM's 12 dB state-variable filter. **MODE** is a knob, like the SEM's pot: low-pass (0), a notch at FREQ (middle), high-pass (127). It glides and is a destination, so an LFO on MODE sweeps the response itself. **OUTPUT**, on SEM MOD, is the SEM's switch: MODE (the knob's sweep) or BP (band-pass). Like the original, it does not self-oscillate: at full RES it rings and the ring dies away.
+Modelled on the behaviour of the Oberheim SEM's 12 dB state-variable filter. **MODE** is a knob, after the SEM's pot: low-pass (0), a notch at FREQ (middle), high-pass (127). It glides and is a destination, so an LFO on MODE sweeps the response itself. **OUTPUT**, on SEM MOD, is after the SEM's switch: MODE (the knob's sweep) or BP (band-pass). Like the original, it does not self-oscillate: at full RES it rings and the ring dies away.
 
 > **Design note:** SEM was built twice. The first try was an existing filter with new labels, and it got sent back. The second started from the SEM-1A's schematic: the whole VCF in one nodal circuit simulation, using the measured CA3080 data of Köper, Holters, Esqueda and Parker's DAFx paper on the EDP Wasp filter. What you play is a much cheaper model with every constant taken from that simulation; over 75 test renders it tracks the full circuit closely, down to how long the resonance rings at each frequency.
 
@@ -3277,7 +3277,7 @@ A full route (100 %) moves the cutoff ten octaves. A dash means no route; turn t
 
 **Why:** these four are not separate controls with hidden wiring; each is a matrix cell shown where you think about the filter. Turn ENV AMT and the matrix's ENV1 → FREQ route moves with it ([MOD: route cells on other pages](#mod-route-cells-on-other-pages)).
 
-> **Design note:** FEEDBACK comes from a favourite Kobol Expander patch, audio out back into the filter's frequency input. Here the output, a sample late and smoothed, bends the cutoff by up to eight octaves. On a pluck it sounds like the filter is arguing with the note. The 2040 gets an extra soft limit while FEEDBACK is on, so full feedback at full resonance stays inside full scale.
+> **Design note:** FEEDBACK is inspired by a favourite Kobol Expander patch, audio out back into the filter's frequency input. Here the output, a sample late and smoothed, bends the cutoff by up to eight octaves. On a pluck it sounds like the filter is arguing with the note. The 2040 gets an extra soft limit while FEEDBACK is on, so full feedback at full resonance stays inside full scale.
 
 ### FILTER MOD: good starting points
 
@@ -3346,7 +3346,7 @@ The matrix's fixed FX column moves P1 (DRIVE, SUSTAIN or FOLD) whatever the TYPE
 
 **Why:** one slot either side of the filter does the work of a drive and a folder at the cost of one: PRE overdrives into the filter, POST folds or fuzzes a resonant peak.
 
-> **Design note:** FUZZ is an Electro-Harmonix Big Muff Pi, the NYC reissue, modelled stage by stage from its published circuit values. When the model's mid scoop came out shallower than the plan said it should, the circuit won and the plan was corrected. Turns out the circuit is always right.
+> **Design note:** FUZZ is modelled on the Electro-Harmonix Big Muff Pi, the NYC reissue, stage by stage from its published circuit values. When the model's mid scoop came out shallower than the plan said it should, the circuit won and the plan was corrected. Turns out the circuit is always right.
 
 ### FX: STABILITY
 
@@ -3382,7 +3382,7 @@ On 2040, LADDER and SEM the sixth FX cell, **STABILITY**, gives each voice its o
 
 ## AMP: the VCA and low-pass gate
 
-**AMP** is the voice's VCA. **LPG**, **DECAY** and **STRIKE** turn it into a low-pass gate in the manner of Plaits'; all three at 0 is a plain VCA. **BASE** is where routes into the VCA start.
+**AMP** is the voice's VCA. **LPG**, **DECAY** and **STRIKE** turn it into a low-pass gate, using code adapted from Plaits (see the design note below); all three at 0 is a plain VCA. **BASE** is where routes into the VCA start.
 
 ![AMP page, annotated](img/algo_amp.png)
 
@@ -3408,7 +3408,7 @@ On 2040, LADDER and SEM the sixth FX cell, **STABILITY**, gives each voice its o
 
 LPG, DECAY, STRIKE and BASE are destinations and MIDI-learnable. **STRIKE** adds to the envelope routed into VCA as an accent; a held note falls back to the envelope. With nothing routed into VCA the strike alone plays the note, which ends when the gate shuts even with the key held. Any filter TYPE plays in front of the gate: a sine through FOLD with LPG and STRIKE at full is a bongo.
 
-> **Design note:** the low-pass gate is a port of Émilie Gillet's low-pass gate from Mutable Instruments Plaits, vactrol-style envelope, decay and colour mapping included. With all three knobs at 0 the voice runs the plain VCA bit for bit, so every Sound made before the gate existed sounds exactly as it did. A full vactrol model, from a published study of the VTL5C3, lives in the circuit lab as a reference.
+> **Design note:** the low-pass gate uses code adapted from Émilie Gillet's Mutable Instruments Plaits (MIT licence): the gate, its vactrol-style envelope and its decay and colour mapping. With all three knobs at 0 the voice runs the plain VCA bit for bit, so every Sound made before the gate existed sounds exactly as it did. A full vactrol model, from a published study of the VTL5C3, lives in the circuit lab as a reference.
 
 ### AMP: routes into VCA and BASE
 
@@ -3518,7 +3518,7 @@ From MATRIX, **SEQ** steps on through ENV1 to LFO3 and wraps back to the matrix;
 
 **Why:** instead of a fixed "filter envelope", "amp envelope" and "vibrato LFO", a Sound gets six slots, each a choice of kind, and any of them can drive anything through the matrix.
 
-> **Design note:** the envelope slots follow the behaviour and ranges of the Intellijel Cascadia's Envelopes A and B, taken from its manual: no code, just the published ranges and how each mode behaves. A is its AHDSR with speed switch and hold position; B its function generator, which can be an envelope, an LFO or a burst of pulses. The stages charge like a capacitor toward a rail, which is why they sound like an analogue envelope rather than a ruler.
+> **Design note:** the envelope slots are modelled on the behaviour and ranges of the Intellijel Cascadia's Envelopes A and B, after its manual: no code, just the published ranges and how each mode behaves. A is after its AHDSR with speed switch and hold position; B after its function generator, which can be an envelope, an LFO or a burst of pulses. The stages charge like a capacitor toward a rail, which is why they sound like an analogue envelope rather than a ruler.
 
 ## Envelopes: the three slots
 
@@ -3622,7 +3622,7 @@ With TYPE **B** the page reads **MODE · (two times or rates) / (a shape) · FOR
 
 | Cell | Range | Default | What it does |
 |---|---|---|---|
-| **RATE** | 0.05 Hz to 800 Hz | 1.00 Hz | The speed |
+| **RATE** | 0.05 Hz to 800 Hz | 0.37 Hz | The speed |
 | **PHASE** | 0 to 360 | 230 | Where the wave starts (FREE, SYNC) |
 | **TILT** | SAW, TRI, RAMP | TRI | Slope: falling saw, triangle, rising ramp |
 | **DELTA** | 0 to 100 % | 64 % | LFV: how far each new random target may land from the last |
@@ -3637,7 +3637,7 @@ With TYPE **B** the page reads **MODE · (two times or rates) / (a shape) · FOR
 
 | Cell | Range | Default | What it does |
 |---|---|---|---|
-| **RATE** | 0.05 Hz to 1 kHz | about 0.9 Hz | Pulse rate within the burst |
+| **RATE** | 0.05 Hz to 1 kHz | 0.38 Hz | Pulse rate within the burst |
 | **LENGTH** | 10 ms to 20 s | about 1.3 s | How long the burst lasts |
 | **TILT** | SAW, TRI, RAMP | TRI | The burst's shape over its length |
 | **FORM** | AD, AHR, CYCLE | AD | AD: one burst a note. AHR: goes on while held. CYCLE: repeats while held; on key up the running burst is the last |
@@ -4239,7 +4239,7 @@ The right side reads on the inverted sweep, so it is wide in stereo and safe in 
 
 1. Header: `PART 6 · MIX CHORUS`.
 2. Focused cell: TYPE PHASER.
-3. Glyph: a ray gun.
+3. Glyph: a ray gun; the small dot under it marks TYPE as the focused cell.
 4. Hint: `MIX + B1-6 PART`.
 5. Effects flow, CHR lit.
 6. **TYPE**.
@@ -4260,7 +4260,7 @@ The right side reads on the inverted sweep, so it is wide in stereo and safe in 
 8. **MIX**.
 9. Chain map: CHR lit (no sub-pages).
 
-> **Design note:** I, II and I+II are the Juno-60's chorus buttons: two bucket-brigade lines on triangles, I at 0.513 Hz and II at 0.863 Hz at the default RATE. FLANGER is the feedback comb from Jon Dattorro's "Effect Design Part 2" (1997); PHASER the all-pass phaser of Julius O. Smith's "An Allpass Approach to Digital Phasing and Flanging" (1984). Both borrow the chorus's own delay lines, so they cost no memory at all.
+> **Design note:** I, II and I+II are inspired by the Juno-60's chorus buttons: two bucket-brigade lines on triangles, I at 0.513 Hz and II at 0.863 Hz at the default RATE. FLANGER is the feedback comb from Jon Dattorro's "Effect Design Part 2" (1997); PHASER the all-pass phaser of Julius O. Smith's "An Allpass Approach to Digital Phasing and Flanging" (1984). Both borrow the chorus's own delay lines, so they cost no memory at all.
 
 ## MIXER: the DLY page
 
@@ -4402,7 +4402,7 @@ Each grain reads the cells when it starts, through a smooth bell, so nothing zip
 
 Starting points: shimmer, PITCH +12, FDBK high, TEXTURE low, some REV. Haze: DENSITY high, SIZE short, TEXTURE high.
 
-> **Design note:** GRAIN is a port of the grain engine in Émilie Gillet's Mutable Instruments Beads: the pulse-train clock, grains starting behind the write head, the bell, the grain-stealing fades and the four-point read are hers. Chimera plays six grains, not thirty-two, from the delay's half-second line, so no freeze, reverse or stereo spray. TEXTURE does one job where Beads splits DENSITY in two, and grains are scaled by how many overlap, so FDBK under the top always dies away. We tried hard to make it not. The same core runs TAPE's STRETCH machine ([TAPE](#tape-the-sample-engine)).
+> **Design note:** GRAIN uses code adapted from the grain engine in Émilie Gillet's Mutable Instruments Beads (MIT licence): the pulse-train clock, grains starting behind the write head, the bell, the grain-stealing fades and the four-point read. Chimera plays six grains, not thirty-two, from the delay's half-second line, so no freeze, reverse or stereo spray. TEXTURE does one job where Beads splits DENSITY in two, and grains are scaled by how many overlap, so FDBK under the top always dies away. We tried hard to make it not. The same core runs TAPE's STRETCH machine ([TAPE](#tape-the-sample-engine)).
 
 ## MIXER: the REV page
 
@@ -4529,7 +4529,7 @@ Starting points: drum room, ROOM, SIZE low, DECAY short. Pad, HALL or BLOOM, lon
 11. Chain map: REV lit.
 12. Sub-page row: REVERB underlined.
 
-> **Design note:** ROOM, HALL, BLOOM, GATE and REVERSE were derived from, and A/B-matched against, thement's open-source midiverb_emulator, which recreates a classic hardware reverb from its decompiled programs. ROOM's and BLOOM's structures and HALL's diffuser start from numbers read out of it; the engine, the knobs and everything between the reference settings are Chimera's. Each starting setting was fitted until decay per octave, pre-delay, early energy, echo density and brightness matched within a few percent. QUAD is Chimera's original ring; SMEAR is ours too, a wander bounded to a few cents. Fitting reverbs by octave-band decay is a strange way to spend an evening, but the GATE does sound right.
+> **Design note:** ROOM, HALL, BLOOM, GATE and REVERSE were voiced and A/B-tuned against thement's open-source midiverb_emulator. ROOM's and BLOOM's structures and HALL's diffuser start from values in it; the engine, the knobs and everything between the reference settings are Chimera's. Each starting setting was fitted until decay per octave, pre-delay, early energy, echo density and brightness matched within a few percent. QUAD is Chimera's original ring; SMEAR is ours too, a wander bounded to a few cents. Fitting reverbs by octave-band decay is a strange way to spend an evening, but the GATE does sound right.
 
 ## MIXER: the MORE sub-page
 
@@ -4741,7 +4741,7 @@ Under PART *n*, the key Part passes unducked at full level (its effect returns s
 
 Starting points: pumping from a DRUM Part 1, KEY PART 1, RATIO 4:1+, THRESH low, ATK fast, REL with the tempo. Glue, KEY HIGH, RATIO 2:1, THRESH just under the loud parts.
 
-> **Design note:** KEY follows how Elektron's Analog Rytm keys its compressor: fixed curves on the detector, then the Parts themselves. LOW's and HIGH's 150 Hz are Chimera's own guess, since no manual publishes the corners. HIT is the K-weighting of ITU-R BS.1770, the curve broadcast loudness meters use, built from its analogue prototype so it holds at any sample rate.
+> **Design note:** KEY is inspired by how Elektron's Analog Rytm keys its compressor: fixed curves on the detector, then the Parts themselves. LOW's and HIGH's 150 Hz are Chimera's own guess, since no manual publishes the corners. HIT is the K-weighting of ITU-R BS.1770, the curve broadcast loudness meters use, built from its analogue prototype so it holds at any sample rate.
 
 ## MIXER: the LVL sub-page
 
@@ -4832,18 +4832,19 @@ The header names the ring or scene: `RING 3  RHYTHM`, `SCENE 1  CHORDS`.
 ![ORB page, annotated](img/orbit_orb.png)
 
 1. Header: `SCENE 1  ORBIT`, the sounding dot.
-2. Ring 1's track: an empty step, marked `+`.
-3. Frame line: `A MINOR · 4 BARS · 120 INT`, key, scale, bars and tempo with its source (`INT` own clock, `MIDI` followed clock).
-4. A hit on ring 1, filled.
-5. Another empty step on ring 1.
-6. **RING**: `3 › P3`.
-7. **KEY**: A.
-8. **SCALE**: MINOR.
-9. **BARS**: 4.
-10. **SCENE**: 1.
-11. **BPM**: 120.
-12. Chain map, ORB lit.
-13. Sub-page row: ORB CUSTOM, ORB underlined.
+2. Frame line: `A MINOR · 4 BARS · 120 INT`, key, scale, bars and tempo with its source (`INT` own clock, `MIDI` followed clock).
+3. The chord progression: the thick arc round the outside.
+4. Part numbers at each ring's step 1 (`1 2 3 3` up the top).
+5. A hit on ring 2.
+6. A hit on ring 1, the outermost ring (2 steps, 2 hits).
+7. **RING**: `3 › P3`.
+8. **KEY**: A.
+9. **SCALE**: MINOR.
+10. **BARS**: 4.
+11. **SCENE**: 1.
+12. **BPM**: 120.
+13. Chain map, ORB lit.
+14. Sub-page row: ORB CUSTOM, ORB underlined.
 
 The thick arc round the outside is the chord progression, one piece per segment, the playing one lit. Inside it the rings, ring 1 outermost: hits filled, empty steps `+`, accents ringed, the playing step lit, each Part number at step 1 (the `1 2 3 3` up the top); a muted ring is dark, as ring 5 at the centre.
 
@@ -5712,7 +5713,7 @@ A Part's channel always wins over a CONTROL channel; then MIXER wins over SEQUEN
 
 **Why all OFF:** a channel taken by default would steal notes from an existing setup, and MPE uses 2 to 16.
 
-> **Design note:** track channels, an effects channel and an "auto" channel that follows the selected track come straight from Elektron's Digitakt and Digitone, where AUTO CHANNEL and FX CONTROL CH have earned their keep on a lot of stages. Chimera adds a SEQUENCER channel for ORBIT, because a ring sequencer you can't drive from a footswitch is just a very pretty clock.
+> **Design note:** track channels, an effects channel and an "auto" channel that follows the selected track are inspired by Elektron's Digitakt and Digitone, where AUTO CHANNEL and FX CONTROL CH have earned their keep on a lot of stages. Chimera adds a SEQUENCER channel for ORBIT, because a ring sequencer you can't drive from a footswitch is just a very pretty clock.
 
 ### MIDI: the AUTO channel
 
@@ -5883,7 +5884,7 @@ Here Part 1 plays the map `EC4`, two rows above its Sound's rows:
 5. A dimmed row (`CC 74  - RESO`) does nothing now: the Sound binds the same control, or the cell is not in the Part's engine (`- STRUCT`). The rows below it are the Sound's own.
 6. The bar's INPUT spelled out (`ABSOLUTE · JUMPS TO THE KNOB`); for a relative kind, the bytes for one step each way.
 7. `IN EC4`: the row belongs to the map.
-8. **C MIN**, **D MAX** (0 to 255; MAX below MIN reverses), **F ECHO**.
+8. The C/D/F line: **C MIN**, **D MAX** (0 to 255; MAX below MIN reverses), **F ECHO**.
 9. **B CONTROL**, **E INPUT**, **EDIT TARGET**.
 10. Footer: the project's name and `* MODIFIED`.
 11. Footer: `A MOVE · MIX+MINUS DELETES`.
@@ -6435,7 +6436,7 @@ The factory zip (`factory-v1.zip`) on the releases page holds the Sounds, their 
 
 **Why read-only:** a factory Sound is the same everywhere, and your version lives beside it under your own name.
 
-> **Design note:** sixteen of the factory ALGO Sounds are ports in the spirit of the Yamaha TX81Z's classic presets, rebuilt by hand for six operators and then left to wander. Each factory Sound starts life as a small text file and arrives on the card as the same kind of file your own Sounds are. No secret factory format: the only special thing about them is that the unit refuses to let you spill coffee on them.
+> **Design note:** sixteen of the factory ALGO Sounds are inspired by the Yamaha TX81Z's classic presets, voiced by hand for six operators and then left to wander. Each factory Sound starts life as a small text file and arrives on the card as the same kind of file your own Sounds are. No secret factory format: the only special thing about them is that the unit refuses to let you spill coffee on them.
 
 ## Card messages and what to do
 
@@ -6914,7 +6915,7 @@ When no voice is free, or the budget has no room, Chimera takes one:
 
 ## Limits: VOICES and RESERVE per Part
 
-Two voice limits sit on the Part's mixer VOICES page (MIXER › PRT, then SEQ; VOI on the chain map). They belong to the project's mix, not the Sound.
+Two voice limits sit on the Part's mixer VOICES page (MIXER › PRT, then SEQ: PRT lit on the chain map, with VOICES as its sub-page). They belong to the project's mix, not the Sound.
 
 ![VOICES page, annotated](img/mixer_voi.png)
 

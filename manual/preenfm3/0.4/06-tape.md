@@ -295,7 +295,7 @@ The other TYPE's cells are dimmed: `GRAIN TYPE ONLY` or `CLASSIC TYPE ONLY`.
 
 These are GRAIN's; a turn affects grains to come. Key up is the amp envelope's.
 
-> **Design note:** CLASSIC is the Akai S950's time-stretch done in real time: the S950 had to render a stretched copy and make you wait, while CLASSIC stretches as you play. GRAIN's grain core is a port of Émilie Gillet's Mutable Instruments Beads (its pulse-train clock, bell-shaped window and grain stealing), the same core as the delay's GRAIN type. Around it, Chimera adds what a sampler needs and Beads doesn't: a pointer that reaches the end in exactly LENGTH seconds on every key, grains that lock to the source's pitch so a stretched tone stays a tone, and levels that hold steady whether the grains agree or not. It is an accordion for sound, minus the folk club.
+> **Design note:** CLASSIC is inspired by the Akai S950's time-stretch, done in real time: the S950 had to render a stretched version and make you wait, while CLASSIC stretches as you play. GRAIN's grain core uses code adapted from Émilie Gillet's Mutable Instruments Beads (MIT licence): its pulse-train clock, bell-shaped window and grain stealing. The delay's GRAIN type runs the same core. Around it, Chimera adds what a sampler needs and Beads doesn't: a pointer that reaches the end in exactly LENGTH seconds on every key, grains that lock to the source's pitch so a stretched tone stays a tone, and levels that hold steady whether the grains agree or not. It is an accordion for sound, minus the folk club.
 
 ## TAPE: SCRUB
 
@@ -386,7 +386,7 @@ All three are matrix destinations: an LFO on FRAME is the classic sweep. Each fr
 9. Chain map, DECK lit.
 10. Sub-page row: DECK WAVE PITCH, WAVE underlined.
 
-> **Design note:** WAVE follows the wavetable synths of the 80s and 90s: single-cycle frames, scanned, each kept at a ladder of octave-spaced versions so a high note never folds, the way the PPG Wave and the Waldorf Microwave did it. The factory WAVE sources are transwave-style tables made from Chimera's own engines (morphing, saw, bowed, brass). Somewhere, a 1990s workstation is feeling very flattered.
+> **Design note:** WAVE follows the wavetable synths of the 80s and 90s: single-cycle frames, scanned, each kept at a ladder of octave-spaced versions so a high note never folds, in the spirit of the PPG Wave and the Waldorf Microwave. The factory WAVE sources are transwave-style tables made from Chimera's own engines (morphing, saw, bowed, brass). Somewhere, a 1990s workstation is feeling very flattered.
 
 ## TAPE: the pitch page
 

@@ -103,7 +103,7 @@ A Part's channel always wins over a CONTROL channel; then MIXER wins over SEQUEN
 
 **Why all OFF:** a channel taken by default would steal notes from an existing setup, and MPE uses 2 to 16.
 
-> **Design note:** track channels, an effects channel and an "auto" channel that follows the selected track come straight from Elektron's Digitakt and Digitone, where AUTO CHANNEL and FX CONTROL CH have earned their keep on a lot of stages. Chimera adds a SEQUENCER channel for ORBIT, because a ring sequencer you can't drive from a footswitch is just a very pretty clock.
+> **Design note:** track channels, an effects channel and an "auto" channel that follows the selected track are inspired by Elektron's Digitakt and Digitone, where AUTO CHANNEL and FX CONTROL CH have earned their keep on a lot of stages. Chimera adds a SEQUENCER channel for ORBIT, because a ring sequencer you can't drive from a footswitch is just a very pretty clock.
 
 ### MIDI: the AUTO channel
 
@@ -274,7 +274,7 @@ Here Part 1 plays the map `EC4`, two rows above its Sound's rows:
 5. A dimmed row (`CC 74  - RESO`) does nothing now: the Sound binds the same control, or the cell is not in the Part's engine (`- STRUCT`). The rows below it are the Sound's own.
 6. The bar's INPUT spelled out (`ABSOLUTE · JUMPS TO THE KNOB`); for a relative kind, the bytes for one step each way.
 7. `IN EC4`: the row belongs to the map.
-8. **C MIN**, **D MAX** (0 to 255; MAX below MIN reverses), **F ECHO**.
+8. The C/D/F line: **C MIN**, **D MAX** (0 to 255; MAX below MIN reverses), **F ECHO**.
 9. **B CONTROL**, **E INPUT**, **EDIT TARGET**.
 10. Footer: the project's name and `* MODIFIED`.
 11. Footer: `A MOVE · MIX+MINUS DELETES`.

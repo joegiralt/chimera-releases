@@ -16,7 +16,7 @@ Every Sound stores two algorithms, **ALG A** and **ALG B**; **MORPH** blends one
 
 **Why phase modulation:** operators modulate each other's phase, not their frequency, so a carrier's pitch stays centred however deep the modulation goes. The stock PreenFM3 firmware does true FM; Chimera is phase modulation throughout.
 
-> **Design note:** ALGO began as a faithful four-operator TX81Z engine that cost more than the whole chip could spend on one voice: every FM note was refused. It was replaced with a six-operator engine written from scratch. The TX81Z is still in its bones: the 64 COARSE ratios, FINE, the 0.75 dB LEVEL step, the four-rate envelope and the feedback steps were re-entered by hand from its owner's manual, and T1 to T8 are its eight algorithms. The waves were redrawn as formulas. The other 24 algorithms are Chimera's own, because six operators deserve more than eight ways to meet.
+> **Design note:** ALGO began as a four-operator engine modelled on the behaviour of the TX81Z, and it cost more than the whole chip could spend on one voice: every FM note was refused. It was replaced with a six-operator engine written from scratch. The TX81Z's spirit is still in its bones: the 64 COARSE ratios, FINE, the 0.75 dB LEVEL step, the four-rate envelope and the feedback steps follow the behaviour its owner's manual describes, and T1 to T8 are after its eight algorithms. The waves were redrawn as formulas. The other 24 algorithms are Chimera's own, because six operators deserve more than eight ways to meet.
 
 ## ALGO: the chain and its pages
 
@@ -129,7 +129,7 @@ A higher-numbered operator always modulates a lower one; "4→3" means 4 modulat
 | A23 | 6 into 2, 3, 4, 5; each of those into 1 | 1 |
 | A24 | 6→5; 5 into 2, 3, 4; each of those into 1 | 1 |
 
-T1–T8 are the TX81Z's eight on operators 1–4, plus a 6→5 pair; with 5 and 6 at LEVEL 0 they play as the TX81Z's. A1 is an additive organ, A17 the deepest stack; A16, A18 and A23 pile modulators onto one or two carriers. A16 with A17 is the costliest pair to morph.
+T1–T8 are after the TX81Z's eight algorithms, on operators 1–4, plus a 6→5 pair; with 5 and 6 at LEVEL 0 they behave like its four-operator originals. A1 is an additive organ, A17 the deepest stack; A16, A18 and A23 pile modulators onto one or two carriers. A16 with A17 is the costliest pair to morph.
 
 ## ALGO: the OSC node and the group pages
 
@@ -193,11 +193,11 @@ The envelope pages draw the touched operator's envelope; the others show the liv
 | **FRMT** | Formant operator (FORMANT in the band) |
 | **NOISE** | Noise band |
 
-W1–W8 are the TX81Z's waves; W3, W4, W7 and W8 keep their DC offset as on the TX81Z. All tables are band-limited. A WAVE change under a held note crossfades. A choice the [formant budget](#algo-the-formant-budget) refuses shows dimmed and writes nothing.
+W1–W8 are modelled on the TX81Z's eight waves; W3, W4, W7 and W8 keep a DC offset, as its waves do. All tables are band-limited. A WAVE change under a held note crossfades. A choice the [formant budget](#algo-the-formant-budget) refuses shows dimmed and writes nothing.
 
 ### ALGO: COARSE, FINE and DETUNE, the ratio
 
-An operator plays at the note's frequency times its ratio. **COARSE** picks one of the TX81Z's 64:
+An operator plays at the note's frequency times its ratio. **COARSE** picks one of 64 ratios, after the TX81Z's set:
 
 | | | | | | | | |
 |---|---|---|---|---|---|---|---|
@@ -210,7 +210,7 @@ An operator plays at the note's frequency times its ratio. **COARSE** picks one 
 | 15.70 | 16.96 | 17.27 | 17.30 | 18.37 | 18.84 | 19.03 | 19.78 |
 | 20.41 | 20.76 | 21.20 | 21.98 | 22.49 | 23.55 | 24.22 | 25.95 |
 
-- Whole numbers give harmonic tones; the rest give bells and metals. 3.14 and 6.28 are TX81Z ratios, not π and 2π.
+- Whole numbers give harmonic tones; the rest give bells and metals. 3.14 and 6.28 are ratios after the TX81Z's, not π and 2π.
 - **FINE** raises the ratio in 16 steps towards the next region (8 below 1.00; FINE 8–15 then hold the top).
 - **DETUNE** moves ±4.5 cents at most; detuned carriers beat slowly.
 - The focus band shows where the operator lands: `RATIO 1.41, DETUNE +4.5 CENTS`. COARSE steps; FINE and DETUNE glide.
@@ -299,7 +299,7 @@ An operator plays at the note's frequency times its ratio. **COARSE** picks one 
 
 ### ALGO: FEEDBACK
 
-**FDBK** feeds an operator's output into its own phase: a sine gains harmonics, turns towards a saw and at the top breaks into grit. The whole numbers are the TX81Z's eight steps, each doubling the swing from step 1; one detent is a tenth of a step. **MIX + turn** jumps to the next whole number, **SEQ + turn** steps by tenths. A noise band ignores FDBK.
+**FDBK** feeds an operator's output into its own phase: a sine gains harmonics, turns towards a saw and at the top breaks into grit. The whole numbers follow the TX81Z's eight steps, each doubling the swing from step 1; one detent is a tenth of a step. **MIX + turn** jumps to the next whole number, **SEQ + turn** steps by tenths. A noise band ignores FDBK.
 
 ![FEEDBACK (FBK) page, annotated](img/algo_fbk.png)
 
@@ -633,7 +633,7 @@ A MIDI control or load that lands on a refused choice shows the toast `FORMANT B
 > - **FOF** (Xavier Rodet's *fonctions d'onde formantique*, IRCAM's CHANT, 1984) made the grain-per-period formant famous, and sang opera with it.
 > - **The FS1R** (Yamaha, 1998) put formant operators inside an FM algorithm, so a formant could be modulated like any operator.
 >
-> Chimera's structure follows the FS1R's expired patent (US 5,610,354). The window, the width floor, the level law (an FS1R gets louder as BW widens; this does not), VOWEL and its slots are Chimera's own. The vowel table is Peterson and Barney's 1952 data, so somewhere in the firmware a committee of mid-century American men is still saying "hod", "head" and "hid" on your behalf.
+> Chimera's formant operator is inspired by the FS1R, and its structure follows the FS1R's expired patent (US 5,610,354). The window, the width floor, the level law (an FS1R gets louder as BW widens; this does not), VOWEL and its slots are Chimera's own. The vowel table is Peterson and Barney's 1952 data, so somewhere in the firmware a committee of mid-century American men is still saying "hod", "head" and "hid" on your behalf.
 
 ## ALGO: the shared pages on an ALGO Part
 

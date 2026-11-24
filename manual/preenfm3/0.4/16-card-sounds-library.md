@@ -181,7 +181,7 @@ The factory zip (`factory-v1.zip`) on the releases page holds the Sounds, their 
 
 **Why read-only:** a factory Sound is the same everywhere, and your version lives beside it under your own name.
 
-> **Design note:** sixteen of the factory ALGO Sounds are ports in the spirit of the Yamaha TX81Z's classic presets, rebuilt by hand for six operators and then left to wander. Each factory Sound starts life as a small text file and arrives on the card as the same kind of file your own Sounds are. No secret factory format: the only special thing about them is that the unit refuses to let you spill coffee on them.
+> **Design note:** sixteen of the factory ALGO Sounds are inspired by the Yamaha TX81Z's classic presets, voiced by hand for six operators and then left to wander. Each factory Sound starts life as a small text file and arrives on the card as the same kind of file your own Sounds are. No secret factory format: the only special thing about them is that the unit refuses to let you spill coffee on them.
 
 ## Card messages and what to do
 

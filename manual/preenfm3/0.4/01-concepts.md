@@ -84,7 +84,7 @@ Every engine's chain map ends in **FLT** (FILTER), **AMP** and **MOD**, and ever
 
 **Why:** one chain means one set of pages to learn. A filter sweep or a low-pass gate works the same on an FM bell, a string or a recording.
 
-> **Design note:** the voice chain reads like a Eurorack row: oscillator, wavefolder or fuzz, filter, low-pass gate. The low-pass gate is a port of the one in Émilie Gillet's Mutable Instruments Plaits; FUZZ is modelled from the circuit of a Big Muff pedal; SEM is the SEM-1A filter, from a published circuit-model paper; 2040 models the SSM2040 chip. No soldering iron was harmed.
+> **Design note:** the voice chain reads like a Eurorack row: oscillator, wavefolder or fuzz, filter, low-pass gate. The low-pass gate uses code adapted from Émilie Gillet's Mutable Instruments Plaits (MIT licence); FUZZ is modelled on the circuit of a Big Muff pedal; SEM is modelled on the behaviour of the Oberheim SEM-1A filter, after a published circuit-model paper; 2040 models the SSM2040 chip. No soldering iron was harmed.
 
 ## Concepts: modulation
 
@@ -102,7 +102,7 @@ Everything that moves a setting over time is a **route** in the Part's **MOD mat
 | [TAPE](06-tape.md) | Plays recordings (sources) from memory or streamed from the card; the DECK machine is **WALK**, **STRETCH**, **SCRUB** or **WAVE** |
 | [DRUM](07-drum.md) | A kit on one Part: twelve pads, each with its own machine (TONE KICK, METAL HAT, PLAIN NOISE…), filter, amp, modulation and keys |
 
-> **Design note:** the engines have known ancestors, and none of them is a copy. MODAL builds on the maths of Émilie Gillet's Mutable Instruments Rings and Elements. ALGO's factory set includes Sounds ported from Yamaha TX81Z patches, which then wander off on six operators instead of four. TAPE's STRETCH follows the way a classic Akai S950 stretched time. VA is a clean-room design, meant to feel analogue while still able to go West Coast or East Coast. DRUM borrows the shape of an Analog Rytm kit and the structure of the Machinedrum's machines, from their manuals only.
+> **Design note:** the engines have known ancestors, and none of them is a copy. MODAL builds on the maths of Émilie Gillet's Mutable Instruments Rings and Elements, and uses code adapted from Rings (MIT licence). ALGO's factory set includes Sounds inspired by Yamaha TX81Z presets, which then wander off on six operators instead of four. TAPE's STRETCH is inspired by the way a classic Akai S950 stretched time. VA is a clean-room design, meant to feel analogue while still able to go West Coast or East Coast. DRUM is after the architecture of an Analog Rytm kit and in the spirit of the Machinedrum's machines, from their manuals only.
 
 ## Concepts: design ideas you will meet everywhere
 

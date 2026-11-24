@@ -149,7 +149,7 @@ A clean state-variable filter in the manner of the Cascadia's VCF; the home filt
 
 At high Q, CLEAN self-oscillates (not in NOTCH2). LP4 fully open passes its input untouched. The NOTCH2 picture is a sketch, not the real response.
 
-> **Design note:** CLEAN takes its controls and words from the Intellijel Cascadia's VCF: modes named by what they do (LP1, BP4, NOTCH2), not by a datasheet. Under it runs a zero-delay state-variable filter that can self-oscillate. NOTCH2 is four all-pass stages around the dry signal, after an application circuit in the SSM2040's own data sheet: a nice bit of family history for a filter that sits next to a 2040.
+> **Design note:** CLEAN's controls and words are inspired by the Intellijel Cascadia's VCF: modes named by what they do (LP1, BP4, NOTCH2), not by a datasheet. Under it runs a zero-delay state-variable filter that can self-oscillate. NOTCH2 is four all-pass stages around the dry signal, after an application circuit in the SSM2040's own data sheet: a nice bit of family history for a filter that sits next to a 2040.
 
 ### FILTER: 2040
 
@@ -170,8 +170,8 @@ A four-pole low-pass modelled on the SSM2040 filter chip; VA's home filter. Its 
 
 | VOICE | What it is |
 |---|---|
-| REV2 | The chip as the Prophet-5 used it: linear resonance, bounded by the chip's own clip |
-| EXPNDR | The chip as the Kobol Expander uses it, a CA3080 in the resonance loop: squelches as RES rises, keeps more bass, rings over its input at full RES |
+| REV2 | Modelled on the chip as the Prophet-5 used it: linear resonance, bounded by the chip's own clip |
+| EXPNDR | Modelled on the chip as the Kobol Expander uses it, a CA3080 in the resonance loop: squelches as RES rises, keeps more bass, rings over its input at full RES |
 
 > **Design note:** the 2040 is a circuit model of the SSM2040, each VOICE solving the loop through its own resonance part. EXPNDR's bass and ring were then measured against a recording of a real Kobol Expander at three resonance settings, and its make-up gain fitted to match. REV2 was left exactly as modelled.
 
@@ -207,7 +207,7 @@ A Chamberlin state-variable filter that drives hard: the cheapest and edgiest. M
 9. Chain map, FLT lit.
 10. Sub-page row, FILTER underlined.
 
-The Moog transistor ladder, four poles, with Xpander-style modes (**LP2**, **LP4** default, **BP2**, **BP4**, **HP4**) and INPUT as its drive. Like the original it loses some bass as resonance rises. Its modulation page is titled LADDER MOD.
+Modelled on the Moog transistor ladder, four poles, with Xpander-style modes (**LP2**, **LP4** default, **BP2**, **BP4**, **HP4**) and INPUT as its drive. Like the original it loses some bass as resonance rises. Its modulation page is titled LADDER MOD.
 
 > **Design note:** LADDER is Vadim Zavalishin's topology-preserving ladder from *The Art of VA Filter Design*, its feedback loop solved in closed form. Three published Moog models were weighed first. A benchmark paper against a transistor-level simulation settled where the saturation goes: five saturators, one at the input and one a stage, because distributed saturation matches the real circuit far better than one clipper at the end.
 
@@ -226,7 +226,7 @@ The Moog transistor ladder, four poles, with Xpander-style modes (**LP2**, **LP4
 9. Chain map, FLT lit.
 10. Sub-page row, FILTER underlined.
 
-The Oberheim SEM's 12 dB state-variable filter. **MODE** is a knob, like the SEM's pot: low-pass (0), a notch at FREQ (middle), high-pass (127). It glides and is a destination, so an LFO on MODE sweeps the response itself. **OUTPUT**, on SEM MOD, is the SEM's switch: MODE (the knob's sweep) or BP (band-pass). Like the original, it does not self-oscillate: at full RES it rings and the ring dies away.
+Modelled on the behaviour of the Oberheim SEM's 12 dB state-variable filter. **MODE** is a knob, after the SEM's pot: low-pass (0), a notch at FREQ (middle), high-pass (127). It glides and is a destination, so an LFO on MODE sweeps the response itself. **OUTPUT**, on SEM MOD, is after the SEM's switch: MODE (the knob's sweep) or BP (band-pass). Like the original, it does not self-oscillate: at full RES it rings and the ring dies away.
 
 > **Design note:** SEM was built twice. The first try was an existing filter with new labels, and it got sent back. The second started from the SEM-1A's schematic: the whole VCF in one nodal circuit simulation, using the measured CA3080 data of Köper, Holters, Esqueda and Parker's DAFx paper on the EDP Wasp filter. What you play is a much cheaper model with every constant taken from that simulation; over 75 test renders it tracks the full circuit closely, down to how long the resonance rings at each frequency.
 
@@ -263,7 +263,7 @@ A full route (100 %) moves the cutoff ten octaves. A dash means no route; turn t
 
 **Why:** these four are not separate controls with hidden wiring; each is a matrix cell shown where you think about the filter. Turn ENV AMT and the matrix's ENV1 → FREQ route moves with it ([MOD: route cells on other pages](10-mod-matrix.md#mod-route-cells-on-other-pages)).
 
-> **Design note:** FEEDBACK comes from a favourite Kobol Expander patch, audio out back into the filter's frequency input. Here the output, a sample late and smoothed, bends the cutoff by up to eight octaves. On a pluck it sounds like the filter is arguing with the note. The 2040 gets an extra soft limit while FEEDBACK is on, so full feedback at full resonance stays inside full scale.
+> **Design note:** FEEDBACK is inspired by a favourite Kobol Expander patch, audio out back into the filter's frequency input. Here the output, a sample late and smoothed, bends the cutoff by up to eight octaves. On a pluck it sounds like the filter is arguing with the note. The 2040 gets an extra soft limit while FEEDBACK is on, so full feedback at full resonance stays inside full scale.
 
 ### FILTER MOD: good starting points
 
@@ -332,7 +332,7 @@ The matrix's fixed FX column moves P1 (DRIVE, SUSTAIN or FOLD) whatever the TYPE
 
 **Why:** one slot either side of the filter does the work of a drive and a folder at the cost of one: PRE overdrives into the filter, POST folds or fuzzes a resonant peak.
 
-> **Design note:** FUZZ is an Electro-Harmonix Big Muff Pi, the NYC reissue, modelled stage by stage from its published circuit values. When the model's mid scoop came out shallower than the plan said it should, the circuit won and the plan was corrected. Turns out the circuit is always right.
+> **Design note:** FUZZ is modelled on the Electro-Harmonix Big Muff Pi, the NYC reissue, stage by stage from its published circuit values. When the model's mid scoop came out shallower than the plan said it should, the circuit won and the plan was corrected. Turns out the circuit is always right.
 
 ### FX: STABILITY
 
@@ -368,7 +368,7 @@ On 2040, LADDER and SEM the sixth FX cell, **STABILITY**, gives each voice its o
 
 ## AMP: the VCA and low-pass gate
 
-**AMP** is the voice's VCA. **LPG**, **DECAY** and **STRIKE** turn it into a low-pass gate in the manner of Plaits'; all three at 0 is a plain VCA. **BASE** is where routes into the VCA start.
+**AMP** is the voice's VCA. **LPG**, **DECAY** and **STRIKE** turn it into a low-pass gate, using code adapted from Plaits (see the design note below); all three at 0 is a plain VCA. **BASE** is where routes into the VCA start.
 
 ![AMP page, annotated](img/algo_amp.png)
 
@@ -394,7 +394,7 @@ On 2040, LADDER and SEM the sixth FX cell, **STABILITY**, gives each voice its o
 
 LPG, DECAY, STRIKE and BASE are destinations and MIDI-learnable. **STRIKE** adds to the envelope routed into VCA as an accent; a held note falls back to the envelope. With nothing routed into VCA the strike alone plays the note, which ends when the gate shuts even with the key held. Any filter TYPE plays in front of the gate: a sine through FOLD with LPG and STRIKE at full is a bongo.
 
-> **Design note:** the low-pass gate is a port of Émilie Gillet's low-pass gate from Mutable Instruments Plaits, vactrol-style envelope, decay and colour mapping included. With all three knobs at 0 the voice runs the plain VCA bit for bit, so every Sound made before the gate existed sounds exactly as it did. A full vactrol model, from a published study of the VTL5C3, lives in the circuit lab as a reference.
+> **Design note:** the low-pass gate uses code adapted from Émilie Gillet's Mutable Instruments Plaits (MIT licence): the gate, its vactrol-style envelope and its decay and colour mapping. With all three knobs at 0 the voice runs the plain VCA bit for bit, so every Sound made before the gate existed sounds exactly as it did. A full vactrol model, from a published study of the VTL5C3, lives in the circuit lab as a reference.
 
 ### AMP: routes into VCA and BASE
 

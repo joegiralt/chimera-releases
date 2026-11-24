@@ -16,7 +16,7 @@ A MODAL Part's chain is **EXC · RES · FLT · AMP · MOD**, and it opens on EXC
 | BOWED | BOW | A bowed string: sounds while the key is held, rings when the bow lifts. |
 | SYMP | PLUCK | A plucked string with seven sympathetic strings (the halo) tuned to a chord. |
 
-> **Design note:** MODAL builds on the maths of Émilie Gillet's Mutable Instruments Rings and Elements, which are open source. The modal bank's band-pass filters, its strike-position weights, its stiffness curve and SYMP's chord table follow Rings, and keep its MIT notice. The plucked string itself is Chimera's own code: it began life in an alternative Ambika firmware by Chimera's author, long before it met a PreenFM3. Where Rings is one module with a fixed voice count, MODAL is one engine among several in a six-Part synth, so it had to learn to share: memory, CPU and, in SYMP's case, its sympathetic strings.
+> **Design note:** MODAL builds on the maths of Émilie Gillet's Mutable Instruments Rings and Elements, which are open source. The modal bank's band-pass filters, its strike-position weights, its stiffness curve and SYMP's chord table use code adapted from Émilie Gillet's Mutable Instruments Rings (MIT licence). The plucked string itself is Chimera's own code: it began life in an alternative Ambika firmware by Chimera's author, long before it met a PreenFM3. Where Rings is one module with a fixed voice count, MODAL is one engine among several in a six-Part synth, so it had to learn to share: memory, CPU and, in SYMP's case, its sympathetic strings.
 
 ## MODAL: notes ring free
 

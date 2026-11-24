@@ -226,7 +226,7 @@ A turn while SEQ is held cancels SEQ's own press: it neither changes sub-page no
 
 ## Panel: hints in the focus band
 
-Touch a cell and the focus band's bottom line lists its combos, keys in bold (`MIX + SEQ LEARNS A CC`). Arrows show which way to turn: `◂▸` along, `▴▾` up and down. A cell's own words (a reason, a note) take the line instead.
+Touch a cell and the focus band's bottom line lists its combos, keys in bold: a choice cell reads `MIX + SEQ LEARNS A CC`, a continuous cell `SEQ+TURN FINE  MIX + SEQ LEARN`. Arrows show which way to turn: `◂▸` along, `▴▾` up and down. A cell's own words (a reason, a note) take the line instead.
 
 ![The FILTER MOD sub-page, annotated](img/sub-page-hint.png)
 

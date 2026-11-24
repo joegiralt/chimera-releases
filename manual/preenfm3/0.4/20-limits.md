@@ -43,7 +43,7 @@ When no voice is free, or the budget has no room, Chimera takes one:
 
 ## Limits: VOICES and RESERVE per Part
 
-Two voice limits sit on the Part's mixer VOICES page (MIXER › PRT, then SEQ; VOI on the chain map). They belong to the project's mix, not the Sound.
+Two voice limits sit on the Part's mixer VOICES page (MIXER › PRT, then SEQ: PRT lit on the chain map, with VOICES as its sub-page). They belong to the project's mix, not the Sound.
 
 ![VOICES page, annotated](img/mixer_voi.png)
 
