@@ -48,14 +48,14 @@ Two voice limits sit on the Part's mixer VOICES page (MIXER › PRT, then SEQ; V
 ![VOICES page, annotated](img/mixer_voi.png)
 
 1. Header: `PART 1 · MIX`, the VOICES page.
-2. The focused cell, MODE, and its value.
+2. The focused cell, MODE, and its value (POLY).
 3. The hint: `MIX + B1-6 PART` opens another Part's VOICES.
-4. The picture: all six Parts' levels, the current one in accent.
+4. The picture: all six Parts' levels, the current one (1) in accent.
 5. **MODE** (encoder 1): MONO or POLY.
 6. **VOICES** (encoder 2): the cap, AUTO or 1–8.
 7. **RESERVE** (encoder 3): voices guarded, 0–8.
-8. The chain map: PRT.
-9. The sub-pages: PRT, VOI (VOICES), EQ.
+8. The chain map: PRT lit.
+9. The sub-page row: PART, VOICES (underlined), EQ.
 
 | Cell | Range | Default | What it does |
 |---|---|---|---|
@@ -87,8 +87,8 @@ SETTINGS › SYSTEM › DIAGNOSTICS › AUDIO LOAD (AUD LOAD).
 
 ![AUDIO LOAD page, annotated](img/settings_system_diag_aud_load.png)
 
-1. Header: where you are in SETTINGS.
-2. The focused cell, LOAD.
+1. Header: where you are in SETTINGS (`..` › DIAG › AUD LOAD).
+2. The focused cell, LOAD (23 %).
 3. Its glyph, an arc of the load.
 4. The picture: chip revision and clock (`REV V  480 MHZ`), last restart cause (`RST WDOG` for the watchdog), and a load bar with the 75 % mark.
 5. **LOAD** (encoder 1): average load, % of block time.
@@ -116,12 +116,12 @@ The six Parts' current Sounds don't count: each Part plays its own copy.
 ![POOL page, annotated](img/settings_project_pool.png)
 
 1. Header: SETTINGS › PROJECT › POOL.
-2. The focused cell, USED, in %.
+2. The focused cell, USED, in % (4 %).
 3. Its glyph, an arc of the same.
 4. The picture: Sounds in white, sources in grey, a faint part being freed, then free space.
 5. **SOUNDS** (encoder 1): how many, and their memory (`17 · 5.8K`).
-6. **SOURCES** (encoder 2): how many, and their memory.
-7. **FREE** (encoder 3): what is left.
+6. **SOURCES** (encoder 2): how many, and their memory (`0 · 0.0K`).
+7. **FREE** (encoder 3): what is left (154K).
 8. Footer: the project and its state.
 9. Footer: MENU goes back.
 

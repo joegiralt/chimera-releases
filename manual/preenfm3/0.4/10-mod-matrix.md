@@ -1,6 +1,6 @@
 # The mod matrix and routes
 
-Every connection from a modulator to the sound is a **route**: one cell of the MOD matrix, a source on its row and a destination in its column, with an amount. This chapter covers the matrix page (**MTX** on the chain map, MATRIX in the sub-page row, MOD MATRIX on screen), every source and destination, and every gesture that makes, changes or deletes a route. The modulators are in [Envelopes and LFOs](09-envelopes-and-lfos.md), the filter's route cells and the VCA in [the voice chain](08-voice-chain.md), the wheel, pressure and MPE in [MIDI](14-midi.md).
+Every connection from a modulator to the sound is a **route**: one cell of the MOD matrix, a source on its row and a destination in its column, with an amount. This chapter covers the matrix page (MATRIX in the sub-page row, **MTX** in a STACK chain map, MOD MATRIX on screen), every source and destination, and every gesture that makes, changes or deletes a route. The modulators are in [Envelopes and LFOs](09-envelopes-and-lfos.md), the filter's route cells and the VCA in [the voice chain](08-voice-chain.md), the wheel, pressure and MPE in [MIDI](14-midi.md).
 
 ## MOD: every connection is a route
 
@@ -18,18 +18,15 @@ The MOD node's own page is the matrix; **SEQ** steps on to the envelopes, SPEED 
 
 ![The MOD MATRIX page, annotated](img/algo_mtx.png)
 
-1. **Header:** MOD MATRIX.
-2. **Source rows:** ENV1 to ENV3, LFO1 to LFO3.
-3. **A primed column**, PIT PITCH, holding LFO 1's +2 route: the INIT vibrato.
-4. **VELO** and **NOTE.**
-5. **The hand rows** (WHEEL, PRESS, SLIDE), then ALGO's **OP5** and **OP6**; `×` marks a column a tap can't reach.
-6. **Readout:** the route under the cursor in full words (`ENV 1 → FILTER CUTOFF`) …
-7. … and the amount in the destination's terms (`0 = 0 oct`).
-8. **Hint:** the keys for the cell under the cursor …
-9. … and what they do (MIX + MINUS deletes the route).
-10. **Count:** routes in use and destinations primed (`5 ROUTES   2 OF 16 DEST`).
-11. **Chain map**, on MOD.
-12. **Sub-pages:** MTX lit.
+1. **Header:** PART 1 · SOUND, page MOD MATRIX.
+2. **Column heads:** the destinations, block over parameter (FLT FREQ, FLT Q, OUT VCA, FX FX, then the primed PIT PITCH, holding LFO 1's +2 route: the INIT vibrato); `>` means more off the edge.
+3. **Row labels:** the sources, ENV1 to ENV3, LFO1 to LFO3, VELO, NOTE, the hand rows (WHEEL, PRESS, SLIDE), then ALGO's **OP5** and **OP6**; `×` marks a column a tap can't reach.
+4. **Readout:** the route under the cursor in full words (`ENV 1 → FILTER CUTOFF`).
+5. **Amount** in the destination's terms (`0 = 0 oct`).
+6. **Hint:** the keys for the cell under the cursor (`MIX + MINUS DELETES THE ROUTE`).
+7. **Count:** routes in use and destinations primed (`5 ROUTES   2 OF 16 DEST`).
+8. **Chain map:** MOD lit.
+9. **Sub-page row:** MATRIX (underlined), ENV1, ENV2, ENV3; `>` for SPEED and the LFOs.
 
 The page has no cells of its own; the encoders work the grid:
 
@@ -42,7 +39,7 @@ The page has no cells of its own; the encoders work the grid:
 
 Five columns show at once; `<` and `>` mean more off screen. Each header has two lines: the block (FLT, OUT, FX, PIT, LF1, E2, OP1 …) over the parameter. A cell with a route is lit and prints its amount, an empty cell is an outline, the cursor's cell is outlined in the accent colour. A route at 0 stays a route (it prints `0`), ready for an amount.
 
-![The matrix scrolled, with eight primed columns](img/mod_matrix_wide.png)
+![The matrix scrolled, `<` and `>`](img/mod_matrix_wide.png)
 
 ## MOD: the sources
 
@@ -151,9 +148,9 @@ Not destinations: TYPE, MODE lists, VOICE, FX PLACE, the jacks, STEAL, TIME (gli
 | [VA](05-va.md) | VA's **WAVE1**, **WAVE2**, **BLEND**, **SUB**, **STABILITY**; OSC1's and OSC2's **SHAPE**, **CRSE**, **FINE**; NOISE's **LEVEL** |
 | [TAPE](06-tape.md) | SRC's **START**, **VOL**; DECK's continuous knobs (labels follow the machine); the machine page's **AGE**, **TAPE** |
 
-A column whose parameter does nothing in the current setting (MORPH while ALG A and ALG B match, say) turns grey; its routes stay, waiting.
+A column whose parameter does nothing in the current setting (MORPH while ALG A and ALG B match, say) turns grey and the readout adds INERT; its routes stay, waiting.
 
-![A route to MORPH while MORPH is inert](img/mod_matrix_morph_inert.png)
+![A route to MORPH while MORPH is inert: ENV 1 → ALGO MORPH, +60 = +47%, INERT](img/mod_matrix_morph_inert.png)
 
 ## MOD: ALGO's operator taps
 

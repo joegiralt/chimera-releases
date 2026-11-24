@@ -17,7 +17,7 @@ SETTINGS has its own look: whole-width lists with a highlight bar, a growing bre
 
 ![SETTINGS, annotated](img/settings.png)
 
-1. Breadcrumb (`SETTINGS › PROJECT`).
+1. Breadcrumb: `SETTINGS`, growing as you go in (`SETTINGS › PROJECT`).
 2. The bar.
 3. A chevron: the row opens a list or page.
 4. `LATER`: not built yet; dimmed and skipped.
@@ -335,11 +335,10 @@ In light mode accents darken only as far as they must. The boot splash keeps its
 
 1. Breadcrumb.
 2. Focused cell.
-3. Glyph.
-4. Waveform.
-5. **SIZE**.
-6. Footer: project and state.
-7. Footer: keys.
+3. Waveform.
+4. **SIZE**.
+5. Footer: project and state.
+6. Footer: keys.
 
 **SIZE**: NORMAL (default) or LARGE, which draws cell labels and values, the focus label, hints, SETTINGS lists and Sound names a size up wherever they fit. Header, breadcrumbs, chain map, the big value, pictures, dialogs, ORBIT's rings and MANAGE's columns stay.
 
@@ -366,11 +365,10 @@ In light mode accents darken only as far as they must. The boot splash keeps its
 
 1. Breadcrumb.
 2. Focused cell.
-3. Glyph.
-4. Waveform.
-5. **FIRST**.
-6. Footer: project and state.
-7. Footer: keys.
+3. Waveform.
+4. **FIRST**.
+5. Footer: project and state.
+6. Footer: keys.
 
 **FIRST** orders ALGO's OSC sub-pages: PARAMS (default; one parameter across six operators first) or OPS (OPERATOR 1 to 6 first). No page is ever skipped, even a silent operator's, since LEVEL 0 is exactly the page you open to turn it up ([ALGO](03-algo.md)).
 
@@ -431,21 +429,20 @@ Read-only; reads nothing new from the card.
 
 1. Breadcrumb.
 2. The name, large.
-3. Its picture.
-4. Version and build.
-5. The firmware's label, and whether its second part needs an update.
-6. **VERSION**.
-7. **BUILD**.
-8. **CHIP**: revision and board package.
-9. **CLOCK**.
-10. **RESET**: why the unit last restarted.
-11. **CARD**: label or serial as last seen, `NO CARD` or `ERROR`.
-12. Footer: project and state.
-13. Footer: `MENU BACK`.
+3. `FIRMWARE 0.4.0 RELEASE`: version and build type.
+4. The build's identity: version and commit (`0.4.0 b42f427c`).
+5. **VERSION**.
+6. **BUILD**.
+7. **CHIP**: revision and board package.
+8. **CLOCK**.
+9. **RESET**: why the unit last restarted.
+10. **CARD**: label or serial as last seen, `NO CARD` or `ERROR`.
+11. Footer: project and state.
+12. Footer: `MENU BACK`.
 
 ## SETTINGS: every question it asks
 
-A question is a panel: the question, what will happen, the answers. Any encoder moves, **EDIT** answers, **MENU** or **SEQ** cancels (`EDIT OK · MENU BACK`). DELETE, CLEAR and SAVE OVER open on CANCEL. Every question but the scene ones offers CANCEL; the table lists the other answers.
+A question is a panel: the question, what will happen, the answers. Any encoder moves, **EDIT** answers, **MENU** or **SEQ** cancels (`EDIT OK · MENU BACK`). DELETE, CLEAR, SAVE OVER, RELOAD SCENE and ENTER DFU open on CANCEL. Every question but `NAME EXISTS` and the slot-update one (`P4 ALSO USES SLOT 03`) offers CANCEL; the table lists the other answers.
 
 | Prompt (second line) | When it appears | Answers |
 |---|---|---|
@@ -461,7 +458,7 @@ A question is a panel: the question, what will happen, the answers. Any encoder 
 | `LOAD INTO P1?` | Library load into an edited Part | **SAVE PART FIRST**; **REPLACE** loads |
 | `LOAD INTO P1?` (`KIT NOT IN LIBRARY`) | Loading over an unsaved DRUM kit | **REPLACE** loads |
 | `RELOAD P1 FROM SLOT 03?` | PART › RELOAD FROM PROJ | **SAVE PART FIRST**; **RELOAD** drops edits |
-| `ALSO USES SLOT 03` (`IT KEEPS THE OLD SOUND`) | Saving over a slot other Parts play | **UPDATE P4** / **UPDATE ALL** move them to the new Sound; **LEAVE** keeps the old until they reload |
+| `P4 ALSO USES SLOT 03` (`IT KEEPS THE OLD SOUND`) | Saving over a slot other Parts play | **UPDATE P4** / **UPDATE ALL** move them to the new Sound; **LEAVE** keeps the old until they reload (no CANCEL) |
 | `CLEAR SLOT 03?` (`NO PART USES IT`) | MIX + MINUS in the Sound browser ([the SD card](16-card-sounds-library.md)) | **CLEAR** empties the slot |
 | `CLEAR SCENE 3?` (`IT GOES SILENT ON THE LOOP`) | ORBIT › CLEAR | **CLEAR** |
 | `SAVE OVER SCENE 2?` (`ITS SAVED SCENE IS REPLACED`) | ORBIT › SAVE TO PROJ, or EDIT on SCN, over a saved scene | **SAVE OVER** |
@@ -473,7 +470,7 @@ A question is a panel: the question, what will happen, the answers. Any encoder 
 
 ![NAME EXISTS](img/settings_prompt_name_exists.png)
 
-![Quick save refused: another card](img/settings_prompt_card_changed.png)
+![Quick save onto another card](img/settings_prompt_card_changed.png)
 
 ![SAVE OVER](img/settings_prompt_save_over.png)
 

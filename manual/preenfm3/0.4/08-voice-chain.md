@@ -49,17 +49,17 @@ The hint line under the value shows the combos the touched cell answers to (off 
 
 ![PITCH page, annotated](img/algo_pit.png)
 
-1. **Header:** Part, Sound, page.
-2. **The touched cell**, large, with its arc.
-3. **Hint line.**
-4. **The tuner:** the note the Part's last note sounds at, its offset in cents (`C4 +0ct`), and its Hz. `REF C4` before the first note.
+1. **Header:** PART 1 · SOUND, page PITCH.
+2. **The touched cell**, large: PITCH, 0, with its arc.
+3. **Hint line:** `SEQ+TURN FINE  MIX + SEQ LEARN`.
+4. **Picture band:** the glide sketch, under **the tuner**: the note the Part's last note sounds at, its offset in cents (`C4 +0ct`), and its Hz. `REF C4` before the first note.
 5. **PITCH**, in semitones.
 6. **FINE**, in cents.
 7. **STEAL:** CUT or GLIDE.
 8. **TIME:** the glide time.
 9. **SNAP:** CHROMA or MUSICAL.
-10. **Chain map**, on ALG.
-11. **Sub-pages** of ALG, PITCH lit.
+10. **Chain map**, ALG lit.
+11. **Sub-page row:** ALGORITHM PITCH, PITCH underlined.
 
 | Cell | Range | Default | What it does |
 |---|---|---|---|
@@ -75,15 +75,15 @@ The tuner reads A4 = 440 Hz in the Part's tuning, including PITCH, FINE and the 
 
 1. Header.
 2. The touched cell: STEAL, GLIDE.
-3. Hint line.
-4. Tuner.
+3. Hint line: `MIX + SEQ LEARNS A CC`.
+4. Picture band: glide sketch and tuner.
 5. PITCH.
 6. FINE.
 7. **STEAL** at GLIDE.
 8. **TIME**, now in use.
 9. SNAP.
-10. Chain map.
-11. Sub-pages.
+10. Chain map, ALG lit.
+11. Sub-page row, PITCH underlined.
 
 GLIDE acts only when a new note takes a sounding voice of the same Part. With MAX VOICES 1 ([the mixer](11-mixer-and-master-fx.md)) that is every note, so GLIDE becomes legato portamento. STEAL and TIME are read at the moment of the steal, so they are not destinations.
 
@@ -97,17 +97,16 @@ GLIDE acts only when a new note takes a sounding voice of the same Part. With MA
 
 ![FILTER page, annotated](img/algo_flt.png)
 
-1. **Header:** Part, Sound, page.
-2. **The response**, drawn from the filter's real response, resonance peak included; the dot is the corner, at the cutoff.
-3. **Readout** of the touched control (TYPE: CLEAN).
-4. **TYPE.**
-5. **FX:** the voice's FX slot.
-6. **Q:** resonance.
-7. **MODE:** the response.
-8. **FX PLACE:** PRE or POST; the cell draws the order.
-9. **FREQ:** the cutoff; a thin line under its bar shows modulation reaching it.
-10. **Chain map**, on FLT.
-11. **Sub-pages:** FILTER, MODULATION, FX, JACKS.
+1. **Header:** PART 1 · SOUND, page FILTER.
+2. **The picture:** the readout of the touched control (TYPE, CLEAN) over the response, drawn from the filter's real response, resonance peak included; the dot is the corner, at the cutoff.
+3. **TYPE.**
+4. **FX:** the voice's FX slot.
+5. **Q:** resonance.
+6. **MODE:** the response.
+7. **FX PLACE:** PRE or POST; the cell draws the order.
+8. **FREQ:** the cutoff; a thin line under its bar shows modulation reaching it.
+9. **Chain map**, FLT lit.
+10. **Sub-page row:** FILTER MODULATION FX `>`, FILTER underlined; `>` leads on to JACKS.
 
 The picture takes the whole band, so there is no focus band. The readout shows the value you set and stays still under modulation; a faint band under the plot runs from the corner to where modulation has the cutoff now, with a tick at its end:
 
@@ -157,16 +156,15 @@ At high Q, CLEAN self-oscillates (not in NOTCH2). LP4 fully open passes its inpu
 ![FILTER page on 2040, annotated](img/algo_flt_2040.png)
 
 1. Header.
-2. The 2040's response.
-3. Readout: TYPE, 2040.
-4. **TYPE.**
-5. FX.
-6. **RES.**
-7. **VOICE:** REV2 or EXPNDR.
-8. FX PLACE.
-9. **CUTOFF.**
-10. Chain map.
-11. Sub-pages.
+2. The picture: readout `TYPE · 4-POLE LP`, 2040, over the 2040's response.
+3. **TYPE.**
+4. FX.
+5. **RES.**
+6. **VOICE:** REV2 or EXPNDR.
+7. FX PLACE.
+8. **CUTOFF.**
+9. Chain map, FLT lit.
+10. Sub-page row, FILTER underlined.
 
 A four-pole low-pass modelled on the SSM2040 filter chip; VA's home filter. Its one mode reads 4-POLE LP. **INPUT** (on FX) drives the chip's stages directly. **VOICE** picks the chip's surroundings:
 
@@ -182,16 +180,15 @@ A four-pole low-pass modelled on the SSM2040 filter chip; VA's home filter. Its 
 ![FILTER page on DIRTY, annotated](img/algo_flt_dirty.png)
 
 1. Header.
-2. DIRTY's response.
-3. Readout: TYPE, DIRTY.
-4. **TYPE.**
-5. FX.
-6. **Q.**
-7. **MODE:** LP2, BP2, HP2 or NOTCH1.
-8. FX PLACE.
-9. **FREQ.**
-10. Chain map.
-11. Sub-pages.
+2. The picture: readout TYPE, DIRTY, over DIRTY's response.
+3. **TYPE.**
+4. FX.
+5. **Q.**
+6. **MODE:** LP2, BP2, HP2 or NOTCH1.
+7. FX PLACE.
+8. **FREQ.**
+9. Chain map, FLT lit.
+10. Sub-page row, FILTER underlined.
 
 A Chamberlin state-variable filter that drives hard: the cheapest and edgiest. MODE is **LP2** (default), **BP2**, **HP2** or **NOTCH1** (one notch, at FREQ). Its modulation page is titled DIRTY MOD.
 
@@ -200,16 +197,15 @@ A Chamberlin state-variable filter that drives hard: the cheapest and edgiest. M
 ![FILTER page on LADDER, annotated](img/algo_flt_ladder.png)
 
 1. Header.
-2. LADDER's response.
-3. Readout: TYPE, LADDER.
-4. **TYPE.**
-5. FX.
-6. **Q.**
-7. **MODE:** LP2, LP4, BP2, BP4 or HP4.
-8. FX PLACE.
-9. **FREQ.**
-10. Chain map.
-11. Sub-pages.
+2. The picture: readout TYPE, LADDER, over LADDER's response.
+3. **TYPE.**
+4. FX.
+5. **Q.**
+6. **MODE:** LP2, LP4, BP2, BP4 or HP4.
+7. FX PLACE.
+8. **FREQ.**
+9. Chain map, FLT lit.
+10. Sub-page row, FILTER underlined.
 
 The Moog transistor ladder, four poles, with Xpander-style modes (**LP2**, **LP4** default, **BP2**, **BP4**, **HP4**) and INPUT as its drive. Like the original it loses some bass as resonance rises. Its modulation page is titled LADDER MOD.
 
@@ -220,16 +216,15 @@ The Moog transistor ladder, four poles, with Xpander-style modes (**LP2**, **LP4
 ![FILTER page on SEM, annotated](img/algo_flt_sem.png)
 
 1. Header.
-2. SEM's response.
-3. Readout: TYPE, SEM.
-4. **TYPE.**
-5. FX.
-6. **RES.**
-7. **MODE**, a knob: low-pass at 0, notch mid-way, high-pass at 127.
-8. FX PLACE.
-9. **FREQ.**
-10. Chain map.
-11. Sub-pages.
+2. The picture: SEM's response, under the readout TYPE, SEM.
+3. **TYPE.**
+4. FX.
+5. **RES.**
+6. **MODE**, a knob: low-pass at 0, notch mid-way, high-pass at 127.
+7. FX PLACE.
+8. **FREQ.**
+9. Chain map, FLT lit.
+10. Sub-page row, FILTER underlined.
 
 The Oberheim SEM's 12 dB state-variable filter. **MODE** is a knob, like the SEM's pot: low-pass (0), a notch at FREQ (middle), high-pass (127). It glides and is a destination, so an LFO on MODE sweeps the response itself. **OUTPUT**, on SEM MOD, is the SEM's switch: MODE (the knob's sweep) or BP (band-pass). Like the original, it does not self-oscillate: at full RES it rings and the ring dies away.
 
@@ -250,8 +245,8 @@ The Oberheim SEM's 12 dB state-variable filter. **MODE** is a knob, like the SEM
 7. **FREQ MOD.**
 8. **FDBK:** FEEDBACK.
 9. **RES MOD**, a dash: no route yet.
-10. **Chain map**, on FLT.
-11. **Sub-pages**, MODULATION lit.
+10. **Chain map**, FLT lit.
+11. **Sub-page row:** FILTER MODULATION FX `>`, MODULATION underlined.
 
 | Cell | Range | Default | What it does |
 |---|---|---|---|
@@ -286,25 +281,28 @@ Every voice has one FX slot, before or after the filter: its TYPE is **FX** and 
 2. **The touched cell**, large: INPUT, 64.
 3. **Its arc.**
 4. **Hint line.**
-5. **Signal path** (OSC, FX, FLT: PRE) over **the effect's curve**; with FX OFF, a plain sine.
+5. **Picture band:** the signal path (OSC, FX, FLT: PRE) over **the effect's curve**; with FX OFF, a plain sine.
 6. **INPUT.**
-7. **MIX**, dimmed while FX is OFF; the pots read dashes.
-8. **Chain map**, on FLT.
-9. **Sub-pages**, FX lit.
+7. **MIX**, +63, dimmed while FX is OFF; the pots read dashes.
+8. **Chain map**, FLT lit.
+9. **Sub-page row:** `<` MODULATION FX JACKS, FX underlined.
 
 With an effect on, the pots fill in:
 
 ![The FILTER FX sub-page with SOFT, annotated](img/filter-fx.png)
 
-1. Signal path, in FX PLACE's order.
-2. The effect's curve: sine in (faint), shaped wave out.
-3. The touched pot's arc.
-4. **INPUT.**
-5. First pot (SOFT: DRIVE).
-6. Second pot (TONE).
-7. Third pot (LEVEL).
-8. **MIX.**
-9. Sub-page row, on FX.
+1. Header: PART 1 · SOUND, page FX.
+2. The touched cell, large: DRIVE, 40.
+3. Its arc.
+4. Hint line: `SEQ+TURN FINE  MIX + SEQ LEARN`.
+5. Picture band: the signal path in FX PLACE's order (OSC, FX, FLT), over the effect's curve: sine in (faint), shaped wave out.
+6. **INPUT**, 64.
+7. First pot, **DRIVE** (SOFT), 40.
+8. Second pot, **TONE**.
+9. Third pot, **LEVEL**, 64.
+10. **MIX**, +63.
+11. Chain map, FLT lit.
+12. Sub-page row, FX underlined.
 
 The page reads **INPUT · P1 · P2 / P3 · MIX · STABILITY**:
 
@@ -348,12 +346,12 @@ On 2040, LADDER and SEM the sixth FX cell, **STABILITY**, gives each voice its o
 
 ![FILTER JACKS page, annotated](img/algo_jack.png)
 
-1. **Header.**
-2. **Picture band:** the touched jack and its source.
-3. **FREQ SRC.**
-4. **RES SRC.**
-5. Chain map, on FLT.
-6. Sub-pages, JACKS lit.
+1. **Header:** page FILTER JACKS.
+2. **Picture band:** the source's wave.
+3. **FREQ SRC**, LFO1.
+4. **RES SRC**, ENV3.
+5. Chain map, FLT lit.
+6. Sub-page row, JACKS underlined.
 
 | Cell | Choices | Default |
 |---|---|---|
@@ -375,16 +373,16 @@ On 2040, LADDER and SEM the sixth FX cell, **STABILITY**, gives each voice its o
 ![AMP page, annotated](img/algo_amp.png)
 
 1. **Header.**
-2. **The touched cell**, large.
+2. **The touched cell**, large: VEL, 127, dimmed.
 3. **Hint line.**
 4. **Picture band:** the live output.
-5. **VEL.**
+5. **VEL**, dimmed: no route into VCA.
 6. **LPG.**
 7. **DECAY.**
 8. **STRIKE.**
-9. **BASE.**
-10. **Chain map**, on AMP.
-11. **Sub-pages:** AMP, STEREO, SENDS.
+9. **BASE**, dimmed.
+10. **Chain map**, AMP lit.
+11. **Sub-page row:** AMP STEREO SENDS, AMP underlined.
 
 | Cell | Range | Default | What it does |
 |---|---|---|---|
@@ -433,13 +431,13 @@ On ALGO and MODAL with nothing routed into VCA, a gate after the filter follows 
 ![STEREO page, annotated](img/algo_ster.png)
 
 1. **Header.**
-2. **The touched cell**, large.
-3. **Hint line.**
+2. **The touched cell**, large: PAN, C.
+3. **Hint line:** `PLACES EACH NOTE, ROUTABLE`.
 4. **Picture band:** the live output.
 5. **PAN.**
-6. **WIDTH.**
-7. Chain map, on AMP.
-8. Sub-pages, STEREO lit.
+6. **WIDTH**, 64.
+7. Chain map, AMP lit.
+8. Sub-page row, STEREO underlined.
 
 | Cell | Range | Default | What it does |
 |---|---|---|---|
@@ -464,8 +462,8 @@ PAN acts per note; WIDTH on the whole Part afterwards, and with the Part's pan c
 6. **CHORUS.**
 7. **DELAY.**
 8. **REVERB.**
-9. Chain map, on AMP.
-10. Sub-pages, SENDS lit.
+9. Chain map, AMP lit.
+10. Sub-page row, SENDS underlined.
 
 | Cell | Range | Default | What it does |
 |---|---|---|---|

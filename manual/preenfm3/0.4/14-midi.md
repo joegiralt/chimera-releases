@@ -25,11 +25,11 @@ The MIDI settings live in **SETTINGS › MIDI CONFIG**: SYNC, PORT CONFIG (dimme
 ![SYNC page, annotated](img/settings_midi_sync.png)
 
 1. Header: `SETTINGS › MIDI › SYNC`.
-2. Focused cell, large.
-3. Picture band.
-4. **SYNC** (A).
-5. **PROGRAM** (B).
-6. Footer: project name and unsaved mark.
+2. Focused cell, large: SYNC EXT.
+3. The picture band: a test wave in this shot.
+4. **SYNC** (A): EXT.
+5. **PROGRAM** (B): OFF.
+6. Footer: the project's name (`NEW PROJECT`), marked when unsaved.
 7. Footer: `A-F EDIT · MENU BACK`.
 
 | Cell | Options | Default | What it does |
@@ -48,15 +48,15 @@ The MIDI settings live in **SETTINGS › MIDI CONFIG**: SYNC, PORT CONFIG (dimme
 ![CHANNELS page, annotated](img/settings_midi_channels.png)
 
 1. Header: `SETTINGS › MIDI › CHANNELS`.
-2. Focused cell, large.
-3. Picture band.
-4. **P1** (A).
-5. **P2** (B).
-6. **P3** (C).
-7. **P4** (D).
-8. **P5** (E).
-9. **P6** (F).
-10. Footer: project name and unsaved mark.
+2. Focused cell, large: P1 on 1, with its arc.
+3. The picture band: a test wave in this shot.
+4. **P1** (A): 1.
+5. **P2** (B): 2.
+6. **P3** (C): 3.
+7. **P4** (D): 4.
+8. **P5** (E): 5.
+9. **P6** (F): 6.
+10. Footer: the project's name (`NEW PROJECT`), marked when unsaved.
 11. Footer: `A-F EDIT · MENU BACK`.
 
 | Cell | Range | Default | What it does |
@@ -72,13 +72,13 @@ These are the same values as the channel on the mixer's Part page ([the mixer](1
 ![CONTROL CHANNELS page, annotated](img/settings_midi_control.png)
 
 1. Header: `SETTINGS › MIDI › CONTROL`.
-2. Focused cell, large.
-3. Picture band.
-4. **MIXER** (A).
-5. **SEQ** (B); the readout and focus band call it SEQUENCER.
-6. **AUTO** (C).
-7. **BUILT-IN** (D).
-8. Footer: project name and unsaved mark.
+2. Focused cell, large: MIXER OFF, with its arc.
+3. The picture band: a test wave in this shot.
+4. **MIXER** (A): OFF.
+5. **SEQ** (B): OFF; the readout and focus band call it SEQUENCER.
+6. **AUTO** (C): OFF.
+7. **BUILT-IN** (D): ON.
+8. Footer: the project's name (`NEW PROJECT`), marked when unsaved.
 9. Footer: `A-F EDIT · MENU BACK`.
 
 Here AUTO is on Part 1's channel, so it is dimmed:
@@ -151,13 +151,13 @@ Most controllers set the zones themselves with RPN 6 (zone on, bend range 48). O
 ![MPE page, annotated](img/settings_midi_mpe.png)
 
 1. Header: `SETTINGS › MIDI › MPE`.
-2. Focused cell, large.
-3. Picture band.
-4. **LOWER** (A).
-5. **L BEND** (B).
-6. **UPPER** (C).
-7. **U BEND** (D).
-8. Footer: project name and unsaved mark.
+2. Focused cell, large: LOWER OFF, with its arc.
+3. The picture band: a test wave in this shot.
+4. **LOWER** (A): OFF.
+5. **L BEND** (B): 48.
+6. **UPPER** (C): OFF.
+7. **U BEND** (D): 48.
+8. Footer: the project's name (`NEW PROJECT`), marked when unsaved.
 9. Footer: `A-F EDIT · MENU BACK`.
 
 | Cell | Options | Default | What it does |
@@ -267,18 +267,17 @@ Here Part 1 plays the map `EC4`, two rows above its Sound's rows:
 
 ![The MIDI MAP page, annotated](img/midi-map.png)
 
-1. Breadcrumb: the Part.
-2. `CONTROLLER`: the first row.
-3. The map's name, or `NONE`.
-4. The bar: control, then cell (`CC 30` `MORPH`). **A** moves it. Master FX and ORBIT cells name their block (`REVERB MIX`, `RING 1 CHANCE`).
-5. INPUT kind, short (`JUMP`).
-6. A dimmed row does nothing now: the Sound binds the same control, or the cell is not in the Part's engine (`- STRUCT`).
-7. The Sound's own rows.
-8. The bar's binding spelled out; for a relative kind, the bytes for one step each way.
-9. `IN EC4`: the row belongs to the map.
-10. **C MIN**, **D MAX** (0 to 255; MAX below MIN reverses), **F ECHO**.
-11. **B CONTROL**, **E INPUT** (and **EDIT TARGET** on current firmware).
-12. Footer: `A MOVE · MIX+MINUS DELETES`.
+1. Breadcrumb: `… › PART 1 › MIDI MAP`, the Part whose map this is.
+2. `CONTROLLER`, the first row, with the map in use: `EC4` (or `NONE`).
+3. The bar: control, then cell (`CC 30  MORPH`). **A** moves it. Master FX and ORBIT cells name their block (`REVERB MIX`, `RING 1 CHANCE`).
+4. Its INPUT kind, short: `JUMP`.
+5. A dimmed row (`CC 74  - RESO`) does nothing now: the Sound binds the same control, or the cell is not in the Part's engine (`- STRUCT`). The rows below it are the Sound's own.
+6. The bar's INPUT spelled out (`ABSOLUTE · JUMPS TO THE KNOB`); for a relative kind, the bytes for one step each way.
+7. `IN EC4`: the row belongs to the map.
+8. **C MIN**, **D MAX** (0 to 255; MAX below MIN reverses), **F ECHO**.
+9. **B CONTROL**, **E INPUT**, **EDIT TARGET**.
+10. Footer: the project's name and `* MODIFIED`.
+11. Footer: `A MOVE · MIX+MINUS DELETES`.
 
 ### MIDI: the keys on a MIDI MAP row
 
@@ -339,6 +338,8 @@ A relative encoder moves the cell one step a detent, like Chimera's own encoders
 Add a binding without the controller, choosing its CC afterwards:
 
 ![Pointing at a cell for a new binding](img/midi_map_pointing.png)
+
+The steps:
 
 1. On MIDI MAP, put the bar on `+ NEW BINDING` (`POINT AT A CELL`, `ITS CC IS SET ON ITS ROW`) and press **EDIT**.
 2. Chimera opens the page you came from. The value line reads `NEW BINDING`, the hint `A-F POINT  MENU CANCELS`.
@@ -478,13 +479,14 @@ Select the bank with CC 0 (or CC 32 alone, or CC 0 at 0 then CC 32); it stays un
 ![ECHO page, annotated](img/settings_midi_echo.png)
 
 1. Header: `SETTINGS › MIDI › ECHO`.
-2. Focused cell, large.
-3. Its glyph: a switch.
-4. Picture band.
-5. **ECHO** (A).
-6. **PARAM OUT** (B).
-7. Footer: project name and unsaved mark.
+2. Focused cell, large: ECHO ON.
+3. Its glyph: a switch, on.
+4. The picture band: a test wave in this shot.
+5. **ECHO** (A): ON.
+6. **PARAM OUT** (B): OFF.
+7. Footer: the project's name (`NEW PROJECT`), marked when unsaved.
 8. Footer: `A-F EDIT · MENU BACK`.
+
 
 | Cell | Options | Default | What it does |
 |---|---|---|---|

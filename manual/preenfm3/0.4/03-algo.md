@@ -53,10 +53,10 @@ SETTINGS › PERSONALIZE › ALGO PAGES › **FIRST** sets the order of the OSC 
 
 ![ALGORITHM page, annotated](img/algo_alg.png)
 
-1. **Header:** Part and page.
-2. **Focus band:** the touched cell (ALG A, T1).
-3. **Hint:** its gestures.
-4. **Picture:** the algorithm chart.
+1. **Header:** PART 1 · SOUND, page ALGORITHM.
+2. **Focus band:** ALG A, T1.
+3. **Hint:** `MIX + SEQ LEARNS A CC`.
+4. **Picture band:** the T1 chart, carriers 1 and 5 filled.
 5. **ALG A**
 6. **ALG B**
 7. **MORPH**
@@ -64,7 +64,7 @@ SETTINGS › PERSONALIZE › ALGO PAGES › **FIRST** sets the order of the OSC 
 9. **VOL**
 10. **VOWEL**
 11. **Chain map:** ALG lit.
-12. **Sub-pages.**
+12. **Sub-page row:** ALGORITHM underlined, PITCH.
 
 The chart puts carriers, drawn filled, on the bottom row and each modulator above what it feeds. An operator with FDBK above 0 wears a loop: MID colour under 4.0, accent from 4.0, where a sine starts to break towards a saw.
 
@@ -158,11 +158,11 @@ The envelope pages draw the touched operator's envelope; the others show the liv
 
 ![WAVE (OSC) page, annotated](img/algo_osc.png)
 
-1. **Header.**
+1. **Header:** page WAVE.
 2. **Focus band:** OP1, W1.
-3. **Glyph:** the touched operator's wave.
-4. **Hint.**
-5. **Picture:** live output.
+3. **Glyph:** OP1's wave, a sine.
+4. **Hint:** `MIX + SEQ LEARNS A CC`.
+5. **Picture band:** live output (a test wave here).
 6. **OP1**
 7. **OP2**
 8. **OP3**
@@ -170,7 +170,7 @@ The envelope pages draw the touched operator's envelope; the others show the liv
 10. **OP5**
 11. **OP6**
 12. **Chain map:** OSC lit.
-13. **Sub-pages.**
+13. **Sub-page row:** WAVE underlined, `>` at the end.
 
 | WAVE | What it is |
 |---|---|
@@ -217,49 +217,49 @@ An operator plays at the note's frequency times its ratio. **COARSE** picks one 
 
 ![COARSE (CRS) page, annotated](img/algo_crs.png)
 
-1. **Header.**
-2. **Focus band:** OP1's ratio.
-3. **Glyph.**
-4. **Hint:** gestures, or `RATIO 1.00`.
-5. **Picture:** live output.
+1. **Header:** page COARSE.
+2. **Focus band:** OP1, 1.00.
+3. **Glyph:** ratio arc.
+4. **Hint:** `RATIO 1.00`.
+5. **Picture band:** live output (a test wave here).
 6. **OP1**
 7. **OP2**
 8. **OP3**
 9. **OP4**
 10. **OP5**
 11. **OP6**
-12. **Chain map.**
-13. **Sub-pages.**
+12. **Chain map:** OSC lit.
+13. **Sub-page row:** COARSE underlined.
 
 ![FINE (FIN) page, annotated](img/algo_fin.png)
 
-1. **Header.**
-2. **Focus band:** OP1's FINE.
-3. **Hint:** gestures, or the resulting ratio.
-4. **Picture:** live output.
+1. **Header:** page FINE.
+2. **Focus band:** OP1, 0.
+3. **Hint:** `RATIO 1.00`.
+4. **Picture band:** live output (a test wave here).
 5. **OP1**
 6. **OP2**
 7. **OP3**
 8. **OP4**
 9. **OP5**
 10. **OP6**
-11. **Chain map.**
-12. **Sub-pages.**
+11. **Chain map:** OSC lit.
+12. **Sub-page row:** FINE underlined.
 
 ![DETUNE (DET) page, annotated](img/algo_det.png)
 
-1. **Header.**
-2. **Focus band:** OP1's DETUNE.
-3. **Hint:** gestures, or the resulting ratio and detune.
-4. **Picture:** live output.
+1. **Header:** page DETUNE.
+2. **Focus band:** OP1, 0.
+3. **Hint:** `RATIO 1.00`.
+4. **Picture band:** live output (a test wave here).
 5. **OP1**
 6. **OP2**
 7. **OP3**
 8. **OP4**
 9. **OP5**
 10. **OP6**
-11. **Chain map.**
-12. **Sub-pages.**
+11. **Chain map:** OSC lit.
+12. **Sub-page row:** DETUNE underlined.
 
 ### ALGO: LEVEL and VELOCITY
 
@@ -268,34 +268,34 @@ An operator plays at the note's frequency times its ratio. **COARSE** picks one 
 
 ![LEVEL (LVL) page, annotated](img/algo_lvl.png)
 
-1. **Header.**
-2. **Focus band:** OP1's LEVEL.
+1. **Header:** page LEVEL.
+2. **Focus band:** OP1, 99.
 3. **Glyph:** level bar.
-4. **Hint.**
-5. **Picture:** live output.
+4. **Hint:** `SEQ+TURN FINE  MIX + SEQ LEARN`.
+5. **Picture band:** live output (a test wave here).
 6. **OP1**
 7. **OP2**
 8. **OP3**
 9. **OP4**
 10. **OP5**
 11. **OP6**
-12. **Chain map.**
-13. **Sub-pages.**
+12. **Chain map:** OSC lit.
+13. **Sub-page row:** LEVEL underlined.
 
 ![VELOCITY (VEL) page, annotated](img/algo_vel.png)
 
-1. **Header.**
-2. **Focus band:** OP1's VELOCITY.
-3. **Hint.**
-4. **Picture:** live output.
+1. **Header:** page VELOCITY.
+2. **Focus band:** OP1, 0.
+3. **Hint:** `SEQ+TURN FINE  MIX + SEQ LEARN`.
+4. **Picture band:** live output (a test wave here).
 5. **OP1**
 6. **OP2**
 7. **OP3**
 8. **OP4**
 9. **OP5**
 10. **OP6**
-11. **Chain map.**
-12. **Sub-pages.**
+11. **Chain map:** OSC lit.
+12. **Sub-page row:** VELOCITY underlined.
 
 ### ALGO: FEEDBACK
 
@@ -303,19 +303,19 @@ An operator plays at the note's frequency times its ratio. **COARSE** picks one 
 
 ![FEEDBACK (FBK) page, annotated](img/algo_fbk.png)
 
-1. **Header.**
-2. **Focus band:** OP1's FDBK.
+1. **Header:** page FEEDBACK.
+2. **Focus band:** OP1, 0.0.
 3. **Glyph:** level bar.
-4. **Hint:** `MIX+TURN WHOLE`, `SEQ+TURN FINE`.
-5. **Picture:** live output, bent by feedback.
+4. **Hint:** `MIX+TURN WHOLE  SEQ+TURN FINE`.
+5. **Picture band:** live output (a test wave here; FDBK is 0.0).
 6. **OP1**
 7. **OP2**
 8. **OP3**
 9. **OP4**
 10. **OP5**
 11. **OP6**
-12. **Chain map.**
-13. **Sub-pages.**
+12. **Chain map:** OSC lit.
+13. **Sub-page row:** FEEDBACK underlined, OPERATOR 1 next.
 
 **Why tenths:** the TX81Z's low steps were too coarse for subtle colour. A whole number plays exactly as that step did.
 
@@ -332,81 +332,81 @@ Every operator has the classic Yamaha four-rate envelope: **AR** rises to full, 
 
 ![ATTACK RATE (AR) page, annotated](img/algo_ar.png)
 
-1. **Header.**
-2. **Focus band:** ATTACK RATE over the value.
+1. **Header:** page ATTACK RATE.
+2. **Focus band:** ATTACK RATE, 31 (OP1).
 3. **Glyph:** rate arc.
-4. **Hint.**
-5. **Picture:** the touched operator's envelope.
+4. **Hint:** `SEQ+TURN FINE  MIX + SEQ LEARN`.
+5. **Picture band:** OP1's envelope, the attack lit; stage letters below.
 6. **OP1**
 7. **OP2**
 8. **OP3**
 9. **OP4**
 10. **OP5**
 11. **OP6**
-12. **Chain map.**
-13. **Sub-pages.**
+12. **Chain map:** OSC lit.
+13. **Sub-page row:** ATTACK RATE underlined.
 
 ![DECAY 1 RATE (D1R) page, annotated](img/algo_d1r.png)
 
-1. **Header.**
-2. **Focus band:** DECAY 1 RATE over the value.
-3. **Hint.**
-4. **Picture:** the touched operator's envelope.
+1. **Header:** page DECAY 1 RATE.
+2. **Focus band:** DECAY 1 RATE, 0 (OP1).
+3. **Hint:** `SEQ+TURN FINE  MIX + SEQ LEARN`.
+4. **Picture band:** OP1's envelope, D1 lit; stage letters below.
 5. **OP1**
 6. **OP2**
 7. **OP3**
 8. **OP4**
 9. **OP5**
 10. **OP6**
-11. **Chain map.**
-12. **Sub-pages.**
+11. **Chain map:** OSC lit.
+12. **Sub-page row:** DECAY 1 RATE underlined.
 
 ![DECAY 1 LEVEL (D1L) page, annotated](img/algo_d1l.png)
 
-1. **Header:** DECAY 1 LVL.
-2. **Focus band:** DECAY 1 LEVEL over the value.
+1. **Header:** page DECAY 1 LVL.
+2. **Focus band:** DECAY 1 LEVEL, 15 (OP1).
 3. **Glyph:** level arc.
-4. **Hint.**
-5. **Picture:** the touched operator's envelope.
+4. **Hint:** `SEQ+TURN FINE  MIX + SEQ LEARN`.
+5. **Picture band:** OP1's envelope, D1 lit; stage letters below.
 6. **OP1**
 7. **OP2**
 8. **OP3**
 9. **OP4**
 10. **OP5**
 11. **OP6**
-12. **Chain map.**
-13. **Sub-pages.**
+12. **Chain map:** OSC lit.
+13. **Sub-page row:** DECAY 1 LEVEL underlined.
 
 ![DECAY 2 RATE (D2R) page, annotated](img/algo_d2r.png)
 
-1. **Header.**
-2. **Focus band:** DECAY 2 RATE over the value.
-3. **Hint.**
-4. **Picture:** the touched operator's envelope.
+1. **Header:** page DECAY 2 RATE.
+2. **Focus band:** DECAY 2 RATE, 0 (OP1).
+3. **Hint:** `SEQ+TURN FINE  MIX + SEQ LEARN`.
+4. **Picture band:** OP1's envelope, D2 lit; stage letters below.
 5. **OP1**
 6. **OP2**
 7. **OP3**
 8. **OP4**
 9. **OP5**
 10. **OP6**
-11. **Chain map.**
-12. **Sub-pages.**
+11. **Chain map:** OSC lit.
+12. **Sub-page row:** DECAY 2 RATE underlined.
 
 ![RELEASE RATE (RR) page, annotated](img/algo_rr.png)
 
-1. **Header.**
-2. **Focus band:** RELEASE RATE over the value.
+1. **Header:** page RELEASE RATE.
+2. **Focus band:** RELEASE RATE, 5 (OP1).
 3. **Glyph:** rate arc.
-4. **Hint.**
-5. **Picture:** the touched operator's envelope.
+4. **Hint:** `SEQ+TURN FINE  MIX + SEQ LEARN`.
+5. **Picture band:** OP1's envelope, R lit; stage letters below.
 6. **OP1**
 7. **OP2**
 8. **OP3**
 9. **OP4**
 10. **OP5**
 11. **OP6**
-12. **Chain map.**
-13. **Sub-pages.**
+12. **Chain map:** OSC lit.
+13. **Sub-page row:** RELEASE RATE underlined.
 
 ### ALGO: envelope rates in seconds
 
@@ -437,18 +437,18 @@ Two steps of AR, D1R or D2R, or one of RR, make a stage twice as fast. Attack ri
 
 ![RATE SCALE (RS) page, annotated](img/algo_rs.png)
 
-1. **Header.**
-2. **Focus band:** OP1's RATE SCALE.
+1. **Header:** page RATE SCALE.
+2. **Focus band:** OP1, 0.
 3. **Hint:** `HIGH NOTES, FASTER ENVELOPES`.
-4. **Picture:** live output.
+4. **Picture band:** live output (a test wave here).
 5. **OP1**
 6. **OP2**
 7. **OP3**
 8. **OP4**
 9. **OP5**
 10. **OP6**
-11. **Chain map.**
-12. **Sub-pages.**
+11. **Chain map:** OSC lit.
+12. **Sub-page row:** RATE SCALE underlined.
 
 **Why the operators shape the note:** as on a Yamaha FM synth, each carrier's envelope is the note's loudness and each modulator's its brightness, so ALGO needs no amp envelope; ENV1 is free as a mod source. For swells over minutes, route a SLOW MOD envelope into a modulator's LEVEL (see [envelopes and LFOs](09-envelopes-and-lfos.md)).
 
@@ -466,99 +466,99 @@ The six table-operator pages share one layout:
 
 ![OPERATOR 1 (OP1) page, annotated](img/algo_op1.png)
 
-1. **Header:** OPERATOR 1.
-2. **Focus band:** WAVE and its value.
-3. **Glyph:** the operator's wave.
-4. **Hint.**
-5. **Picture:** the envelope (D1, D2, R marked) with a wave inset.
+1. **Header:** page OPERATOR 1.
+2. **Focus band:** WAVE, W1.
+3. **Glyph:** the operator's wave, a sine.
+4. **Hint:** `MIX + SEQ LEARNS A CC`.
+5. **Picture band:** the envelope (D1, D2, R marked) with a wave inset.
 6. **WAVE**
 7. **COARSE**
 8. **FINE**
 9. **LEVEL**
 10. **FDBK**
 11. **VELOCITY**
-12. **Chain map.**
-13. **Sub-pages.**
+12. **Chain map:** OSC lit.
+13. **Sub-page row:** OPERATOR 1 underlined, OPERATOR 2 next.
 
 ![OPERATOR 2 (OP2) page, annotated](img/algo_op2.png)
 
-1. **Header:** OPERATOR 2.
-2. **Focus band:** WAVE and its value.
-3. **Glyph:** the operator's wave.
-4. **Hint.**
-5. **Picture:** the envelope with a wave inset.
+1. **Header:** page OPERATOR 2.
+2. **Focus band:** WAVE, W1.
+3. **Glyph:** the operator's wave, a sine.
+4. **Hint:** `MIX + SEQ LEARNS A CC`.
+5. **Picture band:** the envelope (D1, D2, R marked) with a wave inset.
 6. **WAVE**
 7. **COARSE**
 8. **FINE**
 9. **LEVEL**
 10. **FDBK**
 11. **VELOCITY**
-12. **Chain map.**
-13. **Sub-pages.**
+12. **Chain map:** OSC lit.
+13. **Sub-page row:** OPERATOR 2 underlined, OPERATOR 3 next.
 
 ![OPERATOR 3 (OP3) page, annotated](img/algo_op3.png)
 
-1. **Header:** OPERATOR 3.
-2. **Focus band:** WAVE and its value.
-3. **Glyph:** the operator's wave.
-4. **Hint.**
-5. **Picture:** the envelope with a wave inset.
+1. **Header:** page OPERATOR 3.
+2. **Focus band:** WAVE, W1.
+3. **Glyph:** the operator's wave, a sine.
+4. **Hint:** `MIX + SEQ LEARNS A CC`.
+5. **Picture band:** the envelope (D1, D2, R marked) with a wave inset.
 6. **WAVE**
 7. **COARSE**
 8. **FINE**
 9. **LEVEL**
 10. **FDBK**
 11. **VELOCITY**
-12. **Chain map.**
-13. **Sub-pages.**
+12. **Chain map:** OSC lit.
+13. **Sub-page row:** OPERATOR 3 underlined, OPERATOR 4 next.
 
 ![OPERATOR 4 (OP4) page, annotated](img/algo_op4.png)
 
-1. **Header:** OPERATOR 4.
-2. **Focus band:** WAVE and its value.
-3. **Glyph:** the operator's wave.
-4. **Hint.**
-5. **Picture:** the envelope with a wave inset.
+1. **Header:** page OPERATOR 4.
+2. **Focus band:** WAVE, W1.
+3. **Glyph:** the operator's wave, a sine.
+4. **Hint:** `MIX + SEQ LEARNS A CC`.
+5. **Picture band:** the envelope (D1, D2, R marked) with a wave inset.
 6. **WAVE**
 7. **COARSE**
 8. **FINE**
 9. **LEVEL**
 10. **FDBK**
 11. **VELOCITY**
-12. **Chain map.**
-13. **Sub-pages.**
+12. **Chain map:** OSC lit.
+13. **Sub-page row:** OPERATOR 4 underlined, OPERATOR 5 next.
 
 ![OPERATOR 5 (OP5) page, annotated](img/algo_op5.png)
 
-1. **Header:** OPERATOR 5.
-2. **Focus band:** WAVE and its value.
-3. **Glyph:** the operator's wave.
-4. **Hint.**
-5. **Picture:** the envelope with a wave inset.
+1. **Header:** page OPERATOR 5.
+2. **Focus band:** WAVE, W1.
+3. **Glyph:** the operator's wave, a sine.
+4. **Hint:** `MIX + SEQ LEARNS A CC`.
+5. **Picture band:** the envelope (D1, D2, R marked) with a wave inset.
 6. **WAVE**
 7. **COARSE**
 8. **FINE**
 9. **LEVEL**
 10. **FDBK**
 11. **VELOCITY**
-12. **Chain map.**
-13. **Sub-pages.**
+12. **Chain map:** OSC lit.
+13. **Sub-page row:** OPERATOR 5 underlined, OPERATOR 6 next.
 
 ![OPERATOR 6 (OP6) page, annotated](img/algo_op6.png)
 
-1. **Header:** OPERATOR 6.
-2. **Focus band:** WAVE and its value.
-3. **Glyph:** the operator's wave.
-4. **Hint.**
-5. **Picture:** the envelope with a wave inset.
+1. **Header:** page OPERATOR 6.
+2. **Focus band:** WAVE, W1.
+3. **Glyph:** the operator's wave, a sine.
+4. **Hint:** `MIX + SEQ LEARNS A CC`.
+5. **Picture band:** the envelope (D1, D2, R marked) with a wave inset.
 6. **WAVE**
 7. **COARSE**
 8. **FINE**
 9. **LEVEL**
 10. **FDBK**
 11. **VELOCITY**
-12. **Chain map.**
-13. **Sub-pages.**
+12. **Chain map:** OSC lit.
+13. **Sub-page row:** OPERATOR 6 underlined, OPERATOR 5 before it.
 
 An operator set to FRMT shows the formant cells (OPERATOR 2 here):
 

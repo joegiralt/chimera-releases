@@ -83,17 +83,19 @@ Hold **EDIT** and press **B1**–**B6** to open the browser for that Part, on th
 
 ![The Sound browser, annotated](img/sound-browser.png)
 
-1. The tab: **PROJECT**, **LIBRARY** or **FACTORY**.
-2. **B ◂▸**: encoder 2 changes tab.
-3. The Part it loads into (**P1**).
-4. The INIT rows: **INIT ALGO**, **INIT MODAL**, **INIT VA**, **INIT TAPE**, **INIT DRUM**.
-5. An INIT row's engine tag.
-6. The slot number, 01 to 128.
-7. The selected row.
-8. The Sound's cost in the pool, in kilobytes.
-9. The Sound's engine.
-10. The keys, with the memory each moves: **EDIT LOADS**, **MIX + EDIT SAVES · +0.3K**, **MIX + MINUS CLEARS · FREES 0.3K**.
-11. The pool meter, as a percentage.
+1. **PROJECT**: the lit tab (then **LIBRARY**, **FACTORY**).
+2. **P1**: the Part it loads into.
+3. **INIT**: the INIT rows: **INIT ALGO**, **INIT MODAL**, **INIT VA**, **INIT TAPE**, **INIT DRUM**.
+4. **DRUM**: an INIT row's engine tag.
+5. **01**: the slot number, 01 to 128.
+6. **0.3K**: the Sound's cost in the pool.
+7. **02 GLASS PLUCK**: the selected row.
+8. **EDIT LOADS**: the load key.
+9. **MIX + EDIT SAVES · +0.3K**: the save key and what it adds.
+10. **MIX + MINUS CLEARS · FREES 0.3K**: the clear key and what it frees.
+11. **4%**: the pool meter.
+
+**B ◂▸** at the right of the keys: encoder 2 changes tab.
 
 Any encoder but B moves the bar; **SEQ** goes back. **EDIT** loads (asking if the Part has unsaved edits); **MIX + EDIT** saves (to the pool on PROJECT, to the card on LIBRARY, nothing on FACTORY); **MIX + MINUS** clears a PROJECT slot after asking, unless a Part plays it. Empty slots are dimmed. Names have up to 16 characters and are cut short at the cost column.
 
@@ -117,8 +119,6 @@ A Sound saved to the project lives in memory until you **hold MENU** to write th
 ### Sounds: the pool and its memory
 
 The project's Sounds and in-memory TAPE sources share one 160 KB pool. A Sound takes 0.2 to 0.4 KB; sources far more. The browser's meter shows it; SETTINGS › PROJECT › **POOL** details **USED**, **SOUNDS**, **SOURCES** and **FREE** ([Limits](20-limits.md#limits-the-sound-pool-the-projects-memory)). **PURGE UNUSED SRC** frees sources no Part uses; the files stay on the card.
-
-![SETTINGS › PROJECT › POOL](img/settings_project_pool.png)
 
 When something doesn't fit, the browser says **POOL FULL** and what it needs (**NEEDS 2.0K, 0.2K FREE**), and nothing changes. A project that doesn't fully fit loads what it can: `LOADED · 2 SOUNDS, 1 SRC DIDN'T FIT`.
 

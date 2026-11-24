@@ -8,8 +8,8 @@ A TAPE Part's chain is **SRC · DECK · FLT · AMP · MOD**.
 
 - **SRC** (SOURCE on the header) picks the source and the *window* that plays, **START** to **END**.
 - **DECK** picks the machine with **MODEL** and holds the knobs that move its picture.
-- **MCH**, under DECK, is the machine's own page, named after it on the map (WALK, STRCH, SCRUB, WAVE) and in full on the header. It starts with the tape's wear: **TAPE**, **AGE**, **WOW**.
-- **PIT** is the last sub-page under DECK.
+- **MCH**, under DECK, is the machine's own page, named in full on the header and the sub-page row (WALK, STRETCH, SCRUB, WAVE). It starts with the tape's wear: **TAPE**, **AGE**, **WOW**.
+- **PIT** (PITCH on the sub-page row) is the last sub-page under DECK.
 
 | MODEL | The machine |
 |---|---|
@@ -41,9 +41,9 @@ While the project is open, each source remembers the Part's **START**, **END**, 
 1. **Readout:** rate, length, memory (`24K · 1.5 S · 53K`); a streamed source shows `… · 7 STREAMS`.
 2. **Strip:** the waveform, window lit, play heads.
 3. **SOURCE.**
-4. **START** and **END**; **MIX + turn** snaps to an onset.
+4. **END** (START beside it); **MIX + turn** snaps to an onset.
 5. **VOL.**
-6. TAPE's chain.
+6. TAPE's chain map, SRC lit.
 
 | Cell | Range | Default | What it does |
 |---|---|---|---|
@@ -115,14 +115,19 @@ Turning MODEL sets the new machine's knobs to their defaults, keeping the window
 
 ![DECK on WALK, annotated](img/tape-walk.png)
 
-1. **Picture:** a runner facing the way it plays; FADE is a dashed tail.
-2. **Strip**, window lit.
-3. **Play head.**
-4. **MODEL.**
-5. **LENGTH** and **FADE.**
-6. **DIR.**
-7. **POSITION** and **DRIFT.**
-8. Sub-pages: DECK, WALK, PITCH.
+1. Header: PART 1 · SOUND, page DECK.
+2. Focused cell, large: DIRECTION FORWARD.
+3. **Picture:** a runner facing the way it plays.
+4. Hint line: MIX + SEQ LEARNS A CC.
+5. **Strip:** window lit, play head.
+6. **MODEL:** WALK.
+7. **LENGTH:** 127.
+8. **FADE:** HOLD.
+9. **DIR:** FWD.
+10. **POSITION:** 0.
+11. **DRIFT:** 0%.
+12. Chain map, DECK lit.
+13. Sub-page row: DECK WALK PITCH, DECK underlined.
 
 | Cell | Range | Default | What it does |
 |---|---|---|---|
@@ -136,15 +141,35 @@ Turning DIRECTION between once through and looped sets LENGTH and FADE to that s
 
 ![WALK on LOOP, annotated](img/tape-walk-loop.png)
 
-1. The runner goes round a track.
-2. The loop: LENGTH sizes it, POSITION places it.
-3. DIR: LOOP.
-4. FADE: the note fades out at key up.
+1. Header: page DECK.
+2. Focused cell, large: MODEL WALK.
+3. **Picture:** the runner goes round a track.
+4. Hint line: MIX + SEQ LEARNS A CC.
+5. **Strip:** the loop lit; LENGTH sizes it, POSITION places it.
+6. **MODEL:** WALK.
+7. **LENGTH:** 102, the looped default.
+8. **FADE:** 32 ms, dimmed: the amp release ends the note.
+9. **DIR:** LOOP.
+10. **POSITION:** 0.
+11. **DRIFT:** 0%.
+12. Chain map, DECK lit.
+13. Sub-page row, DECK underlined.
 
 ![WALK on PING, annotated](img/tape-walk-ping.png)
 
-1. The arrow points both ways.
-2. DIR: PING.
+1. Header: page DECK.
+2. Focused cell, large: DIRECTION PING.
+3. **Picture:** runners both ways, the arrow pointing both ways.
+4. Hint line: MIX + SEQ LEARNS A CC.
+5. **Strip:** window lit.
+6. **MODEL:** WALK.
+7. **LENGTH:** 102.
+8. **FADE:** 32 ms, dimmed.
+9. **DIR:** PING.
+10. **POSITION:** 0.
+11. **DRIFT:** 0%.
+12. Chain map, DECK lit.
+13. Sub-page row, DECK underlined.
 
 **FADE and the amp envelope.** A note has one release. With no VCA route, FADE is it. With an envelope routed into the VCA, its release ends the note: on LOOP and PING, FADE is dimmed (`AMP RELEASE ENDS THE NOTE`); once through, only HOLD still counts (`BELOW HOLD AMP RELEASE ENDS IT`). TRON keeps FADE whatever the routes.
 
@@ -156,9 +181,19 @@ With **TRON** ON each key has its own tape: **LENGTH** reads 0.25 to 8 s, the sa
 
 ![WALK with TRON on, annotated](img/tape-walk-tron.png)
 
-1. A finish post marks the tape's end.
-2. **LENGTH** in seconds.
-3. **FADE:** the pad lifting at key up.
+1. Header: page DECK.
+2. Focused cell, large: DIRECTION FORWARD.
+3. **Picture:** a finish post marks the tape's end.
+4. Hint line: MIX + SEQ LEARNS A CC.
+5. **Strip:** play head, the tape's end dotted.
+6. **MODEL:** WALK.
+7. **LENGTH:** 8.0 s, in seconds with TRON.
+8. **FADE:** 500 ms, the pad lifting at key up.
+9. **DIR:** FWD.
+10. **POSITION:** 0.
+11. **DRIFT:** 0%.
+12. Chain map, DECK lit.
+13. Sub-page row, DECK underlined.
 
 > **Design note:** TRON is modelled on the Mellotron M400, where every key has its own strip of tape about eight seconds long, and a held note simply runs out. Chimera keeps the run-out audible whatever the source: the tape's length is a time, not a stretch of the recording, so even a short source comes round again until the tape ends. Unlike the real thing, nobody has to rewind the tape frame afterwards.
 
@@ -166,12 +201,19 @@ With **TRON** ON each key has its own tape: **LENGTH** reads 0.25 to 8 s, the sa
 
 ![WALK's own page, annotated](img/tape-walk-page.png)
 
-1. **TAPE, AGE, WOW.**
-2. WOW's kind.
-3. **TRON.**
-4. **XFADE.**
-5. **RETRIG.**
-6. Sub-page row, WALK lit.
+1. Header: page WALK.
+2. Focused cell, large: TAPE 0.
+3. **Picture:** runner and finish post (TRON on).
+4. Hint line: SEQ+TURN FINE, MIX + SEQ LEARN.
+5. The picture band: a test wave in this shot.
+6. **TAPE:** 0.
+7. **AGE:** 0.
+8. **WOW:** CAPSTAN, dimmed at TAPE 0.
+9. **TRON:** ON.
+10. **XFADE:** 25.
+11. **RETRIG:** STACK, dimmed with TRON on.
+12. Chain map, DECK lit.
+13. Sub-page row: DECK WALK PITCH, WALK underlined.
 
 | Cell | Range | Default | What it does |
 |---|---|---|---|
@@ -199,12 +241,19 @@ STRETCH plays the source at the key's pitch, stretched or squeezed in time.
 
 ![DECK on STRETCH, annotated](img/tape-stretch.png)
 
-1. **Picture:** an accordion under a note.
-2. **TYPE.**
-3. **SPEED.**
-4. **LENGTH** (GRAIN).
-5. **D-TIME** (CLASSIC).
-6. **POSITION** (CLASSIC); dimmed cells say why in the band.
+1. Header: page DECK.
+2. Focused cell, large: MODEL STRETCH.
+3. **Picture:** an accordion under a note.
+4. Hint line: MIX + SEQ LEARNS A CC.
+5. **Strip:** window lit, play head.
+6. **MODEL:** STRCH.
+7. **TYPE:** GRAIN.
+8. **SPEED:** 1.00x.
+9. **LENGTH:** 2.0 s (GRAIN).
+10. **D-TIME:** 64, dimmed (CLASSIC only).
+11. **POSITION:** 0, dimmed (CLASSIC only); a dimmed cell says why in the band.
+12. Chain map, DECK lit.
+13. Sub-page row: DECK STRETCH PITCH, DECK underlined.
 
 | Cell | Range | Default | What it does |
 |---|---|---|---|
@@ -224,11 +273,19 @@ The other TYPE's cells are dimmed: `GRAIN TYPE ONLY` or `CLASSIC TYPE ONLY`.
 
 ![STRETCH's own page, annotated](img/tape-stretch-grain.png)
 
-1. TAPE, AGE, WOW.
-2. **GRAIN.**
-3. **SPRAY.**
-4. **END.**
-5. Sub-page row, STRETCH lit.
+1. Header: page STRETCH.
+2. Focused cell, large: TAPE 0.
+3. **Picture:** the accordion.
+4. Hint line: SEQ+TURN FINE, MIX + SEQ LEARN.
+5. The picture band: a test wave in this shot.
+6. **TAPE:** 0.
+7. **AGE:** 0.
+8. **WOW:** CAPSTAN, dimmed at TAPE 0.
+9. **GRAIN:** 80 ms.
+10. **SPRAY:** 40%.
+11. **END:** HOLD.
+12. Chain map, DECK lit.
+13. Sub-page row, STRETCH underlined.
 
 | Cell | Range | Default | What it does |
 |---|---|---|---|
@@ -244,13 +301,19 @@ These are GRAIN's; a turn affects grains to come. Key up is the amp envelope's.
 
 ![DECK on SCRUB, annotated](img/tape-scrub.png)
 
-1. **Picture:** a sponge on the tape.
-2. Hint on FINGER with KEY at POSITION: KEYS PLACE THE FINGER.
-3. Strip, the finger marked.
-4. **FINGER.**
-5. **SPEED.**
-6. **LENGTH** and **XFADE.**
-7. **DRAG.**
+1. Header: page DECK.
+2. Focused cell, large: FINGER 51.
+3. **Picture:** a sponge on the tape.
+4. Hint on FINGER with KEY at POSITION: KEYS PLACE THE FINGER.
+5. **Strip:** the finger marked.
+6. **MODEL:** SCRUB.
+7. **FINGER:** 51.
+8. **SPEED:** 1.00x.
+9. **LENGTH:** 70 ms.
+10. **XFADE:** 25.
+11. **DRAG:** 32 ms.
+12. Chain map, DECK lit.
+13. Sub-page row: DECK SCRUB PITCH, DECK underlined.
 
 | Cell | Range | Default | What it does |
 |---|---|---|---|
@@ -262,8 +325,17 @@ These are GRAIN's; a turn affects grains to come. Key up is the amp envelope's.
 
 ![SCRUB's own page, annotated](img/tape-scrub-page.png)
 
-1. TAPE, AGE, WOW.
-2. **KEY.**
+1. Header: page SCRUB.
+2. Focused cell, large: TAPE 0.
+3. **Picture:** the sponge.
+4. Hint line: SEQ+TURN FINE, MIX + SEQ LEARN.
+5. The picture band: a test wave in this shot.
+6. **TAPE:** 0.
+7. **AGE:** 0.
+8. **WOW:** CAPSTAN, dimmed at TAPE 0.
+9. **KEY:** POSITION.
+10. Chain map, DECK lit.
+11. Sub-page row, SCRUB underlined.
 
 | Cell | Options | Default | What it does |
 |---|---|---|---|
@@ -281,11 +353,17 @@ WAVE scans a wavetable source's single-cycle frames, so the tone morphs.
 
 ![DECK on WAVE, annotated](img/tape-wave.png)
 
-1. **Picture:** film through a gate.
-2. **Strip:** the frames, playing ones lit.
-3. **FRAME.**
-4. **SCAN.**
-5. **RANGE.**
+1. Header: page DECK.
+2. Focused cell, large: MODEL WAVE.
+3. **Picture:** film through a gate, the wave under it.
+4. Hint line: MIX + SEQ LEARNS A CC.
+5. **Strip:** the frames, playing ones lit.
+6. **MODEL:** WAVE.
+7. **FRAME:** 0.
+8. **SCAN:** 0.
+9. **RANGE:** 127.
+10. Chain map, DECK lit.
+11. Sub-page row: DECK WAVE PITCH, DECK underlined.
 
 | Cell | Range | Default | What it does |
 |---|---|---|---|
@@ -298,15 +376,15 @@ All three are matrix destinations: an LFO on FRAME is the classic sweep. Each fr
 ![WAVE's machine page, annotated](img/tape_mch_wave.png)
 
 1. Header: page WAVE.
-2. Focused cell.
-3. The machine's glyph.
-4. Hint line.
-5. Picture band.
-6. **TAPE.**
-7. **AGE.**
-8. **WOW**, dimmed at TAPE 0.
+2. Focused cell, large: TAPE 0.
+3. **Picture:** film through a gate.
+4. Hint line: SEQ+TURN FINE, MIX + SEQ LEARN.
+5. The picture band: a test wave in this shot.
+6. **TAPE:** 0.
+7. **AGE:** 0.
+8. **WOW:** CAPSTAN, dimmed at TAPE 0.
 9. Chain map, DECK lit.
-10. Sub-pages: DECK, WAVE, PIT.
+10. Sub-page row: DECK WAVE PITCH, WAVE underlined.
 
 > **Design note:** WAVE follows the wavetable synths of the 80s and 90s: single-cycle frames, scanned, each kept at a ladder of octave-spaced versions so a high note never folds, the way the PPG Wave and the Waldorf Microwave did it. The factory WAVE sources are transwave-style tables made from Chimera's own engines (morphing, saw, bowed, brass). Somewhere, a 1990s workstation is feeling very flattered.
 
@@ -323,16 +401,17 @@ All three are matrix destinations: an LFO on FRAME is the classic sweep. Each fr
 ![TAPE's PIT page, annotated](img/tape_pit.png)
 
 1. Header: page PITCH.
-2. Focused cell.
-3. Hint line.
-4. Tuner: the note sounding (or `ROOT ?`).
-5. **PITCH.**
-6. **FINE.**
-7. **STEAL.**
-8. **TIME.**
-9. **SNAP.**
+2. Focused cell, large: PITCH 0.
+3. Hint line: SEQ+TURN FINE, MIX + SEQ LEARN.
+4. The picture band, where the tuner shows the note sounding (or `ROOT ?`); a test wave in this shot.
+5. **PITCH:** 0.
+6. **FINE:** 0.
+7. **STEAL:** CUT.
+8. **TIME:** 150 ms.
+9. **SNAP:** CHROMA.
 10. Chain map, DECK lit.
-11. Sub-pages: DECK, machine, PIT.
+11. Sub-page row: DECK WALK PITCH, PITCH underlined.
+
 
 ![PIT on TAPE: SNAP at MUSICAL](img/tape_pitch_musical.png)
 

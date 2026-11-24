@@ -208,7 +208,7 @@ Most PreenFM3 encoders only turn, and Chimera never needs a push: every push is 
 
 1. Header: SETTINGS › SYSTEM › PUSH.
 2. The focused cell, PUSH, and its value.
-3. Its glyph, a switch.
+3. Its glyph, a switch (off).
 4. The picture band, the live output.
 5. Cell A (encoder 1): **PUSH**, OFF or ON.
 6. Footer: the project and its state.
@@ -219,18 +219,18 @@ Most PreenFM3 encoders only turn, and Chimera never needs a push: every push is 
 ![VA page, annotated](img/va_va.png)
 
 1. **Header.** A dot per Part (current bright green, playing ringed), the place (`PART 1 · SOUND` or `PART 1 · MIX`) and the page's full name. Right: the sounding dot, ORBIT's beat, and `OUT P2` / `OUT P3` for a Part on another pair.
-2. **Focus band:** the touched cell's label (WAVE1) and value, large, with its unit. Modulation never moves this number.
-3. **Focus band: the glyph**, a picture of the value.
-4. **Focus band: the hint line**, the touched cell's combos.
+2. **Focus band:** the touched cell's label (WAVE1) and value (85), large, with its unit. Modulation never moves this number.
+3. **Focus band: the glyph**, a picture of the value (here the wave's shape).
+4. **Focus band: the hint line**, the touched cell's combos (`SEQ+TURN FINE  MIX + SEQ LEARN`).
 5. **The picture band** (viz band): what the page does; pages without a picture show the live output.
 6. **Cell 1** (encoder 1), WAVE1. The focused label is in the accent colour; the bar shows where the value sits.
 7. **Cell 2**, WAVE2.
-8. **Cell 3**, MODE. A choice has no bar.
+8. **Cell 3**, MODE (MIX). A choice has no bar.
 9. **Cell 4**, BLEND.
 10. **Cell 5**, SUB.
 11. **Cell 6**, STABILITY. A line under a bar shows modulation; a dash is an empty slot; dimmed does nothing now.
-12. **The chain map**: the filled pill is the current page; other nodes are MINUS / PLUS away.
-13. **The sub-page row**: the page itself, then its sub-pages; `<` and `>` mean more off the edge.
+12. **The chain map**: the filled pill (VA) is the current page; FLT, AMP, MOD are MINUS / PLUS away.
+13. **The sub-page row**: VA (underlined, you are here), OSC1, OSC2, NOISE; `>` (and `<`) mean more off the edge.
 
 What each VA cell does is in [VA](#va-the-variable-wave-engine).
 
@@ -307,8 +307,8 @@ The strip at the bottom of every Part, mixer and ORBIT page maps the chain you a
 2. The line joins the pages in order.
 3. The pill: the page you are on.
 4. Node labels: short names (ALG, OSC, FLT, AMP, MOD).
-5. The sub-page row, in full words; the underlined one is where you are.
-6. `<` and `>`: more pages off the edge (OSC has 18).
+5. The sub-page row, in full words: FILTER (underlined, where you are), MODULATION, FX.
+6. `>`: more sub-pages off the edge (`<` when some are off the left; OSC has 18).
 
 | Where | Chain |
 |---|---|
@@ -327,7 +327,7 @@ The map shows short names (FLT); the sub-page row and header show full names (FI
 ![CHAIN MAP page, annotated](img/settings_personal_map.png)
 
 1. Header: SETTINGS › PERSONAL › MAP.
-2. The focused cell, PAGES, and its value.
+2. The focused cell, PAGES, and its value (ROW).
 3. The picture band, the live output.
 4. Cell A (encoder 1): **PAGES**, ROW or STACK.
 5. Footer: the project and its state.
@@ -415,7 +415,7 @@ Touch a cell and the focus band's bottom line lists its combos, keys in bold (`M
 1. The page name is the sub-page's: FILTER MOD.
 2. The touched cell, RES MOD, and its source (ENV3).
 3. Its arc, bipolar, filled from 12 o'clock.
-4. The hint line: the touched cell's combos.
+4. The hint line: the touched cell's combo, `MIX + MINUS DELETES THE ROUTE`.
 5. A route amount (FREQ MOD); its source is set on JACKS.
 6. The touched cell, RES MOD, with its amount.
 7. The node, FLT, lit on the map.
@@ -491,8 +491,8 @@ After a while untouched, the screen shows a large oscilloscope of the output, wi
 
 ![SCREENSAVER page, annotated](img/settings_personal_saver.png)
 
-1. Header: SETTINGS › PERSONAL › SAVER.
-2. The focused cell, SAVER, and its value.
+1. Header: the breadcrumb, `..` › PERSONAL › SAVER (shortened to fit).
+2. The focused cell, SAVER, and its value (5 MIN).
 3. The picture band, the live output.
 4. Cell A (encoder 1): **SAVER**, the wait.
 5. Footer: the project and its state.
@@ -509,12 +509,11 @@ SETTINGS › PERSONALIZE › TEXT SIZE › **SIZE**: NORMAL (default) or LARGE. 
 ![TEXT SIZE page, annotated](img/settings_personal_text.png)
 
 1. Header: SETTINGS › PERSONAL › TEXT.
-2. The focused cell, SIZE, and its value.
-3. Its glyph.
-4. The picture band, the live output.
-5. Cell A (encoder 1): **SIZE**, NORMAL or LARGE.
-6. Footer: the project and its state.
-7. Footer: the keys this page answers to.
+2. The focused cell, SIZE, and its value (NORMAL).
+3. The picture band, the live output.
+4. Cell A (encoder 1): **SIZE**, NORMAL or LARGE.
+5. Footer: the project and its state.
+6. Footer: the keys this page answers to.
 
 ![An ALGO page with TEXT SIZE LARGE](img/large_engine_algo.png)
 
@@ -575,10 +574,10 @@ SETTINGS › PERSONALIZE › ALGO PAGES › **FIRST** sets the order of the OSC 
 
 ![ALGORITHM page, annotated](img/algo_alg.png)
 
-1. **Header:** Part and page.
-2. **Focus band:** the touched cell (ALG A, T1).
-3. **Hint:** its gestures.
-4. **Picture:** the algorithm chart.
+1. **Header:** PART 1 · SOUND, page ALGORITHM.
+2. **Focus band:** ALG A, T1.
+3. **Hint:** `MIX + SEQ LEARNS A CC`.
+4. **Picture band:** the T1 chart, carriers 1 and 5 filled.
 5. **ALG A**
 6. **ALG B**
 7. **MORPH**
@@ -586,7 +585,7 @@ SETTINGS › PERSONALIZE › ALGO PAGES › **FIRST** sets the order of the OSC 
 9. **VOL**
 10. **VOWEL**
 11. **Chain map:** ALG lit.
-12. **Sub-pages.**
+12. **Sub-page row:** ALGORITHM underlined, PITCH.
 
 The chart puts carriers, drawn filled, on the bottom row and each modulator above what it feeds. An operator with FDBK above 0 wears a loop: MID colour under 4.0, accent from 4.0, where a sine starts to break towards a saw.
 
@@ -680,11 +679,11 @@ The envelope pages draw the touched operator's envelope; the others show the liv
 
 ![WAVE (OSC) page, annotated](img/algo_osc.png)
 
-1. **Header.**
+1. **Header:** page WAVE.
 2. **Focus band:** OP1, W1.
-3. **Glyph:** the touched operator's wave.
-4. **Hint.**
-5. **Picture:** live output.
+3. **Glyph:** OP1's wave, a sine.
+4. **Hint:** `MIX + SEQ LEARNS A CC`.
+5. **Picture band:** live output (a test wave here).
 6. **OP1**
 7. **OP2**
 8. **OP3**
@@ -692,7 +691,7 @@ The envelope pages draw the touched operator's envelope; the others show the liv
 10. **OP5**
 11. **OP6**
 12. **Chain map:** OSC lit.
-13. **Sub-pages.**
+13. **Sub-page row:** WAVE underlined, `>` at the end.
 
 | WAVE | What it is |
 |---|---|
@@ -739,49 +738,49 @@ An operator plays at the note's frequency times its ratio. **COARSE** picks one 
 
 ![COARSE (CRS) page, annotated](img/algo_crs.png)
 
-1. **Header.**
-2. **Focus band:** OP1's ratio.
-3. **Glyph.**
-4. **Hint:** gestures, or `RATIO 1.00`.
-5. **Picture:** live output.
+1. **Header:** page COARSE.
+2. **Focus band:** OP1, 1.00.
+3. **Glyph:** ratio arc.
+4. **Hint:** `RATIO 1.00`.
+5. **Picture band:** live output (a test wave here).
 6. **OP1**
 7. **OP2**
 8. **OP3**
 9. **OP4**
 10. **OP5**
 11. **OP6**
-12. **Chain map.**
-13. **Sub-pages.**
+12. **Chain map:** OSC lit.
+13. **Sub-page row:** COARSE underlined.
 
 ![FINE (FIN) page, annotated](img/algo_fin.png)
 
-1. **Header.**
-2. **Focus band:** OP1's FINE.
-3. **Hint:** gestures, or the resulting ratio.
-4. **Picture:** live output.
+1. **Header:** page FINE.
+2. **Focus band:** OP1, 0.
+3. **Hint:** `RATIO 1.00`.
+4. **Picture band:** live output (a test wave here).
 5. **OP1**
 6. **OP2**
 7. **OP3**
 8. **OP4**
 9. **OP5**
 10. **OP6**
-11. **Chain map.**
-12. **Sub-pages.**
+11. **Chain map:** OSC lit.
+12. **Sub-page row:** FINE underlined.
 
 ![DETUNE (DET) page, annotated](img/algo_det.png)
 
-1. **Header.**
-2. **Focus band:** OP1's DETUNE.
-3. **Hint:** gestures, or the resulting ratio and detune.
-4. **Picture:** live output.
+1. **Header:** page DETUNE.
+2. **Focus band:** OP1, 0.
+3. **Hint:** `RATIO 1.00`.
+4. **Picture band:** live output (a test wave here).
 5. **OP1**
 6. **OP2**
 7. **OP3**
 8. **OP4**
 9. **OP5**
 10. **OP6**
-11. **Chain map.**
-12. **Sub-pages.**
+11. **Chain map:** OSC lit.
+12. **Sub-page row:** DETUNE underlined.
 
 ### ALGO: LEVEL and VELOCITY
 
@@ -790,34 +789,34 @@ An operator plays at the note's frequency times its ratio. **COARSE** picks one 
 
 ![LEVEL (LVL) page, annotated](img/algo_lvl.png)
 
-1. **Header.**
-2. **Focus band:** OP1's LEVEL.
+1. **Header:** page LEVEL.
+2. **Focus band:** OP1, 99.
 3. **Glyph:** level bar.
-4. **Hint.**
-5. **Picture:** live output.
+4. **Hint:** `SEQ+TURN FINE  MIX + SEQ LEARN`.
+5. **Picture band:** live output (a test wave here).
 6. **OP1**
 7. **OP2**
 8. **OP3**
 9. **OP4**
 10. **OP5**
 11. **OP6**
-12. **Chain map.**
-13. **Sub-pages.**
+12. **Chain map:** OSC lit.
+13. **Sub-page row:** LEVEL underlined.
 
 ![VELOCITY (VEL) page, annotated](img/algo_vel.png)
 
-1. **Header.**
-2. **Focus band:** OP1's VELOCITY.
-3. **Hint.**
-4. **Picture:** live output.
+1. **Header:** page VELOCITY.
+2. **Focus band:** OP1, 0.
+3. **Hint:** `SEQ+TURN FINE  MIX + SEQ LEARN`.
+4. **Picture band:** live output (a test wave here).
 5. **OP1**
 6. **OP2**
 7. **OP3**
 8. **OP4**
 9. **OP5**
 10. **OP6**
-11. **Chain map.**
-12. **Sub-pages.**
+11. **Chain map:** OSC lit.
+12. **Sub-page row:** VELOCITY underlined.
 
 ### ALGO: FEEDBACK
 
@@ -825,19 +824,19 @@ An operator plays at the note's frequency times its ratio. **COARSE** picks one 
 
 ![FEEDBACK (FBK) page, annotated](img/algo_fbk.png)
 
-1. **Header.**
-2. **Focus band:** OP1's FDBK.
+1. **Header:** page FEEDBACK.
+2. **Focus band:** OP1, 0.0.
 3. **Glyph:** level bar.
-4. **Hint:** `MIX+TURN WHOLE`, `SEQ+TURN FINE`.
-5. **Picture:** live output, bent by feedback.
+4. **Hint:** `MIX+TURN WHOLE  SEQ+TURN FINE`.
+5. **Picture band:** live output (a test wave here; FDBK is 0.0).
 6. **OP1**
 7. **OP2**
 8. **OP3**
 9. **OP4**
 10. **OP5**
 11. **OP6**
-12. **Chain map.**
-13. **Sub-pages.**
+12. **Chain map:** OSC lit.
+13. **Sub-page row:** FEEDBACK underlined, OPERATOR 1 next.
 
 **Why tenths:** the TX81Z's low steps were too coarse for subtle colour. A whole number plays exactly as that step did.
 
@@ -854,81 +853,81 @@ Every operator has the classic Yamaha four-rate envelope: **AR** rises to full, 
 
 ![ATTACK RATE (AR) page, annotated](img/algo_ar.png)
 
-1. **Header.**
-2. **Focus band:** ATTACK RATE over the value.
+1. **Header:** page ATTACK RATE.
+2. **Focus band:** ATTACK RATE, 31 (OP1).
 3. **Glyph:** rate arc.
-4. **Hint.**
-5. **Picture:** the touched operator's envelope.
+4. **Hint:** `SEQ+TURN FINE  MIX + SEQ LEARN`.
+5. **Picture band:** OP1's envelope, the attack lit; stage letters below.
 6. **OP1**
 7. **OP2**
 8. **OP3**
 9. **OP4**
 10. **OP5**
 11. **OP6**
-12. **Chain map.**
-13. **Sub-pages.**
+12. **Chain map:** OSC lit.
+13. **Sub-page row:** ATTACK RATE underlined.
 
 ![DECAY 1 RATE (D1R) page, annotated](img/algo_d1r.png)
 
-1. **Header.**
-2. **Focus band:** DECAY 1 RATE over the value.
-3. **Hint.**
-4. **Picture:** the touched operator's envelope.
+1. **Header:** page DECAY 1 RATE.
+2. **Focus band:** DECAY 1 RATE, 0 (OP1).
+3. **Hint:** `SEQ+TURN FINE  MIX + SEQ LEARN`.
+4. **Picture band:** OP1's envelope, D1 lit; stage letters below.
 5. **OP1**
 6. **OP2**
 7. **OP3**
 8. **OP4**
 9. **OP5**
 10. **OP6**
-11. **Chain map.**
-12. **Sub-pages.**
+11. **Chain map:** OSC lit.
+12. **Sub-page row:** DECAY 1 RATE underlined.
 
 ![DECAY 1 LEVEL (D1L) page, annotated](img/algo_d1l.png)
 
-1. **Header:** DECAY 1 LVL.
-2. **Focus band:** DECAY 1 LEVEL over the value.
+1. **Header:** page DECAY 1 LVL.
+2. **Focus band:** DECAY 1 LEVEL, 15 (OP1).
 3. **Glyph:** level arc.
-4. **Hint.**
-5. **Picture:** the touched operator's envelope.
+4. **Hint:** `SEQ+TURN FINE  MIX + SEQ LEARN`.
+5. **Picture band:** OP1's envelope, D1 lit; stage letters below.
 6. **OP1**
 7. **OP2**
 8. **OP3**
 9. **OP4**
 10. **OP5**
 11. **OP6**
-12. **Chain map.**
-13. **Sub-pages.**
+12. **Chain map:** OSC lit.
+13. **Sub-page row:** DECAY 1 LEVEL underlined.
 
 ![DECAY 2 RATE (D2R) page, annotated](img/algo_d2r.png)
 
-1. **Header.**
-2. **Focus band:** DECAY 2 RATE over the value.
-3. **Hint.**
-4. **Picture:** the touched operator's envelope.
+1. **Header:** page DECAY 2 RATE.
+2. **Focus band:** DECAY 2 RATE, 0 (OP1).
+3. **Hint:** `SEQ+TURN FINE  MIX + SEQ LEARN`.
+4. **Picture band:** OP1's envelope, D2 lit; stage letters below.
 5. **OP1**
 6. **OP2**
 7. **OP3**
 8. **OP4**
 9. **OP5**
 10. **OP6**
-11. **Chain map.**
-12. **Sub-pages.**
+11. **Chain map:** OSC lit.
+12. **Sub-page row:** DECAY 2 RATE underlined.
 
 ![RELEASE RATE (RR) page, annotated](img/algo_rr.png)
 
-1. **Header.**
-2. **Focus band:** RELEASE RATE over the value.
+1. **Header:** page RELEASE RATE.
+2. **Focus band:** RELEASE RATE, 5 (OP1).
 3. **Glyph:** rate arc.
-4. **Hint.**
-5. **Picture:** the touched operator's envelope.
+4. **Hint:** `SEQ+TURN FINE  MIX + SEQ LEARN`.
+5. **Picture band:** OP1's envelope, R lit; stage letters below.
 6. **OP1**
 7. **OP2**
 8. **OP3**
 9. **OP4**
 10. **OP5**
 11. **OP6**
-12. **Chain map.**
-13. **Sub-pages.**
+12. **Chain map:** OSC lit.
+13. **Sub-page row:** RELEASE RATE underlined.
 
 ### ALGO: envelope rates in seconds
 
@@ -959,18 +958,18 @@ Two steps of AR, D1R or D2R, or one of RR, make a stage twice as fast. Attack ri
 
 ![RATE SCALE (RS) page, annotated](img/algo_rs.png)
 
-1. **Header.**
-2. **Focus band:** OP1's RATE SCALE.
+1. **Header:** page RATE SCALE.
+2. **Focus band:** OP1, 0.
 3. **Hint:** `HIGH NOTES, FASTER ENVELOPES`.
-4. **Picture:** live output.
+4. **Picture band:** live output (a test wave here).
 5. **OP1**
 6. **OP2**
 7. **OP3**
 8. **OP4**
 9. **OP5**
 10. **OP6**
-11. **Chain map.**
-12. **Sub-pages.**
+11. **Chain map:** OSC lit.
+12. **Sub-page row:** RATE SCALE underlined.
 
 **Why the operators shape the note:** as on a Yamaha FM synth, each carrier's envelope is the note's loudness and each modulator's its brightness, so ALGO needs no amp envelope; ENV1 is free as a mod source. For swells over minutes, route a SLOW MOD envelope into a modulator's LEVEL (see [envelopes and LFOs](#envelopes-and-lfos)).
 
@@ -988,99 +987,99 @@ The six table-operator pages share one layout:
 
 ![OPERATOR 1 (OP1) page, annotated](img/algo_op1.png)
 
-1. **Header:** OPERATOR 1.
-2. **Focus band:** WAVE and its value.
-3. **Glyph:** the operator's wave.
-4. **Hint.**
-5. **Picture:** the envelope (D1, D2, R marked) with a wave inset.
+1. **Header:** page OPERATOR 1.
+2. **Focus band:** WAVE, W1.
+3. **Glyph:** the operator's wave, a sine.
+4. **Hint:** `MIX + SEQ LEARNS A CC`.
+5. **Picture band:** the envelope (D1, D2, R marked) with a wave inset.
 6. **WAVE**
 7. **COARSE**
 8. **FINE**
 9. **LEVEL**
 10. **FDBK**
 11. **VELOCITY**
-12. **Chain map.**
-13. **Sub-pages.**
+12. **Chain map:** OSC lit.
+13. **Sub-page row:** OPERATOR 1 underlined, OPERATOR 2 next.
 
 ![OPERATOR 2 (OP2) page, annotated](img/algo_op2.png)
 
-1. **Header:** OPERATOR 2.
-2. **Focus band:** WAVE and its value.
-3. **Glyph:** the operator's wave.
-4. **Hint.**
-5. **Picture:** the envelope with a wave inset.
+1. **Header:** page OPERATOR 2.
+2. **Focus band:** WAVE, W1.
+3. **Glyph:** the operator's wave, a sine.
+4. **Hint:** `MIX + SEQ LEARNS A CC`.
+5. **Picture band:** the envelope (D1, D2, R marked) with a wave inset.
 6. **WAVE**
 7. **COARSE**
 8. **FINE**
 9. **LEVEL**
 10. **FDBK**
 11. **VELOCITY**
-12. **Chain map.**
-13. **Sub-pages.**
+12. **Chain map:** OSC lit.
+13. **Sub-page row:** OPERATOR 2 underlined, OPERATOR 3 next.
 
 ![OPERATOR 3 (OP3) page, annotated](img/algo_op3.png)
 
-1. **Header:** OPERATOR 3.
-2. **Focus band:** WAVE and its value.
-3. **Glyph:** the operator's wave.
-4. **Hint.**
-5. **Picture:** the envelope with a wave inset.
+1. **Header:** page OPERATOR 3.
+2. **Focus band:** WAVE, W1.
+3. **Glyph:** the operator's wave, a sine.
+4. **Hint:** `MIX + SEQ LEARNS A CC`.
+5. **Picture band:** the envelope (D1, D2, R marked) with a wave inset.
 6. **WAVE**
 7. **COARSE**
 8. **FINE**
 9. **LEVEL**
 10. **FDBK**
 11. **VELOCITY**
-12. **Chain map.**
-13. **Sub-pages.**
+12. **Chain map:** OSC lit.
+13. **Sub-page row:** OPERATOR 3 underlined, OPERATOR 4 next.
 
 ![OPERATOR 4 (OP4) page, annotated](img/algo_op4.png)
 
-1. **Header:** OPERATOR 4.
-2. **Focus band:** WAVE and its value.
-3. **Glyph:** the operator's wave.
-4. **Hint.**
-5. **Picture:** the envelope with a wave inset.
+1. **Header:** page OPERATOR 4.
+2. **Focus band:** WAVE, W1.
+3. **Glyph:** the operator's wave, a sine.
+4. **Hint:** `MIX + SEQ LEARNS A CC`.
+5. **Picture band:** the envelope (D1, D2, R marked) with a wave inset.
 6. **WAVE**
 7. **COARSE**
 8. **FINE**
 9. **LEVEL**
 10. **FDBK**
 11. **VELOCITY**
-12. **Chain map.**
-13. **Sub-pages.**
+12. **Chain map:** OSC lit.
+13. **Sub-page row:** OPERATOR 4 underlined, OPERATOR 5 next.
 
 ![OPERATOR 5 (OP5) page, annotated](img/algo_op5.png)
 
-1. **Header:** OPERATOR 5.
-2. **Focus band:** WAVE and its value.
-3. **Glyph:** the operator's wave.
-4. **Hint.**
-5. **Picture:** the envelope with a wave inset.
+1. **Header:** page OPERATOR 5.
+2. **Focus band:** WAVE, W1.
+3. **Glyph:** the operator's wave, a sine.
+4. **Hint:** `MIX + SEQ LEARNS A CC`.
+5. **Picture band:** the envelope (D1, D2, R marked) with a wave inset.
 6. **WAVE**
 7. **COARSE**
 8. **FINE**
 9. **LEVEL**
 10. **FDBK**
 11. **VELOCITY**
-12. **Chain map.**
-13. **Sub-pages.**
+12. **Chain map:** OSC lit.
+13. **Sub-page row:** OPERATOR 5 underlined, OPERATOR 6 next.
 
 ![OPERATOR 6 (OP6) page, annotated](img/algo_op6.png)
 
-1. **Header:** OPERATOR 6.
-2. **Focus band:** WAVE and its value.
-3. **Glyph:** the operator's wave.
-4. **Hint.**
-5. **Picture:** the envelope with a wave inset.
+1. **Header:** page OPERATOR 6.
+2. **Focus band:** WAVE, W1.
+3. **Glyph:** the operator's wave, a sine.
+4. **Hint:** `MIX + SEQ LEARNS A CC`.
+5. **Picture band:** the envelope (D1, D2, R marked) with a wave inset.
 6. **WAVE**
 7. **COARSE**
 8. **FINE**
 9. **LEVEL**
 10. **FDBK**
 11. **VELOCITY**
-12. **Chain map.**
-13. **Sub-pages.**
+12. **Chain map:** OSC lit.
+13. **Sub-page row:** OPERATOR 6 underlined, OPERATOR 5 before it.
 
 An operator set to FRMT shows the formant cells (OPERATOR 2 here):
 
@@ -1231,7 +1230,7 @@ Every MODEL's INIT plays at about the same loudness, so switching MODEL does not
 
 ## MODAL: the EXC page (exciter)
 
-**EXC** is the first page of a MODAL Part. Its header names the exciter (PLUCK, STRIKE or BOW) and its cells follow MODEL. All read 0 to 127.
+**EXC** is the first page of a MODAL Part. Its header names the exciter (PLUCK, STRIKE or BOW) and its cells follow MODEL. All read 0 to 127. EXC has no sub-pages, so no sub-page row.
 
 EXCITE, COLOR and BURST are read when a note starts: a turn changes the next note. FORCE and SPEED move a held note, eased so nothing jumps. None of them is a matrix destination; to swell a bowed note, route an envelope into **BRIGHT** or the filter, as the factory Sound CELLO SWELL does.
 
@@ -1241,15 +1240,14 @@ EXCITE, COLOR and BURST are read when a note starts: a turn changes the next not
 
 ![EXC page on STRING, annotated](img/modal_exc.png)
 
-1. Header: Part, Sound, exciter (PLUCK).
-2. Focused cell.
-3. Its glyph.
-4. Hint: SEQ + turn fine, MIX + SEQ learns a CC.
-5. Picture band: live output.
+1. **Header:** PART 1 · SOUND, exciter PLUCK.
+2. **Focus band:** EXCITE, 102.
+3. **Glyph:** its arc.
+4. **Hint:** `SEQ+TURN FINE  MIX + SEQ LEARN`.
+5. **Picture band:** live output (a test wave here).
 6. **EXCITE.**
 7. **COLOR.**
-8. Chain map, EXC lit.
-9. EXC has no sub-pages.
+8. **Chain map:** EXC lit.
 
 | Cell | Range | Default | What it does |
 |---|---|---|---|
@@ -1260,15 +1258,14 @@ EXCITE, COLOR and BURST are read when a note starts: a turn changes the next not
 
 ![EXC page on BANK, annotated](img/modal_exc_bank.png)
 
-1. Header: exciter STRIKE.
-2. Focused cell.
-3. Its glyph.
-4. Hint line.
-5. Picture band.
+1. **Header:** exciter STRIKE.
+2. **Focus band:** EXCITE, 102.
+3. **Glyph:** its arc.
+4. **Hint:** `SEQ+TURN FINE  MIX + SEQ LEARN`.
+5. **Picture band:** live output (a test wave here).
 6. **EXCITE.**
 7. **BURST.**
-8. Chain map, EXC lit.
-9. No sub-pages.
+8. **Chain map:** EXC lit.
 
 | Cell | Range | Default | What it does |
 |---|---|---|---|
@@ -1279,15 +1276,14 @@ EXCITE, COLOR and BURST are read when a note starts: a turn changes the next not
 
 ![EXC page on BOWED, annotated](img/modal_exc_bowed.png)
 
-1. Header: exciter BOW.
-2. Focused cell.
-3. Its glyph.
-4. Hint line.
-5. Picture band.
+1. **Header:** exciter BOW.
+2. **Focus band:** FORCE, 64.
+3. **Glyph:** its arc.
+4. **Hint:** `SEQ+TURN FINE  MIX + SEQ LEARN`.
+5. **Picture band:** live output (a test wave here).
 6. **FORCE**, live on a held note.
 7. **SPEED**, live on a held note.
-8. Chain map, EXC lit.
-9. No sub-pages.
+8. **Chain map:** EXC lit.
 
 | Cell | Range | Default | What it does |
 |---|---|---|---|
@@ -1300,7 +1296,7 @@ A very hard or very slow bow drifts a little sharp at the top of the keyboard, a
 
 ## MODAL: the RES page (resonator)
 
-**RES** (MODAL on the header) is MODAL's home: **MODEL** and the four macros. Under it sit the model page (MDL2, named after the model on the map) and PIT.
+**RES** (MODAL on the header) is MODAL's home: **MODEL** and the four macros. Under it sit the model page (MDL2, named after the model on the sub-page row) and PIT.
 
 | Cell | Range | Default | What it does |
 |---|---|---|---|
@@ -1316,60 +1312,59 @@ The macros are live: they move a sounding note, glide as you turn, and are matri
 
 ![RES page on STRING, annotated](img/modal_res.png)
 
-1. Header: page MODAL.
-2. Focused cell: MODEL, STRING.
-3. No glyph: a word choice takes the band.
-4. Hint: MIX + SEQ learns a CC.
-5. Picture band.
-6. **MODEL.**
-7. **STRUCT:** stiffness.
-8. **BRIGHT.**
-9. **DAMP.**
-10. **POS.**
-11. Chain map, RES lit.
-12. Sub-pages: RES, STRING, PIT.
+1. **Header:** page MODAL.
+2. **Focus band:** MODEL, STRING.
+3. **Hint:** `MIX + SEQ LEARNS A CC`.
+4. **Picture band:** live output (a test wave here).
+5. **MODEL.**
+6. **STRUCT:** stiffness.
+7. **BRIGHT.**
+8. **DAMP.**
+9. **POS.**
+10. **Chain map:** RES lit.
+11. **Sub-page row:** RESONATOR underlined, then STRING and PITCH.
 
 ![RES page on BANK, annotated](img/modal_res_bank.png)
 
-1. Header.
-2. Focused cell: MODEL, BANK.
-3. Hint line.
-4. Picture band.
+1. **Header:** page MODAL.
+2. **Focus band:** MODEL, BANK.
+3. **Hint:** `MIX + SEQ LEARNS A CC`.
+4. **Picture band:** live output (a test wave here).
 5. **MODEL.**
 6. **STRUCT:** mode spacing.
 7. **BRIGHT:** upper modes' ring.
 8. **DAMP.**
 9. **POS:** strike place.
-10. Chain map.
-11. Sub-pages: RES, BANK, PIT.
+10. **Chain map:** RES lit.
+11. **Sub-page row:** RESONATOR underlined, then BANK and PITCH.
 
 ![RES page on BOWED, annotated](img/modal_res_bowed.png)
 
-1. Header.
-2. Focused cell: MODEL, BOWED.
-3. Hint line.
-4. Picture band.
+1. **Header:** page MODAL.
+2. **Focus band:** MODEL, BOWED.
+3. **Hint:** `MIX + SEQ LEARNS A CC`.
+4. **Picture band:** live output (a test wave here).
 5. **MODEL.**
 6. **STRUCT:** dimmed.
 7. **BRIGHT:** the bridge's tone.
 8. **DAMP:** ring after the bow lifts.
 9. **POS:** bow place.
-10. Chain map.
-11. Sub-pages: RES, BOWED, PIT.
+10. **Chain map:** RES lit.
+11. **Sub-page row:** RESONATOR underlined, then BOWED and PITCH.
 
 ![RES page on SYMP, annotated](img/modal_res_symp.png)
 
-1. Header.
-2. Focused cell: MODEL, SYMP.
-3. Hint line.
-4. Picture band.
+1. **Header:** page MODAL.
+2. **Focus band:** MODEL, SYMP.
+3. **Hint:** `MIX + SEQ LEARNS A CC`.
+4. **Picture band:** live output (a test wave here).
 5. **MODEL.**
 6. **STRUCT:** the halo's chord.
 7. **BRIGHT:** string and halo.
 8. **DAMP:** the halo rings twice as long.
 9. **POS.**
-10. Chain map.
-11. Sub-pages: RES, SYMP, PIT.
+10. **Chain map:** RES lit.
+11. **Sub-page row:** RESONATOR underlined, then SYMP and PITCH.
 
 ### MODAL: the macros on each model
 
@@ -1384,23 +1379,23 @@ SYMP's STRUCT steps through Rings' eleven chords for the seven sympathetic strin
 
 ## MODAL: the MDL2 page (the model's own controls)
 
-**MDL2** sits under RES, named after the model on the map, MODAL-2 on the header. Its cells follow MODEL, are read when a note starts, and are not matrix destinations.
+**MDL2** sits under RES, named after the model on the sub-page row (STRING, BANK, BOWED or SYMP), MODAL-2 on the header. Its cells follow MODEL, are read when a note starts, and are not matrix destinations.
 
 ### MODAL: STRING's model page
 
 ![MDL2 page on STRING, annotated](img/modal_mdl2.png)
 
-1. Header: page MODAL-2.
-2. Focused cell.
-3. Its glyph.
-4. Hint line.
-5. Picture band.
+1. **Header:** page MODAL-2.
+2. **Focus band:** BODY, 38.
+3. **Glyph:** its arc.
+4. **Hint:** `SEQ+TURN FINE  MIX + SEQ LEARN`.
+5. **Picture band:** live output (a test wave here).
 6. **BODY.**
 7. **ENS.D.**
 8. **ENS.R.**
 9. **ENS.M.**
-10. Chain map, RES lit.
-11. Sub-pages, STRING lit.
+10. **Chain map:** RES lit.
+11. **Sub-page row:** STRING underlined, between RESONATOR and PITCH.
 
 | Cell | Range | Default | What it does |
 |---|---|---|---|
@@ -1415,14 +1410,14 @@ The ensemble reads the string twice more, a little ahead and behind, swaying in 
 
 ![MDL2 page on BANK, annotated](img/modal_mdl2_bank.png)
 
-1. Header.
-2. Focused cell: MODES.
-3. No glyph: a word choice.
-4. Hint line.
-5. Picture band.
+1. **Header:** page MODAL-2.
+2. **Focus band:** MODES, 32.
+3. **Glyph:** its arc.
+4. **Hint:** `MIX + SEQ LEARNS A CC`.
+5. **Picture band:** live output (a test wave here).
 6. **MODES.**
-7. Chain map.
-8. Sub-pages, BANK lit.
+7. **Chain map:** RES lit.
+8. **Sub-page row:** BANK underlined.
 
 | Cell | Range | Default | What it does |
 |---|---|---|---|
@@ -1436,10 +1431,10 @@ A note keeps its mode count, and its cost, until it ends. Modes above what the s
 
 ![MDL2 page on BOWED, annotated](img/modal_mdl2_bowed.png)
 
-1. Header.
-2. Picture band; no cells.
-3. Chain map.
-4. Sub-pages, BOWED lit.
+1. **Header:** page MODAL-2.
+2. **Picture band:** no cells, only the output (a test wave here).
+3. **Chain map:** RES lit.
+4. **Sub-page row:** BOWED underlined.
 
 BOWED has no model controls: everything is on EXC and RES.
 
@@ -1447,18 +1442,18 @@ BOWED has no model controls: everything is on EXC and RES.
 
 ![MDL2 page on SYMP, annotated](img/modal_mdl2_symp.png)
 
-1. Header.
-2. Focused cell.
-3. Its glyph.
-4. Hint line.
-5. Picture band.
+1. **Header:** page MODAL-2.
+2. **Focus band:** COUPLE, 32.
+3. **Glyph:** its arc.
+4. **Hint:** `SEQ+TURN FINE  MIX + SEQ LEARN`.
+5. **Picture band:** live output (a test wave here).
 6. **COUPLE.**
 7. **HALO.**
 8. **BODY.**
 9. **ENS.D.**
 10. **ENS.M.**
-11. Chain map.
-12. Sub-pages, SYMP lit.
+11. **Chain map:** RES lit.
+12. **Sub-page row:** SYMP underlined.
 
 | Cell | Range | Default | What it does |
 |---|---|---|---|
@@ -1527,32 +1522,37 @@ Navigation and gestures are as on every page (see [the panel and navigation](#th
 
 ![VA page, annotated](img/va_va.png)
 
-1. **Header:** Part and page.
+1. **Header:** PART 1 · SOUND, page VA.
 2. **Focus band:** WAVE1, 85 (saw).
 3. **Glyph:** OSC 1's wave at the touched WAVE.
 4. **Hint:** `SEQ+TURN FINE`, `MIX + SEQ LEARN`.
 5. **Picture:** live output.
-6. **WAVE1**
-7. **WAVE2**
-8. **MODE**
-9. **BLEND**
-10. **SUB**
-11. **STABILITY**
+6. **WAVE1**, 85.
+7. **WAVE2**, 85.
+8. **MODE**, MIX.
+9. **BLEND**, 64.
+10. **SUB**, 0.
+11. **STABILITY**, 89.
 12. **Chain map:** VA lit.
-13. **Sub-pages.**
+13. **Sub-page row:** VA underlined, then OSC1, OSC2, NOISE; `>` for PITCH off the edge.
 
 With BLEND touched, its glyph names the MODE's two ends:
 
 ![The VA page with BLEND touched, annotated](img/va-page.png)
 
-1. **BLEND's glyph:** a crossfader labelled with each end (here FM: CLEAN to DEEP).
-2. Live output.
-3. **WAVE1, WAVE2.**
-4. **MODE:** touched, its glyph draws the result.
-5. **BLEND.**
-6. **SUB.**
-7. **STABILITY.**
-8. Sub-pages: OSC1, OSC2, NOISE, PITCH.
+1. **Header:** PART 1 · SOUND, page VA.
+2. **Focus band:** BLEND, 102.
+3. **BLEND's glyph:** a crossfader labelled with each end (here FM: CLEAN to DEEP).
+4. **Hint:** `SEQ+TURN FINE`, `MIX + SEQ LEARN`.
+5. **Picture:** live output.
+6. **WAVE1**, 85.
+7. **WAVE2**, 85.
+8. **MODE**, FM.
+9. **BLEND**, 102, touched.
+10. **SUB**, 0.
+11. **STABILITY**, 89.
+12. **Chain map:** VA lit.
+13. **Sub-page row:** VA underlined, then OSC1, OSC2, NOISE; `>` for PITCH.
 
 | Cell | Range | INIT | What it does |
 |---|---|---|---|
@@ -1575,27 +1575,27 @@ Between the four points WAVE crossfades the two neighbours, kept in phase so the
 
 ![OSC 1 (OSC1) page, annotated](img/va_osc1.png)
 
-1. **Header:** OSC 1.
-2. **Focus band:** CRSE and its value.
+1. **Header:** page OSC 1.
+2. **Focus band:** CRSE, 0 (its arc beside it).
 3. **Hint:** `SEQ+TURN FINE`, `MIX + SEQ LEARN`.
 4. **Picture:** live output.
-5. **CRSE**
-6. **FINE**
-7. **SHAPE**
-8. **Chain map.**
-9. **Sub-pages.**
+5. **CRSE**, 0.
+6. **FINE**, 0.
+7. **SHAPE**, 0.
+8. **Chain map:** VA lit.
+9. **Sub-page row:** VA, OSC1 (underlined), OSC2, NOISE, PITCH.
 
 ![OSC 2 (OSC2) page, annotated](img/va_osc2.png)
 
-1. **Header:** OSC 2.
-2. **Focus band:** CRSE and its value.
+1. **Header:** page OSC 2.
+2. **Focus band:** CRSE, 0.
 3. **Hint:** as OSC 1.
 4. **Picture:** live output.
-5. **CRSE**
-6. **FINE**
-7. **SHAPE**
-8. **Chain map.**
-9. **Sub-pages.**
+5. **CRSE**, 0.
+6. **FINE**, +6.
+7. **SHAPE**, 0.
+8. **Chain map:** VA lit.
+9. **Sub-page row:** VA, OSC1, OSC2 (underlined), NOISE, PITCH.
 
 | Cell | Range | INIT (OSC 1 / OSC 2) | What it does |
 |---|---|---|---|
@@ -1645,8 +1645,19 @@ Between two waves SHAPE varies both, at a steady level. PIT moves the whole voic
 
 ![STABILITY's spirit level, annotated](img/va-stability.png)
 
-1. **STABILITY's glyph:** a spirit level; the further the bubble from the middle, the more drift.
-2. STABILITY, touched.
+1. **Header:** PART 1 · SOUND, page VA.
+2. **Focus band:** STABILITY, 119.
+3. **STABILITY's glyph:** a spirit level; the further the bubble from the middle, the more drift.
+4. **Hint:** `SEQ+TURN FINE`, `MIX + SEQ LEARN`.
+5. **Picture:** live output.
+6. **WAVE1**, 85.
+7. **WAVE2**, 85.
+8. **MODE**, MIX.
+9. **BLEND**, 64.
+10. **SUB**, 0.
+11. **STABILITY**, 119, touched.
+12. **Chain map:** VA lit.
+13. **Sub-page row:** VA underlined, then OSC1, OSC2, NOISE; `>` for PITCH.
 
 At **127** the oscillators are steady and every note starts in the same phase, so a render repeats exactly. Below 127 each voice behaves like an untrimmed analogue oscillator:
 
@@ -1669,14 +1680,14 @@ The top of the knob is fine-grained; at 0 the shared drift reaches about ±12 ce
 
 ![NOISE page, annotated](img/va_noise.png)
 
-1. **Header:** NOISE.
+1. **Header:** page NOISE.
 2. **Focus band:** KIND, WHITE.
-3. **Hint.**
+3. **Hint:** `MIX + SEQ LEARNS A CC`.
 4. **Picture:** live output.
-5. **KIND**
-6. **LEVEL**
-7. **Chain map.**
-8. **Sub-pages.**
+5. **KIND**, WHITE.
+6. **LEVEL**, 0.
+7. **Chain map:** VA lit.
+8. **Sub-page row:** VA, OSC1, OSC2, NOISE (underlined), PITCH.
 
 | Cell | Range | INIT | What it does |
 |---|---|---|---|
@@ -1736,8 +1747,8 @@ A TAPE Part's chain is **SRC · DECK · FLT · AMP · MOD**.
 
 - **SRC** (SOURCE on the header) picks the source and the *window* that plays, **START** to **END**.
 - **DECK** picks the machine with **MODEL** and holds the knobs that move its picture.
-- **MCH**, under DECK, is the machine's own page, named after it on the map (WALK, STRCH, SCRUB, WAVE) and in full on the header. It starts with the tape's wear: **TAPE**, **AGE**, **WOW**.
-- **PIT** is the last sub-page under DECK.
+- **MCH**, under DECK, is the machine's own page, named in full on the header and the sub-page row (WALK, STRETCH, SCRUB, WAVE). It starts with the tape's wear: **TAPE**, **AGE**, **WOW**.
+- **PIT** (PITCH on the sub-page row) is the last sub-page under DECK.
 
 | MODEL | The machine |
 |---|---|
@@ -1769,9 +1780,9 @@ While the project is open, each source remembers the Part's **START**, **END**, 
 1. **Readout:** rate, length, memory (`24K · 1.5 S · 53K`); a streamed source shows `… · 7 STREAMS`.
 2. **Strip:** the waveform, window lit, play heads.
 3. **SOURCE.**
-4. **START** and **END**; **MIX + turn** snaps to an onset.
+4. **END** (START beside it); **MIX + turn** snaps to an onset.
 5. **VOL.**
-6. TAPE's chain.
+6. TAPE's chain map, SRC lit.
 
 | Cell | Range | Default | What it does |
 |---|---|---|---|
@@ -1843,14 +1854,19 @@ Turning MODEL sets the new machine's knobs to their defaults, keeping the window
 
 ![DECK on WALK, annotated](img/tape-walk.png)
 
-1. **Picture:** a runner facing the way it plays; FADE is a dashed tail.
-2. **Strip**, window lit.
-3. **Play head.**
-4. **MODEL.**
-5. **LENGTH** and **FADE.**
-6. **DIR.**
-7. **POSITION** and **DRIFT.**
-8. Sub-pages: DECK, WALK, PITCH.
+1. Header: PART 1 · SOUND, page DECK.
+2. Focused cell, large: DIRECTION FORWARD.
+3. **Picture:** a runner facing the way it plays.
+4. Hint line: MIX + SEQ LEARNS A CC.
+5. **Strip:** window lit, play head.
+6. **MODEL:** WALK.
+7. **LENGTH:** 127.
+8. **FADE:** HOLD.
+9. **DIR:** FWD.
+10. **POSITION:** 0.
+11. **DRIFT:** 0%.
+12. Chain map, DECK lit.
+13. Sub-page row: DECK WALK PITCH, DECK underlined.
 
 | Cell | Range | Default | What it does |
 |---|---|---|---|
@@ -1864,15 +1880,35 @@ Turning DIRECTION between once through and looped sets LENGTH and FADE to that s
 
 ![WALK on LOOP, annotated](img/tape-walk-loop.png)
 
-1. The runner goes round a track.
-2. The loop: LENGTH sizes it, POSITION places it.
-3. DIR: LOOP.
-4. FADE: the note fades out at key up.
+1. Header: page DECK.
+2. Focused cell, large: MODEL WALK.
+3. **Picture:** the runner goes round a track.
+4. Hint line: MIX + SEQ LEARNS A CC.
+5. **Strip:** the loop lit; LENGTH sizes it, POSITION places it.
+6. **MODEL:** WALK.
+7. **LENGTH:** 102, the looped default.
+8. **FADE:** 32 ms, dimmed: the amp release ends the note.
+9. **DIR:** LOOP.
+10. **POSITION:** 0.
+11. **DRIFT:** 0%.
+12. Chain map, DECK lit.
+13. Sub-page row, DECK underlined.
 
 ![WALK on PING, annotated](img/tape-walk-ping.png)
 
-1. The arrow points both ways.
-2. DIR: PING.
+1. Header: page DECK.
+2. Focused cell, large: DIRECTION PING.
+3. **Picture:** runners both ways, the arrow pointing both ways.
+4. Hint line: MIX + SEQ LEARNS A CC.
+5. **Strip:** window lit.
+6. **MODEL:** WALK.
+7. **LENGTH:** 102.
+8. **FADE:** 32 ms, dimmed.
+9. **DIR:** PING.
+10. **POSITION:** 0.
+11. **DRIFT:** 0%.
+12. Chain map, DECK lit.
+13. Sub-page row, DECK underlined.
 
 **FADE and the amp envelope.** A note has one release. With no VCA route, FADE is it. With an envelope routed into the VCA, its release ends the note: on LOOP and PING, FADE is dimmed (`AMP RELEASE ENDS THE NOTE`); once through, only HOLD still counts (`BELOW HOLD AMP RELEASE ENDS IT`). TRON keeps FADE whatever the routes.
 
@@ -1884,9 +1920,19 @@ With **TRON** ON each key has its own tape: **LENGTH** reads 0.25 to 8 s, the sa
 
 ![WALK with TRON on, annotated](img/tape-walk-tron.png)
 
-1. A finish post marks the tape's end.
-2. **LENGTH** in seconds.
-3. **FADE:** the pad lifting at key up.
+1. Header: page DECK.
+2. Focused cell, large: DIRECTION FORWARD.
+3. **Picture:** a finish post marks the tape's end.
+4. Hint line: MIX + SEQ LEARNS A CC.
+5. **Strip:** play head, the tape's end dotted.
+6. **MODEL:** WALK.
+7. **LENGTH:** 8.0 s, in seconds with TRON.
+8. **FADE:** 500 ms, the pad lifting at key up.
+9. **DIR:** FWD.
+10. **POSITION:** 0.
+11. **DRIFT:** 0%.
+12. Chain map, DECK lit.
+13. Sub-page row, DECK underlined.
 
 > **Design note:** TRON is modelled on the Mellotron M400, where every key has its own strip of tape about eight seconds long, and a held note simply runs out. Chimera keeps the run-out audible whatever the source: the tape's length is a time, not a stretch of the recording, so even a short source comes round again until the tape ends. Unlike the real thing, nobody has to rewind the tape frame afterwards.
 
@@ -1894,12 +1940,19 @@ With **TRON** ON each key has its own tape: **LENGTH** reads 0.25 to 8 s, the sa
 
 ![WALK's own page, annotated](img/tape-walk-page.png)
 
-1. **TAPE, AGE, WOW.**
-2. WOW's kind.
-3. **TRON.**
-4. **XFADE.**
-5. **RETRIG.**
-6. Sub-page row, WALK lit.
+1. Header: page WALK.
+2. Focused cell, large: TAPE 0.
+3. **Picture:** runner and finish post (TRON on).
+4. Hint line: SEQ+TURN FINE, MIX + SEQ LEARN.
+5. The picture band: a test wave in this shot.
+6. **TAPE:** 0.
+7. **AGE:** 0.
+8. **WOW:** CAPSTAN, dimmed at TAPE 0.
+9. **TRON:** ON.
+10. **XFADE:** 25.
+11. **RETRIG:** STACK, dimmed with TRON on.
+12. Chain map, DECK lit.
+13. Sub-page row: DECK WALK PITCH, WALK underlined.
 
 | Cell | Range | Default | What it does |
 |---|---|---|---|
@@ -1927,12 +1980,19 @@ STRETCH plays the source at the key's pitch, stretched or squeezed in time.
 
 ![DECK on STRETCH, annotated](img/tape-stretch.png)
 
-1. **Picture:** an accordion under a note.
-2. **TYPE.**
-3. **SPEED.**
-4. **LENGTH** (GRAIN).
-5. **D-TIME** (CLASSIC).
-6. **POSITION** (CLASSIC); dimmed cells say why in the band.
+1. Header: page DECK.
+2. Focused cell, large: MODEL STRETCH.
+3. **Picture:** an accordion under a note.
+4. Hint line: MIX + SEQ LEARNS A CC.
+5. **Strip:** window lit, play head.
+6. **MODEL:** STRCH.
+7. **TYPE:** GRAIN.
+8. **SPEED:** 1.00x.
+9. **LENGTH:** 2.0 s (GRAIN).
+10. **D-TIME:** 64, dimmed (CLASSIC only).
+11. **POSITION:** 0, dimmed (CLASSIC only); a dimmed cell says why in the band.
+12. Chain map, DECK lit.
+13. Sub-page row: DECK STRETCH PITCH, DECK underlined.
 
 | Cell | Range | Default | What it does |
 |---|---|---|---|
@@ -1952,11 +2012,19 @@ The other TYPE's cells are dimmed: `GRAIN TYPE ONLY` or `CLASSIC TYPE ONLY`.
 
 ![STRETCH's own page, annotated](img/tape-stretch-grain.png)
 
-1. TAPE, AGE, WOW.
-2. **GRAIN.**
-3. **SPRAY.**
-4. **END.**
-5. Sub-page row, STRETCH lit.
+1. Header: page STRETCH.
+2. Focused cell, large: TAPE 0.
+3. **Picture:** the accordion.
+4. Hint line: SEQ+TURN FINE, MIX + SEQ LEARN.
+5. The picture band: a test wave in this shot.
+6. **TAPE:** 0.
+7. **AGE:** 0.
+8. **WOW:** CAPSTAN, dimmed at TAPE 0.
+9. **GRAIN:** 80 ms.
+10. **SPRAY:** 40%.
+11. **END:** HOLD.
+12. Chain map, DECK lit.
+13. Sub-page row, STRETCH underlined.
 
 | Cell | Range | Default | What it does |
 |---|---|---|---|
@@ -1972,13 +2040,19 @@ These are GRAIN's; a turn affects grains to come. Key up is the amp envelope's.
 
 ![DECK on SCRUB, annotated](img/tape-scrub.png)
 
-1. **Picture:** a sponge on the tape.
-2. Hint on FINGER with KEY at POSITION: KEYS PLACE THE FINGER.
-3. Strip, the finger marked.
-4. **FINGER.**
-5. **SPEED.**
-6. **LENGTH** and **XFADE.**
-7. **DRAG.**
+1. Header: page DECK.
+2. Focused cell, large: FINGER 51.
+3. **Picture:** a sponge on the tape.
+4. Hint on FINGER with KEY at POSITION: KEYS PLACE THE FINGER.
+5. **Strip:** the finger marked.
+6. **MODEL:** SCRUB.
+7. **FINGER:** 51.
+8. **SPEED:** 1.00x.
+9. **LENGTH:** 70 ms.
+10. **XFADE:** 25.
+11. **DRAG:** 32 ms.
+12. Chain map, DECK lit.
+13. Sub-page row: DECK SCRUB PITCH, DECK underlined.
 
 | Cell | Range | Default | What it does |
 |---|---|---|---|
@@ -1990,8 +2064,17 @@ These are GRAIN's; a turn affects grains to come. Key up is the amp envelope's.
 
 ![SCRUB's own page, annotated](img/tape-scrub-page.png)
 
-1. TAPE, AGE, WOW.
-2. **KEY.**
+1. Header: page SCRUB.
+2. Focused cell, large: TAPE 0.
+3. **Picture:** the sponge.
+4. Hint line: SEQ+TURN FINE, MIX + SEQ LEARN.
+5. The picture band: a test wave in this shot.
+6. **TAPE:** 0.
+7. **AGE:** 0.
+8. **WOW:** CAPSTAN, dimmed at TAPE 0.
+9. **KEY:** POSITION.
+10. Chain map, DECK lit.
+11. Sub-page row, SCRUB underlined.
 
 | Cell | Options | Default | What it does |
 |---|---|---|---|
@@ -2009,11 +2092,17 @@ WAVE scans a wavetable source's single-cycle frames, so the tone morphs.
 
 ![DECK on WAVE, annotated](img/tape-wave.png)
 
-1. **Picture:** film through a gate.
-2. **Strip:** the frames, playing ones lit.
-3. **FRAME.**
-4. **SCAN.**
-5. **RANGE.**
+1. Header: page DECK.
+2. Focused cell, large: MODEL WAVE.
+3. **Picture:** film through a gate, the wave under it.
+4. Hint line: MIX + SEQ LEARNS A CC.
+5. **Strip:** the frames, playing ones lit.
+6. **MODEL:** WAVE.
+7. **FRAME:** 0.
+8. **SCAN:** 0.
+9. **RANGE:** 127.
+10. Chain map, DECK lit.
+11. Sub-page row: DECK WAVE PITCH, DECK underlined.
 
 | Cell | Range | Default | What it does |
 |---|---|---|---|
@@ -2026,15 +2115,15 @@ All three are matrix destinations: an LFO on FRAME is the classic sweep. Each fr
 ![WAVE's machine page, annotated](img/tape_mch_wave.png)
 
 1. Header: page WAVE.
-2. Focused cell.
-3. The machine's glyph.
-4. Hint line.
-5. Picture band.
-6. **TAPE.**
-7. **AGE.**
-8. **WOW**, dimmed at TAPE 0.
+2. Focused cell, large: TAPE 0.
+3. **Picture:** film through a gate.
+4. Hint line: SEQ+TURN FINE, MIX + SEQ LEARN.
+5. The picture band: a test wave in this shot.
+6. **TAPE:** 0.
+7. **AGE:** 0.
+8. **WOW:** CAPSTAN, dimmed at TAPE 0.
 9. Chain map, DECK lit.
-10. Sub-pages: DECK, WAVE, PIT.
+10. Sub-page row: DECK WAVE PITCH, WAVE underlined.
 
 > **Design note:** WAVE follows the wavetable synths of the 80s and 90s: single-cycle frames, scanned, each kept at a ladder of octave-spaced versions so a high note never folds, the way the PPG Wave and the Waldorf Microwave did it. The factory WAVE sources are transwave-style tables made from Chimera's own engines (morphing, saw, bowed, brass). Somewhere, a 1990s workstation is feeling very flattered.
 
@@ -2051,16 +2140,16 @@ All three are matrix destinations: an LFO on FRAME is the classic sweep. Each fr
 ![TAPE's PIT page, annotated](img/tape_pit.png)
 
 1. Header: page PITCH.
-2. Focused cell.
-3. Hint line.
-4. Tuner: the note sounding (or `ROOT ?`).
-5. **PITCH.**
-6. **FINE.**
-7. **STEAL.**
-8. **TIME.**
-9. **SNAP.**
+2. Focused cell, large: PITCH 0.
+3. Hint line: SEQ+TURN FINE, MIX + SEQ LEARN.
+4. The picture band, where the tuner shows the note sounding (or `ROOT ?`); a test wave in this shot.
+5. **PITCH:** 0.
+6. **FINE:** 0.
+7. **STEAL:** CUT.
+8. **TIME:** 150 ms.
+9. **SNAP:** CHROMA.
 10. Chain map, DECK lit.
-11. Sub-pages: DECK, machine, PIT.
+11. Sub-page row: DECK WALK PITCH, PITCH underlined.
 
 ![PIT on TAPE: SNAP at MUSICAL](img/tape_pitch_musical.png)
 
@@ -2136,18 +2225,18 @@ The hint line shows `MIX + -/+ PAD` on every pad cell. Pad cells have no MIDI-le
 
 ![KIT page, annotated](img/drum_kit.png)
 
-1. **Header:** Part, pad and machine (`01 TONE KICK`), page.
-2. **Focused cell:** PAD.
-3. **Machine icon**, large, with its family letter.
+1. **Header:** `PART 1 · 01 TONE KICK`, page KIT.
+2. **Focused cell:** PAD, 01.
+3. **Machine icon,** large, with its family letter (T).
 4. **Hint:** `MIX + -/+ PAD`.
-5. **The twelve pads:** number, choke group, icon; the selected one framed.
+5. **The twelve pads:** number, choke group, icon; 01 framed.
 6. **PAD.**
-7. **MACHINE.**
+7. **MACHINE:** KICK.
 8. **LEVEL.**
 9. **PAN.**
 10. **TONAL.**
-11. Chain map, KIT lit.
-12. Sub-pages: KIT, KEYS.
+11. **Chain map:** KIT lit.
+12. **Sub-page row:** KIT KEYS, KIT underlined.
 
 Family letters: **T** TONE, **M** METAL, **B** BODY, **P** PLAIN. A pad lights while it sounds.
 
@@ -2178,7 +2267,7 @@ A new MACHINE takes its own knob defaults; the pad's other settings stay.
 - Machines with no PITCH (TONE CLAP, BODY SHAKER, PLAIN NOISE) play the same hit everywhere: `NO PITCH ON CLAP`.
 - TONAL on a NONE pad plays nothing from C1 up: `NONE PLAYS NOTHING`.
 
-![TONAL on a CLAP pad: NO PITCH ON CLAP](img/drum_kit_tonal_clap.png)
+![TONAL on 04, a TONE CLAP pad: NO PITCH ON CLAP](img/drum_kit_tonal_clap.png)
 
 **Why:** a note's pad depends on the saved kit, never on the screen. OFF suits pad controllers, sequencers and General MIDI parts (notes from 36 up); TONAL puts the pad's pitch at middle C, where a keyboard plays.
 
@@ -2186,16 +2275,16 @@ A new MACHINE takes its own knob defaults; the pad's other settings stay.
 
 ![KEYS page, annotated](img/drum_keys.png)
 
-1. **Header**, page KEYS.
-2. **Focused cell:** PAD.
+1. **Header:** `PART 1 · 01 TONE KICK`, page KEYS.
+2. **Focused cell:** PAD, 01.
 3. **Machine icon.**
 4. **Hint:** `MIX + -/+ PAD`; on CHOKE, `GROUPS n/8`.
-5. **The twelve pads.**
+5. **The twelve pads,** 01 framed.
 6. **PAD.**
-7. **CHOKE.**
-8. **RETRIG.**
-9. Chain map, KIT lit.
-10. Sub-pages, KEYS lit.
+7. **CHOKE:** OFF.
+8. **RETRIG:** CUT.
+9. **Chain map:** KIT lit.
+10. **Sub-page row:** KIT KEYS, KEYS underlined.
 
 KEYS (**SEQ** from KIT) sets how the pad's hits meet.
 
@@ -2247,16 +2336,16 @@ Every pad's sound starts as CLEAN LP4 at 20.0 kHz, Q 0; an open AMP (DECAY INF, 
 
 ![MORE page, annotated](img/drum_more.png)
 
-1. **Header**, page MORE.
-2. **Focused cell:** MACHINE, full name.
+1. **Header:** `PART 1 · 01 TONE KICK`, page MORE.
+2. **Focused cell:** MACHINE, full name TONE KICK (the dot sits just above it).
 3. **Machine icon.**
 4. **Hint:** `MIX + -/+ PAD`.
-5. **Picture band.**
-6. **MACHINE.**
-7. **Knob G:** here START.
-8. **Knob H:** here HARM.
-9. Chain map, MCH lit.
-10. Sub-pages, MORE lit.
+5. **Picture band:** a test wave.
+6. **MACHINE:** KICK.
+7. **START** (knob G).
+8. **HARM** (knob H, HARMONICS).
+9. **Chain map:** MCH lit.
+10. **Sub-page row:** MACHINE MORE, MORE underlined.
 
 The knobs, LEVEL, PAN and VEL are read at the strike; the filter, envelopes, LFO and route amounts follow a ringing hit ([what a ringing hit follows](#drum-what-a-ringing-hit-follows)).
 
@@ -2283,19 +2372,19 @@ Knobs are listed in cell order: six on MCH, then MORE's. Each MCH image's hint r
 
 ![MCH page, TONE KICK, annotated](img/drum_mch.png)
 
-1. Header.
-2. Focused cell.
-3. Arc.
-4. Hint.
-5. Picture band.
+1. **Header:** `PART 1 · 01 TONE KICK`, page MCH.
+2. **Focused cell:** PITCH, 46 Hz.
+3. **Arc:** where the value sits in its range.
+4. **Hint:** `MIX + -/+ PAD`, `SEQ+TURN FINE`.
+5. **Picture band:** a test wave.
 6. **PITCH.**
 7. **DECAY.**
 8. **SWEEP.**
 9. **SWPT.**
 10. **CLICK.**
 11. **DRIVE.**
-12. Chain map.
-13. Sub-pages.
+12. **Chain map:** MCH lit.
+13. **Sub-page row:** MACHINE MORE, MACHINE underlined.
 
 | Cell | Range | Default | What it does |
 |---|---|---|---|
@@ -2314,19 +2403,19 @@ Sub kick: DECAY past 1.5 s, SWEEP low, CLICK 0. Punchy: DECAY about 300 ms, SWEE
 
 ![MCH page, TONE SNARE, annotated](img/drum_mch_tone-snare.png)
 
-1. Header.
-2. Focused cell.
-3. Arc.
-4. Hint.
-5. Picture band.
+1. **Header:** `PART 1 · 01 TONE SNARE`, page MCH.
+2. **Focused cell:** PITCH, 173 Hz.
+3. **Arc:** where the value sits in its range.
+4. **Hint:** `MIX + -/+ PAD`, `SEQ+TURN FINE`.
+5. **Picture band:** a test wave.
 6. **PITCH.**
 7. **DECAY.**
 8. **BUMP.**
 9. **SNAP.**
 10. **SDEC.**
 11. **TONE.**
-12. Chain map.
-13. Sub-pages.
+12. **Chain map:** MCH lit.
+13. **Sub-page row:** MACHINE MORE, MACHINE underlined.
 
 | Cell | Range | Default | What it does |
 |---|---|---|---|
@@ -2343,19 +2432,19 @@ Sub kick: DECAY past 1.5 s, SWEEP low, CLICK 0. Punchy: DECAY about 300 ms, SWEE
 
 ![MCH page, TONE TOM, annotated](img/drum_mch_tone-tom.png)
 
-1. Header.
-2. Focused cell.
-3. Arc.
-4. Hint.
-5. Picture band.
+1. **Header:** `PART 1 · 01 TONE TOM`, page MCH.
+2. **Focused cell:** PITCH, 113 Hz.
+3. **Arc:** where the value sits in its range.
+4. **Hint:** `MIX + -/+ PAD`, `SEQ+TURN FINE`.
+5. **Picture band:** a test wave.
 6. **PITCH.**
 7. **DECAY.**
 8. **SWEEP.**
 9. **SWPT.**
 10. **NOISE.**
 11. **DAMP.**
-12. Chain map.
-13. Sub-pages.
+12. **Chain map:** MCH lit.
+13. **Sub-page row:** MACHINE MORE, MACHINE underlined.
 
 | Cell | Range | Default | What it does |
 |---|---|---|---|
@@ -2372,23 +2461,23 @@ Sub kick: DECAY past 1.5 s, SWEEP low, CLICK 0. Punchy: DECAY about 300 ms, SWEE
 
 ![MCH page, TONE CLAP, annotated](img/drum_mch_tone-clap.png)
 
-1. Header.
-2. Focused cell.
-3. Arc.
-4. Hint.
-5. Picture band.
+1. **Header:** `PART 1 · 01 TONE CLAP`, page MCH.
+2. **Focused cell:** TONE, 1.34 kHz.
+3. **Arc:** where the value sits in its range.
+4. **Hint:** `MIX + -/+ PAD`, `SEQ+TURN FINE`.
+5. **Picture band:** a test wave.
 6. **TONE.**
 7. **DECAY.**
 8. **CLAPS.**
 9. **SPREAD.**
 10. **TAIL.**
 11. **RING.**
-12. Chain map.
-13. Sub-pages.
+12. **Chain map:** MCH lit.
+13. **Sub-page row:** MACHINE MORE, MACHINE underlined.
 
 | Cell | Range | Default | What it does |
 |---|---|---|---|
-| **TONE** | 500 Hz–4.00 kHz | 1.33 kHz | Burst band-pass |
+| **TONE** | 500 Hz–4.00 kHz | 1.34 kHz | Burst band-pass |
 | **DECAY** | 50 ms–1.00 s | 163 ms | Tail length |
 | **CLAPS** | 1–8 | 4 | How many hands |
 | **SPREAD** | 4–30 ms | 9 ms | Time between claps |
@@ -2401,25 +2490,25 @@ Sub kick: DECAY past 1.5 s, SWEEP low, CLICK 0. Punchy: DECAY about 300 ms, SWEE
 
 ![MCH page, TONE COWBELL, annotated](img/drum_mch_tone-cowbell.png)
 
-1. Header.
-2. Focused cell.
-3. Arc.
-4. Hint.
-5. Picture band.
+1. **Header:** `PART 1 · 01 COWBELL`, page MCH.
+2. **Focused cell:** PITCH, 547 Hz.
+3. **Arc:** where the value sits in its range.
+4. **Hint:** `MIX + -/+ PAD`, `SEQ+TURN FINE`.
+5. **Picture band:** a test wave.
 6. **PITCH.**
 7. **DECAY.**
-8. **INTV.**
+8. **INTERVAL.**
 9. **TONE.**
 10. **RING.**
 11. **DRIVE.**
-12. Chain map.
-13. Sub-pages.
+12. **Chain map:** MCH lit.
+13. **Sub-page row:** MACHINE MORE, MACHINE underlined.
 
 | Cell | Range | Default | What it does |
 |---|---|---|---|
 | **PITCH** | 300 Hz–1.20 kHz | 547 Hz | Lower square |
 | **DECAY** | 80 ms–1.50 s | 254 ms | Ring |
-| **INTERVAL** (INTV) | 1.20x–1.80x | 1.48x | Upper square over lower |
+| **INTERVAL** | 1.20x–1.80x | 1.48x | Upper square over lower |
 | **TONE** | 600 Hz–6.00 kHz | 2.13 kHz | Band-pass |
 | **RING** | 0–85 | 27 | Resonance |
 | **DRIVE** | 0–100 | 24 | Saturation |
@@ -2430,19 +2519,19 @@ Sub kick: DECAY past 1.5 s, SWEEP low, CLICK 0. Punchy: DECAY about 300 ms, SWEE
 
 ![MCH page, TONE CYMBAL, annotated](img/drum_mch_tone-cymbal.png)
 
-1. Header.
-2. Focused cell.
-3. Arc.
-4. Hint.
-5. Picture band.
+1. **Header:** `PART 1 · 01 TONE CYMBAL`, page MCH.
+2. **Focused cell:** PITCH, +0.2.
+3. **Arc:** where the value sits in its range.
+4. **Hint:** `MIX + -/+ PAD`, `SEQ+TURN FINE`.
+5. **Picture band:** a test wave.
 6. **PITCH.**
 7. **DECAY.**
 8. **TONE.**
 9. **SPREAD.**
 10. **RING.**
 11. **SHIMMER.**
-12. Chain map.
-13. Sub-pages.
+12. **Chain map:** MCH lit.
+13. **Sub-page row:** MACHINE MORE, MACHINE underlined.
 
 | Cell | Range | Default | What it does |
 |---|---|---|---|
@@ -2459,19 +2548,19 @@ Sub kick: DECAY past 1.5 s, SWEEP low, CLICK 0. Punchy: DECAY about 300 ms, SWEE
 
 ![MCH page, METAL HAT, annotated](img/drum_mch_metal-hat.png)
 
-1. Header.
-2. Focused cell.
-3. Arc.
-4. Hint.
-5. Picture band.
+1. **Header:** `PART 1 · 01 METAL HAT`, page MCH.
+2. **Focused cell:** PITCH, +0.2.
+3. **Arc:** where the value sits in its range.
+4. **Hint:** `MIX + -/+ PAD`, `SEQ+TURN FINE`.
+5. **Picture band:** a test wave.
 6. **PITCH.**
 7. **DECAY.**
 8. **TONE.**
 9. **SPREAD.**
 10. **RING.**
 11. **NOISE.**
-12. Chain map.
-13. Sub-pages.
+12. **Chain map:** MCH lit.
+13. **Sub-page row:** MACHINE MORE, MACHINE underlined.
 
 | Cell | Range | Default | What it does |
 |---|---|---|---|
@@ -2488,19 +2577,19 @@ Sub kick: DECAY past 1.5 s, SWEEP low, CLICK 0. Punchy: DECAY about 300 ms, SWEE
 
 ![MCH page, METAL JINGLE, annotated](img/drum_mch_metal-jingle.png)
 
-1. Header.
-2. Focused cell.
-3. Arc.
-4. Hint.
-5. Picture band.
+1. **Header:** `PART 1 · 01 METAL JINGLE`, page MCH.
+2. **Focused cell:** PITCH, +6.1.
+3. **Arc:** where the value sits in its range.
+4. **Hint:** `MIX + -/+ PAD`, `SEQ+TURN FINE`.
+5. **Picture band:** a test wave.
 6. **PITCH.**
 7. **DECAY.**
 8. **JINGLES.**
 9. **SHAKE.**
 10. **TONE.**
 11. **RING.**
-12. Chain map.
-13. Sub-pages.
+12. **Chain map:** MCH lit.
+13. **Sub-page row:** MACHINE MORE, MACHINE underlined.
 
 A tambourine: the hat's squares an octave up, gated by shaken particles.
 
@@ -2519,19 +2608,19 @@ A tambourine: the hat's squares an octave up, gated by shaken particles.
 
 ![MCH page, BODY SHAKER, annotated](img/drum_mch_body-shaker.png)
 
-1. Header.
-2. Focused cell.
-3. Arc.
-4. Hint.
-5. Picture band.
+1. **Header:** `PART 1 · 01 BODY SHAKER`, page MCH.
+2. **Focused cell:** GRAINS, 852 Hz.
+3. **Arc:** where the value sits in its range.
+4. **Hint:** `MIX + -/+ PAD`, `SEQ+TURN FINE`.
+5. **Picture band:** a test wave.
 6. **GRAINS.**
 7. **DECAY.**
 8. **GLEN.**
 9. **TONE.**
 10. **SHAKE.**
 11. **RING.**
-12. Chain map.
-13. Sub-pages.
+12. **Chain map:** MCH lit.
+13. **Sub-page row:** MACHINE MORE, MACHINE underlined.
 
 | Cell | Range | Default | What it does |
 |---|---|---|---|
@@ -2547,17 +2636,17 @@ A tambourine: the hat's squares an octave up, gated by shaken particles.
 
 ![MCH page, PLAIN SINE, annotated](img/drum_mch_plain-sine.png)
 
-1. Header.
-2. Focused cell.
-3. Arc.
-4. Hint.
-5. Picture band.
+1. **Header:** `PART 1 · 01 PLAIN SINE`, page MCH.
+2. **Focused cell:** PITCH, 58 Hz.
+3. **Arc:** where the value sits in its range.
+4. **Hint:** `MIX + -/+ PAD`, `SEQ+TURN FINE`.
+5. **Picture band:** a test wave.
 6. **PITCH.**
 7. **DECAY.**
 8. **SWEEP.**
 9. **SWPT.**
-10. Chain map.
-11. Sub-pages.
+10. **Chain map:** MCH lit.
+11. **Sub-page row:** MACHINE MORE, MACHINE underlined.
 
 An 808-style bass on TONAL, a zap, a blip.
 
@@ -2572,15 +2661,15 @@ An 808-style bass on TONAL, a zap, a blip.
 
 ![MCH page, PLAIN NOISE, annotated](img/drum_mch_plain-noise.png)
 
-1. Header.
-2. Focused cell.
-3. Arc.
-4. Hint.
-5. Picture band.
+1. **Header:** `PART 1 · 01 PLAIN NOISE`, page MCH.
+2. **Focused cell:** DECAY, 35 ms.
+3. **Arc:** where the value sits in its range.
+4. **Hint:** `MIX + -/+ PAD`, `SEQ+TURN FINE`.
+5. **Picture band:** a test wave.
 6. **DECAY.**
 7. **TONE.**
-8. Chain map.
-9. Sub-pages.
+8. **Chain map:** MCH lit.
+9. **Sub-page row:** MACHINE MORE, MACHINE underlined.
 
 | Cell | Range | Default | What it does |
 |---|---|---|---|
@@ -2591,17 +2680,17 @@ An 808-style bass on TONAL, a zap, a blip.
 
 ![MCH page, PLAIN IMPULSE, annotated](img/drum_mch_plain-impulse.png)
 
-1. Header.
-2. Focused cell.
-3. Arc.
-4. Hint.
-5. Picture band.
+1. **Header:** `PART 1 · 01 IMPULSE`, page MCH.
+2. **Focused cell:** PITCH, 113 Hz.
+3. **Arc:** where the value sits in its range.
+4. **Hint:** `MIX + -/+ PAD`, `SEQ+TURN FINE`.
+5. **Picture band:** a test wave.
 6. **PITCH.**
 7. **DECAY.**
 8. **SWEEP.**
 9. **SWPT.**
-10. Chain map.
-11. Sub-pages.
+10. **Chain map:** MCH lit.
+11. **Sub-page row:** MACHINE MORE, MACHINE underlined.
 
 A pulse under a decay: a rimshot, a click.
 
@@ -2619,25 +2708,25 @@ A pulse under a decay: a rimshot, a click.
 
 ![KIT page with MACHINE on NONE, annotated](img/drum_kit_none.png)
 
-1. **Header:** `NONE`, page KIT.
+1. **Header:** `PART 1 · 01 NONE`, page KIT.
 2. **Focused cell:** MACHINE, NONE.
 3. **NONE's icon:** a box with an X.
-4. Hint.
-5. **The pads:** this one shows the box.
+4. **Hint:** `MIX + -/+ PAD`.
+5. **The pads:** 01 shows the box.
 6. **PAD:** live.
 7. **MACHINE:** turn to bring a machine back.
 8. **LEVEL:** dimmed, kept.
 9. **PAN:** dimmed, kept.
 10. **TONAL:** live.
-11. Chain map.
-12. Sub-pages.
+11. **Chain map:** KIT lit.
+12. **Sub-page row:** KIT KEYS, KIT underlined.
 
 ![MCH page with MACHINE on NONE, annotated](img/drum_mch_none.png)
 
-1. **Header**, NONE, page MCH.
-2. **Picture band;** knob cells empty.
-3. Chain map.
-4. Sub-pages.
+1. **Header:** `PART 1 · 01 NONE`, page MACHINE.
+2. **Picture band:** a test wave; the knob cells are empty.
+3. **Chain map:** MCH lit.
+4. **Sub-page row:** MACHINE MORE, MACHINE underlined.
 
 NONE, MACHINE's last choice, plays nothing: a note books no voice and chokes nothing, though with PAD FOLLOW it still selects the pad. MCH and MORE are empty; every other pad cell is dimmed but keeps its value, so a machine chosen again gets back the pad's level, pan, chokes and sound (knobs at that machine's defaults). PAD, TONAL, FX and FX PLACE stay live. A ringing hit rings out.
 
@@ -2647,17 +2736,17 @@ NONE, MACHINE's last choice, plays nothing: a note books no voice and chokes not
 
 ![FILTER page, annotated](img/drum_flt.png)
 
-1. **Header**, page FILTER.
-2. **Filter curve**, cutoff dot; hint above.
-3. **TYPE**, large.
-4. **TYPE.**
-5. **FX** (Part).
-6. **Q** (pad).
-7. **MODE** (pad).
+1. **Header:** `PART 1 · 01 TONE KICK`, page FILTER; hint `MIX + -/+ PAD` under it.
+2. **Filter curve,** cutoff dot at the right.
+3. **TYPE,** large: CLEAN.
+4. **TYPE:** CLEAN (pad).
+5. **FX:** OFF (Part).
+6. **Q:** 0 (pad).
+7. **MODE:** LP4 (pad).
 8. **FX PLACE** (Part).
-9. **FREQ** (pad).
-10. Chain map, FLT lit.
-11. Sub-pages.
+9. **FREQ:** 20.0 kHz (pad).
+10. **Chain map:** FLT lit.
+11. **Sub-page row:** FILTER MODULATION FX, FILTER underlined.
 
 FLT holds the pad's filter and the Part's FX slot. The TYPEs, MODEs and the FX slot are described in [the voice chain](#the-voice-chain-pitch-filter-fx-amp-stereo-and-sends); only the pad split is DRUM's.
 
@@ -2681,54 +2770,52 @@ These are the Part's pages, shared by every pad and working as in [the voice cha
 ![FILTER MOD page, annotated](img/drum_fmd.png)
 
 1. **Header:** `PART 1 · SOUND  FILTER MOD`.
-2. **Focused cell:** ENV AMT.
+2. **Focused cell:** ENV AMT, 0 %.
 3. **Hint:** `MIX + MINUS DELETES THE ROUTE`.
-4. **Picture band.**
+4. **Picture band:** a test wave.
 5. **ENV AMT.**
 6. **KEYBOARD.**
 7. **FREQ MOD.**
 8. **FDBK** (FEEDBACK).
 9. **RES MOD.**
-10. Chain map, FLT lit.
-11. Sub-pages, FMD lit.
+10. **Chain map:** FLT lit.
+11. **Sub-page row:** FILTER MODULATION FX, MODULATION underlined.
 
 ![FX page, annotated](img/drum_fx.png)
 
 1. **Header:** `PART 1 · SOUND  FX`.
-2. **Focused cell:** INPUT.
+2. **Focused cell:** INPUT, 64.
 3. **Arc.**
 4. **Hint:** `SEQ+TURN FINE`, `MIX + SEQ LEARN`.
-5. **The slot's place** in the chain, over the output.
+5. **Picture band:** the slot's curve, under its place in the chain (MCH, FX, FLT).
 6. **INPUT.**
-7. **MIX;** with FX OFF the slot's knobs are dashes.
-8. Chain map, FLT lit.
-9. Sub-pages, FX lit.
+7. **MIX:** +63; with FX OFF the slot's other knobs are dashes.
+8. **Chain map:** FLT lit.
+9. **Sub-page row:** MODULATION FX JACKS, FX underlined.
 
 ![FILTER JACKS page, annotated](img/drum_jack.png)
 
 1. **Header:** `PART 1 · SOUND  FILTER JACKS`.
-2. **Picture band.**
-3. **FREQ SRC.**
-4. **RES SRC.**
-5. Chain map, FLT lit.
-6. Sub-pages, JACK lit.
+2. **Picture band:** a test wave.
+3. **FREQ SRC:** LFO1.
+4. **RES SRC:** ENV3.
+5. **Chain map:** FLT lit.
+6. **Sub-page row:** MODULATION FX JACKS, JACKS underlined.
 
 ## DRUM: the AMP page
 
 ![AMP page, annotated](img/drum_amp.png)
 
-1. **Header**, page AMP; hint under it.
-2. **Focused stage**, lit.
-3. **The rest**, flat while DECAY is INF.
-4. **The shape.**
-5. **ATTACK.**
-6. **HOLD.**
-7. **DECAY.**
-8. **SPEED.**
-9. **VEL.**
-10. **MODE.**
-11. Chain map, AMP lit.
-12. Sub-pages: AMP, GATE, SENDS.
+1. **Header:** `PART 1 · 01 TONE KICK`, page AMP; hint under it.
+2. **The shape:** flat at full while DECAY is INF; stage letters A H D below.
+3. **ATTACK.**
+4. **HOLD.**
+5. **DECAY:** INF.
+6. **SPEED:** MED.
+7. **VEL:** 127.
+8. **MODE:** 1-SHOT.
+9. **Chain map:** AMP lit.
+10. **Sub-page row:** AMP GATE SENDS, AMP underlined.
 
 The pad's own attack-hold-decay envelope, shaping on top of the machine's DECAY.
 
@@ -2747,14 +2834,14 @@ The pad's own attack-hold-decay envelope, shaping on top of the machine's DECAY.
 
 ![GATE page, annotated](img/drum_gate.png)
 
-1. **Header**, page GATE.
-2. **Picture band.**
+1. **Header:** `PART 1 · 01 TONE KICK`, page GATE.
+2. **Picture band:** a test wave.
 3. **LPG.**
 4. **DECAY.**
 5. **STRIKE.**
-6. **WIDTH.**
-7. Chain map, AMP lit.
-8. Sub-pages, GATE lit.
+6. **WIDTH:** 64 (Part).
+7. **Chain map:** AMP lit.
+8. **Sub-page row:** AMP GATE SENDS, GATE underlined.
 
 Each pad has its own low-pass gate (as described under AMP in [the voice chain](#the-voice-chain-pitch-filter-fx-amp-stereo-and-sends)), replacing the Part's.
 
@@ -2773,17 +2860,17 @@ MOD's first three sub-pages are the pad's own modulation. After them come the Pa
 
 ![PENV page, annotated](img/drum_penv.png)
 
-1. **Header**, page PENV.
-2. **Focused stage.**
-3. **HOLD and DECAY.**
-4. **Hint.**
-5. **The shape.**
+1. **Header:** `PART 1 · 01 TONE KICK`, page PENV.
+2. **Hint:** `MIX + -/+ PAD`, `SEQ+TURN FINE`.
+3. **Attack peak** of the shape.
+4. **HOLD and DECAY:** the fall.
+5. **Stage letters:** A H D.
 6. **ATTACK.**
 7. **HOLD.**
-8. **DECAY.**
-9. **SPEED.**
-10. Chain map, MOD lit.
-11. Sub-pages, PENV lit.
+8. **DECAY:** 64.
+9. **SPEED:** MED.
+10. **Chain map:** MOD lit.
+11. **Sub-page row:** MATRIX PAD ENV PAD LFO, PAD ENV underlined.
 
 An AHD envelope like AMP's (DECAY 0–126 or INF, default 64; SPEED default MED), feeding the routes as MOD ENV.
 
@@ -2791,17 +2878,17 @@ An AHD envelope like AMP's (DECAY 0–126 or INF, default 64; SPEED default MED)
 
 ![PLFO page, annotated](img/drum_plfo.png)
 
-1. **Header**, page PLFO.
-2. **Focused cell:** WAVE.
-3. **Hint.**
-4. **Picture band.**
+1. **Header:** `PART 1 · 01 TONE KICK`, page PLFO.
+2. **Focused cell:** WAVE, SINE.
+3. **Hint:** `MIX + -/+ PAD`.
+4. **Picture band:** a test wave.
 5. **WAVE.**
 6. **SPEED.**
 7. **DEPTH.**
 8. **PHASE.**
 9. **MODE.**
-10. Chain map.
-11. Sub-pages, PLFO lit.
+10. **Chain map:** MOD lit.
+11. **Sub-page row:** PAD ENV PAD LFO ROUTE, PAD LFO underlined.
 
 Feeds the routes as LFO.
 
@@ -2817,16 +2904,16 @@ Feeds the routes as LFO.
 
 ![ROUTE page, annotated](img/drum_route.png)
 
-1. **Header**, page ROUTE.
-2. **Focused cell.**
-3. **Hint.**
-4. **Picture band.**
+1. **Header:** `PART 1 · 01 TONE KICK`, page ROUTE.
+2. **Focused cell:** ROUTE, 1.
+3. **Hint:** `MIX + -/+ PAD`.
+4. **Picture band:** a test wave.
 5. **ROUTE.**
-6. **SOURCE.**
-7. **DEST.**
-8. **AMOUNT.**
-9. Chain map.
-10. Sub-pages, ROUTE lit.
+6. **SOURCE:** MOD ENV.
+7. **DEST:** CUTOFF.
+8. **AMOUNT:** 0%.
+9. **Chain map:** MOD lit.
+10. **Sub-page row:** PAD LFO ROUTE ENV1 ENV2, ROUTE underlined.
 
 | Cell | Range | Default | What it does |
 |---|---|---|---|
@@ -2864,11 +2951,11 @@ The Part's own filter TYPE and gate are unused (each pad's replace them); its mi
 ![PAD FOLLOW page, annotated](img/settings_personal_follow.png)
 
 1. **Header:** `PERSONAL › FOLLOW`.
-2. **Focused cell.**
-3. **Picture band.**
+2. **Focused cell:** FOLLOW, IDLE.
+3. **Picture band:** a test wave.
 4. **FOLLOW.**
-5. **Footer:** project, unsaved state.
-6. **Footer:** keys.
+5. **Footer:** the project, `NEW PROJECT`.
+6. **Footer:** the keys, `A-F EDIT · MENU BACK`.
 
 SETTINGS › PERSONALIZE › PAD FOLLOW decides whether a played hit selects its pad. **FOLLOW** is a unit setting, kept in SYSTEM ([SETTINGS](#settings)):
 
@@ -2976,17 +3063,17 @@ The hint line under the value shows the combos the touched cell answers to (off 
 
 ![PITCH page, annotated](img/algo_pit.png)
 
-1. **Header:** Part, Sound, page.
-2. **The touched cell**, large, with its arc.
-3. **Hint line.**
-4. **The tuner:** the note the Part's last note sounds at, its offset in cents (`C4 +0ct`), and its Hz. `REF C4` before the first note.
+1. **Header:** PART 1 · SOUND, page PITCH.
+2. **The touched cell**, large: PITCH, 0, with its arc.
+3. **Hint line:** `SEQ+TURN FINE  MIX + SEQ LEARN`.
+4. **Picture band:** the glide sketch, under **the tuner**: the note the Part's last note sounds at, its offset in cents (`C4 +0ct`), and its Hz. `REF C4` before the first note.
 5. **PITCH**, in semitones.
 6. **FINE**, in cents.
 7. **STEAL:** CUT or GLIDE.
 8. **TIME:** the glide time.
 9. **SNAP:** CHROMA or MUSICAL.
-10. **Chain map**, on ALG.
-11. **Sub-pages** of ALG, PITCH lit.
+10. **Chain map**, ALG lit.
+11. **Sub-page row:** ALGORITHM PITCH, PITCH underlined.
 
 | Cell | Range | Default | What it does |
 |---|---|---|---|
@@ -3002,15 +3089,15 @@ The tuner reads A4 = 440 Hz in the Part's tuning, including PITCH, FINE and the 
 
 1. Header.
 2. The touched cell: STEAL, GLIDE.
-3. Hint line.
-4. Tuner.
+3. Hint line: `MIX + SEQ LEARNS A CC`.
+4. Picture band: glide sketch and tuner.
 5. PITCH.
 6. FINE.
 7. **STEAL** at GLIDE.
 8. **TIME**, now in use.
 9. SNAP.
-10. Chain map.
-11. Sub-pages.
+10. Chain map, ALG lit.
+11. Sub-page row, PITCH underlined.
 
 GLIDE acts only when a new note takes a sounding voice of the same Part. With MAX VOICES 1 ([the mixer](#the-mixer-and-the-master-effects)) that is every note, so GLIDE becomes legato portamento. STEAL and TIME are read at the moment of the steal, so they are not destinations.
 
@@ -3024,17 +3111,16 @@ GLIDE acts only when a new note takes a sounding voice of the same Part. With MA
 
 ![FILTER page, annotated](img/algo_flt.png)
 
-1. **Header:** Part, Sound, page.
-2. **The response**, drawn from the filter's real response, resonance peak included; the dot is the corner, at the cutoff.
-3. **Readout** of the touched control (TYPE: CLEAN).
-4. **TYPE.**
-5. **FX:** the voice's FX slot.
-6. **Q:** resonance.
-7. **MODE:** the response.
-8. **FX PLACE:** PRE or POST; the cell draws the order.
-9. **FREQ:** the cutoff; a thin line under its bar shows modulation reaching it.
-10. **Chain map**, on FLT.
-11. **Sub-pages:** FILTER, MODULATION, FX, JACKS.
+1. **Header:** PART 1 · SOUND, page FILTER.
+2. **The picture:** the readout of the touched control (TYPE, CLEAN) over the response, drawn from the filter's real response, resonance peak included; the dot is the corner, at the cutoff.
+3. **TYPE.**
+4. **FX:** the voice's FX slot.
+5. **Q:** resonance.
+6. **MODE:** the response.
+7. **FX PLACE:** PRE or POST; the cell draws the order.
+8. **FREQ:** the cutoff; a thin line under its bar shows modulation reaching it.
+9. **Chain map**, FLT lit.
+10. **Sub-page row:** FILTER MODULATION FX `>`, FILTER underlined; `>` leads on to JACKS.
 
 The picture takes the whole band, so there is no focus band. The readout shows the value you set and stays still under modulation; a faint band under the plot runs from the corner to where modulation has the cutoff now, with a tick at its end:
 
@@ -3084,16 +3170,15 @@ At high Q, CLEAN self-oscillates (not in NOTCH2). LP4 fully open passes its inpu
 ![FILTER page on 2040, annotated](img/algo_flt_2040.png)
 
 1. Header.
-2. The 2040's response.
-3. Readout: TYPE, 2040.
-4. **TYPE.**
-5. FX.
-6. **RES.**
-7. **VOICE:** REV2 or EXPNDR.
-8. FX PLACE.
-9. **CUTOFF.**
-10. Chain map.
-11. Sub-pages.
+2. The picture: readout `TYPE · 4-POLE LP`, 2040, over the 2040's response.
+3. **TYPE.**
+4. FX.
+5. **RES.**
+6. **VOICE:** REV2 or EXPNDR.
+7. FX PLACE.
+8. **CUTOFF.**
+9. Chain map, FLT lit.
+10. Sub-page row, FILTER underlined.
 
 A four-pole low-pass modelled on the SSM2040 filter chip; VA's home filter. Its one mode reads 4-POLE LP. **INPUT** (on FX) drives the chip's stages directly. **VOICE** picks the chip's surroundings:
 
@@ -3109,16 +3194,15 @@ A four-pole low-pass modelled on the SSM2040 filter chip; VA's home filter. Its 
 ![FILTER page on DIRTY, annotated](img/algo_flt_dirty.png)
 
 1. Header.
-2. DIRTY's response.
-3. Readout: TYPE, DIRTY.
-4. **TYPE.**
-5. FX.
-6. **Q.**
-7. **MODE:** LP2, BP2, HP2 or NOTCH1.
-8. FX PLACE.
-9. **FREQ.**
-10. Chain map.
-11. Sub-pages.
+2. The picture: readout TYPE, DIRTY, over DIRTY's response.
+3. **TYPE.**
+4. FX.
+5. **Q.**
+6. **MODE:** LP2, BP2, HP2 or NOTCH1.
+7. FX PLACE.
+8. **FREQ.**
+9. Chain map, FLT lit.
+10. Sub-page row, FILTER underlined.
 
 A Chamberlin state-variable filter that drives hard: the cheapest and edgiest. MODE is **LP2** (default), **BP2**, **HP2** or **NOTCH1** (one notch, at FREQ). Its modulation page is titled DIRTY MOD.
 
@@ -3127,16 +3211,15 @@ A Chamberlin state-variable filter that drives hard: the cheapest and edgiest. M
 ![FILTER page on LADDER, annotated](img/algo_flt_ladder.png)
 
 1. Header.
-2. LADDER's response.
-3. Readout: TYPE, LADDER.
-4. **TYPE.**
-5. FX.
-6. **Q.**
-7. **MODE:** LP2, LP4, BP2, BP4 or HP4.
-8. FX PLACE.
-9. **FREQ.**
-10. Chain map.
-11. Sub-pages.
+2. The picture: readout TYPE, LADDER, over LADDER's response.
+3. **TYPE.**
+4. FX.
+5. **Q.**
+6. **MODE:** LP2, LP4, BP2, BP4 or HP4.
+7. FX PLACE.
+8. **FREQ.**
+9. Chain map, FLT lit.
+10. Sub-page row, FILTER underlined.
 
 The Moog transistor ladder, four poles, with Xpander-style modes (**LP2**, **LP4** default, **BP2**, **BP4**, **HP4**) and INPUT as its drive. Like the original it loses some bass as resonance rises. Its modulation page is titled LADDER MOD.
 
@@ -3147,16 +3230,15 @@ The Moog transistor ladder, four poles, with Xpander-style modes (**LP2**, **LP4
 ![FILTER page on SEM, annotated](img/algo_flt_sem.png)
 
 1. Header.
-2. SEM's response.
-3. Readout: TYPE, SEM.
-4. **TYPE.**
-5. FX.
-6. **RES.**
-7. **MODE**, a knob: low-pass at 0, notch mid-way, high-pass at 127.
-8. FX PLACE.
-9. **FREQ.**
-10. Chain map.
-11. Sub-pages.
+2. The picture: SEM's response, under the readout TYPE, SEM.
+3. **TYPE.**
+4. FX.
+5. **RES.**
+6. **MODE**, a knob: low-pass at 0, notch mid-way, high-pass at 127.
+7. FX PLACE.
+8. **FREQ.**
+9. Chain map, FLT lit.
+10. Sub-page row, FILTER underlined.
 
 The Oberheim SEM's 12 dB state-variable filter. **MODE** is a knob, like the SEM's pot: low-pass (0), a notch at FREQ (middle), high-pass (127). It glides and is a destination, so an LFO on MODE sweeps the response itself. **OUTPUT**, on SEM MOD, is the SEM's switch: MODE (the knob's sweep) or BP (band-pass). Like the original, it does not self-oscillate: at full RES it rings and the ring dies away.
 
@@ -3177,8 +3259,8 @@ The Oberheim SEM's 12 dB state-variable filter. **MODE** is a knob, like the SEM
 7. **FREQ MOD.**
 8. **FDBK:** FEEDBACK.
 9. **RES MOD**, a dash: no route yet.
-10. **Chain map**, on FLT.
-11. **Sub-pages**, MODULATION lit.
+10. **Chain map**, FLT lit.
+11. **Sub-page row:** FILTER MODULATION FX `>`, MODULATION underlined.
 
 | Cell | Range | Default | What it does |
 |---|---|---|---|
@@ -3213,25 +3295,28 @@ Every voice has one FX slot, before or after the filter: its TYPE is **FX** and 
 2. **The touched cell**, large: INPUT, 64.
 3. **Its arc.**
 4. **Hint line.**
-5. **Signal path** (OSC, FX, FLT: PRE) over **the effect's curve**; with FX OFF, a plain sine.
+5. **Picture band:** the signal path (OSC, FX, FLT: PRE) over **the effect's curve**; with FX OFF, a plain sine.
 6. **INPUT.**
-7. **MIX**, dimmed while FX is OFF; the pots read dashes.
-8. **Chain map**, on FLT.
-9. **Sub-pages**, FX lit.
+7. **MIX**, +63, dimmed while FX is OFF; the pots read dashes.
+8. **Chain map**, FLT lit.
+9. **Sub-page row:** `<` MODULATION FX JACKS, FX underlined.
 
 With an effect on, the pots fill in:
 
 ![The FILTER FX sub-page with SOFT, annotated](img/filter-fx.png)
 
-1. Signal path, in FX PLACE's order.
-2. The effect's curve: sine in (faint), shaped wave out.
-3. The touched pot's arc.
-4. **INPUT.**
-5. First pot (SOFT: DRIVE).
-6. Second pot (TONE).
-7. Third pot (LEVEL).
-8. **MIX.**
-9. Sub-page row, on FX.
+1. Header: PART 1 · SOUND, page FX.
+2. The touched cell, large: DRIVE, 40.
+3. Its arc.
+4. Hint line: `SEQ+TURN FINE  MIX + SEQ LEARN`.
+5. Picture band: the signal path in FX PLACE's order (OSC, FX, FLT), over the effect's curve: sine in (faint), shaped wave out.
+6. **INPUT**, 64.
+7. First pot, **DRIVE** (SOFT), 40.
+8. Second pot, **TONE**.
+9. Third pot, **LEVEL**, 64.
+10. **MIX**, +63.
+11. Chain map, FLT lit.
+12. Sub-page row, FX underlined.
 
 The page reads **INPUT · P1 · P2 / P3 · MIX · STABILITY**:
 
@@ -3275,12 +3360,12 @@ On 2040, LADDER and SEM the sixth FX cell, **STABILITY**, gives each voice its o
 
 ![FILTER JACKS page, annotated](img/algo_jack.png)
 
-1. **Header.**
-2. **Picture band:** the touched jack and its source.
-3. **FREQ SRC.**
-4. **RES SRC.**
-5. Chain map, on FLT.
-6. Sub-pages, JACKS lit.
+1. **Header:** page FILTER JACKS.
+2. **Picture band:** the source's wave.
+3. **FREQ SRC**, LFO1.
+4. **RES SRC**, ENV3.
+5. Chain map, FLT lit.
+6. Sub-page row, JACKS underlined.
 
 | Cell | Choices | Default |
 |---|---|---|
@@ -3302,16 +3387,16 @@ On 2040, LADDER and SEM the sixth FX cell, **STABILITY**, gives each voice its o
 ![AMP page, annotated](img/algo_amp.png)
 
 1. **Header.**
-2. **The touched cell**, large.
+2. **The touched cell**, large: VEL, 127, dimmed.
 3. **Hint line.**
 4. **Picture band:** the live output.
-5. **VEL.**
+5. **VEL**, dimmed: no route into VCA.
 6. **LPG.**
 7. **DECAY.**
 8. **STRIKE.**
-9. **BASE.**
-10. **Chain map**, on AMP.
-11. **Sub-pages:** AMP, STEREO, SENDS.
+9. **BASE**, dimmed.
+10. **Chain map**, AMP lit.
+11. **Sub-page row:** AMP STEREO SENDS, AMP underlined.
 
 | Cell | Range | Default | What it does |
 |---|---|---|---|
@@ -3360,13 +3445,13 @@ On ALGO and MODAL with nothing routed into VCA, a gate after the filter follows 
 ![STEREO page, annotated](img/algo_ster.png)
 
 1. **Header.**
-2. **The touched cell**, large.
-3. **Hint line.**
+2. **The touched cell**, large: PAN, C.
+3. **Hint line:** `PLACES EACH NOTE, ROUTABLE`.
 4. **Picture band:** the live output.
 5. **PAN.**
-6. **WIDTH.**
-7. Chain map, on AMP.
-8. Sub-pages, STEREO lit.
+6. **WIDTH**, 64.
+7. Chain map, AMP lit.
+8. Sub-page row, STEREO underlined.
 
 | Cell | Range | Default | What it does |
 |---|---|---|---|
@@ -3391,8 +3476,8 @@ PAN acts per note; WIDTH on the whole Part afterwards, and with the Part's pan c
 6. **CHORUS.**
 7. **DELAY.**
 8. **REVERB.**
-9. Chain map, on AMP.
-10. Sub-pages, SENDS lit.
+9. Chain map, AMP lit.
+10. Sub-page row, SENDS underlined.
 
 | Cell | Range | Default | What it does |
 |---|---|---|---|
@@ -3445,37 +3530,33 @@ Changing TYPE, MODE or FORM never jumps: the new shape takes over from the slot'
 
 ![ENV 1 page, annotated](img/algo_e1.png)
 
-1. **Header:** Part, Sound, ENV 1 / A.
-2. **The picture:** the envelope as set.
-3. **Its stages**, attack to release.
-4. **The touched stage**, lit.
-5. **Stage letters**, A H D S R.
-6. **ATTACK.**
-7. **DECAY.**
-8. **SUSTAIN.**
-9. **RELEASE.**
-10. **HOLD.**
-11. **TYPE:** A.
-12. **Chain map**, on MOD.
-13. **Sub-pages**, ENV1 lit.
+1. **Header:** PART 1 · SOUND, page ENV 1 / A.
+2. **The picture:** the envelope as set, its stages drawn to scale, the touched stage (attack) lit.
+3. **Stage letters:** A H D S R, the touched one lit.
+4. **ATTACK**, 10 ms.
+5. **DECAY**, 299 ms.
+6. **SUSTAIN**, 70%.
+7. **RELEASE**, 299 ms.
+8. **HOLD**, 0.001 ms.
+9. **TYPE:** A.
+10. **Chain map**, MOD lit.
+11. **Sub-page row:** MATRIX ENV1 ENV2 ENV3 `>`, ENV1 underlined.
 
 E2 starts the same way:
 
 ![ENV 2 page, annotated](img/algo_e2.png)
 
 1. Header: ENV 2 / A.
-2. Picture.
-3. Stages.
-4. Touched stage.
-5. Stage letters.
-6. ATTACK.
-7. DECAY.
-8. SUSTAIN.
-9. RELEASE.
-10. HOLD.
-11. TYPE: A.
-12. Chain map.
-13. Sub-pages, ENV2 lit.
+2. The envelope.
+3. Stage letters.
+4. ATTACK.
+5. DECAY.
+6. SUSTAIN.
+7. RELEASE.
+8. HOLD.
+9. TYPE: A.
+10. Chain map, MOD lit.
+11. Sub-page row: `<` ENV1 ENV2 ENV3 SPEED `>`, ENV2 underlined.
 
 | Cell | Range (at MED) | Default | What it does |
 |---|---|---|---|
@@ -3511,19 +3592,18 @@ With TYPE **B** the page reads **MODE · (two times or rates) / (a shape) · FOR
 ![ENV 3 page, annotated](img/algo_e3.png)
 
 1. **Header:** ENV 3 / B.
-2. **MODE pills** (ENV, LFO, BURST), current one lit.
-3. **The rise**, at RISE's time and SHAPE's curve.
-4. **The fall**, at FALL's time.
-5. **MODE.**
-6. **RISE.**
-7. **FALL.**
-8. **SHAPE.**
-9. **FORM:** AD.
-10. **TYPE:** B.
-11. **Chain map**, on MOD.
-12. **Sub-pages**, ENV3 lit.
+2. **MODE pills:** ENV, LFO, BURST; ENV lit.
+3. **The shape:** up at RISE's time and SHAPE's curve, down at FALL's.
+4. **MODE:** ENV.
+5. **RISE**, 10 ms.
+6. **FALL**, 299 ms.
+7. **SHAPE:** LIN.
+8. **FORM:** AD.
+9. **TYPE:** B.
+10. **Chain map**, MOD lit.
+11. **Sub-page row:** `<` ENV2 ENV3 SPEED LFO1 `>`, ENV3 underlined.
 
-![Envelope 3, type B, ENV · AD](img/env_b_env_ad.png)
+![Envelope 3, type B, ENV · AD, RISE 18 ms](img/env_b_env_ad.png)
 
 | Cell | Range | Default | What it does |
 |---|---|---|---|
@@ -3579,16 +3659,15 @@ A type B slot feeding the VCA runs every sample, at full range. Anywhere else it
 ![ENV SPEED page, annotated](img/algo_spd.png)
 
 1. **Header:** ENV SPEED.
-2. **Speed pills**, a column a slot: FAST, MED or SLOW lit.
-3. **Hold position** under each column; a type B column is dimmed and reads RISE/FALL.
-4. **E1 SPEED.**
-5. **E2 SPEED.**
-6. **E3 SPEED**, TYPE B, dimmed.
-7. **E1 HOLD.**
-8. **E2 HOLD.**
-9. **E3 HOLD**, TYPE B, dimmed.
-10. **Chain map**, on MOD.
-11. **Sub-pages**, SPEED lit.
+2. **The picture:** speed pills, a column a slot (FAST, MED or SLOW lit), and the hold position under each (AHDSR); the type B column E3 is dimmed and reads RISE/FALL.
+3. **E1 SPEED**, MED.
+4. **E2 SPEED**, MED.
+5. **E3 SPEED**, TYPE B, dimmed.
+6. **E1 HOLD**, AHDSR.
+7. **E2 HOLD**, AHDSR.
+8. **E3 HOLD**, TYPE B, dimmed.
+9. **Chain map**, MOD lit.
+10. **Sub-page row:** `<` ENV3 SPEED LFO1 LFO2 `>`, SPEED underlined.
 
 | Cell | Choices | Default | What it does |
 |---|---|---|---|
@@ -3623,40 +3702,30 @@ On type B, **RISE**, **FALL** and **SHAPE** are destinations each, under whateve
 
 Each LFO slot's **TYPE** is **CLASSIC** (shape, rate in Hz, sync, phase, depth) or **FUNC** (envelope B locked to LFO mode: TILT, the random walk, rates to 93.75 Hz).
 
-![An LFO page, annotated](img/lfo.png)
-
-1. The touched control's value (CLASSIC RATE in Hz).
-2. **Its glyph:** RATE draws two seconds of the LFO; the others draw what they do.
-3. **The LFO:** one cycle as set.
-4. A dot rides the newest voice's place in the cycle, resting at the start while nothing plays.
-5. **RATE, SHAPE, SYNC** on top; **PHASE** (dimmed under FREE) and **DEPTH** below.
-6. **TYPE:** CLASSIC or FUNC.
-7. `<`: more sub-pages to the left.
-
 ## LFOs: CLASSIC
 
-![LFO 1 page, annotated](img/algo_l1.png)
+![LFO 1 page with RATE 1.33 Hz and DEPTH 127, annotated](img/algo_l1.png)
 
-1. **Header:** LFO 1.
-2. **The touched cell**, large.
-3. **Its glyph:** RATE draws two seconds over a one-second ruler.
-4. **Hint line.**
-5. **The LFO**, one cycle, with the newest voice's dot.
+1. **Header:** PART 1 · SOUND, page LFO 1.
+2. **The touched cell**, large: RATE, 1.33 Hz.
+3. **Its glyph:** RATE draws two seconds of the LFO over a one-second ruler; the other cells draw what they do.
+4. **Hint line:** `SEQ+TURN FINE  MIX + SEQ LEARN`.
+5. **The LFO:** one cycle as set. A dot rides the newest voice's place in the cycle, resting at the start while nothing plays.
 6. **RATE.**
-7. **SHAPE.**
-8. **SYNC.**
+7. **SHAPE:** SINE.
+8. **SYNC:** FREE.
 9. **PHASE**, dimmed under FREE.
-10. **DEPTH.**
-11. **TYPE.**
-12. **Chain map**, on MOD.
-13. **Sub-pages**, LFO1 lit.
+10. **DEPTH**, 127.
+11. **TYPE:** CLASSIC or FUNC.
+12. **Chain map**, MOD lit.
+13. **Sub-page row:** `<` SPEED LFO1 LFO2 LFO3, LFO1 underlined.
 
 LFO 2 and LFO 3 are laid out the same:
 
 ![LFO 2 page, annotated](img/algo_l2.png)
 
 1. Header: LFO 2.
-2. Touched cell.
+2. Touched cell: RATE, 1.00 Hz.
 3. Glyph.
 4. Hint line.
 5. The LFO.
@@ -3664,15 +3733,15 @@ LFO 2 and LFO 3 are laid out the same:
 7. SHAPE.
 8. SYNC.
 9. PHASE.
-10. DEPTH.
+10. DEPTH, 127.
 11. TYPE.
-12. Chain map.
-13. Sub-pages, LFO2 lit.
+12. Chain map, MOD lit.
+13. Sub-page row, LFO2 underlined.
 
 ![LFO 3 page, annotated](img/algo_l3.png)
 
 1. Header: LFO 3.
-2. Touched cell.
+2. Touched cell: RATE, 1.00 Hz.
 3. Glyph.
 4. Hint line.
 5. The LFO.
@@ -3680,10 +3749,10 @@ LFO 2 and LFO 3 are laid out the same:
 7. SHAPE.
 8. SYNC.
 9. PHASE.
-10. DEPTH.
+10. DEPTH, 127.
 11. TYPE.
-12. Chain map.
-13. Sub-pages, LFO3 lit.
+12. Chain map, MOD lit.
+13. Sub-page row, LFO3 underlined.
 
 | Cell | Range | Default | What it does |
 |---|---|---|---|
@@ -3741,7 +3810,7 @@ MODE, FORM, TYPE, SPEED, HOLD on SPEED, CLASSIC's SHAPE and SYNC, and the LFOs' 
 
 # The mod matrix and routes
 
-Every connection from a modulator to the sound is a **route**: one cell of the MOD matrix, a source on its row and a destination in its column, with an amount. This chapter covers the matrix page (**MTX** on the chain map, MATRIX in the sub-page row, MOD MATRIX on screen), every source and destination, and every gesture that makes, changes or deletes a route. The modulators are in [Envelopes and LFOs](#envelopes-and-lfos), the filter's route cells and the VCA in [the voice chain](#the-voice-chain-pitch-filter-fx-amp-stereo-and-sends), the wheel, pressure and MPE in [MIDI](#midi-channels-maps-and-controllers).
+Every connection from a modulator to the sound is a **route**: one cell of the MOD matrix, a source on its row and a destination in its column, with an amount. This chapter covers the matrix page (MATRIX in the sub-page row, **MTX** in a STACK chain map, MOD MATRIX on screen), every source and destination, and every gesture that makes, changes or deletes a route. The modulators are in [Envelopes and LFOs](#envelopes-and-lfos), the filter's route cells and the VCA in [the voice chain](#the-voice-chain-pitch-filter-fx-amp-stereo-and-sends), the wheel, pressure and MPE in [MIDI](#midi-channels-maps-and-controllers).
 
 ## MOD: every connection is a route
 
@@ -3759,18 +3828,15 @@ The MOD node's own page is the matrix; **SEQ** steps on to the envelopes, SPEED 
 
 ![The MOD MATRIX page, annotated](img/algo_mtx.png)
 
-1. **Header:** MOD MATRIX.
-2. **Source rows:** ENV1 to ENV3, LFO1 to LFO3.
-3. **A primed column**, PIT PITCH, holding LFO 1's +2 route: the INIT vibrato.
-4. **VELO** and **NOTE.**
-5. **The hand rows** (WHEEL, PRESS, SLIDE), then ALGO's **OP5** and **OP6**; `×` marks a column a tap can't reach.
-6. **Readout:** the route under the cursor in full words (`ENV 1 → FILTER CUTOFF`) …
-7. … and the amount in the destination's terms (`0 = 0 oct`).
-8. **Hint:** the keys for the cell under the cursor …
-9. … and what they do (MIX + MINUS deletes the route).
-10. **Count:** routes in use and destinations primed (`5 ROUTES   2 OF 16 DEST`).
-11. **Chain map**, on MOD.
-12. **Sub-pages:** MTX lit.
+1. **Header:** PART 1 · SOUND, page MOD MATRIX.
+2. **Column heads:** the destinations, block over parameter (FLT FREQ, FLT Q, OUT VCA, FX FX, then the primed PIT PITCH, holding LFO 1's +2 route: the INIT vibrato); `>` means more off the edge.
+3. **Row labels:** the sources, ENV1 to ENV3, LFO1 to LFO3, VELO, NOTE, the hand rows (WHEEL, PRESS, SLIDE), then ALGO's **OP5** and **OP6**; `×` marks a column a tap can't reach.
+4. **Readout:** the route under the cursor in full words (`ENV 1 → FILTER CUTOFF`).
+5. **Amount** in the destination's terms (`0 = 0 oct`).
+6. **Hint:** the keys for the cell under the cursor (`MIX + MINUS DELETES THE ROUTE`).
+7. **Count:** routes in use and destinations primed (`5 ROUTES   2 OF 16 DEST`).
+8. **Chain map:** MOD lit.
+9. **Sub-page row:** MATRIX (underlined), ENV1, ENV2, ENV3; `>` for SPEED and the LFOs.
 
 The page has no cells of its own; the encoders work the grid:
 
@@ -3783,7 +3849,7 @@ The page has no cells of its own; the encoders work the grid:
 
 Five columns show at once; `<` and `>` mean more off screen. Each header has two lines: the block (FLT, OUT, FX, PIT, LF1, E2, OP1 …) over the parameter. A cell with a route is lit and prints its amount, an empty cell is an outline, the cursor's cell is outlined in the accent colour. A route at 0 stays a route (it prints `0`), ready for an amount.
 
-![The matrix scrolled, with eight primed columns](img/mod_matrix_wide.png)
+![The matrix scrolled, `<` and `>`](img/mod_matrix_wide.png)
 
 ## MOD: the sources
 
@@ -3892,9 +3958,9 @@ Not destinations: TYPE, MODE lists, VOICE, FX PLACE, the jacks, STEAL, TIME (gli
 | [VA](#va-the-variable-wave-engine) | VA's **WAVE1**, **WAVE2**, **BLEND**, **SUB**, **STABILITY**; OSC1's and OSC2's **SHAPE**, **CRSE**, **FINE**; NOISE's **LEVEL** |
 | [TAPE](#tape-the-sample-engine) | SRC's **START**, **VOL**; DECK's continuous knobs (labels follow the machine); the machine page's **AGE**, **TAPE** |
 
-A column whose parameter does nothing in the current setting (MORPH while ALG A and ALG B match, say) turns grey; its routes stay, waiting.
+A column whose parameter does nothing in the current setting (MORPH while ALG A and ALG B match, say) turns grey and the readout adds INERT; its routes stay, waiting.
 
-![A route to MORPH while MORPH is inert](img/mod_matrix_morph_inert.png)
+![A route to MORPH while MORPH is inert: ENV 1 → ALGO MORPH, +60 = +47%, INERT](img/mod_matrix_morph_inert.png)
 
 ## MOD: ALGO's operator taps
 
@@ -3940,7 +4006,7 @@ Continuous knobs read 0 to 127 unless the screen shows a unit (ms, Hz, dB, s, %)
 | **MIX + B*n*** | Opens Part *n*'s mixer from anywhere; inside the mixer, jumps to that Part's mixer on the same page |
 | **MIX + SEQ** | MIDI-learns the touched cell ([MIDI](#midi-channels-maps-and-controllers)) |
 
-The mixer opens on **SND**, then on the mixer page you last used this session. The header reads `PART 1 · MIX`.
+The mixer opens on **SND**, then on the mixer page you last used this session. The header reads `PART 1 · MIX` and the page name (`PART 1 · MIX SENDS`).
 
 **Why:** PRT's third cell is OUT; opening there, a stray turn could send the Part to a pair you are not listening to.
 
@@ -3967,13 +4033,19 @@ Every mixer page has the same frame: the header, the focused cell large (with it
 
 ![The mixer's PART page, annotated](img/mixer.png)
 
-1. `PART 1 · MIX`.
-2. LEVEL's glyph.
-3. The six Parts' levels and meters, this Part in accent.
-4. **CH**, **MODE**, **OUT**.
-5. **LEVEL**, **PAN**, **BEND**.
-6. The chain map.
-7. The hint: `MIX + B1-6 PART`, `MIX + SEQ LEARN`.
+1. Header: `PART 1 · MIX PART`.
+2. Focused cell: LEVEL 94.
+3. LEVEL's glyph: a fader.
+4. Hint: `SEQ+TURN FINE`, `MIX + SEQ LEARN`.
+5. The six Parts' levels and meters, this Part in accent.
+6. **CH**.
+7. **MODE**.
+8. **OUT**.
+9. **LEVEL**.
+10. **PAN**.
+11. **BEND**.
+12. Chain map: PRT lit.
+13. Sub-page row: PART underlined.
 
 | Cell | Range | Default | What it does |
 |---|---|---|---|
@@ -3994,15 +4066,15 @@ Beside each LEVEL bar is a meter taken after the EQ and before LEVEL: −48 to 0
 
 ![VOICES page, annotated](img/mixer_voi.png)
 
-1. Header.
-2. Focused cell.
-3. Hint (on RESERVE, the total: `RESERVES 2/8`).
+1. Header: `PART 1 · MIX VOICES`.
+2. Focused cell: MODE POLY.
+3. Hint: `MIX + B1-6 PART` (on RESERVE it shows the total, `RESERVES 2/8`).
 4. Levels and meters.
 5. **MODE**.
 6. **VOICES**.
 7. **RESERVE**.
-8. Chain map.
-9. Sub-pages.
+8. Chain map: PRT lit.
+9. Sub-page row: VOICES underlined.
 
 | Cell | Options | Default | What it does |
 |---|---|---|---|
@@ -4020,15 +4092,15 @@ RESERVE may not pass the Part's VOICES, and all reserves together may not pass 8
 
 ![EQ page, annotated](img/mixer_eq.png)
 
-1. Header.
-2. Focused cell (TILT in dB).
+1. Header: `PART 1 · MIX EQ`.
+2. Focused cell: TILT 0 dB.
 3. Hint: `SEQ+TURN FINE`, `MIX + SEQ LEARN`.
 4. Levels and meters, with SMART EQ's four live cuts.
 5. **TILT**.
 6. **LO CUT**.
 7. **ROLE**.
-8. Chain map.
-9. Sub-pages.
+8. Chain map: PRT lit.
+9. Sub-page row: EQ underlined.
 
 | Cell | Range | Default | What it does |
 |---|---|---|---|
@@ -4066,16 +4138,15 @@ SMART EQ stops Parts masking each other. Where a higher-ROLE Part is loud in a b
 
 ![SENDS page, annotated](img/mixer_snd.png)
 
-1. Header.
-2. Focused cell.
+1. Header: `PART 1 · MIX SENDS`.
+2. Focused cell: CHORUS 0.
 3. Glyph: a level bar.
 4. Hint: the effect and its TYPE (`CHORUS ▸ I`).
-5. Effects flow, the focused send's effect lit.
+5. Effects flow, the focused send's effect (CHR) lit.
 6. **CHORUS**.
 7. **DELAY**.
 8. **REVERB**.
-9. Chain map.
-10. Sub-pages: none.
+9. Chain map: SND lit (no sub-pages).
 
 **CHORUS**, **DELAY** and **REVERB** run 0 to 127, default 0. Sends belong to the Sound and glide on load. They are taken after EQ and SMART EQ, **before** LEVEL and PAN: a Part at LEVEL 0 plays only through its effects. The taper is squared: 64 is −12 dB, so the top half covers 12 dB.
 
@@ -4110,90 +4181,84 @@ SMART EQ stops Parts masking each other. Where a higher-ROLE Part is loud in a b
 | **FLANGER** | Short delay on a slow triangle, fed back; right side sweeps the other way |
 | **PHASER** | Six all-pass stages a side, fed back |
 
-The right side reads on the inverted sweep, so it is wide in stereo and safe in mono. FLANGER's and PHASER's feedback is fixed; their notches come from the dry Part beside the return, so the CHORUS send sets their depth. The glyph is a braid; FLANGER and PHASER draw two strands.
+The right side reads on the inverted sweep, so it is wide in stereo and safe in mono. FLANGER's and PHASER's feedback is fixed; their notches come from the dry Part beside the return, so the CHORUS send sets their depth. The glyph for I, II and I+II is a braid; FLANGER draws a moiré comb, PHASER a ray gun, OFF a flat dry line.
 
 ![CHORUS page on I, annotated](img/mixer_chr.png)
 
-1. Header.
-2. TYPE: I.
-3. Glyph.
-4. Hint.
-5. Effects flow.
+1. Header: `PART 6 · MIX CHORUS`.
+2. Focused cell: TYPE I.
+3. Glyph: a braid.
+4. Hint: `MIX + B1-6 PART`.
+5. Effects flow, CHR lit.
 6. **TYPE**.
 7. **RATE**.
 8. **DEPTH**.
 9. **MIX**.
-10. Chain map.
-11. Sub-pages.
+10. Chain map: CHR lit (no sub-pages).
 
 ![CHORUS page on II, annotated](img/mixer_chr_ii.png)
 
-1. Header.
-2. TYPE: II.
-3. Glyph.
-4. Hint.
-5. Effects flow.
+1. Header: `PART 6 · MIX CHORUS`.
+2. Focused cell: TYPE II.
+3. Glyph: a tighter braid.
+4. Hint: `MIX + B1-6 PART`.
+5. Effects flow, CHR lit.
 6. **TYPE**.
 7. **RATE**.
 8. **DEPTH**.
 9. **MIX**.
-10. Chain map.
-11. Sub-pages.
+10. Chain map: CHR lit (no sub-pages).
 
 ![CHORUS page on I+II, annotated](img/mixer_chr_i-ii.png)
 
-1. Header.
-2. TYPE: I+II.
-3. Glyph.
-4. Hint.
-5. Effects flow.
+1. Header: `PART 6 · MIX CHORUS`.
+2. Focused cell: TYPE I+II.
+3. Glyph: a braid of both lines.
+4. Hint: `MIX + B1-6 PART`.
+5. Effects flow, CHR lit.
 6. **TYPE**.
 7. **RATE**.
 8. **DEPTH**.
 9. **MIX**.
-10. Chain map.
-11. Sub-pages.
+10. Chain map: CHR lit (no sub-pages).
 
 ![CHORUS page on FLANGER, annotated](img/mixer_chr_flanger.png)
 
-1. Header.
-2. TYPE: FLANGER.
-3. Glyph, two strands.
-4. Hint.
-5. Effects flow.
+1. Header: `PART 6 · MIX CHORUS`.
+2. Focused cell: TYPE FLANGER.
+3. Glyph: a moiré comb.
+4. Hint: `MIX + B1-6 PART`.
+5. Effects flow, CHR lit.
 6. **TYPE**.
 7. **RATE**.
 8. **DEPTH**.
 9. **MIX**.
-10. Chain map.
-11. Sub-pages.
+10. Chain map: CHR lit (no sub-pages).
 
 ![CHORUS page on PHASER, annotated](img/mixer_chr_phaser.png)
 
-1. Header.
-2. TYPE: PHASER.
-3. Glyph, two strands.
-4. Hint.
-5. Effects flow.
+1. Header: `PART 6 · MIX CHORUS`.
+2. Focused cell: TYPE PHASER.
+3. Glyph: a ray gun.
+4. Hint: `MIX + B1-6 PART`.
+5. Effects flow, CHR lit.
 6. **TYPE**.
 7. **RATE**.
 8. **DEPTH**.
 9. **MIX**.
-10. Chain map.
-11. Sub-pages.
+10. Chain map: CHR lit (no sub-pages).
 
 ![CHORUS page on OFF, annotated](img/mixer_chr_off.png)
 
-1. Header.
-2. TYPE: OFF.
-3. Hint.
-4. Effects flow.
+1. Header: `PART 6 · MIX CHORUS`.
+2. Focused cell: TYPE OFF (a flat dry line beside it).
+3. Hint: `MIX + B1-6 PART`.
+4. Effects flow, CHR lit.
 5. **TYPE**.
 6. **RATE**.
 7. **DEPTH**.
 8. **MIX**.
-9. Chain map.
-10. Sub-pages.
+9. Chain map: CHR lit (no sub-pages).
 
 > **Design note:** I, II and I+II are the Juno-60's chorus buttons: two bucket-brigade lines on triangles, I at 0.513 Hz and II at 0.863 Hz at the default RATE. FLANGER is the feedback comb from Jon Dattorro's "Effect Design Part 2" (1997); PHASER the all-pass phaser of Julius O. Smith's "An Allpass Approach to Digital Phasing and Flanging" (1984). Both borrow the chorus's own delay lines, so they cost no memory at all.
 
@@ -4203,17 +4268,23 @@ The right side reads on the inverted sweep, so it is wide in stereo and safe in 
 
 ![The delay page, annotated](img/delay.png)
 
-1. **TYPE**, large while touched.
-2. The effects flow, the delay lit.
-3. TYPE's cell.
-4. **TIME** and **FDBK**.
-5. **TONE**, **REV** and **MIX**.
-6. Sub-pages: DELAY, CHARACTER, GRAIN.
+1. Header: `PART 6 · MIX DELAY`.
+2. Focused cell: TYPE TAPE.
+3. Hint: `MIX + B1-6 PART`.
+4. Effects flow, DLY lit.
+5. **TYPE**.
+6. **TIME** (95, the 375 ms default).
+7. **FDBK**.
+8. **TONE**.
+9. **REV**.
+10. **MIX**.
+11. Chain map: DLY lit.
+12. Sub-page row: DELAY underlined.
 
 | Cell | Range | Default | What it does |
 |---|---|---|---|
 | **TYPE** | TAPE, GRAIN | TAPE | TAPE echo, or repeats built from grains of the last half second |
-| **TIME** | 10 to 500 ms (FREE) or a note (SYNC) | 375 ms, 1/8D | Time between repeats; under GRAIN, how far behind the grains start |
+| **TIME** | 0 to 127 on screen, no unit: 10 to 500 ms (FREE); or a note (SYNC) | 95 (375 ms), 1/8D | Time between repeats; under GRAIN, how far behind the grains start |
 | **FDBK** | 0 to 127 | 51 | How much of each repeat comes round again |
 | **TONE** | 0 to 127 | 76 | Roll-off inside the loop: lower is darker each repeat |
 | **REV** | 0 to 127 | 0 | Delay return into the reverb (squared taper) |
@@ -4224,18 +4295,18 @@ The right side reads on the inverted sweep, so it is wide in stereo and safe in 
 
 ![DELAY page on GRAIN, annotated](img/mixer_dly_grain.png)
 
-1. Header.
-2. TYPE: GRAIN.
-3. Hint.
-4. Effects flow.
+1. Header: `PART 6 · MIX DELAY`.
+2. Focused cell: TYPE GRAIN.
+3. Hint: `MIX + B1-6 PART`.
+4. Effects flow, DLY lit.
 5. **TYPE**.
 6. **TIME**.
 7. **FDBK**.
 8. **TONE**.
 9. **REV**.
 10. **MIX**.
-11. Chain map.
-12. Sub-pages.
+11. Chain map: DLY lit.
+12. Sub-page row: DELAY underlined.
 
 ### DELAY: SYNC and the tempo
 
@@ -4255,10 +4326,16 @@ The right side reads on the inverted sweep, so it is wide in stereo and safe in 
 
 ![The delay's CHARACTER sub-page, annotated](img/delay-char.png)
 
-1. MECHANICS' glyph: the reel, wobbling with the transport.
-2. **MECH**.
-3. **SAT**.
-4. Sub-page row, on CHARACTER.
+1. Header: `PART 6 · MIX DELAY CHAR`.
+2. Focused cell: MECHANICS 19.
+3. MECHANICS' glyph: the reel, wobbling with the transport.
+4. Hint: `SEQ+TURN FINE`, `MIX + SEQ LEARN`.
+5. Effects flow, DLY lit.
+6. **MECH**.
+7. **SAT**.
+8. **SYNC**.
+9. Chain map: DLY lit.
+10. Sub-page row: CHARACTER underlined.
 
 | Cell | Range | Default | What it does |
 |---|---|---|---|
@@ -4270,15 +4347,15 @@ Under GRAIN, MECHANICS and SAT dim (`TAPE TYPE ONLY`) and keep their values.
 
 ![CHARACTER page under GRAIN, annotated](img/mixer_char_grain.png)
 
-1. Header.
-2. Focused cell, dimmed.
-3. Band: `TAPE TYPE ONLY`.
-4. Effects flow.
-5. **MECHANICS**, dimmed.
+1. Header: `PART 6 · MIX DELAY CHAR`.
+2. Focused cell: MECHANICS 19, dimmed.
+3. Hint band: `TAPE TYPE ONLY`.
+4. Effects flow, DLY lit.
+5. **MECH**, dimmed.
 6. **SAT**, dimmed.
 7. **SYNC**, live under both TYPEs.
-8. Chain map.
-9. Sub-pages.
+8. Chain map: DLY lit.
+9. Sub-page row: CHARACTER underlined.
 
 ## MIXER: the GRAIN sub-page
 
@@ -4286,15 +4363,22 @@ Under GRAIN, MECHANICS and SAT dim (`TAPE TYPE ONLY`) and keep their values.
 
 ![The delay's GRAIN sub-page, annotated](img/delay-grain.png)
 
-1. **SIZE**.
-2. **DENSITY**.
-3. **PITCH**: +12 with high FDBK is a shimmer.
-4. **TEXTURE**.
-5. Sub-page row, on GRAIN.
+1. Header: `PART 6 · MIX DELAY GRAIN`.
+2. Focused cell: SIZE 76.
+3. SIZE's glyph: a dial.
+4. Hint: `SEQ+TURN FINE`, `MIX + SEQ LEARN`.
+5. Effects flow, DLY lit.
+6. **SIZE**.
+7. **DENSITY**.
+8. **PITCH** (0 here; +12 with high FDBK is a shimmer).
+9. **TEXTURE**.
+10. **SYNC**.
+11. Chain map: DLY lit.
+12. Sub-page row: GRAIN underlined.
 
 | Cell | Range | Default | What it does |
 |---|---|---|---|
-| **SIZE** | 10 to 500 ms | 76 | Grain length |
+| **SIZE** | 0 to 127 on screen, no unit: 10 to 500 ms | 76 | Grain length |
 | **DENSITY** | 1 to 128 a second | 76 | Grains started per second |
 | **PITCH** | −24 to +24 | 0 | Shift in semitones |
 | **TEXTURE** | 0 to 127 | 25 | 0: a regular train TIME behind; up: random starts scattered round TIME |
@@ -4304,17 +4388,17 @@ Each grain reads the cells when it starts, through a smooth bell, so nothing zip
 
 ![GRAIN page under TAPE, annotated](img/mixer_grain.png)
 
-1. Header.
-2. Focused cell, dimmed.
-3. Band: `GRAIN TYPE ONLY`.
-4. Effects flow.
+1. Header: `PART 6 · MIX DELAY GRAIN`.
+2. Focused cell: SIZE 76, dimmed.
+3. Hint band: `GRAIN TYPE ONLY`.
+4. Effects flow, DLY lit.
 5. **SIZE**, dimmed.
 6. **DENSITY**, dimmed.
 7. **PITCH**, dimmed.
 8. **TEXTURE**, dimmed.
-9. **SYNC**.
-10. Chain map.
-11. Sub-pages.
+9. **SYNC**, live.
+10. Chain map: DLY lit.
+11. Sub-page row: GRAIN underlined.
 
 Starting points: shimmer, PITCH +12, FDBK high, TEXTURE low, some REV. Haze: DENSITY high, SIZE short, TEXTURE high.
 
@@ -4357,94 +4441,93 @@ Starting points: drum room, ROOM, SIZE low, DECAY short. Pad, HALL or BLOOM, lon
 
 ![REVERB page on QUAD, annotated](img/mixer_rev.png)
 
-1. Header.
-2. TYPE: QUAD.
-3. Hint.
-4. Effects flow.
+1. Header: `PART 6 · MIX REVERB`.
+2. Focused cell: TYPE QUAD.
+3. Hint: `MIX + B1-6 PART`.
+4. Effects flow, REV lit.
 5. **TYPE**.
-6. **SIZE**.
-7. **TIME**.
-8. **DAMP**.
-9. **SMEAR**.
-10. **MIX**, in %.
-11. Chain map.
-12. Sub-pages.
+6. **SIZE** (663ms).
+7. **TIME** (1.9s).
+8. **DAMP** (6.1k).
+9. **SMEAR** (OFF).
+10. **MIX** (100%).
+11. Chain map: REV lit.
+12. Sub-page row: REVERB underlined.
 
 ![REVERB page on ROOM, annotated](img/mixer_rev_room.png)
 
-1. Header.
-2. TYPE: ROOM.
-3. Hint.
-4. Effects flow.
+1. Header: `PART 6 · MIX REVERB`.
+2. Focused cell: TYPE ROOM.
+3. Hint: `MIX + B1-6 PART`.
+4. Effects flow, REV lit.
 5. **TYPE**.
-6. **SIZE**.
-7. **DECAY**.
-8. **TONE** (`OFF` at the top).
-9. **DIFFUSE**.
-10. **MIX**.
-11. Chain map.
-12. Sub-pages.
+6. **SIZE** (117ms).
+7. **DECAY** (1.0s).
+8. **TONE** (OFF).
+9. **DIFFUSE** (0.45).
+10. **MIX** (100%).
+11. Chain map: REV lit.
+12. Sub-page row: REVERB underlined.
 
 ![REVERB page on HALL, annotated](img/mixer_rev_hall.png)
 
-1. Header.
-2. TYPE: HALL.
-3. Hint.
-4. Effects flow.
+1. Header: `PART 6 · MIX REVERB`.
+2. Focused cell: TYPE HALL.
+3. Hint: `MIX + B1-6 PART`.
+4. Effects flow, REV lit.
 5. **TYPE**.
-6. **SIZE**.
-7. **DECAY**.
-8. **TONE**.
-9. **DIFFUSE**.
-10. **MIX**.
-11. Chain map.
-12. Sub-pages.
+6. **SIZE** (563ms).
+7. **DECAY** (2.0s).
+8. **TONE** (12k).
+9. **DIFFUSE** (0.49).
+10. **MIX** (100%).
+11. Chain map: REV lit.
+12. Sub-page row: REVERB underlined.
 
 ![REVERB page on BLOOM, annotated](img/mixer_rev_bloom.png)
 
-1. Header.
-2. TYPE: BLOOM.
-3. Hint.
-4. Effects flow.
+1. Header: `PART 6 · MIX REVERB`.
+2. Focused cell: TYPE BLOOM.
+3. Hint: `MIX + B1-6 PART`.
+4. Effects flow, REV lit.
 5. **TYPE**.
-6. **SWELL**.
-7. **DECAY**.
-8. **TONE**.
-9. **DIFFUSE**.
-10. **MIX**.
-11. Chain map.
-12. Sub-pages.
+6. **SWELL** (538ms).
+7. **DECAY** (11s).
+8. **TONE** (3.3k).
+9. **DIFFUSE** (0.48).
+10. **MIX** (100%).
+11. Chain map: REV lit.
+12. Sub-page row: REVERB underlined.
 
 ![REVERB page on GATE, annotated](img/mixer_rev_gate.png)
 
-1. Header.
-2. TYPE: GATE.
-3. Hint.
-4. Effects flow.
+1. Header: `PART 6 · MIX REVERB`.
+2. Focused cell: TYPE GATE.
+3. Hint: `MIX + B1-6 PART`.
+4. Effects flow, REV lit.
 5. **TYPE**.
-6. **LENGTH**.
-7. **TAIL**.
-8. **TONE**.
-9. **DENSITY** (taps).
-10. **MIX**.
-11. Chain map.
-12. Sub-pages.
+6. **LENGTH** (195ms).
+7. **TAIL** (0.43s).
+8. **TONE** (4.6k).
+9. **DENSITY** (8.0).
+10. **MIX** (100%).
+11. Chain map: REV lit.
+12. Sub-page row: REVERB underlined.
 
 ![REVERB page on REVERSE, annotated](img/mixer_rev_reverse.png)
 
-1. Header.
-2. TYPE: REVERSE.
-3. Glyph: the TYPE's word.
-4. Hint.
-5. Effects flow.
-6. **TYPE**.
-7. **LENGTH**.
-8. **REGEN** (`OFF` at 0).
-9. **TONE**.
-10. **DENSITY**.
-11. **MIX**.
-12. Chain map.
-13. Sub-pages.
+1. Header: `PART 6 · MIX REVERB`.
+2. Focused cell: TYPE REVERSE.
+3. Hint: `MIX + B1-6 PART`.
+4. Effects flow, REV lit.
+5. **TYPE**.
+6. **LENGTH** (478ms).
+7. **REGEN** (`OFF` at 0).
+8. **TONE** (8.6k).
+9. **DENSITY** (0.63).
+10. **MIX** (100%).
+11. Chain map: REV lit.
+12. Sub-page row: REVERB underlined.
 
 > **Design note:** ROOM, HALL, BLOOM, GATE and REVERSE were derived from, and A/B-matched against, thement's open-source midiverb_emulator, which recreates a classic hardware reverb from its decompiled programs. ROOM's and BLOOM's structures and HALL's diffuser start from numbers read out of it; the engine, the knobs and everything between the reference settings are Chimera's. Each starting setting was fitted until decay per octave, pre-delay, early energy, echo density and brightness matched within a few percent. QUAD is Chimera's original ring; SMEAR is ours too, a wander bounded to a few cents. Fitting reverbs by octave-band decay is a strange way to spend an evening, but the GATE does sound right.
 
@@ -4463,12 +4546,12 @@ Starting points: drum room, ROOM, SIZE low, DECAY short. Pad, HALL or BLOOM, lon
 
 | Control | Shows | What it does |
 |---|---|---|
-| **PRE-DLY** (reads PRE) | ms | Silence before the reverb, so the attack stays clear |
+| **PRE-DLY** | ms | Silence before the reverb, so the attack stays clear |
 | **ONSET** | ms | REVERSE's pre-delay |
 | **SHAPE** | dB | GATE's burst envelope: falling, flat or rising |
 | **CURVE** | dB | REVERSE's rising curve |
 | **LOOPS** | 0 to 90° | ROOM's coupling: 0 four short loops, 90 two long |
-| **SPREAD** (reads SPRD) | ms | HALL's diffuser: how far early echoes spread |
+| **SPREAD** | ms | HALL's diffuser: how far early echoes spread |
 | **RATE** | 0.1 to 2 Hz | SMEAR's speed |
 | **DAMP**, **SMEAR** | | As on REV (GATE's DAMP damps its TAIL) |
 | **SYNC** | OFF, TIME, ALL | Tempo sync (below) |
@@ -4477,88 +4560,88 @@ Starting points: drum room, ROOM, SIZE low, DECAY short. Pad, HALL or BLOOM, lon
 
 ![MORE page on QUAD, annotated](img/mixer_more.png)
 
-1. Header.
-2. Effects flow.
-3. **RATE**.
-4. Chain map.
-5. Sub-pages.
+1. Header: `PART 6 · MIX REVERB MORE`.
+2. Effects flow, REV lit (no focused cell under QUAD: only RATE).
+3. **RATE** (0.95Hz).
+4. Chain map: REV lit.
+5. Sub-page row: MORE underlined.
 
 ![MORE page on ROOM, annotated](img/mixer_more_room.png)
 
-1. Header.
-2. PRE-DLY, large.
-3. Glyph.
-4. Hint.
-5. Effects flow.
-6. **PRE-DLY**.
-7. **DAMP**.
-8. **SMEAR**.
-9. **RATE**.
-10. **SYNC**.
-11. **LOOPS**.
-12. Chain map.
-13. Sub-pages.
+1. Header: `PART 6 · MIX REVERB MORE`.
+2. Focused cell: PRE-DLY 4 ms.
+3. Glyph: the reverb's envelope over time.
+4. Hint: `SEQ+TURN FINE`, `MIX + SEQ LEARN`.
+5. Effects flow, REV lit.
+6. **PRE-DLY** (4ms).
+7. **DAMP** (4.5k).
+8. **SMEAR** (OFF).
+9. **RATE** (0.95Hz).
+10. **SYNC** (OFF).
+11. **LOOPS** (57).
+12. Chain map: REV lit.
+13. Sub-page row: MORE underlined.
 
 ![MORE page on HALL, annotated](img/mixer_more_hall.png)
 
-1. Header.
-2. PRE-DLY, large.
-3. Glyph.
-4. Hint.
-5. Effects flow.
-6. **PRE-DLY**.
-7. **DAMP**.
-8. **SMEAR**.
-9. **RATE**.
-10. **SYNC**.
-11. **SPREAD**.
-12. Chain map.
-13. Sub-pages.
+1. Header: `PART 6 · MIX REVERB MORE`.
+2. Focused cell: PRE-DLY 7 ms.
+3. Glyph: the reverb's envelope over time.
+4. Hint: `SEQ+TURN FINE`, `MIX + SEQ LEARN`.
+5. Effects flow, REV lit.
+6. **PRE-DLY** (7ms).
+7. **DAMP** (3.2k).
+8. **SMEAR** (OFF).
+9. **RATE** (0.95Hz).
+10. **SYNC** (OFF).
+11. **SPREAD** (107ms).
+12. Chain map: REV lit.
+13. Sub-page row: MORE underlined.
 
 ![MORE page on BLOOM, annotated](img/mixer_more_bloom.png)
 
-1. Header.
-2. PRE-DLY, large.
-3. Glyph.
-4. Hint.
-5. Effects flow.
-6. **PRE-DLY**.
-7. **SMEAR**.
-8. **RATE**.
-9. **SYNC**.
-10. Chain map.
-11. Sub-pages.
+1. Header: `PART 6 · MIX REVERB MORE`.
+2. Focused cell: PRE-DLY 17 ms.
+3. Glyph: the reverb's envelope over time.
+4. Hint: `SEQ+TURN FINE`, `MIX + SEQ LEARN`.
+5. Effects flow, REV lit.
+6. **PRE-DLY** (17ms).
+7. **SMEAR** (OFF).
+8. **RATE** (0.95Hz).
+9. **SYNC** (OFF).
+10. Chain map: REV lit.
+11. Sub-page row: MORE underlined.
 
 ![MORE page on GATE, annotated](img/mixer_more_gate.png)
 
-1. Header.
-2. PRE-DLY, large.
-3. Glyph.
-4. Hint.
-5. Effects flow.
-6. **PRE-DLY**.
-7. **SHAPE**.
-8. **SMEAR**.
-9. **RATE**.
-10. **SYNC**.
-11. **DAMP**.
-12. Chain map.
-13. Sub-pages.
+1. Header: `PART 6 · MIX REVERB MORE`.
+2. Focused cell: PRE-DLY 9 ms.
+3. Glyph: the reverb's envelope over time.
+4. Hint: `SEQ+TURN FINE`, `MIX + SEQ LEARN`.
+5. Effects flow, REV lit.
+6. **PRE-DLY** (9ms).
+7. **SHAPE** (-22dB).
+8. **SMEAR** (OFF).
+9. **RATE** (0.95Hz).
+10. **SYNC** (OFF).
+11. **DAMP** (2.0k).
+12. Chain map: REV lit.
+13. Sub-page row: MORE underlined.
 
 ![MORE page on REVERSE, annotated](img/mixer_more_reverse.png)
 
-1. Header.
-2. ONSET, large.
-3. Glyph.
-4. Hint.
-5. Effects flow.
-6. **ONSET**.
-7. **CURVE**.
-8. **SMEAR**.
-9. **RATE**.
-10. **SYNC**.
-11. Chain map.
-12. Sub-pages.
+1. Header: `PART 6 · MIX REVERB MORE`.
+2. Focused cell: ONSET 89 ms.
+3. Glyph: REVERSE's rising burst over time.
+4. Hint: `SEQ+TURN FINE`, `MIX + SEQ LEARN`.
+5. Effects flow, REV lit.
+6. **ONSET** (89ms).
+7. **CURVE** (33dB).
+8. **SMEAR** (OFF).
+9. **RATE** (0.95Hz).
+10. **SYNC** (OFF).
+11. Chain map: REV lit.
+12. Sub-page row: MORE underlined.
 
 ### REVERB: tempo sync
 
@@ -4576,15 +4659,15 @@ ROOM offers OFF and TIME; QUAD has no SYNC. A time the reverb cannot reach is ma
 
 ![DUCK page, annotated](img/mixer_duck.png)
 
-1. Header.
-2. AMOUNT, large, in %.
-3. Band: `DUCKS THE TAIL UNDER ITS INPUT`.
-4. Effects flow.
-5. **AMOUNT**.
-6. **RELEASE**.
-7. **SMART ROLE**.
-8. Chain map.
-9. Sub-pages.
+1. Header: `PART 6 · MIX REVERB DUCK`.
+2. Focused cell: AMOUNT 0 %.
+3. Hint band: `DUCKS THE TAIL UNDER ITS INPUT`.
+4. Effects flow, REV lit.
+5. **AMOUNT** (0%).
+6. **RELEASE** (299 ms).
+7. **SMART ROLE** (BACK).
+8. Chain map: REV lit.
+9. Sub-page row: DUCK underlined.
 
 | Cell | Range | Default | What it does |
 |---|---|---|---|
@@ -4598,18 +4681,18 @@ It listens to every REVERB send and the delay's REV, and ducks only the wet retu
 
 ## MIXER: the MOR2 sub-page
 
-**MORE 2** (MOR2) is HALL's alone: **DENSITY** (reads DENS), 3 to 8 taps a side, about 4 by default: more early echoes is denser. Under other TYPEs it is empty and skipped.
+**MORE 2** (MOR2) is HALL's alone: **DENSITY**, 3 to 8 taps a side, about 4 by default: more early echoes is denser. Under other TYPEs it is empty and skipped.
 
 ![MORE 2 page on HALL, annotated](img/mixer_mor2.png)
 
-1. Header.
-2. DENSITY, large.
-3. Glyph.
-4. Hint.
-5. Effects flow.
+1. Header: `PART 6 · MIX REVERB MORE 2`.
+2. Focused cell: DENSITY 4.0.
+3. Glyph: the reverb's envelope over time.
+4. Hint: `SEQ+TURN FINE`, `MIX + SEQ LEARN`.
+5. Effects flow, REV lit.
 6. **DENSITY**.
-7. Chain map.
-8. Sub-pages.
+7. Chain map: REV lit.
+8. Sub-page row: MORE 2 underlined.
 
 ## MIXER: the MST page
 
@@ -4617,26 +4700,26 @@ It listens to every REVERB send and the delay's REV, and ducks only the wet retu
 
 ![MASTER page, annotated](img/mixer_mst.png)
 
-1. Header.
-2. OUT, up the side of the curve.
-3. Gain-reduction meter.
-4. The curve's area.
-5. The curve, IN along the bottom, KEY named under it.
-6. **THRESH**.
-7. **RATIO**.
+1. Header: `PART 6 · MIX MASTER`.
+2. OUT: the curve's output axis (IN runs along the bottom).
+3. Gain-reduction meter, at the right.
+4. The curve: input to output (a straight line at RATIO 1:1).
+5. The KEY, named inside the graph: `FULL`.
+6. **THRESH** (89).
+7. **RATIO** (1:1).
 8. **ATK**.
 9. **REL**.
 10. **KEY**.
 11. **MIX**.
-12. Chain map.
-13. Sub-pages: MASTER, LEVEL.
+12. Chain map: MST lit.
+13. Sub-page row: MASTER underlined.
 
 | Cell | Range | Default | What it does |
 |---|---|---|---|
-| **THRESH** | −40 to 0 dB | about −12 dB | Where it starts working |
+| **THRESH** | 0 to 127 on screen, no unit: −40 to 0 dB | 89 (about −12 dB) | Where it starts working |
 | **RATIO** | 1:1, 1.5:1, 2:1, 3:1, 4:1, 6:1, 10:1, 20:1, MAX | 1:1 | 1:1 is off; MAX is a limiter's slope |
-| **ATK** | 0.1 to 100 ms | 64 | Attack |
-| **REL** | 10 ms to 1 s | 64 | Release |
+| **ATK** | 0 to 127 on screen: 0.1 to 100 ms | 64 | Attack |
+| **REL** | 0 to 127 on screen: 10 ms to 1 s | 64 | Release |
 | **KEY** | FULL, LOW, HIGH, HIT, PART 1, PART 2, PART 3, PART 4, PART 5, PART 6 | FULL | What the detector hears |
 | **MIX** | 0 to 127 | 127 | Parallel blend: 0 dry, 127 compressed |
 
@@ -4666,10 +4749,10 @@ Starting points: pumping from a DRUM Part 1, KEY PART 1, RATIO 4:1+, THRESH low,
 
 ![LEVEL page, annotated](img/mixer_lvl.png)
 
-1. Header.
-2. Focused cell.
-3. Glyph: a level bar.
-4. Hint.
+1. Header: `PART 6 · MIX LEVEL`.
+2. Focused cell: VOL 127.
+3. Glyph: a fader.
+4. Hint: `SEQ+TURN FINE`, `MIX + SEQ LEARN`.
 5. SMART EQ's bands for Parts 1 to 6 and REV, each role's letter (F, M, B) under it.
 6. **VOL**.
 7. **PAN**.
@@ -4677,8 +4760,8 @@ Starting points: pumping from a DRUM Part 1, KEY PART 1, RATIO 4:1+, THRESH low,
 9. **SMART EQ**.
 10. **AMOUNT**.
 11. **REV ROLE**.
-12. Chain map.
-13. Sub-pages.
+12. Chain map: MST lit.
+13. Sub-page row: LEVEL underlined.
 
 | Cell | Range | Default | What it does |
 |---|---|---|---|
@@ -4748,18 +4831,21 @@ The header names the ring or scene: `RING 3  RHYTHM`, `SCENE 1  CHORDS`.
 
 ![ORB page, annotated](img/orbit_orb.png)
 
-1. Header: the playing scene, ORBIT, the beat and sounding dots.
-2. Frame line: key, scale, bars, tempo with its source (`INT` own clock, `MIDI` followed clock).
-3. The chord progression round the outside, the playing segment lit, the sweep showing the bar.
-4. The rings, ring 1 outermost: hits filled, accents ringed, the playing step lit, each Part number at step 1; a muted ring dark.
-5. **RING** (`3 › P3`).
-6. **KEY**.
-7. **SCALE**.
-8. **BARS**.
-9. **SCENE**.
-10. **BPM**.
-11. Chain map.
-12. Sub-pages: ORB, CUSTOM.
+1. Header: `SCENE 1  ORBIT`, the sounding dot.
+2. Ring 1's track: an empty step, marked `+`.
+3. Frame line: `A MINOR · 4 BARS · 120 INT`, key, scale, bars and tempo with its source (`INT` own clock, `MIDI` followed clock).
+4. A hit on ring 1, filled.
+5. Another empty step on ring 1.
+6. **RING**: `3 › P3`.
+7. **KEY**: A.
+8. **SCALE**: MINOR.
+9. **BARS**: 4.
+10. **SCENE**: 1.
+11. **BPM**: 120.
+12. Chain map, ORB lit.
+13. Sub-page row: ORB CUSTOM, ORB underlined.
+
+The thick arc round the outside is the chord progression, one piece per segment, the playing one lit. Inside it the rings, ring 1 outermost: hits filled, empty steps `+`, accents ringed, the playing step lit, each Part number at step 1 (the `1 2 3 3` up the top); a muted ring is dark, as ring 5 at the centre.
 
 | Cell | Range | Default | What it does |
 |---|---|---|---|
@@ -4778,15 +4864,14 @@ A new project's scene 1 is a four-bar A minor groove, i–VI–VII–i: ring 1 r
 
 ![CUSTOM page, annotated](img/orbit_custom.png)
 
-1. Header.
-2. The twelve notes round a circle, tonic at the top.
-3. A note out of the scale: outline.
-4. A note in the scale: filled.
-5. Centre: the scale's name and size.
-6. **NOTE**: the cursor.
-7. **IN SCALE**: `ROOT` on the tonic.
-8. Chain map.
-9. Sub-pages, CUSTOM lit.
+1. Header: `SCENE 1  CUSTOM`.
+2. Centre: the scale's name and size, `MINOR 7 NOTES`.
+3. **NOTE**: A, the cursor.
+4. **IN SCALE**: `ROOT` on the tonic.
+5. Chain map, ORB lit.
+6. Sub-page row: ORB CUSTOM, CUSTOM underlined.
+
+Round the centre the twelve notes sit on a circle, tonic at the top: in the scale filled, out of it outlined, the cursor large.
 
 | Cell | Range | What it does |
 |---|---|---|
@@ -4809,22 +4894,23 @@ RHYTHM is the RING node's own page.
 
 ![RHYTHM page, annotated](img/orbit_rhythm.png)
 
-1. Header: `RING 3  RHYTHM`.
-2. Focused cell: STEPS.
-3. The ring's steps on a line, a tick under step 1.
-4. **STEPS**.
-5. **HITS**.
-6. **ROTATE**.
-7. **CHANCE**.
-8. **MUTATE**.
-9. **MUTE**.
-10. Chain map.
-11. Sub-pages: RHYTHM, VOICE, NOTES.
+1. Header: `RING 1  RHYTHM`.
+2. Focused cell, large: HITS `5/16`.
+3. Its arc.
+4. The ring's steps on a line, hits large, a tick under step 1, the playing step lit.
+5. **STEPS**: 16.
+6. **HITS**: 5.
+7. **ROTATE**: 0.
+8. **CHANCE**: 100%.
+9. **MUTATE**: 0%.
+10. **MUTE**: OFF.
+11. Chain map, RING lit.
+12. Sub-page row: RHYTHM VOICE NOTES, RHYTHM underlined.
 
 | Cell | Range | Default | What it does |
 |---|---|---|---|
 | **STEPS** | 1 to 32 | 16 | Steps in a bar |
-| **HITS** | 0 to STEPS | 4 | Hits, spread evenly (`1/1` reads hits over steps) |
+| **HITS** | 0 to STEPS | 4 | Hits, spread evenly (`5/16` reads hits over steps) |
 | **ROTATE** | 0 to STEPS − 1 | 0 | Turns the pattern |
 | **CHANCE** | 0 to 100 % | 100 % | Each hit's chance to sound |
 | **MUTATE** | 0 to 100 % | 0 % | Chance of a small change at each loop's end; 0 locks it |
@@ -4837,18 +4923,18 @@ A new STEPS, HITS or ROTATE lays the hits out afresh, dropping MUTATE's nudges.
 ![VOICE page, annotated](img/orbit_voice.png)
 
 1. Header: `RING 3  VOICE`.
-2. Focused cell: GATE.
+2. Focused cell, large: ACCENT 2.
 3. Its arc.
 4. Hint `MIX + SEQ LEARNS A CC`, and the register (`C4 TO B4 · ACCENT +30 VEL`).
-5. Hits as bars, GATE long and velocity tall; accents taller in the second ink.
-6. **GATE**.
-7. **VEL**.
-8. **ACCENT**.
-9. **OCTAVE**.
-10. **RANGE**.
-11. **SNAP**.
-12. Chain map.
-13. Sub-pages.
+5. Hits as bars, GATE wide and velocity tall; the two accented hits taller, the playing step lit.
+6. **GATE**: 60%.
+7. **VEL**: 90.
+8. **ACCENT**: 2.
+9. **OCTAVE**: 4.
+10. **RANGE**: 0.
+11. **SNAP**: CHORD.
+12. Chain map, RING lit.
+13. Sub-page row: RHYTHM VOICE NOTES, VOICE underlined.
 
 | Cell | Range | Default | What it does |
 |---|---|---|---|
@@ -4866,16 +4952,16 @@ No note plays out of key. A bass ring on CHORD plays roots and fifths; a melody 
 ![NOTES page, annotated](img/orbit_notes.png)
 
 1. Header: `RING 3  NOTES`.
-2. Focused cell: MODE, with `POOL 1 · HITS 1 · COMES ROUND IN 1`.
-3. The chips: the ring's notes.
-4. **MODE**.
-5. **WALK**.
-6. **TARGET**.
-7. **LEARN**.
+2. Focused cell, large: MODE POOL.
+3. The line `POOL 1 · HITS 1 · COMES ROUND IN 1` and the chips, the ring's notes (one, E4).
+4. **MODE**: POOL.
+5. **WALK**: UP.
+6. **TARGET**: 3.
+7. **LEARN**: OFF.
 8. **CLEAR** (`C4 / RND`, with MIX).
-9. **NOTE**.
-10. Chain map.
-11. Sub-pages.
+9. **NOTE**: E4.
+10. Chain map, RING lit.
+11. Sub-page row: RHYTHM VOICE NOTES, NOTES underlined.
 
 | Cell | Range | Default | What it does |
 |---|---|---|---|
@@ -4922,14 +5008,13 @@ On a DRUM Part each note picks a pad by note name ([the KIT keymap](#drum-the-ki
 ![CHORDS page, annotated](img/orbit_chrd.png)
 
 1. Header: `SCENE 1  CHORDS`.
-2. Focused cell: SEGS.
+2. Focused cell, large: SEGS 4.
 3. Its arc.
 4. A chip per segment, numeral over chord (`i` over `Am`), the selected one outlined; the bars under them.
-5. **SEGS**.
-6. **DEGREE** (`i Am`).
-7. **PLAY** (`-`).
-8. Chain map.
-9. No sub-pages.
+5. **SEGS**: 4.
+6. **DEGREE**: `i Am`.
+7. **PLAY**: `-`.
+8. Chain map, CHRD lit; CHRD has no sub-pages.
 
 | Cell | Range | Default | What it does |
 |---|---|---|---|
@@ -4957,13 +5042,12 @@ A scene is the five rings, the progression, key, scale and BARS.
 ![SCENES page, annotated](img/orbit_scn.png)
 
 1. Header: `SCENE 1  SCENES`.
-2. Focused cell: `SCENE · PLAYING`, or `SCENE · ON THE LOOP` when queued.
+2. Focused cell, large: `SCENE · PLAYING` 1, or `SCENE · ON THE LOOP` when queued.
 3. Eight slots: saved filled, empty outlined, playing ringed, queued filling, SAVE's dotted.
-4. **SCENE**.
-5. **SAVE** (`TO 1`).
+4. **SCENE**: 1.
+5. **SAVE**: `TO 1`.
 6. **SWITCH**: LOOP.
-7. Chain map.
-8. No sub-pages.
+7. Chain map, SCN lit; SCN has no sub-pages.
 
 | Cell | Range | What it does |
 |---|---|---|
@@ -5036,7 +5120,7 @@ SETTINGS has its own look: whole-width lists with a highlight bar, a growing bre
 
 ![SETTINGS, annotated](img/settings.png)
 
-1. Breadcrumb (`SETTINGS › PROJECT`).
+1. Breadcrumb: `SETTINGS`, growing as you go in (`SETTINGS › PROJECT`).
 2. The bar.
 3. A chevron: the row opens a list or page.
 4. `LATER`: not built yet; dimmed and skipped.
@@ -5354,11 +5438,10 @@ In light mode accents darken only as far as they must. The boot splash keeps its
 
 1. Breadcrumb.
 2. Focused cell.
-3. Glyph.
-4. Waveform.
-5. **SIZE**.
-6. Footer: project and state.
-7. Footer: keys.
+3. Waveform.
+4. **SIZE**.
+5. Footer: project and state.
+6. Footer: keys.
 
 **SIZE**: NORMAL (default) or LARGE, which draws cell labels and values, the focus label, hints, SETTINGS lists and Sound names a size up wherever they fit. Header, breadcrumbs, chain map, the big value, pictures, dialogs, ORBIT's rings and MANAGE's columns stay.
 
@@ -5385,11 +5468,10 @@ In light mode accents darken only as far as they must. The boot splash keeps its
 
 1. Breadcrumb.
 2. Focused cell.
-3. Glyph.
-4. Waveform.
-5. **FIRST**.
-6. Footer: project and state.
-7. Footer: keys.
+3. Waveform.
+4. **FIRST**.
+5. Footer: project and state.
+6. Footer: keys.
 
 **FIRST** orders ALGO's OSC sub-pages: PARAMS (default; one parameter across six operators first) or OPS (OPERATOR 1 to 6 first). No page is ever skipped, even a silent operator's, since LEVEL 0 is exactly the page you open to turn it up ([ALGO](#algo-the-six-operator-engine)).
 
@@ -5450,21 +5532,20 @@ Read-only; reads nothing new from the card.
 
 1. Breadcrumb.
 2. The name, large.
-3. Its picture.
-4. Version and build.
-5. The firmware's label, and whether its second part needs an update.
-6. **VERSION**.
-7. **BUILD**.
-8. **CHIP**: revision and board package.
-9. **CLOCK**.
-10. **RESET**: why the unit last restarted.
-11. **CARD**: label or serial as last seen, `NO CARD` or `ERROR`.
-12. Footer: project and state.
-13. Footer: `MENU BACK`.
+3. `FIRMWARE 0.4.0 RELEASE`: version and build type.
+4. The build's identity: version and commit (`0.4.0 b42f427c`).
+5. **VERSION**.
+6. **BUILD**.
+7. **CHIP**: revision and board package.
+8. **CLOCK**.
+9. **RESET**: why the unit last restarted.
+10. **CARD**: label or serial as last seen, `NO CARD` or `ERROR`.
+11. Footer: project and state.
+12. Footer: `MENU BACK`.
 
 ## SETTINGS: every question it asks
 
-A question is a panel: the question, what will happen, the answers. Any encoder moves, **EDIT** answers, **MENU** or **SEQ** cancels (`EDIT OK · MENU BACK`). DELETE, CLEAR and SAVE OVER open on CANCEL. Every question but the scene ones offers CANCEL; the table lists the other answers.
+A question is a panel: the question, what will happen, the answers. Any encoder moves, **EDIT** answers, **MENU** or **SEQ** cancels (`EDIT OK · MENU BACK`). DELETE, CLEAR, SAVE OVER, RELOAD SCENE and ENTER DFU open on CANCEL. Every question but `NAME EXISTS` and the slot-update one (`P4 ALSO USES SLOT 03`) offers CANCEL; the table lists the other answers.
 
 | Prompt (second line) | When it appears | Answers |
 |---|---|---|
@@ -5480,7 +5561,7 @@ A question is a panel: the question, what will happen, the answers. Any encoder 
 | `LOAD INTO P1?` | Library load into an edited Part | **SAVE PART FIRST**; **REPLACE** loads |
 | `LOAD INTO P1?` (`KIT NOT IN LIBRARY`) | Loading over an unsaved DRUM kit | **REPLACE** loads |
 | `RELOAD P1 FROM SLOT 03?` | PART › RELOAD FROM PROJ | **SAVE PART FIRST**; **RELOAD** drops edits |
-| `ALSO USES SLOT 03` (`IT KEEPS THE OLD SOUND`) | Saving over a slot other Parts play | **UPDATE P4** / **UPDATE ALL** move them to the new Sound; **LEAVE** keeps the old until they reload |
+| `P4 ALSO USES SLOT 03` (`IT KEEPS THE OLD SOUND`) | Saving over a slot other Parts play | **UPDATE P4** / **UPDATE ALL** move them to the new Sound; **LEAVE** keeps the old until they reload (no CANCEL) |
 | `CLEAR SLOT 03?` (`NO PART USES IT`) | MIX + MINUS in the Sound browser ([the SD card](#the-sd-card-projects-sounds-and-the-library)) | **CLEAR** empties the slot |
 | `CLEAR SCENE 3?` (`IT GOES SILENT ON THE LOOP`) | ORBIT › CLEAR | **CLEAR** |
 | `SAVE OVER SCENE 2?` (`ITS SAVED SCENE IS REPLACED`) | ORBIT › SAVE TO PROJ, or EDIT on SCN, over a saved scene | **SAVE OVER** |
@@ -5492,7 +5573,7 @@ A question is a panel: the question, what will happen, the answers. Any encoder 
 
 ![NAME EXISTS](img/settings_prompt_name_exists.png)
 
-![Quick save refused: another card](img/settings_prompt_card_changed.png)
+![Quick save onto another card](img/settings_prompt_card_changed.png)
 
 ![SAVE OVER](img/settings_prompt_save_over.png)
 
@@ -5553,11 +5634,11 @@ The MIDI settings live in **SETTINGS › MIDI CONFIG**: SYNC, PORT CONFIG (dimme
 ![SYNC page, annotated](img/settings_midi_sync.png)
 
 1. Header: `SETTINGS › MIDI › SYNC`.
-2. Focused cell, large.
-3. Picture band.
-4. **SYNC** (A).
-5. **PROGRAM** (B).
-6. Footer: project name and unsaved mark.
+2. Focused cell, large: SYNC EXT.
+3. The picture band: a test wave in this shot.
+4. **SYNC** (A): EXT.
+5. **PROGRAM** (B): OFF.
+6. Footer: the project's name (`NEW PROJECT`), marked when unsaved.
 7. Footer: `A-F EDIT · MENU BACK`.
 
 | Cell | Options | Default | What it does |
@@ -5576,15 +5657,15 @@ The MIDI settings live in **SETTINGS › MIDI CONFIG**: SYNC, PORT CONFIG (dimme
 ![CHANNELS page, annotated](img/settings_midi_channels.png)
 
 1. Header: `SETTINGS › MIDI › CHANNELS`.
-2. Focused cell, large.
-3. Picture band.
-4. **P1** (A).
-5. **P2** (B).
-6. **P3** (C).
-7. **P4** (D).
-8. **P5** (E).
-9. **P6** (F).
-10. Footer: project name and unsaved mark.
+2. Focused cell, large: P1 on 1, with its arc.
+3. The picture band: a test wave in this shot.
+4. **P1** (A): 1.
+5. **P2** (B): 2.
+6. **P3** (C): 3.
+7. **P4** (D): 4.
+8. **P5** (E): 5.
+9. **P6** (F): 6.
+10. Footer: the project's name (`NEW PROJECT`), marked when unsaved.
 11. Footer: `A-F EDIT · MENU BACK`.
 
 | Cell | Range | Default | What it does |
@@ -5600,13 +5681,13 @@ These are the same values as the channel on the mixer's Part page ([the mixer](#
 ![CONTROL CHANNELS page, annotated](img/settings_midi_control.png)
 
 1. Header: `SETTINGS › MIDI › CONTROL`.
-2. Focused cell, large.
-3. Picture band.
-4. **MIXER** (A).
-5. **SEQ** (B); the readout and focus band call it SEQUENCER.
-6. **AUTO** (C).
-7. **BUILT-IN** (D).
-8. Footer: project name and unsaved mark.
+2. Focused cell, large: MIXER OFF, with its arc.
+3. The picture band: a test wave in this shot.
+4. **MIXER** (A): OFF.
+5. **SEQ** (B): OFF; the readout and focus band call it SEQUENCER.
+6. **AUTO** (C): OFF.
+7. **BUILT-IN** (D): ON.
+8. Footer: the project's name (`NEW PROJECT`), marked when unsaved.
 9. Footer: `A-F EDIT · MENU BACK`.
 
 Here AUTO is on Part 1's channel, so it is dimmed:
@@ -5679,13 +5760,13 @@ Most controllers set the zones themselves with RPN 6 (zone on, bend range 48). O
 ![MPE page, annotated](img/settings_midi_mpe.png)
 
 1. Header: `SETTINGS › MIDI › MPE`.
-2. Focused cell, large.
-3. Picture band.
-4. **LOWER** (A).
-5. **L BEND** (B).
-6. **UPPER** (C).
-7. **U BEND** (D).
-8. Footer: project name and unsaved mark.
+2. Focused cell, large: LOWER OFF, with its arc.
+3. The picture band: a test wave in this shot.
+4. **LOWER** (A): OFF.
+5. **L BEND** (B): 48.
+6. **UPPER** (C): OFF.
+7. **U BEND** (D): 48.
+8. Footer: the project's name (`NEW PROJECT`), marked when unsaved.
 9. Footer: `A-F EDIT · MENU BACK`.
 
 | Cell | Options | Default | What it does |
@@ -5795,18 +5876,17 @@ Here Part 1 plays the map `EC4`, two rows above its Sound's rows:
 
 ![The MIDI MAP page, annotated](img/midi-map.png)
 
-1. Breadcrumb: the Part.
-2. `CONTROLLER`: the first row.
-3. The map's name, or `NONE`.
-4. The bar: control, then cell (`CC 30` `MORPH`). **A** moves it. Master FX and ORBIT cells name their block (`REVERB MIX`, `RING 1 CHANCE`).
-5. INPUT kind, short (`JUMP`).
-6. A dimmed row does nothing now: the Sound binds the same control, or the cell is not in the Part's engine (`- STRUCT`).
-7. The Sound's own rows.
-8. The bar's binding spelled out; for a relative kind, the bytes for one step each way.
-9. `IN EC4`: the row belongs to the map.
-10. **C MIN**, **D MAX** (0 to 255; MAX below MIN reverses), **F ECHO**.
-11. **B CONTROL**, **E INPUT** (and **EDIT TARGET** on current firmware).
-12. Footer: `A MOVE · MIX+MINUS DELETES`.
+1. Breadcrumb: `… › PART 1 › MIDI MAP`, the Part whose map this is.
+2. `CONTROLLER`, the first row, with the map in use: `EC4` (or `NONE`).
+3. The bar: control, then cell (`CC 30  MORPH`). **A** moves it. Master FX and ORBIT cells name their block (`REVERB MIX`, `RING 1 CHANCE`).
+4. Its INPUT kind, short: `JUMP`.
+5. A dimmed row (`CC 74  - RESO`) does nothing now: the Sound binds the same control, or the cell is not in the Part's engine (`- STRUCT`). The rows below it are the Sound's own.
+6. The bar's INPUT spelled out (`ABSOLUTE · JUMPS TO THE KNOB`); for a relative kind, the bytes for one step each way.
+7. `IN EC4`: the row belongs to the map.
+8. **C MIN**, **D MAX** (0 to 255; MAX below MIN reverses), **F ECHO**.
+9. **B CONTROL**, **E INPUT**, **EDIT TARGET**.
+10. Footer: the project's name and `* MODIFIED`.
+11. Footer: `A MOVE · MIX+MINUS DELETES`.
 
 ### MIDI: the keys on a MIDI MAP row
 
@@ -5867,6 +5947,8 @@ A relative encoder moves the cell one step a detent, like Chimera's own encoders
 Add a binding without the controller, choosing its CC afterwards:
 
 ![Pointing at a cell for a new binding](img/midi_map_pointing.png)
+
+The steps:
 
 1. On MIDI MAP, put the bar on `+ NEW BINDING` (`POINT AT A CELL`, `ITS CC IS SET ON ITS ROW`) and press **EDIT**.
 2. Chimera opens the page you came from. The value line reads `NEW BINDING`, the hint `A-F POINT  MENU CANCELS`.
@@ -6006,12 +6088,12 @@ Select the bank with CC 0 (or CC 32 alone, or CC 0 at 0 then CC 32); it stays un
 ![ECHO page, annotated](img/settings_midi_echo.png)
 
 1. Header: `SETTINGS › MIDI › ECHO`.
-2. Focused cell, large.
-3. Its glyph: a switch.
-4. Picture band.
-5. **ECHO** (A).
-6. **PARAM OUT** (B).
-7. Footer: project name and unsaved mark.
+2. Focused cell, large: ECHO ON.
+3. Its glyph: a switch, on.
+4. The picture band: a test wave in this shot.
+5. **ECHO** (A): ON.
+6. **PARAM OUT** (B): OFF.
+7. Footer: the project's name (`NEW PROJECT`), marked when unsaved.
 8. Footer: `A-F EDIT · MENU BACK`.
 
 | Cell | Options | Default | What it does |
@@ -6072,23 +6154,15 @@ Each Part plays in a tuning of its own: equal temperament, a historical temperam
 ![TUNING page, annotated](img/settings_audio_tuning.png)
 
 1. Header: `SETTINGS › AUDIO › TUNING`.
-2. Focused cell, large.
+2. Focused cell, large: TUNE, 0, with its arc.
 3. Picture band.
-4. **TUNE** (A).
-5. **TUNING** (B).
-6. **MAPPING** (C).
-7. Footer: project name and unsaved mark.
+4. **TUNE** (A), 0.
+5. **TUNING** (B), 12-TET.
+6. **MAPPING** (C), CONTIN.
+7. Footer: the project and its state.
 8. Footer: `A-F EDIT · MENU BACK`.
 
-With a Scala file picked:
-
-![TUNING with bohlen-pierce.scl picked, annotated](img/tuning.png)
-
-1. **TUNE** (A), in cents.
-2. **TUNING** (B): past MTS it steps through the card's Scala files by name (first 7 characters in the cell).
-3. **MAPPING** (C): `CONTIN.` or `KEYBD`.
-4. The file's description line (its scale's name), or the file name.
-5. With focus, a long file name scrolls here and in the cell.
+With a Scala file picked, **TUNING** shows the file's name (its first 7 characters in the cell; with focus, a long name scrolls), and the focus band shows the description line written inside the file, or the file name when it has none.
 
 | Cell | Range or options | Default | What it does |
 |---|---|---|---|
@@ -6263,17 +6337,19 @@ Hold **EDIT** and press **B1**–**B6** to open the browser for that Part, on th
 
 ![The Sound browser, annotated](img/sound-browser.png)
 
-1. The tab: **PROJECT**, **LIBRARY** or **FACTORY**.
-2. **B ◂▸**: encoder 2 changes tab.
-3. The Part it loads into (**P1**).
-4. The INIT rows: **INIT ALGO**, **INIT MODAL**, **INIT VA**, **INIT TAPE**, **INIT DRUM**.
-5. An INIT row's engine tag.
-6. The slot number, 01 to 128.
-7. The selected row.
-8. The Sound's cost in the pool, in kilobytes.
-9. The Sound's engine.
-10. The keys, with the memory each moves: **EDIT LOADS**, **MIX + EDIT SAVES · +0.3K**, **MIX + MINUS CLEARS · FREES 0.3K**.
-11. The pool meter, as a percentage.
+1. **PROJECT**: the lit tab (then **LIBRARY**, **FACTORY**).
+2. **P1**: the Part it loads into.
+3. **INIT**: the INIT rows: **INIT ALGO**, **INIT MODAL**, **INIT VA**, **INIT TAPE**, **INIT DRUM**.
+4. **DRUM**: an INIT row's engine tag.
+5. **01**: the slot number, 01 to 128.
+6. **0.3K**: the Sound's cost in the pool.
+7. **02 GLASS PLUCK**: the selected row.
+8. **EDIT LOADS**: the load key.
+9. **MIX + EDIT SAVES · +0.3K**: the save key and what it adds.
+10. **MIX + MINUS CLEARS · FREES 0.3K**: the clear key and what it frees.
+11. **4%**: the pool meter.
+
+**B ◂▸** at the right of the keys: encoder 2 changes tab.
 
 Any encoder but B moves the bar; **SEQ** goes back. **EDIT** loads (asking if the Part has unsaved edits); **MIX + EDIT** saves (to the pool on PROJECT, to the card on LIBRARY, nothing on FACTORY); **MIX + MINUS** clears a PROJECT slot after asking, unless a Part plays it. Empty slots are dimmed. Names have up to 16 characters and are cut short at the cost column.
 
@@ -6297,8 +6373,6 @@ A Sound saved to the project lives in memory until you **hold MENU** to write th
 ### Sounds: the pool and its memory
 
 The project's Sounds and in-memory TAPE sources share one 160 KB pool. A Sound takes 0.2 to 0.4 KB; sources far more. The browser's meter shows it; SETTINGS › PROJECT › **POOL** details **USED**, **SOUNDS**, **SOURCES** and **FREE** ([Limits](#limits-the-sound-pool-the-projects-memory)). **PURGE UNUSED SRC** frees sources no Part uses; the files stay on the card.
-
-![SETTINGS › PROJECT › POOL](img/settings_project_pool.png)
 
 When something doesn't fit, the browser says **POOL FULL** and what it needs (**NEEDS 2.0K, 0.2K FREE**), and nothing changes. A project that doesn't fully fit loads what it can: `LOADED · 2 SOUNDS, 1 SRC DIDN'T FIT`.
 
@@ -6436,11 +6510,11 @@ Stereo, 24-bit, 48 kHz, both ways.
 ![USB AUDIO page, annotated](img/settings_audio_usb.png)
 
 1. Header: `SETTINGS › AUDIO › USB`.
-2. Focused cell, large.
-3. Its glyph: a knob.
+2. Focused cell, large: USB IN, 0 dB.
+3. Its glyph: a knob, full.
 4. Picture band.
-5. **USB IN** (A).
-6. Footer: project name and unsaved mark.
+5. **USB IN** (A), 0dB.
+6. Footer: the project and its state.
 7. Footer: `A-F EDIT · MENU BACK`.
 
 | Cell | Options | Default | What it does |
@@ -6689,8 +6763,8 @@ Nothing plays in DFU. Flash with the command above, or power-cycle to return unc
 ![The install screen, annotated](img/install.png)
 
 1. **DON'T POWER OFF.** Chimera is writing its second half; sound keeps playing.
-2. The version being installed, with its build.
-3. The step: **ERASING**, **WRITING**, **SEALING**. Then Chimera carries on.
+2. The version being installed, with its build (`INSTALLING 0.4.0 b42f427c`).
+3. The step, here **WRITING** (**ERASING**, **WRITING**, **SEALING**). Then Chimera carries on.
 
 Buttons and knobs wait until it ends. If the power goes off, the next start installs again from the beginning; the bootloader and first half are never touched.
 
@@ -6769,7 +6843,7 @@ Every command here uses `-a 0`; never `-a 1`.
 
 Check [Known issues](https://joegiralt.github.io/chimera-releases/guides/known-issues) first, then open **Issues › New issue › Bug report** on the releases page. The form asks for:
 
-- **Which build are you on?** From ABOUT or the boot splash (`0.4.0 a1b2c3d4`).
+- **Which build are you on?** From ABOUT or the boot splash (`0.4.0 b42f427c`).
 - **Board.** The **CHIP** cell on ABOUT (`V 176`).
 - **What were you doing when you first noticed it?** Part, engine, Sound or project, what you played.
 - **How can we make it happen?** Steps, from a fresh start if you can.
@@ -6779,6 +6853,19 @@ Check [Known issues](https://joegiralt.github.io/chimera-releases/guides/known-i
 - **Attachments** (optional): a recording, a screen photo or the project file.
 
 ![SETTINGS › SYSTEM › ABOUT](img/settings_system_about.png)
+
+1. Header: SETTINGS › SYSTEM › ABOUT.
+2. The firmware's name, CHIMERA.
+3. FIRMWARE: version and build type (`0.4.0  RELEASE`).
+4. The build's identity: version and commit (`0.4.0 b42f427c`), the line a bug report asks for.
+5. **VERSION**, 0.4.0.
+6. **BUILD**, RELEASE.
+7. **CHIP**, the board (`V 176`).
+8. **CLOCK**, 480 MHZ.
+9. **RESET**, why the chip last restarted (WDOG).
+10. **CARD**, NO CARD here.
+11. Footer: the project and its state.
+12. Footer: `MENU BACK`.
 
 A faint buzz when powered over USB from the computer your audio interface is on is a ground loop, not a bug: use the 9 V supply.
 
@@ -6832,14 +6919,14 @@ Two voice limits sit on the Part's mixer VOICES page (MIXER › PRT, then SEQ; V
 ![VOICES page, annotated](img/mixer_voi.png)
 
 1. Header: `PART 1 · MIX`, the VOICES page.
-2. The focused cell, MODE, and its value.
+2. The focused cell, MODE, and its value (POLY).
 3. The hint: `MIX + B1-6 PART` opens another Part's VOICES.
-4. The picture: all six Parts' levels, the current one in accent.
+4. The picture: all six Parts' levels, the current one (1) in accent.
 5. **MODE** (encoder 1): MONO or POLY.
 6. **VOICES** (encoder 2): the cap, AUTO or 1–8.
 7. **RESERVE** (encoder 3): voices guarded, 0–8.
-8. The chain map: PRT.
-9. The sub-pages: PRT, VOI (VOICES), EQ.
+8. The chain map: PRT lit.
+9. The sub-page row: PART, VOICES (underlined), EQ.
 
 | Cell | Range | Default | What it does |
 |---|---|---|---|
@@ -6871,8 +6958,8 @@ SETTINGS › SYSTEM › DIAGNOSTICS › AUDIO LOAD (AUD LOAD).
 
 ![AUDIO LOAD page, annotated](img/settings_system_diag_aud_load.png)
 
-1. Header: where you are in SETTINGS.
-2. The focused cell, LOAD.
+1. Header: where you are in SETTINGS (`..` › DIAG › AUD LOAD).
+2. The focused cell, LOAD (23 %).
 3. Its glyph, an arc of the load.
 4. The picture: chip revision and clock (`REV V  480 MHZ`), last restart cause (`RST WDOG` for the watchdog), and a load bar with the 75 % mark.
 5. **LOAD** (encoder 1): average load, % of block time.
@@ -6900,12 +6987,12 @@ The six Parts' current Sounds don't count: each Part plays its own copy.
 ![POOL page, annotated](img/settings_project_pool.png)
 
 1. Header: SETTINGS › PROJECT › POOL.
-2. The focused cell, USED, in %.
+2. The focused cell, USED, in % (4 %).
 3. Its glyph, an arc of the same.
 4. The picture: Sounds in white, sources in grey, a faint part being freed, then free space.
 5. **SOUNDS** (encoder 1): how many, and their memory (`17 · 5.8K`).
-6. **SOURCES** (encoder 2): how many, and their memory.
-7. **FREE** (encoder 3): what is left.
+6. **SOURCES** (encoder 2): how many, and their memory (`0 · 0.0K`).
+7. **FREE** (encoder 3): what is left (154K).
 8. Footer: the project and its state.
 9. Footer: MENU goes back.
 

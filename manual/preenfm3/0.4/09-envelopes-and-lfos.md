@@ -26,37 +26,33 @@ Changing TYPE, MODE or FORM never jumps: the new shape takes over from the slot'
 
 ![ENV 1 page, annotated](img/algo_e1.png)
 
-1. **Header:** Part, Sound, ENV 1 / A.
-2. **The picture:** the envelope as set.
-3. **Its stages**, attack to release.
-4. **The touched stage**, lit.
-5. **Stage letters**, A H D S R.
-6. **ATTACK.**
-7. **DECAY.**
-8. **SUSTAIN.**
-9. **RELEASE.**
-10. **HOLD.**
-11. **TYPE:** A.
-12. **Chain map**, on MOD.
-13. **Sub-pages**, ENV1 lit.
+1. **Header:** PART 1 · SOUND, page ENV 1 / A.
+2. **The picture:** the envelope as set, its stages drawn to scale, the touched stage (attack) lit.
+3. **Stage letters:** A H D S R, the touched one lit.
+4. **ATTACK**, 10 ms.
+5. **DECAY**, 299 ms.
+6. **SUSTAIN**, 70%.
+7. **RELEASE**, 299 ms.
+8. **HOLD**, 0.001 ms.
+9. **TYPE:** A.
+10. **Chain map**, MOD lit.
+11. **Sub-page row:** MATRIX ENV1 ENV2 ENV3 `>`, ENV1 underlined.
 
 E2 starts the same way:
 
 ![ENV 2 page, annotated](img/algo_e2.png)
 
 1. Header: ENV 2 / A.
-2. Picture.
-3. Stages.
-4. Touched stage.
-5. Stage letters.
-6. ATTACK.
-7. DECAY.
-8. SUSTAIN.
-9. RELEASE.
-10. HOLD.
-11. TYPE: A.
-12. Chain map.
-13. Sub-pages, ENV2 lit.
+2. The envelope.
+3. Stage letters.
+4. ATTACK.
+5. DECAY.
+6. SUSTAIN.
+7. RELEASE.
+8. HOLD.
+9. TYPE: A.
+10. Chain map, MOD lit.
+11. Sub-page row: `<` ENV1 ENV2 ENV3 SPEED `>`, ENV2 underlined.
 
 | Cell | Range (at MED) | Default | What it does |
 |---|---|---|---|
@@ -92,19 +88,18 @@ With TYPE **B** the page reads **MODE · (two times or rates) / (a shape) · FOR
 ![ENV 3 page, annotated](img/algo_e3.png)
 
 1. **Header:** ENV 3 / B.
-2. **MODE pills** (ENV, LFO, BURST), current one lit.
-3. **The rise**, at RISE's time and SHAPE's curve.
-4. **The fall**, at FALL's time.
-5. **MODE.**
-6. **RISE.**
-7. **FALL.**
-8. **SHAPE.**
-9. **FORM:** AD.
-10. **TYPE:** B.
-11. **Chain map**, on MOD.
-12. **Sub-pages**, ENV3 lit.
+2. **MODE pills:** ENV, LFO, BURST; ENV lit.
+3. **The shape:** up at RISE's time and SHAPE's curve, down at FALL's.
+4. **MODE:** ENV.
+5. **RISE**, 10 ms.
+6. **FALL**, 299 ms.
+7. **SHAPE:** LIN.
+8. **FORM:** AD.
+9. **TYPE:** B.
+10. **Chain map**, MOD lit.
+11. **Sub-page row:** `<` ENV2 ENV3 SPEED LFO1 `>`, ENV3 underlined.
 
-![Envelope 3, type B, ENV · AD](img/env_b_env_ad.png)
+![Envelope 3, type B, ENV · AD, RISE 18 ms](img/env_b_env_ad.png)
 
 | Cell | Range | Default | What it does |
 |---|---|---|---|
@@ -160,16 +155,15 @@ A type B slot feeding the VCA runs every sample, at full range. Anywhere else it
 ![ENV SPEED page, annotated](img/algo_spd.png)
 
 1. **Header:** ENV SPEED.
-2. **Speed pills**, a column a slot: FAST, MED or SLOW lit.
-3. **Hold position** under each column; a type B column is dimmed and reads RISE/FALL.
-4. **E1 SPEED.**
-5. **E2 SPEED.**
-6. **E3 SPEED**, TYPE B, dimmed.
-7. **E1 HOLD.**
-8. **E2 HOLD.**
-9. **E3 HOLD**, TYPE B, dimmed.
-10. **Chain map**, on MOD.
-11. **Sub-pages**, SPEED lit.
+2. **The picture:** speed pills, a column a slot (FAST, MED or SLOW lit), and the hold position under each (AHDSR); the type B column E3 is dimmed and reads RISE/FALL.
+3. **E1 SPEED**, MED.
+4. **E2 SPEED**, MED.
+5. **E3 SPEED**, TYPE B, dimmed.
+6. **E1 HOLD**, AHDSR.
+7. **E2 HOLD**, AHDSR.
+8. **E3 HOLD**, TYPE B, dimmed.
+9. **Chain map**, MOD lit.
+10. **Sub-page row:** `<` ENV3 SPEED LFO1 LFO2 `>`, SPEED underlined.
 
 | Cell | Choices | Default | What it does |
 |---|---|---|---|
@@ -204,40 +198,30 @@ On type B, **RISE**, **FALL** and **SHAPE** are destinations each, under whateve
 
 Each LFO slot's **TYPE** is **CLASSIC** (shape, rate in Hz, sync, phase, depth) or **FUNC** (envelope B locked to LFO mode: TILT, the random walk, rates to 93.75 Hz).
 
-![An LFO page, annotated](img/lfo.png)
-
-1. The touched control's value (CLASSIC RATE in Hz).
-2. **Its glyph:** RATE draws two seconds of the LFO; the others draw what they do.
-3. **The LFO:** one cycle as set.
-4. A dot rides the newest voice's place in the cycle, resting at the start while nothing plays.
-5. **RATE, SHAPE, SYNC** on top; **PHASE** (dimmed under FREE) and **DEPTH** below.
-6. **TYPE:** CLASSIC or FUNC.
-7. `<`: more sub-pages to the left.
-
 ## LFOs: CLASSIC
 
-![LFO 1 page, annotated](img/algo_l1.png)
+![LFO 1 page with RATE 1.33 Hz and DEPTH 127, annotated](img/algo_l1.png)
 
-1. **Header:** LFO 1.
-2. **The touched cell**, large.
-3. **Its glyph:** RATE draws two seconds over a one-second ruler.
-4. **Hint line.**
-5. **The LFO**, one cycle, with the newest voice's dot.
+1. **Header:** PART 1 · SOUND, page LFO 1.
+2. **The touched cell**, large: RATE, 1.33 Hz.
+3. **Its glyph:** RATE draws two seconds of the LFO over a one-second ruler; the other cells draw what they do.
+4. **Hint line:** `SEQ+TURN FINE  MIX + SEQ LEARN`.
+5. **The LFO:** one cycle as set. A dot rides the newest voice's place in the cycle, resting at the start while nothing plays.
 6. **RATE.**
-7. **SHAPE.**
-8. **SYNC.**
+7. **SHAPE:** SINE.
+8. **SYNC:** FREE.
 9. **PHASE**, dimmed under FREE.
-10. **DEPTH.**
-11. **TYPE.**
-12. **Chain map**, on MOD.
-13. **Sub-pages**, LFO1 lit.
+10. **DEPTH**, 127.
+11. **TYPE:** CLASSIC or FUNC.
+12. **Chain map**, MOD lit.
+13. **Sub-page row:** `<` SPEED LFO1 LFO2 LFO3, LFO1 underlined.
 
 LFO 2 and LFO 3 are laid out the same:
 
 ![LFO 2 page, annotated](img/algo_l2.png)
 
 1. Header: LFO 2.
-2. Touched cell.
+2. Touched cell: RATE, 1.00 Hz.
 3. Glyph.
 4. Hint line.
 5. The LFO.
@@ -245,15 +229,15 @@ LFO 2 and LFO 3 are laid out the same:
 7. SHAPE.
 8. SYNC.
 9. PHASE.
-10. DEPTH.
+10. DEPTH, 127.
 11. TYPE.
-12. Chain map.
-13. Sub-pages, LFO2 lit.
+12. Chain map, MOD lit.
+13. Sub-page row, LFO2 underlined.
 
 ![LFO 3 page, annotated](img/algo_l3.png)
 
 1. Header: LFO 3.
-2. Touched cell.
+2. Touched cell: RATE, 1.00 Hz.
 3. Glyph.
 4. Hint line.
 5. The LFO.
@@ -261,10 +245,10 @@ LFO 2 and LFO 3 are laid out the same:
 7. SHAPE.
 8. SYNC.
 9. PHASE.
-10. DEPTH.
+10. DEPTH, 127.
 11. TYPE.
-12. Chain map.
-13. Sub-pages, LFO3 lit.
+12. Chain map, MOD lit.
+13. Sub-page row, LFO3 underlined.
 
 | Cell | Range | Default | What it does |
 |---|---|---|---|

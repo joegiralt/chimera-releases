@@ -46,18 +46,18 @@ The hint line shows `MIX + -/+ PAD` on every pad cell. Pad cells have no MIDI-le
 
 ![KIT page, annotated](img/drum_kit.png)
 
-1. **Header:** Part, pad and machine (`01 TONE KICK`), page.
-2. **Focused cell:** PAD.
-3. **Machine icon**, large, with its family letter.
+1. **Header:** `PART 1 · 01 TONE KICK`, page KIT.
+2. **Focused cell:** PAD, 01.
+3. **Machine icon,** large, with its family letter (T).
 4. **Hint:** `MIX + -/+ PAD`.
-5. **The twelve pads:** number, choke group, icon; the selected one framed.
+5. **The twelve pads:** number, choke group, icon; 01 framed.
 6. **PAD.**
-7. **MACHINE.**
+7. **MACHINE:** KICK.
 8. **LEVEL.**
 9. **PAN.**
 10. **TONAL.**
-11. Chain map, KIT lit.
-12. Sub-pages: KIT, KEYS.
+11. **Chain map:** KIT lit.
+12. **Sub-page row:** KIT KEYS, KIT underlined.
 
 Family letters: **T** TONE, **M** METAL, **B** BODY, **P** PLAIN. A pad lights while it sounds.
 
@@ -88,7 +88,7 @@ A new MACHINE takes its own knob defaults; the pad's other settings stay.
 - Machines with no PITCH (TONE CLAP, BODY SHAKER, PLAIN NOISE) play the same hit everywhere: `NO PITCH ON CLAP`.
 - TONAL on a NONE pad plays nothing from C1 up: `NONE PLAYS NOTHING`.
 
-![TONAL on a CLAP pad: NO PITCH ON CLAP](img/drum_kit_tonal_clap.png)
+![TONAL on 04, a TONE CLAP pad: NO PITCH ON CLAP](img/drum_kit_tonal_clap.png)
 
 **Why:** a note's pad depends on the saved kit, never on the screen. OFF suits pad controllers, sequencers and General MIDI parts (notes from 36 up); TONAL puts the pad's pitch at middle C, where a keyboard plays.
 
@@ -96,16 +96,16 @@ A new MACHINE takes its own knob defaults; the pad's other settings stay.
 
 ![KEYS page, annotated](img/drum_keys.png)
 
-1. **Header**, page KEYS.
-2. **Focused cell:** PAD.
+1. **Header:** `PART 1 · 01 TONE KICK`, page KEYS.
+2. **Focused cell:** PAD, 01.
 3. **Machine icon.**
 4. **Hint:** `MIX + -/+ PAD`; on CHOKE, `GROUPS n/8`.
-5. **The twelve pads.**
+5. **The twelve pads,** 01 framed.
 6. **PAD.**
-7. **CHOKE.**
-8. **RETRIG.**
-9. Chain map, KIT lit.
-10. Sub-pages, KEYS lit.
+7. **CHOKE:** OFF.
+8. **RETRIG:** CUT.
+9. **Chain map:** KIT lit.
+10. **Sub-page row:** KIT KEYS, KEYS underlined.
 
 KEYS (**SEQ** from KIT) sets how the pad's hits meet.
 
@@ -157,16 +157,16 @@ Every pad's sound starts as CLEAN LP4 at 20.0 kHz, Q 0; an open AMP (DECAY INF, 
 
 ![MORE page, annotated](img/drum_more.png)
 
-1. **Header**, page MORE.
-2. **Focused cell:** MACHINE, full name.
+1. **Header:** `PART 1 · 01 TONE KICK`, page MORE.
+2. **Focused cell:** MACHINE, full name TONE KICK (the dot sits just above it).
 3. **Machine icon.**
 4. **Hint:** `MIX + -/+ PAD`.
-5. **Picture band.**
-6. **MACHINE.**
-7. **Knob G:** here START.
-8. **Knob H:** here HARM.
-9. Chain map, MCH lit.
-10. Sub-pages, MORE lit.
+5. **Picture band:** a test wave.
+6. **MACHINE:** KICK.
+7. **START** (knob G).
+8. **HARM** (knob H, HARMONICS).
+9. **Chain map:** MCH lit.
+10. **Sub-page row:** MACHINE MORE, MORE underlined.
 
 The knobs, LEVEL, PAN and VEL are read at the strike; the filter, envelopes, LFO and route amounts follow a ringing hit ([what a ringing hit follows](#drum-what-a-ringing-hit-follows)).
 
@@ -193,19 +193,19 @@ Knobs are listed in cell order: six on MCH, then MORE's. Each MCH image's hint r
 
 ![MCH page, TONE KICK, annotated](img/drum_mch.png)
 
-1. Header.
-2. Focused cell.
-3. Arc.
-4. Hint.
-5. Picture band.
+1. **Header:** `PART 1 · 01 TONE KICK`, page MCH.
+2. **Focused cell:** PITCH, 46 Hz.
+3. **Arc:** where the value sits in its range.
+4. **Hint:** `MIX + -/+ PAD`, `SEQ+TURN FINE`.
+5. **Picture band:** a test wave.
 6. **PITCH.**
 7. **DECAY.**
 8. **SWEEP.**
 9. **SWPT.**
 10. **CLICK.**
 11. **DRIVE.**
-12. Chain map.
-13. Sub-pages.
+12. **Chain map:** MCH lit.
+13. **Sub-page row:** MACHINE MORE, MACHINE underlined.
 
 | Cell | Range | Default | What it does |
 |---|---|---|---|
@@ -224,19 +224,19 @@ Sub kick: DECAY past 1.5 s, SWEEP low, CLICK 0. Punchy: DECAY about 300 ms, SWEE
 
 ![MCH page, TONE SNARE, annotated](img/drum_mch_tone-snare.png)
 
-1. Header.
-2. Focused cell.
-3. Arc.
-4. Hint.
-5. Picture band.
+1. **Header:** `PART 1 · 01 TONE SNARE`, page MCH.
+2. **Focused cell:** PITCH, 173 Hz.
+3. **Arc:** where the value sits in its range.
+4. **Hint:** `MIX + -/+ PAD`, `SEQ+TURN FINE`.
+5. **Picture band:** a test wave.
 6. **PITCH.**
 7. **DECAY.**
 8. **BUMP.**
 9. **SNAP.**
 10. **SDEC.**
 11. **TONE.**
-12. Chain map.
-13. Sub-pages.
+12. **Chain map:** MCH lit.
+13. **Sub-page row:** MACHINE MORE, MACHINE underlined.
 
 | Cell | Range | Default | What it does |
 |---|---|---|---|
@@ -253,19 +253,19 @@ Sub kick: DECAY past 1.5 s, SWEEP low, CLICK 0. Punchy: DECAY about 300 ms, SWEE
 
 ![MCH page, TONE TOM, annotated](img/drum_mch_tone-tom.png)
 
-1. Header.
-2. Focused cell.
-3. Arc.
-4. Hint.
-5. Picture band.
+1. **Header:** `PART 1 · 01 TONE TOM`, page MCH.
+2. **Focused cell:** PITCH, 113 Hz.
+3. **Arc:** where the value sits in its range.
+4. **Hint:** `MIX + -/+ PAD`, `SEQ+TURN FINE`.
+5. **Picture band:** a test wave.
 6. **PITCH.**
 7. **DECAY.**
 8. **SWEEP.**
 9. **SWPT.**
 10. **NOISE.**
 11. **DAMP.**
-12. Chain map.
-13. Sub-pages.
+12. **Chain map:** MCH lit.
+13. **Sub-page row:** MACHINE MORE, MACHINE underlined.
 
 | Cell | Range | Default | What it does |
 |---|---|---|---|
@@ -282,23 +282,23 @@ Sub kick: DECAY past 1.5 s, SWEEP low, CLICK 0. Punchy: DECAY about 300 ms, SWEE
 
 ![MCH page, TONE CLAP, annotated](img/drum_mch_tone-clap.png)
 
-1. Header.
-2. Focused cell.
-3. Arc.
-4. Hint.
-5. Picture band.
+1. **Header:** `PART 1 · 01 TONE CLAP`, page MCH.
+2. **Focused cell:** TONE, 1.34 kHz.
+3. **Arc:** where the value sits in its range.
+4. **Hint:** `MIX + -/+ PAD`, `SEQ+TURN FINE`.
+5. **Picture band:** a test wave.
 6. **TONE.**
 7. **DECAY.**
 8. **CLAPS.**
 9. **SPREAD.**
 10. **TAIL.**
 11. **RING.**
-12. Chain map.
-13. Sub-pages.
+12. **Chain map:** MCH lit.
+13. **Sub-page row:** MACHINE MORE, MACHINE underlined.
 
 | Cell | Range | Default | What it does |
 |---|---|---|---|
-| **TONE** | 500 Hz–4.00 kHz | 1.33 kHz | Burst band-pass |
+| **TONE** | 500 Hz–4.00 kHz | 1.34 kHz | Burst band-pass |
 | **DECAY** | 50 ms–1.00 s | 163 ms | Tail length |
 | **CLAPS** | 1–8 | 4 | How many hands |
 | **SPREAD** | 4–30 ms | 9 ms | Time between claps |
@@ -311,25 +311,25 @@ Sub kick: DECAY past 1.5 s, SWEEP low, CLICK 0. Punchy: DECAY about 300 ms, SWEE
 
 ![MCH page, TONE COWBELL, annotated](img/drum_mch_tone-cowbell.png)
 
-1. Header.
-2. Focused cell.
-3. Arc.
-4. Hint.
-5. Picture band.
+1. **Header:** `PART 1 · 01 COWBELL`, page MCH.
+2. **Focused cell:** PITCH, 547 Hz.
+3. **Arc:** where the value sits in its range.
+4. **Hint:** `MIX + -/+ PAD`, `SEQ+TURN FINE`.
+5. **Picture band:** a test wave.
 6. **PITCH.**
 7. **DECAY.**
-8. **INTV.**
+8. **INTERVAL.**
 9. **TONE.**
 10. **RING.**
 11. **DRIVE.**
-12. Chain map.
-13. Sub-pages.
+12. **Chain map:** MCH lit.
+13. **Sub-page row:** MACHINE MORE, MACHINE underlined.
 
 | Cell | Range | Default | What it does |
 |---|---|---|---|
 | **PITCH** | 300 Hz–1.20 kHz | 547 Hz | Lower square |
 | **DECAY** | 80 ms–1.50 s | 254 ms | Ring |
-| **INTERVAL** (INTV) | 1.20x–1.80x | 1.48x | Upper square over lower |
+| **INTERVAL** | 1.20x–1.80x | 1.48x | Upper square over lower |
 | **TONE** | 600 Hz–6.00 kHz | 2.13 kHz | Band-pass |
 | **RING** | 0–85 | 27 | Resonance |
 | **DRIVE** | 0–100 | 24 | Saturation |
@@ -340,19 +340,19 @@ Sub kick: DECAY past 1.5 s, SWEEP low, CLICK 0. Punchy: DECAY about 300 ms, SWEE
 
 ![MCH page, TONE CYMBAL, annotated](img/drum_mch_tone-cymbal.png)
 
-1. Header.
-2. Focused cell.
-3. Arc.
-4. Hint.
-5. Picture band.
+1. **Header:** `PART 1 · 01 TONE CYMBAL`, page MCH.
+2. **Focused cell:** PITCH, +0.2.
+3. **Arc:** where the value sits in its range.
+4. **Hint:** `MIX + -/+ PAD`, `SEQ+TURN FINE`.
+5. **Picture band:** a test wave.
 6. **PITCH.**
 7. **DECAY.**
 8. **TONE.**
 9. **SPREAD.**
 10. **RING.**
 11. **SHIMMER.**
-12. Chain map.
-13. Sub-pages.
+12. **Chain map:** MCH lit.
+13. **Sub-page row:** MACHINE MORE, MACHINE underlined.
 
 | Cell | Range | Default | What it does |
 |---|---|---|---|
@@ -369,19 +369,19 @@ Sub kick: DECAY past 1.5 s, SWEEP low, CLICK 0. Punchy: DECAY about 300 ms, SWEE
 
 ![MCH page, METAL HAT, annotated](img/drum_mch_metal-hat.png)
 
-1. Header.
-2. Focused cell.
-3. Arc.
-4. Hint.
-5. Picture band.
+1. **Header:** `PART 1 · 01 METAL HAT`, page MCH.
+2. **Focused cell:** PITCH, +0.2.
+3. **Arc:** where the value sits in its range.
+4. **Hint:** `MIX + -/+ PAD`, `SEQ+TURN FINE`.
+5. **Picture band:** a test wave.
 6. **PITCH.**
 7. **DECAY.**
 8. **TONE.**
 9. **SPREAD.**
 10. **RING.**
 11. **NOISE.**
-12. Chain map.
-13. Sub-pages.
+12. **Chain map:** MCH lit.
+13. **Sub-page row:** MACHINE MORE, MACHINE underlined.
 
 | Cell | Range | Default | What it does |
 |---|---|---|---|
@@ -398,19 +398,19 @@ Sub kick: DECAY past 1.5 s, SWEEP low, CLICK 0. Punchy: DECAY about 300 ms, SWEE
 
 ![MCH page, METAL JINGLE, annotated](img/drum_mch_metal-jingle.png)
 
-1. Header.
-2. Focused cell.
-3. Arc.
-4. Hint.
-5. Picture band.
+1. **Header:** `PART 1 · 01 METAL JINGLE`, page MCH.
+2. **Focused cell:** PITCH, +6.1.
+3. **Arc:** where the value sits in its range.
+4. **Hint:** `MIX + -/+ PAD`, `SEQ+TURN FINE`.
+5. **Picture band:** a test wave.
 6. **PITCH.**
 7. **DECAY.**
 8. **JINGLES.**
 9. **SHAKE.**
 10. **TONE.**
 11. **RING.**
-12. Chain map.
-13. Sub-pages.
+12. **Chain map:** MCH lit.
+13. **Sub-page row:** MACHINE MORE, MACHINE underlined.
 
 A tambourine: the hat's squares an octave up, gated by shaken particles.
 
@@ -429,19 +429,19 @@ A tambourine: the hat's squares an octave up, gated by shaken particles.
 
 ![MCH page, BODY SHAKER, annotated](img/drum_mch_body-shaker.png)
 
-1. Header.
-2. Focused cell.
-3. Arc.
-4. Hint.
-5. Picture band.
+1. **Header:** `PART 1 · 01 BODY SHAKER`, page MCH.
+2. **Focused cell:** GRAINS, 852 Hz.
+3. **Arc:** where the value sits in its range.
+4. **Hint:** `MIX + -/+ PAD`, `SEQ+TURN FINE`.
+5. **Picture band:** a test wave.
 6. **GRAINS.**
 7. **DECAY.**
 8. **GLEN.**
 9. **TONE.**
 10. **SHAKE.**
 11. **RING.**
-12. Chain map.
-13. Sub-pages.
+12. **Chain map:** MCH lit.
+13. **Sub-page row:** MACHINE MORE, MACHINE underlined.
 
 | Cell | Range | Default | What it does |
 |---|---|---|---|
@@ -457,17 +457,17 @@ A tambourine: the hat's squares an octave up, gated by shaken particles.
 
 ![MCH page, PLAIN SINE, annotated](img/drum_mch_plain-sine.png)
 
-1. Header.
-2. Focused cell.
-3. Arc.
-4. Hint.
-5. Picture band.
+1. **Header:** `PART 1 · 01 PLAIN SINE`, page MCH.
+2. **Focused cell:** PITCH, 58 Hz.
+3. **Arc:** where the value sits in its range.
+4. **Hint:** `MIX + -/+ PAD`, `SEQ+TURN FINE`.
+5. **Picture band:** a test wave.
 6. **PITCH.**
 7. **DECAY.**
 8. **SWEEP.**
 9. **SWPT.**
-10. Chain map.
-11. Sub-pages.
+10. **Chain map:** MCH lit.
+11. **Sub-page row:** MACHINE MORE, MACHINE underlined.
 
 An 808-style bass on TONAL, a zap, a blip.
 
@@ -482,15 +482,15 @@ An 808-style bass on TONAL, a zap, a blip.
 
 ![MCH page, PLAIN NOISE, annotated](img/drum_mch_plain-noise.png)
 
-1. Header.
-2. Focused cell.
-3. Arc.
-4. Hint.
-5. Picture band.
+1. **Header:** `PART 1 · 01 PLAIN NOISE`, page MCH.
+2. **Focused cell:** DECAY, 35 ms.
+3. **Arc:** where the value sits in its range.
+4. **Hint:** `MIX + -/+ PAD`, `SEQ+TURN FINE`.
+5. **Picture band:** a test wave.
 6. **DECAY.**
 7. **TONE.**
-8. Chain map.
-9. Sub-pages.
+8. **Chain map:** MCH lit.
+9. **Sub-page row:** MACHINE MORE, MACHINE underlined.
 
 | Cell | Range | Default | What it does |
 |---|---|---|---|
@@ -501,17 +501,17 @@ An 808-style bass on TONAL, a zap, a blip.
 
 ![MCH page, PLAIN IMPULSE, annotated](img/drum_mch_plain-impulse.png)
 
-1. Header.
-2. Focused cell.
-3. Arc.
-4. Hint.
-5. Picture band.
+1. **Header:** `PART 1 · 01 IMPULSE`, page MCH.
+2. **Focused cell:** PITCH, 113 Hz.
+3. **Arc:** where the value sits in its range.
+4. **Hint:** `MIX + -/+ PAD`, `SEQ+TURN FINE`.
+5. **Picture band:** a test wave.
 6. **PITCH.**
 7. **DECAY.**
 8. **SWEEP.**
 9. **SWPT.**
-10. Chain map.
-11. Sub-pages.
+10. **Chain map:** MCH lit.
+11. **Sub-page row:** MACHINE MORE, MACHINE underlined.
 
 A pulse under a decay: a rimshot, a click.
 
@@ -529,25 +529,25 @@ A pulse under a decay: a rimshot, a click.
 
 ![KIT page with MACHINE on NONE, annotated](img/drum_kit_none.png)
 
-1. **Header:** `NONE`, page KIT.
+1. **Header:** `PART 1 · 01 NONE`, page KIT.
 2. **Focused cell:** MACHINE, NONE.
 3. **NONE's icon:** a box with an X.
-4. Hint.
-5. **The pads:** this one shows the box.
+4. **Hint:** `MIX + -/+ PAD`.
+5. **The pads:** 01 shows the box.
 6. **PAD:** live.
 7. **MACHINE:** turn to bring a machine back.
 8. **LEVEL:** dimmed, kept.
 9. **PAN:** dimmed, kept.
 10. **TONAL:** live.
-11. Chain map.
-12. Sub-pages.
+11. **Chain map:** KIT lit.
+12. **Sub-page row:** KIT KEYS, KIT underlined.
 
 ![MCH page with MACHINE on NONE, annotated](img/drum_mch_none.png)
 
-1. **Header**, NONE, page MCH.
-2. **Picture band;** knob cells empty.
-3. Chain map.
-4. Sub-pages.
+1. **Header:** `PART 1 · 01 NONE`, page MACHINE.
+2. **Picture band:** a test wave; the knob cells are empty.
+3. **Chain map:** MCH lit.
+4. **Sub-page row:** MACHINE MORE, MACHINE underlined.
 
 NONE, MACHINE's last choice, plays nothing: a note books no voice and chokes nothing, though with PAD FOLLOW it still selects the pad. MCH and MORE are empty; every other pad cell is dimmed but keeps its value, so a machine chosen again gets back the pad's level, pan, chokes and sound (knobs at that machine's defaults). PAD, TONAL, FX and FX PLACE stay live. A ringing hit rings out.
 
@@ -557,17 +557,17 @@ NONE, MACHINE's last choice, plays nothing: a note books no voice and chokes not
 
 ![FILTER page, annotated](img/drum_flt.png)
 
-1. **Header**, page FILTER.
-2. **Filter curve**, cutoff dot; hint above.
-3. **TYPE**, large.
-4. **TYPE.**
-5. **FX** (Part).
-6. **Q** (pad).
-7. **MODE** (pad).
+1. **Header:** `PART 1 · 01 TONE KICK`, page FILTER; hint `MIX + -/+ PAD` under it.
+2. **Filter curve,** cutoff dot at the right.
+3. **TYPE,** large: CLEAN.
+4. **TYPE:** CLEAN (pad).
+5. **FX:** OFF (Part).
+6. **Q:** 0 (pad).
+7. **MODE:** LP4 (pad).
 8. **FX PLACE** (Part).
-9. **FREQ** (pad).
-10. Chain map, FLT lit.
-11. Sub-pages.
+9. **FREQ:** 20.0 kHz (pad).
+10. **Chain map:** FLT lit.
+11. **Sub-page row:** FILTER MODULATION FX, FILTER underlined.
 
 FLT holds the pad's filter and the Part's FX slot. The TYPEs, MODEs and the FX slot are described in [the voice chain](08-voice-chain.md); only the pad split is DRUM's.
 
@@ -591,54 +591,52 @@ These are the Part's pages, shared by every pad and working as in [the voice cha
 ![FILTER MOD page, annotated](img/drum_fmd.png)
 
 1. **Header:** `PART 1 · SOUND  FILTER MOD`.
-2. **Focused cell:** ENV AMT.
+2. **Focused cell:** ENV AMT, 0 %.
 3. **Hint:** `MIX + MINUS DELETES THE ROUTE`.
-4. **Picture band.**
+4. **Picture band:** a test wave.
 5. **ENV AMT.**
 6. **KEYBOARD.**
 7. **FREQ MOD.**
 8. **FDBK** (FEEDBACK).
 9. **RES MOD.**
-10. Chain map, FLT lit.
-11. Sub-pages, FMD lit.
+10. **Chain map:** FLT lit.
+11. **Sub-page row:** FILTER MODULATION FX, MODULATION underlined.
 
 ![FX page, annotated](img/drum_fx.png)
 
 1. **Header:** `PART 1 · SOUND  FX`.
-2. **Focused cell:** INPUT.
+2. **Focused cell:** INPUT, 64.
 3. **Arc.**
 4. **Hint:** `SEQ+TURN FINE`, `MIX + SEQ LEARN`.
-5. **The slot's place** in the chain, over the output.
+5. **Picture band:** the slot's curve, under its place in the chain (MCH, FX, FLT).
 6. **INPUT.**
-7. **MIX;** with FX OFF the slot's knobs are dashes.
-8. Chain map, FLT lit.
-9. Sub-pages, FX lit.
+7. **MIX:** +63; with FX OFF the slot's other knobs are dashes.
+8. **Chain map:** FLT lit.
+9. **Sub-page row:** MODULATION FX JACKS, FX underlined.
 
 ![FILTER JACKS page, annotated](img/drum_jack.png)
 
 1. **Header:** `PART 1 · SOUND  FILTER JACKS`.
-2. **Picture band.**
-3. **FREQ SRC.**
-4. **RES SRC.**
-5. Chain map, FLT lit.
-6. Sub-pages, JACK lit.
+2. **Picture band:** a test wave.
+3. **FREQ SRC:** LFO1.
+4. **RES SRC:** ENV3.
+5. **Chain map:** FLT lit.
+6. **Sub-page row:** MODULATION FX JACKS, JACKS underlined.
 
 ## DRUM: the AMP page
 
 ![AMP page, annotated](img/drum_amp.png)
 
-1. **Header**, page AMP; hint under it.
-2. **Focused stage**, lit.
-3. **The rest**, flat while DECAY is INF.
-4. **The shape.**
-5. **ATTACK.**
-6. **HOLD.**
-7. **DECAY.**
-8. **SPEED.**
-9. **VEL.**
-10. **MODE.**
-11. Chain map, AMP lit.
-12. Sub-pages: AMP, GATE, SENDS.
+1. **Header:** `PART 1 · 01 TONE KICK`, page AMP; hint under it.
+2. **The shape:** flat at full while DECAY is INF; stage letters A H D below.
+3. **ATTACK.**
+4. **HOLD.**
+5. **DECAY:** INF.
+6. **SPEED:** MED.
+7. **VEL:** 127.
+8. **MODE:** 1-SHOT.
+9. **Chain map:** AMP lit.
+10. **Sub-page row:** AMP GATE SENDS, AMP underlined.
 
 The pad's own attack-hold-decay envelope, shaping on top of the machine's DECAY.
 
@@ -657,14 +655,14 @@ The pad's own attack-hold-decay envelope, shaping on top of the machine's DECAY.
 
 ![GATE page, annotated](img/drum_gate.png)
 
-1. **Header**, page GATE.
-2. **Picture band.**
+1. **Header:** `PART 1 · 01 TONE KICK`, page GATE.
+2. **Picture band:** a test wave.
 3. **LPG.**
 4. **DECAY.**
 5. **STRIKE.**
-6. **WIDTH.**
-7. Chain map, AMP lit.
-8. Sub-pages, GATE lit.
+6. **WIDTH:** 64 (Part).
+7. **Chain map:** AMP lit.
+8. **Sub-page row:** AMP GATE SENDS, GATE underlined.
 
 Each pad has its own low-pass gate (as described under AMP in [the voice chain](08-voice-chain.md)), replacing the Part's.
 
@@ -683,17 +681,17 @@ MOD's first three sub-pages are the pad's own modulation. After them come the Pa
 
 ![PENV page, annotated](img/drum_penv.png)
 
-1. **Header**, page PENV.
-2. **Focused stage.**
-3. **HOLD and DECAY.**
-4. **Hint.**
-5. **The shape.**
+1. **Header:** `PART 1 · 01 TONE KICK`, page PENV.
+2. **Hint:** `MIX + -/+ PAD`, `SEQ+TURN FINE`.
+3. **Attack peak** of the shape.
+4. **HOLD and DECAY:** the fall.
+5. **Stage letters:** A H D.
 6. **ATTACK.**
 7. **HOLD.**
-8. **DECAY.**
-9. **SPEED.**
-10. Chain map, MOD lit.
-11. Sub-pages, PENV lit.
+8. **DECAY:** 64.
+9. **SPEED:** MED.
+10. **Chain map:** MOD lit.
+11. **Sub-page row:** MATRIX PAD ENV PAD LFO, PAD ENV underlined.
 
 An AHD envelope like AMP's (DECAY 0–126 or INF, default 64; SPEED default MED), feeding the routes as MOD ENV.
 
@@ -701,17 +699,17 @@ An AHD envelope like AMP's (DECAY 0–126 or INF, default 64; SPEED default MED)
 
 ![PLFO page, annotated](img/drum_plfo.png)
 
-1. **Header**, page PLFO.
-2. **Focused cell:** WAVE.
-3. **Hint.**
-4. **Picture band.**
+1. **Header:** `PART 1 · 01 TONE KICK`, page PLFO.
+2. **Focused cell:** WAVE, SINE.
+3. **Hint:** `MIX + -/+ PAD`.
+4. **Picture band:** a test wave.
 5. **WAVE.**
 6. **SPEED.**
 7. **DEPTH.**
 8. **PHASE.**
 9. **MODE.**
-10. Chain map.
-11. Sub-pages, PLFO lit.
+10. **Chain map:** MOD lit.
+11. **Sub-page row:** PAD ENV PAD LFO ROUTE, PAD LFO underlined.
 
 Feeds the routes as LFO.
 
@@ -727,16 +725,16 @@ Feeds the routes as LFO.
 
 ![ROUTE page, annotated](img/drum_route.png)
 
-1. **Header**, page ROUTE.
-2. **Focused cell.**
-3. **Hint.**
-4. **Picture band.**
+1. **Header:** `PART 1 · 01 TONE KICK`, page ROUTE.
+2. **Focused cell:** ROUTE, 1.
+3. **Hint:** `MIX + -/+ PAD`.
+4. **Picture band:** a test wave.
 5. **ROUTE.**
-6. **SOURCE.**
-7. **DEST.**
-8. **AMOUNT.**
-9. Chain map.
-10. Sub-pages, ROUTE lit.
+6. **SOURCE:** MOD ENV.
+7. **DEST:** CUTOFF.
+8. **AMOUNT:** 0%.
+9. **Chain map:** MOD lit.
+10. **Sub-page row:** PAD LFO ROUTE ENV1 ENV2, ROUTE underlined.
 
 | Cell | Range | Default | What it does |
 |---|---|---|---|
@@ -774,11 +772,11 @@ The Part's own filter TYPE and gate are unused (each pad's replace them); its mi
 ![PAD FOLLOW page, annotated](img/settings_personal_follow.png)
 
 1. **Header:** `PERSONAL › FOLLOW`.
-2. **Focused cell.**
-3. **Picture band.**
+2. **Focused cell:** FOLLOW, IDLE.
+3. **Picture band:** a test wave.
 4. **FOLLOW.**
-5. **Footer:** project, unsaved state.
-6. **Footer:** keys.
+5. **Footer:** the project, `NEW PROJECT`.
+6. **Footer:** the keys, `A-F EDIT · MENU BACK`.
 
 SETTINGS › PERSONALIZE › PAD FOLLOW decides whether a played hit selects its pad. **FOLLOW** is a unit setting, kept in SYSTEM ([SETTINGS](13-settings.md)):
 

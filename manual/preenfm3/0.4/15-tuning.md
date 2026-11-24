@@ -9,23 +9,15 @@ Each Part plays in a tuning of its own: equal temperament, a historical temperam
 ![TUNING page, annotated](img/settings_audio_tuning.png)
 
 1. Header: `SETTINGS › AUDIO › TUNING`.
-2. Focused cell, large.
+2. Focused cell, large: TUNE, 0, with its arc.
 3. Picture band.
-4. **TUNE** (A).
-5. **TUNING** (B).
-6. **MAPPING** (C).
-7. Footer: project name and unsaved mark.
+4. **TUNE** (A), 0.
+5. **TUNING** (B), 12-TET.
+6. **MAPPING** (C), CONTIN.
+7. Footer: the project and its state.
 8. Footer: `A-F EDIT · MENU BACK`.
 
-With a Scala file picked:
-
-![TUNING with bohlen-pierce.scl picked, annotated](img/tuning.png)
-
-1. **TUNE** (A), in cents.
-2. **TUNING** (B): past MTS it steps through the card's Scala files by name (first 7 characters in the cell).
-3. **MAPPING** (C): `CONTIN.` or `KEYBD`.
-4. The file's description line (its scale's name), or the file name.
-5. With focus, a long file name scrolls here and in the cell.
+With a Scala file picked, **TUNING** shows the file's name (its first 7 characters in the cell; with focus, a long name scrolls), and the focus band shows the description line written inside the file, or the file name when it has none.
 
 | Cell | Range or options | Default | What it does |
 |---|---|---|---|

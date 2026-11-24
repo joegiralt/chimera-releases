@@ -36,7 +36,7 @@ Every MODEL's INIT plays at about the same loudness, so switching MODEL does not
 
 ## MODAL: the EXC page (exciter)
 
-**EXC** is the first page of a MODAL Part. Its header names the exciter (PLUCK, STRIKE or BOW) and its cells follow MODEL. All read 0 to 127.
+**EXC** is the first page of a MODAL Part. Its header names the exciter (PLUCK, STRIKE or BOW) and its cells follow MODEL. All read 0 to 127. EXC has no sub-pages, so no sub-page row.
 
 EXCITE, COLOR and BURST are read when a note starts: a turn changes the next note. FORCE and SPEED move a held note, eased so nothing jumps. None of them is a matrix destination; to swell a bowed note, route an envelope into **BRIGHT** or the filter, as the factory Sound CELLO SWELL does.
 
@@ -46,15 +46,14 @@ EXCITE, COLOR and BURST are read when a note starts: a turn changes the next not
 
 ![EXC page on STRING, annotated](img/modal_exc.png)
 
-1. Header: Part, Sound, exciter (PLUCK).
-2. Focused cell.
-3. Its glyph.
-4. Hint: SEQ + turn fine, MIX + SEQ learns a CC.
-5. Picture band: live output.
+1. **Header:** PART 1 · SOUND, exciter PLUCK.
+2. **Focus band:** EXCITE, 102.
+3. **Glyph:** its arc.
+4. **Hint:** `SEQ+TURN FINE  MIX + SEQ LEARN`.
+5. **Picture band:** live output (a test wave here).
 6. **EXCITE.**
 7. **COLOR.**
-8. Chain map, EXC lit.
-9. EXC has no sub-pages.
+8. **Chain map:** EXC lit.
 
 | Cell | Range | Default | What it does |
 |---|---|---|---|
@@ -65,15 +64,14 @@ EXCITE, COLOR and BURST are read when a note starts: a turn changes the next not
 
 ![EXC page on BANK, annotated](img/modal_exc_bank.png)
 
-1. Header: exciter STRIKE.
-2. Focused cell.
-3. Its glyph.
-4. Hint line.
-5. Picture band.
+1. **Header:** exciter STRIKE.
+2. **Focus band:** EXCITE, 102.
+3. **Glyph:** its arc.
+4. **Hint:** `SEQ+TURN FINE  MIX + SEQ LEARN`.
+5. **Picture band:** live output (a test wave here).
 6. **EXCITE.**
 7. **BURST.**
-8. Chain map, EXC lit.
-9. No sub-pages.
+8. **Chain map:** EXC lit.
 
 | Cell | Range | Default | What it does |
 |---|---|---|---|
@@ -84,15 +82,14 @@ EXCITE, COLOR and BURST are read when a note starts: a turn changes the next not
 
 ![EXC page on BOWED, annotated](img/modal_exc_bowed.png)
 
-1. Header: exciter BOW.
-2. Focused cell.
-3. Its glyph.
-4. Hint line.
-5. Picture band.
+1. **Header:** exciter BOW.
+2. **Focus band:** FORCE, 64.
+3. **Glyph:** its arc.
+4. **Hint:** `SEQ+TURN FINE  MIX + SEQ LEARN`.
+5. **Picture band:** live output (a test wave here).
 6. **FORCE**, live on a held note.
 7. **SPEED**, live on a held note.
-8. Chain map, EXC lit.
-9. No sub-pages.
+8. **Chain map:** EXC lit.
 
 | Cell | Range | Default | What it does |
 |---|---|---|---|
@@ -105,7 +102,7 @@ A very hard or very slow bow drifts a little sharp at the top of the keyboard, a
 
 ## MODAL: the RES page (resonator)
 
-**RES** (MODAL on the header) is MODAL's home: **MODEL** and the four macros. Under it sit the model page (MDL2, named after the model on the map) and PIT.
+**RES** (MODAL on the header) is MODAL's home: **MODEL** and the four macros. Under it sit the model page (MDL2, named after the model on the sub-page row) and PIT.
 
 | Cell | Range | Default | What it does |
 |---|---|---|---|
@@ -121,60 +118,59 @@ The macros are live: they move a sounding note, glide as you turn, and are matri
 
 ![RES page on STRING, annotated](img/modal_res.png)
 
-1. Header: page MODAL.
-2. Focused cell: MODEL, STRING.
-3. No glyph: a word choice takes the band.
-4. Hint: MIX + SEQ learns a CC.
-5. Picture band.
-6. **MODEL.**
-7. **STRUCT:** stiffness.
-8. **BRIGHT.**
-9. **DAMP.**
-10. **POS.**
-11. Chain map, RES lit.
-12. Sub-pages: RES, STRING, PIT.
+1. **Header:** page MODAL.
+2. **Focus band:** MODEL, STRING.
+3. **Hint:** `MIX + SEQ LEARNS A CC`.
+4. **Picture band:** live output (a test wave here).
+5. **MODEL.**
+6. **STRUCT:** stiffness.
+7. **BRIGHT.**
+8. **DAMP.**
+9. **POS.**
+10. **Chain map:** RES lit.
+11. **Sub-page row:** RESONATOR underlined, then STRING and PITCH.
 
 ![RES page on BANK, annotated](img/modal_res_bank.png)
 
-1. Header.
-2. Focused cell: MODEL, BANK.
-3. Hint line.
-4. Picture band.
+1. **Header:** page MODAL.
+2. **Focus band:** MODEL, BANK.
+3. **Hint:** `MIX + SEQ LEARNS A CC`.
+4. **Picture band:** live output (a test wave here).
 5. **MODEL.**
 6. **STRUCT:** mode spacing.
 7. **BRIGHT:** upper modes' ring.
 8. **DAMP.**
 9. **POS:** strike place.
-10. Chain map.
-11. Sub-pages: RES, BANK, PIT.
+10. **Chain map:** RES lit.
+11. **Sub-page row:** RESONATOR underlined, then BANK and PITCH.
 
 ![RES page on BOWED, annotated](img/modal_res_bowed.png)
 
-1. Header.
-2. Focused cell: MODEL, BOWED.
-3. Hint line.
-4. Picture band.
+1. **Header:** page MODAL.
+2. **Focus band:** MODEL, BOWED.
+3. **Hint:** `MIX + SEQ LEARNS A CC`.
+4. **Picture band:** live output (a test wave here).
 5. **MODEL.**
 6. **STRUCT:** dimmed.
 7. **BRIGHT:** the bridge's tone.
 8. **DAMP:** ring after the bow lifts.
 9. **POS:** bow place.
-10. Chain map.
-11. Sub-pages: RES, BOWED, PIT.
+10. **Chain map:** RES lit.
+11. **Sub-page row:** RESONATOR underlined, then BOWED and PITCH.
 
 ![RES page on SYMP, annotated](img/modal_res_symp.png)
 
-1. Header.
-2. Focused cell: MODEL, SYMP.
-3. Hint line.
-4. Picture band.
+1. **Header:** page MODAL.
+2. **Focus band:** MODEL, SYMP.
+3. **Hint:** `MIX + SEQ LEARNS A CC`.
+4. **Picture band:** live output (a test wave here).
 5. **MODEL.**
 6. **STRUCT:** the halo's chord.
 7. **BRIGHT:** string and halo.
 8. **DAMP:** the halo rings twice as long.
 9. **POS.**
-10. Chain map.
-11. Sub-pages: RES, SYMP, PIT.
+10. **Chain map:** RES lit.
+11. **Sub-page row:** RESONATOR underlined, then SYMP and PITCH.
 
 ### MODAL: the macros on each model
 
@@ -189,23 +185,23 @@ SYMP's STRUCT steps through Rings' eleven chords for the seven sympathetic strin
 
 ## MODAL: the MDL2 page (the model's own controls)
 
-**MDL2** sits under RES, named after the model on the map, MODAL-2 on the header. Its cells follow MODEL, are read when a note starts, and are not matrix destinations.
+**MDL2** sits under RES, named after the model on the sub-page row (STRING, BANK, BOWED or SYMP), MODAL-2 on the header. Its cells follow MODEL, are read when a note starts, and are not matrix destinations.
 
 ### MODAL: STRING's model page
 
 ![MDL2 page on STRING, annotated](img/modal_mdl2.png)
 
-1. Header: page MODAL-2.
-2. Focused cell.
-3. Its glyph.
-4. Hint line.
-5. Picture band.
+1. **Header:** page MODAL-2.
+2. **Focus band:** BODY, 38.
+3. **Glyph:** its arc.
+4. **Hint:** `SEQ+TURN FINE  MIX + SEQ LEARN`.
+5. **Picture band:** live output (a test wave here).
 6. **BODY.**
 7. **ENS.D.**
 8. **ENS.R.**
 9. **ENS.M.**
-10. Chain map, RES lit.
-11. Sub-pages, STRING lit.
+10. **Chain map:** RES lit.
+11. **Sub-page row:** STRING underlined, between RESONATOR and PITCH.
 
 | Cell | Range | Default | What it does |
 |---|---|---|---|
@@ -220,14 +216,14 @@ The ensemble reads the string twice more, a little ahead and behind, swaying in 
 
 ![MDL2 page on BANK, annotated](img/modal_mdl2_bank.png)
 
-1. Header.
-2. Focused cell: MODES.
-3. No glyph: a word choice.
-4. Hint line.
-5. Picture band.
+1. **Header:** page MODAL-2.
+2. **Focus band:** MODES, 32.
+3. **Glyph:** its arc.
+4. **Hint:** `MIX + SEQ LEARNS A CC`.
+5. **Picture band:** live output (a test wave here).
 6. **MODES.**
-7. Chain map.
-8. Sub-pages, BANK lit.
+7. **Chain map:** RES lit.
+8. **Sub-page row:** BANK underlined.
 
 | Cell | Range | Default | What it does |
 |---|---|---|---|
@@ -241,10 +237,10 @@ A note keeps its mode count, and its cost, until it ends. Modes above what the s
 
 ![MDL2 page on BOWED, annotated](img/modal_mdl2_bowed.png)
 
-1. Header.
-2. Picture band; no cells.
-3. Chain map.
-4. Sub-pages, BOWED lit.
+1. **Header:** page MODAL-2.
+2. **Picture band:** no cells, only the output (a test wave here).
+3. **Chain map:** RES lit.
+4. **Sub-page row:** BOWED underlined.
 
 BOWED has no model controls: everything is on EXC and RES.
 
@@ -252,18 +248,18 @@ BOWED has no model controls: everything is on EXC and RES.
 
 ![MDL2 page on SYMP, annotated](img/modal_mdl2_symp.png)
 
-1. Header.
-2. Focused cell.
-3. Its glyph.
-4. Hint line.
-5. Picture band.
+1. **Header:** page MODAL-2.
+2. **Focus band:** COUPLE, 32.
+3. **Glyph:** its arc.
+4. **Hint:** `SEQ+TURN FINE  MIX + SEQ LEARN`.
+5. **Picture band:** live output (a test wave here).
 6. **COUPLE.**
 7. **HALO.**
 8. **BODY.**
 9. **ENS.D.**
 10. **ENS.M.**
-11. Chain map.
-12. Sub-pages, SYMP lit.
+11. **Chain map:** RES lit.
+12. **Sub-page row:** SYMP underlined.
 
 | Cell | Range | Default | What it does |
 |---|---|---|---|

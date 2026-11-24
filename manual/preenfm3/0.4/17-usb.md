@@ -38,11 +38,11 @@ Stereo, 24-bit, 48 kHz, both ways.
 ![USB AUDIO page, annotated](img/settings_audio_usb.png)
 
 1. Header: `SETTINGS › AUDIO › USB`.
-2. Focused cell, large.
-3. Its glyph: a knob.
+2. Focused cell, large: USB IN, 0 dB.
+3. Its glyph: a knob, full.
 4. Picture band.
-5. **USB IN** (A).
-6. Footer: project name and unsaved mark.
+5. **USB IN** (A), 0dB.
+6. Footer: the project and its state.
 7. Footer: `A-F EDIT · MENU BACK`.
 
 | Cell | Options | Default | What it does |

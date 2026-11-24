@@ -26,7 +26,7 @@ Most PreenFM3 encoders only turn, and Chimera never needs a push: every push is 
 
 1. Header: SETTINGS › SYSTEM › PUSH.
 2. The focused cell, PUSH, and its value.
-3. Its glyph, a switch.
+3. Its glyph, a switch (off).
 4. The picture band, the live output.
 5. Cell A (encoder 1): **PUSH**, OFF or ON.
 6. Footer: the project and its state.
@@ -37,18 +37,18 @@ Most PreenFM3 encoders only turn, and Chimera never needs a push: every push is 
 ![VA page, annotated](img/va_va.png)
 
 1. **Header.** A dot per Part (current bright green, playing ringed), the place (`PART 1 · SOUND` or `PART 1 · MIX`) and the page's full name. Right: the sounding dot, ORBIT's beat, and `OUT P2` / `OUT P3` for a Part on another pair.
-2. **Focus band:** the touched cell's label (WAVE1) and value, large, with its unit. Modulation never moves this number.
-3. **Focus band: the glyph**, a picture of the value.
-4. **Focus band: the hint line**, the touched cell's combos.
+2. **Focus band:** the touched cell's label (WAVE1) and value (85), large, with its unit. Modulation never moves this number.
+3. **Focus band: the glyph**, a picture of the value (here the wave's shape).
+4. **Focus band: the hint line**, the touched cell's combos (`SEQ+TURN FINE  MIX + SEQ LEARN`).
 5. **The picture band** (viz band): what the page does; pages without a picture show the live output.
 6. **Cell 1** (encoder 1), WAVE1. The focused label is in the accent colour; the bar shows where the value sits.
 7. **Cell 2**, WAVE2.
-8. **Cell 3**, MODE. A choice has no bar.
+8. **Cell 3**, MODE (MIX). A choice has no bar.
 9. **Cell 4**, BLEND.
 10. **Cell 5**, SUB.
 11. **Cell 6**, STABILITY. A line under a bar shows modulation; a dash is an empty slot; dimmed does nothing now.
-12. **The chain map**: the filled pill is the current page; other nodes are MINUS / PLUS away.
-13. **The sub-page row**: the page itself, then its sub-pages; `<` and `>` mean more off the edge.
+12. **The chain map**: the filled pill (VA) is the current page; FLT, AMP, MOD are MINUS / PLUS away.
+13. **The sub-page row**: VA (underlined, you are here), OSC1, OSC2, NOISE; `>` (and `<`) mean more off the edge.
 
 What each VA cell does is in [VA](05-va.md).
 
@@ -125,8 +125,8 @@ The strip at the bottom of every Part, mixer and ORBIT page maps the chain you a
 2. The line joins the pages in order.
 3. The pill: the page you are on.
 4. Node labels: short names (ALG, OSC, FLT, AMP, MOD).
-5. The sub-page row, in full words; the underlined one is where you are.
-6. `<` and `>`: more pages off the edge (OSC has 18).
+5. The sub-page row, in full words: FILTER (underlined, where you are), MODULATION, FX.
+6. `>`: more sub-pages off the edge (`<` when some are off the left; OSC has 18).
 
 | Where | Chain |
 |---|---|
@@ -145,7 +145,7 @@ The map shows short names (FLT); the sub-page row and header show full names (FI
 ![CHAIN MAP page, annotated](img/settings_personal_map.png)
 
 1. Header: SETTINGS › PERSONAL › MAP.
-2. The focused cell, PAGES, and its value.
+2. The focused cell, PAGES, and its value (ROW).
 3. The picture band, the live output.
 4. Cell A (encoder 1): **PAGES**, ROW or STACK.
 5. Footer: the project and its state.
@@ -233,7 +233,7 @@ Touch a cell and the focus band's bottom line lists its combos, keys in bold (`M
 1. The page name is the sub-page's: FILTER MOD.
 2. The touched cell, RES MOD, and its source (ENV3).
 3. Its arc, bipolar, filled from 12 o'clock.
-4. The hint line: the touched cell's combos.
+4. The hint line: the touched cell's combo, `MIX + MINUS DELETES THE ROUTE`.
 5. A route amount (FREQ MOD); its source is set on JACKS.
 6. The touched cell, RES MOD, with its amount.
 7. The node, FLT, lit on the map.
@@ -309,8 +309,8 @@ After a while untouched, the screen shows a large oscilloscope of the output, wi
 
 ![SCREENSAVER page, annotated](img/settings_personal_saver.png)
 
-1. Header: SETTINGS › PERSONAL › SAVER.
-2. The focused cell, SAVER, and its value.
+1. Header: the breadcrumb, `..` › PERSONAL › SAVER (shortened to fit).
+2. The focused cell, SAVER, and its value (5 MIN).
 3. The picture band, the live output.
 4. Cell A (encoder 1): **SAVER**, the wait.
 5. Footer: the project and its state.
@@ -327,12 +327,11 @@ SETTINGS › PERSONALIZE › TEXT SIZE › **SIZE**: NORMAL (default) or LARGE. 
 ![TEXT SIZE page, annotated](img/settings_personal_text.png)
 
 1. Header: SETTINGS › PERSONAL › TEXT.
-2. The focused cell, SIZE, and its value.
-3. Its glyph.
-4. The picture band, the live output.
-5. Cell A (encoder 1): **SIZE**, NORMAL or LARGE.
-6. Footer: the project and its state.
-7. Footer: the keys this page answers to.
+2. The focused cell, SIZE, and its value (NORMAL).
+3. The picture band, the live output.
+4. Cell A (encoder 1): **SIZE**, NORMAL or LARGE.
+5. Footer: the project and its state.
+6. Footer: the keys this page answers to.
 
 ![An ALGO page with TEXT SIZE LARGE](img/large_engine_algo.png)
 

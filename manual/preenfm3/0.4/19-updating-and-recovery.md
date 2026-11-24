@@ -128,8 +128,8 @@ Nothing plays in DFU. Flash with the command above, or power-cycle to return unc
 ![The install screen, annotated](img/install.png)
 
 1. **DON'T POWER OFF.** Chimera is writing its second half; sound keeps playing.
-2. The version being installed, with its build.
-3. The step: **ERASING**, **WRITING**, **SEALING**. Then Chimera carries on.
+2. The version being installed, with its build (`INSTALLING 0.4.0 b42f427c`).
+3. The step, here **WRITING** (**ERASING**, **WRITING**, **SEALING**). Then Chimera carries on.
 
 Buttons and knobs wait until it ends. If the power goes off, the next start installs again from the beginning; the bootloader and first half are never touched.
 
@@ -208,7 +208,7 @@ Every command here uses `-a 0`; never `-a 1`.
 
 Check [Known issues](https://joegiralt.github.io/chimera-releases/guides/known-issues) first, then open **Issues › New issue › Bug report** on the releases page. The form asks for:
 
-- **Which build are you on?** From ABOUT or the boot splash (`0.4.0 a1b2c3d4`).
+- **Which build are you on?** From ABOUT or the boot splash (`0.4.0 b42f427c`).
 - **Board.** The **CHIP** cell on ABOUT (`V 176`).
 - **What were you doing when you first noticed it?** Part, engine, Sound or project, what you played.
 - **How can we make it happen?** Steps, from a fresh start if you can.
@@ -218,5 +218,18 @@ Check [Known issues](https://joegiralt.github.io/chimera-releases/guides/known-i
 - **Attachments** (optional): a recording, a screen photo or the project file.
 
 ![SETTINGS › SYSTEM › ABOUT](img/settings_system_about.png)
+
+1. Header: SETTINGS › SYSTEM › ABOUT.
+2. The firmware's name, CHIMERA.
+3. FIRMWARE: version and build type (`0.4.0  RELEASE`).
+4. The build's identity: version and commit (`0.4.0 b42f427c`), the line a bug report asks for.
+5. **VERSION**, 0.4.0.
+6. **BUILD**, RELEASE.
+7. **CHIP**, the board (`V 176`).
+8. **CLOCK**, 480 MHZ.
+9. **RESET**, why the chip last restarted (WDOG).
+10. **CARD**, NO CARD here.
+11. Footer: the project and its state.
+12. Footer: `MENU BACK`.
 
 A faint buzz when powered over USB from the computer your audio interface is on is a ground loop, not a bug: use the 9 V supply.

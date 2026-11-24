@@ -38,18 +38,21 @@ The header names the ring or scene: `RING 3  RHYTHM`, `SCENE 1  CHORDS`.
 
 ![ORB page, annotated](img/orbit_orb.png)
 
-1. Header: the playing scene, ORBIT, the beat and sounding dots.
-2. Frame line: key, scale, bars, tempo with its source (`INT` own clock, `MIDI` followed clock).
-3. The chord progression round the outside, the playing segment lit, the sweep showing the bar.
-4. The rings, ring 1 outermost: hits filled, accents ringed, the playing step lit, each Part number at step 1; a muted ring dark.
-5. **RING** (`3 › P3`).
-6. **KEY**.
-7. **SCALE**.
-8. **BARS**.
-9. **SCENE**.
-10. **BPM**.
-11. Chain map.
-12. Sub-pages: ORB, CUSTOM.
+1. Header: `SCENE 1  ORBIT`, the sounding dot.
+2. Ring 1's track: an empty step, marked `+`.
+3. Frame line: `A MINOR · 4 BARS · 120 INT`, key, scale, bars and tempo with its source (`INT` own clock, `MIDI` followed clock).
+4. A hit on ring 1, filled.
+5. Another empty step on ring 1.
+6. **RING**: `3 › P3`.
+7. **KEY**: A.
+8. **SCALE**: MINOR.
+9. **BARS**: 4.
+10. **SCENE**: 1.
+11. **BPM**: 120.
+12. Chain map, ORB lit.
+13. Sub-page row: ORB CUSTOM, ORB underlined.
+
+The thick arc round the outside is the chord progression, one piece per segment, the playing one lit. Inside it the rings, ring 1 outermost: hits filled, empty steps `+`, accents ringed, the playing step lit, each Part number at step 1 (the `1 2 3 3` up the top); a muted ring is dark, as ring 5 at the centre.
 
 | Cell | Range | Default | What it does |
 |---|---|---|---|
@@ -68,15 +71,14 @@ A new project's scene 1 is a four-bar A minor groove, i–VI–VII–i: ring 1 r
 
 ![CUSTOM page, annotated](img/orbit_custom.png)
 
-1. Header.
-2. The twelve notes round a circle, tonic at the top.
-3. A note out of the scale: outline.
-4. A note in the scale: filled.
-5. Centre: the scale's name and size.
-6. **NOTE**: the cursor.
-7. **IN SCALE**: `ROOT` on the tonic.
-8. Chain map.
-9. Sub-pages, CUSTOM lit.
+1. Header: `SCENE 1  CUSTOM`.
+2. Centre: the scale's name and size, `MINOR 7 NOTES`.
+3. **NOTE**: A, the cursor.
+4. **IN SCALE**: `ROOT` on the tonic.
+5. Chain map, ORB lit.
+6. Sub-page row: ORB CUSTOM, CUSTOM underlined.
+
+Round the centre the twelve notes sit on a circle, tonic at the top: in the scale filled, out of it outlined, the cursor large.
 
 | Cell | Range | What it does |
 |---|---|---|
@@ -99,22 +101,23 @@ RHYTHM is the RING node's own page.
 
 ![RHYTHM page, annotated](img/orbit_rhythm.png)
 
-1. Header: `RING 3  RHYTHM`.
-2. Focused cell: STEPS.
-3. The ring's steps on a line, a tick under step 1.
-4. **STEPS**.
-5. **HITS**.
-6. **ROTATE**.
-7. **CHANCE**.
-8. **MUTATE**.
-9. **MUTE**.
-10. Chain map.
-11. Sub-pages: RHYTHM, VOICE, NOTES.
+1. Header: `RING 1  RHYTHM`.
+2. Focused cell, large: HITS `5/16`.
+3. Its arc.
+4. The ring's steps on a line, hits large, a tick under step 1, the playing step lit.
+5. **STEPS**: 16.
+6. **HITS**: 5.
+7. **ROTATE**: 0.
+8. **CHANCE**: 100%.
+9. **MUTATE**: 0%.
+10. **MUTE**: OFF.
+11. Chain map, RING lit.
+12. Sub-page row: RHYTHM VOICE NOTES, RHYTHM underlined.
 
 | Cell | Range | Default | What it does |
 |---|---|---|---|
 | **STEPS** | 1 to 32 | 16 | Steps in a bar |
-| **HITS** | 0 to STEPS | 4 | Hits, spread evenly (`1/1` reads hits over steps) |
+| **HITS** | 0 to STEPS | 4 | Hits, spread evenly (`5/16` reads hits over steps) |
 | **ROTATE** | 0 to STEPS − 1 | 0 | Turns the pattern |
 | **CHANCE** | 0 to 100 % | 100 % | Each hit's chance to sound |
 | **MUTATE** | 0 to 100 % | 0 % | Chance of a small change at each loop's end; 0 locks it |
@@ -127,18 +130,18 @@ A new STEPS, HITS or ROTATE lays the hits out afresh, dropping MUTATE's nudges.
 ![VOICE page, annotated](img/orbit_voice.png)
 
 1. Header: `RING 3  VOICE`.
-2. Focused cell: GATE.
+2. Focused cell, large: ACCENT 2.
 3. Its arc.
 4. Hint `MIX + SEQ LEARNS A CC`, and the register (`C4 TO B4 · ACCENT +30 VEL`).
-5. Hits as bars, GATE long and velocity tall; accents taller in the second ink.
-6. **GATE**.
-7. **VEL**.
-8. **ACCENT**.
-9. **OCTAVE**.
-10. **RANGE**.
-11. **SNAP**.
-12. Chain map.
-13. Sub-pages.
+5. Hits as bars, GATE wide and velocity tall; the two accented hits taller, the playing step lit.
+6. **GATE**: 60%.
+7. **VEL**: 90.
+8. **ACCENT**: 2.
+9. **OCTAVE**: 4.
+10. **RANGE**: 0.
+11. **SNAP**: CHORD.
+12. Chain map, RING lit.
+13. Sub-page row: RHYTHM VOICE NOTES, VOICE underlined.
 
 | Cell | Range | Default | What it does |
 |---|---|---|---|
@@ -156,16 +159,16 @@ No note plays out of key. A bass ring on CHORD plays roots and fifths; a melody 
 ![NOTES page, annotated](img/orbit_notes.png)
 
 1. Header: `RING 3  NOTES`.
-2. Focused cell: MODE, with `POOL 1 · HITS 1 · COMES ROUND IN 1`.
-3. The chips: the ring's notes.
-4. **MODE**.
-5. **WALK**.
-6. **TARGET**.
-7. **LEARN**.
+2. Focused cell, large: MODE POOL.
+3. The line `POOL 1 · HITS 1 · COMES ROUND IN 1` and the chips, the ring's notes (one, E4).
+4. **MODE**: POOL.
+5. **WALK**: UP.
+6. **TARGET**: 3.
+7. **LEARN**: OFF.
 8. **CLEAR** (`C4 / RND`, with MIX).
-9. **NOTE**.
-10. Chain map.
-11. Sub-pages.
+9. **NOTE**: E4.
+10. Chain map, RING lit.
+11. Sub-page row: RHYTHM VOICE NOTES, NOTES underlined.
 
 | Cell | Range | Default | What it does |
 |---|---|---|---|
@@ -212,14 +215,13 @@ On a DRUM Part each note picks a pad by note name ([the KIT keymap](07-drum.md#d
 ![CHORDS page, annotated](img/orbit_chrd.png)
 
 1. Header: `SCENE 1  CHORDS`.
-2. Focused cell: SEGS.
+2. Focused cell, large: SEGS 4.
 3. Its arc.
 4. A chip per segment, numeral over chord (`i` over `Am`), the selected one outlined; the bars under them.
-5. **SEGS**.
-6. **DEGREE** (`i Am`).
-7. **PLAY** (`-`).
-8. Chain map.
-9. No sub-pages.
+5. **SEGS**: 4.
+6. **DEGREE**: `i Am`.
+7. **PLAY**: `-`.
+8. Chain map, CHRD lit; CHRD has no sub-pages.
 
 | Cell | Range | Default | What it does |
 |---|---|---|---|
@@ -247,13 +249,13 @@ A scene is the five rings, the progression, key, scale and BARS.
 ![SCENES page, annotated](img/orbit_scn.png)
 
 1. Header: `SCENE 1  SCENES`.
-2. Focused cell: `SCENE · PLAYING`, or `SCENE · ON THE LOOP` when queued.
+2. Focused cell, large: `SCENE · PLAYING` 1, or `SCENE · ON THE LOOP` when queued.
 3. Eight slots: saved filled, empty outlined, playing ringed, queued filling, SAVE's dotted.
-4. **SCENE**.
-5. **SAVE** (`TO 1`).
+4. **SCENE**: 1.
+5. **SAVE**: `TO 1`.
 6. **SWITCH**: LOOP.
-7. Chain map.
-8. No sub-pages.
+7. Chain map, SCN lit; SCN has no sub-pages.
+
 
 | Cell | Range | What it does |
 |---|---|---|
