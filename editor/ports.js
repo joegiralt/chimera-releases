@@ -216,7 +216,8 @@ var ChimeraPorts = (function () {
       app = a;
       app.ports.connectSerial.subscribe(connectSerial);
       app.ports.connectSocket.subscribe(connectSocket);
-      app.ports.send.subscribe(send);
+      // An update's lines, in order (a lone line too).
+      app.ports.send.subscribe(function (ls) { (Array.isArray(ls) ? ls : [ls]).forEach(send); });
       app.ports.recall.subscribe(recall);
       app.ports.keep.subscribe(keep);
     },

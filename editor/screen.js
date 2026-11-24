@@ -6,7 +6,7 @@
 //                          "focus":2,"pad":null,"vals":[["ALGO.MORPH",64]]}'>
 //
 // engine  a name from screen.wasm's list (the firmware's PLAYABLE, which
-//         editor/tests/fixtures/engines.txt holds)
+//         editor/tests/fixtures/engines.txt holds, then MIXER: its FX pages)
 // page    `ed describe`'s page number
 // region  "screen" (the page's art), "gauge" (the focus band's glyph),
 //         "full", or "padicon" (pad `pad`'s machine icon alone)
@@ -16,6 +16,11 @@
 // pad     null or 1-12: DRUM's selected pad (KIT draws it selected, a pad's
 //         page shows it); "padicon" needs it
 // vals    [["ADDR", stored], ...] as `ed since` reports them, in any order
+// animate true: the picture moves (the MIXER's effects): repainted at the
+//         unit's 20 frames a second, each paint the next frame, while the
+//         element is on the page; one still frame under reduced motion
+// crop    [x, y, w, h]: that box of the region's own pixels alone (an FX
+//         gauge's picture without its value's edge and hint row)
 //
 // One live mirror per engine keeps every value it was sent: a paint writes
 // only the values the mirror doesn't hold, so a spec with the page's own
@@ -64,7 +69,12 @@ var ChimeraScreen = (function () {
         return { error: 'vals[' + i + '] ' + JSON.stringify(v) };
       }
     }
-    return { spec: { engine: engine, page: s.page, region: REGIONS[s.region], focus: focus, pad: pad, vals: s.vals } };
+    if (s.animate != null && typeof s.animate !== 'boolean') return { error: 'animate ' + JSON.stringify(s.animate) };
+    var crop = s.crop == null ? null : s.crop;
+    if (crop !== null && !(Array.isArray(crop) && crop.length === 4 && int(crop[0], 0, W) && int(crop[1], 0, H) && int(crop[2], 1, W) && int(crop[3], 1, H))) {
+      return { error: 'crop ' + JSON.stringify(s.crop) };
+    }
+    return { spec: { engine: engine, page: s.page, region: REGIONS[s.region], focus: focus, pad: pad, vals: s.vals, animate: s.animate === true, crop: crop } };
   }
 
   // RGB565 pixels `px` (row-major, `stride` wide) cropped to `r` into RGBA,
@@ -99,20 +109,26 @@ var ChimeraScreen = (function () {
     return x.apply(engine, vals.length, text.length);
   }
 
-  // One decoded spec's pixels: `{ rect, rgba, refused }` (the values the
+  // One decoded spec's pixels at UI frame `frame` (an animated picture's
+  // phase; 0 for a still): `{ rect, rgba, refused }` (the values the
   // mirror refused, 0 if none), `{ hidden }` where the Sound doesn't show
   // the page or region, or `{ error }`.
-  function draw(x, s) {
+  function draw(x, s, frame) {
     var got = apply(x, s.engine, s.vals);
     var refused = 0;
     if (got === STATUS.refused) refused = x.refused();
     else if (got !== STATUS.ok) return { error: 'vals refused whole (' + got + ')' };
-    got = x.show(s.engine, s.page, s.region, s.focus, s.pad);
+    got = x.show(s.engine, s.page, s.region, s.focus, s.pad, (frame >>> 0) || 0);
     if (got === STATUS.notShown || got === STATUS.noRegion) return { hidden: true };
     if (got !== STATUS.ok) return { error: 'show refused (' + got + ')' };
     var rp = x.rect_ptr(), bp = x.buf_ptr();
     var q = new Uint16Array(x.memory.buffer, rp, 4);
     var rect = { x: q[0], y: q[1], w: q[2], h: q[3] };
+    if (s.crop) {
+      var c = s.crop;
+      if (c[0] + c[2] > rect.w || c[1] + c[3] > rect.h) return { error: 'crop ' + JSON.stringify(c) + ' past the region ' + rect.w + 'x' + rect.h };
+      rect = { x: rect.x + c[0], y: rect.y + c[1], w: c[2], h: c[3] };
+    }
     var px = new Uint16Array(x.memory.buffer, bp, W * H);
     return { rect: rect, rgba: toRgba(px, W, rect, new Uint8ClampedArray(rect.w * rect.h * 4)), refused: refused };
   }
@@ -130,10 +146,19 @@ var ChimeraScreen = (function () {
     };
   }
 
-  // A spec text's paint: decoded, then drawn.
-  function paintSpec(x, names, text) {
+  // A spec text's paint at `frame`: decoded, then drawn; an animated one
+  // says so (`animate`).
+  function paintSpec(x, names, text, frame) {
     var d = decode(text, names);
-    return d.error ? d : draw(x, d.spec);
+    if (d.error) return d;
+    var got = draw(x, d.spec, frame);
+    got.animate = d.spec.animate;
+    return got;
+  }
+
+  var FRAME_MS = 50; // the unit's UI at 20 frames a second
+  function still() {
+    return typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
   }
 
   var warned = {};
@@ -176,6 +201,22 @@ var ChimeraScreen = (function () {
         this.schedule();
       }
       attributeChangedCallback() { this.schedule(); }
+      disconnectedCallback() { this.stop(); }
+      stop() {
+        if (this.timer) clearInterval(this.timer);
+        this.timer = null;
+      }
+      // An animated picture: the next frame every FRAME_MS while on the page.
+      animate(w) {
+        if (this.timer || still()) return;
+        var self = this;
+        this.frame = this.frame || 0;
+        this.timer = setInterval(function () {
+          if (!self.isConnected) return self.stop();
+          self.frame++;
+          self.paint(paintSpec(w.x, w.names, self.painted || '', self.frame));
+        }, FRAME_MS);
+      }
       // Changes in one task paint once; the same spec twice paints once.
       schedule() {
         if (this.queued || !this.canvas) return;
@@ -186,7 +227,9 @@ var ChimeraScreen = (function () {
           var text = self.getAttribute('spec');
           if (text === self.painted) return;
           self.painted = text;
-          self.paint(paintSpec(w.x, w.names, text || ''));
+          var got = paintSpec(w.x, w.names, text || '', self.frame || 0);
+          self.paint(got);
+          if (got.animate) self.animate(w); else self.stop();
         }, function (err) {
           self.queued = false;
           self.paint({ error: 'screen.wasm: ' + err });
