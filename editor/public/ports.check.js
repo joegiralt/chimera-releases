@@ -102,7 +102,8 @@ async function writesWaitTheirTurn() {
   var app = fakeApp(); P.attach(app);
   var s = fakeSerial({ slow: true });
   app.subs.connectSerial(); await tick();
-  app.subs.send('ed set A.B 1'); app.subs.send('ed set A.B 2'); app.subs.send('ed since 4');
+  // One update's lines come as one list, in the order it awaits their answers.
+  app.subs.send(['ed set A.B 1', 'ed set A.B 2']); app.subs.send('ed since 4');
   await tick();
   eq(s.port.writes.length, 1, 'one write at a time');
   eq(s.port.log.join(), 'ready,write ed set A.B 1', 'ready awaited before the write');

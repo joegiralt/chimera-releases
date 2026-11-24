@@ -36,6 +36,7 @@ module Model exposing
     , subscriptions
     , takesEdits
     , update
+    , updateAll
     )
 
 {-| Only the unit's state: what it last reported, and what it refused. The
@@ -438,12 +439,49 @@ subscriptions =
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
-update msg model =
+update msg =
+    updateAll [ msg ]
+
+
+{-| Each message in turn, and what they send as one port call: the unit's
+lines go in the order the model awaits their answers (a batch of port
+calls would run them last first, and an answer would then be paired with
+the wrong line).
+-}
+updateAll : List Msg -> Model -> ( Model, Cmd Msg )
+updateAll msgs model =
     let
         ( m, effects ) =
-            step msg model
+            List.foldl (\msg ( acc, es ) -> step msg acc |> Tuple.mapSecond (\more -> es ++ more)) ( model, [] ) msgs
+
+        lines : List String
+        lines =
+            List.filterMap
+                (\e ->
+                    case e of
+                        Send o ->
+                            Just (Protocol.outgoingLine o)
+
+                        Recall _ ->
+                            Nothing
+
+                        Keep _ _ ->
+                            Nothing
+                )
+                effects
     in
-    ( m, Cmd.batch (opening msg :: List.map run effects) )
+    ( m
+    , Cmd.batch
+        (List.map opening msgs
+            ++ List.filterMap run effects
+            ++ (if List.isEmpty lines then
+                    []
+
+                else
+                    [ Transport.send lines ]
+               )
+        )
+    )
 
 
 {-| The one thing besides effects a message asks of the world: a link.
@@ -512,17 +550,19 @@ opening msg =
             Cmd.none
 
 
-run : Effect -> Cmd msg
+{-| An effect other than a line to the unit (those go together, in order).
+-}
+run : Effect -> Maybe (Cmd msg)
 run e =
     case e of
-        Send o ->
-            Transport.send (Protocol.outgoingLine o)
+        Send _ ->
+            Nothing
 
         Recall key ->
-            Cache.recall key
+            Just (Cache.recall key)
 
         Keep key lines ->
-            Cache.keep { key = key, lines = lines }
+            Just (Cache.keep { key = key, lines = lines })
 
 
 {-| Once connected and following: the link and the Part and engine it follows.

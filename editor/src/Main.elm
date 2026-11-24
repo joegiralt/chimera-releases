@@ -61,14 +61,12 @@ update msg app =
                 ( page, asks, store ) =
                     EnginePage.update m app.unit app.page
 
-                ( unit, cmds ) =
-                    List.foldl
-                        (\e ( u, cs ) -> Model.update e u |> Tuple.mapSecond (\c -> Cmd.map Unit c :: cs))
-                        ( app.unit, [] )
-                        asks
+                -- One update for every ask: their lines go in order.
+                ( unit, cmd ) =
+                    Model.updateAll asks app.unit
             in
             ( { app | unit = unit, page = EnginePage.follow unit page }
-            , Cmd.batch (Maybe.withDefault Cmd.none (Maybe.map (Tokens.name >> storeTheme) store) :: cmds)
+            , Cmd.batch [ Maybe.withDefault Cmd.none (Maybe.map (Tokens.name >> storeTheme) store), Cmd.map Unit cmd ]
             )
 
 

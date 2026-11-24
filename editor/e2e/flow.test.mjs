@@ -38,6 +38,14 @@ async function resetOps(algs) {
   });
 }
 
+/** From `t0`: each line the editor sent (#n, in order), when, and its answer: when it reached the editor (and as which, @k), or dropped. */
+function since(t0) {
+  return () => [...bridge.flow.got.map((g, k) => ({ ...g, k, last: g.lines.at(-1), lines: g.lines.length })), ...bridge.flow.dropped.map((d) => ({ ...d, dropped: true }))]
+    .filter((g) => g.sentAt >= t0 - 50)
+    .sort((a, b) => a.seq - b.seq)
+    .map((g) => `#${g.seq} sent ${g.sentAt - t0}ms, answered ${g.at - t0}ms: ${g.line}${g.dropped ? " (dropped)" : ` @${g.k} (${g.lines} lines, ${g.last})`}`);
+}
+
 describe("lost answers", () => {
   test("C1: a set's answer lost once: the set goes again, the knob ends on the unit's value, the window still opens", async (t) => {
     await onEngine(1, "ALGO");
@@ -46,13 +54,9 @@ describe("lost answers", () => {
     const lost = bridge.flow.rule({ match: (l) => l.startsWith(`ed set ${addr} `), act: "drop" });
     const from = bridge.flow.sent.length;
     await wheel(knob, was.norm > 0.5 ? -1 : 1);
-    const t0 = Date.now();
-    const timeline = () => [...bridge.flow.got.map((g) => ({ ...g, lines: g.lines.length })), ...bridge.flow.dropped.map((d) => ({ ...d, dropped: true }))]
-      .filter((g) => g.sentAt >= t0 - 50)
-      .sort((a, b) => a.seq - b.seq)
-      .map((g) => `#${g.seq} sent ${g.sentAt - t0}ms, answered ${g.at - t0}ms: ${g.line}${g.dropped ? " (dropped)" : ` (${g.lines} lines)`}`);
+    const timeline = since(Date.now());
     // The sets' answer times, for a unit's run: what its link takes.
-    t.after(() => t.diagnostic(timeline().filter((l) => l.includes("ed set")).join("\n")));
+    t.after(() => t.diagnostic(timeline().slice(0, 30).join("\n")));
     await until("the set sent again after its answer was lost", () => setsOf(addr, from).length >= 2, 5000);
     assert.equal(lost.hits, 1);
     const [first, again] = setsOf(addr, from);
@@ -86,12 +90,33 @@ describe("lost answers", () => {
     assert.deepEqual(await noticesOn(), [], "a late answer is no lost one");
   });
 
-  test("C2: a set's answer lost twice: given up with a notice, and the next want still goes", async () => {
+  // The unit's order (2026-11-24, C1 on the unit): the resend and a `since` went in one step, and its answer came
+  // 27 ms after the `since`'s, past the editor's next clock (33 ms). Lines one step sends go on the wire in its order.
+  test("C15: a set's answer lost once, the resend answered a clock after the poll sent with it: nothing given up", async (t) => {
+    await onEngine(1, "ALGO");
+    const { addr, knob } = await firstKnob("ALGO");
+    const was = await unit.get(addr);
+    bridge.flow.rule({ match: (l) => l.startsWith(`ed set ${addr} `), act: "drop" });
+    bridge.flow.rule({ match: (l) => l.startsWith(`ed set ${addr} `), act: "stall" });
+    const from = bridge.flow.sent.length;
+    await wheel(knob, was.norm > 0.5 ? -1 : 1);
+    await until("the set sent again", () => setsOf(addr, from).length >= 2, 5000);
+    await new Promise((r) => setTimeout(r, 60));
+    bridge.flow.resume();
+    const now = await sliderFollows(addr);
+    assert.notEqual(now.stored, was.stored);
+    t.diagnostic(bridge.flow.sent.slice(from, from + 12).join(" ; "));
+    assert.deepEqual(await noticesOn(), [], "the resend's answer was paired with the poll's");
+  });
+
+  test("C2: a set's answer lost twice: given up with a notice, and the next want still goes", async (t) => {
     await onEngine(1, "ALGO");
     const { addr, knob } = await firstKnob("ALGO");
     const was = await unit.get(addr);
     expectNotice(/^THE UNIT DID NOT ANSWER .*SENT TWICE: GIVEN UP/);
     bridge.flow.rule({ match: (l) => l.startsWith(`ed set ${addr} `), act: "drop", times: 2 });
+    const timeline = since(Date.now());
+    t.after(() => t.diagnostic(timeline().slice(0, 30).join("\n")));
     await wheel(knob, was.norm > 0.5 ? -1 : 1);
     await until("the NoAnswer notice", async () => (await noticesOn()).some((n) => n.startsWith("THE UNIT DID NOT ANSWER")), 5000);
     // The unit took the line (only its answer was lost): the editor shows what it holds.
@@ -99,7 +124,9 @@ describe("lost answers", () => {
     const n = setsOf(addr).length;
     await wheel(knob, held.norm > 0.5 ? -1 : 1);
     await until("the next want sent", () => setsOf(addr).length > n);
-    await until(`${addr} to move on the unit`, async () => (await unit.get(addr)).stored !== held.stored);
+    await until(`${addr} to move on the unit`, async () => (await unit.get(addr)).stored !== held.stored).catch((e) => {
+      throw new Error(`${e.message}: held ${JSON.stringify(held)}; sets ${setsOf(addr).join(" ; ")}; dropped ${bridge.flow.dropped.map((d) => d.line).join(" ; ")}; ${bridge.flow.got.slice(-25).filter((g) => !g.line.startsWith("ed since") || g.lines.length > 1).map((g) => `${g.line} => ${g.lines.join(" | ")}`).join(" ;; ")}`);
+    });
     await sliderFollows(addr);
   });
 

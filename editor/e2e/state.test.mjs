@@ -52,11 +52,18 @@ describe("the box's own hands", () => {
     await unit.ok("ed part 1");
     await until("the box on Part 1", async () => (await unit.at()).startsWith("PART 1"));
     const p1 = await tryGet(addr);
+    // The editor on Part 1 too before the box goes back: else its status still says Part 2 when the key is pressed,
+    // the wait below passes at once, and the hand lands while the editor reads Part 1 then Part 2 again (and takes none).
+    await until("the editor on Part 1", async () => (await statusText()) === "SIMULATOR · PART 1 · ALGO", 10000);
     await unit.ok("key B2");
     await until("the editor on Part 2 again", async () => (await statusText()) === "SIMULATOR · PART 2 · MODAL", 10000);
     await settled();
+    const from = bridge.flow.got.length;
     await wheel(knob, was.norm > 0.5 ? -2 : 2);
-    await until(`${addr} on Part 2 to move`, async () => (await unit.get(addr)).stored !== was.stored);
+    await until(`${addr} on Part 2 to move`, async () => (await unit.get(addr)).stored !== was.stored).catch(async (e) => {
+      const said = bridge.flow.got.slice(from).filter((g) => !(g.line.startsWith("ed since") && g.lines.length === 1));
+      throw new Error(`${e.message}: the unit ${JSON.stringify(await unit.get(addr))}, the editor ${await statusText()}, its notices ${JSON.stringify(await noticesOn())}\n${said.slice(0, 30).map((g) => `${g.line} => ${g.lines.join(" | ")}`).join("\n")}`);
+    });
     await sliderFollows(addr);
     await unit.ok("key B1");
     await followPart(1, "ALGO");

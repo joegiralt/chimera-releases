@@ -32,7 +32,10 @@ port connectSerial : () -> Cmd msg
 port connectSocket : String -> Cmd msg
 
 
-port send : String -> Cmd msg
+{-| Lines to the unit, in this order, in one call: the lines one update sends
+go as one, as a `Cmd.batch` of port calls runs them last first.
+-}
+port send : List String -> Cmd msg
 
 
 port lineIn : (String -> msg) -> Sub msg

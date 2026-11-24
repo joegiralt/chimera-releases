@@ -70,7 +70,9 @@ type Flow
 
         -- Answered edits the unit has not yet reported taking (`OK queued`
         -- is taken, not applied): still where a hand last asked each to go,
-        -- when, and whether the unit has since said anything of it.
+        -- when, and whether the unit has since said anything of it. A newer
+        -- edit of the same going on the wire ends it: given up, that one
+        -- leaves the unit's value, not an older wish.
         , landed : Dict String Landed
 
         -- Shut after `ERR busy` until this time, and how many busy answers in a row.
@@ -108,7 +110,7 @@ want now e (Flow f) =
                 ( Flow f, Nothing )
 
             else if f.shut == Nothing then
-                ( Flow { f | wire = Just (sent now e) }, Just (command e) )
+                ( Flow { f | wire = Just (sent now e), landed = Dict.remove (keyOf e) f.landed }, Just (command e) )
 
             else
                 ( Flow (wait e f), Nothing )
@@ -227,7 +229,7 @@ next : Time.Posix -> Flow -> ( Flow, Maybe Command )
 next now (Flow f) =
     case Dict.toList f.pending |> List.sortBy (Tuple.second >> Tuple.first) |> List.map (Tuple.mapSecond Tuple.second) of
         ( k, e ) :: _ ->
-            ( Flow { f | wire = Just (sent now e), pending = Dict.remove k f.pending }, Just (command e) )
+            ( Flow { f | wire = Just (sent now e), pending = Dict.remove k f.pending, landed = Dict.remove k f.landed }, Just (command e) )
 
         [] ->
             ( Flow { f | wire = Nothing }, Nothing )

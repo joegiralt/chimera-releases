@@ -83,7 +83,9 @@ export async function startBridge(dist, unit) {
     },
     // Paused, the unit's answers wait here, in order: a unit slower than the hand.
     paused: null,
-    pause() {
+    pausedFrom: 0, // the first line (by its number in `sent`) whose answer waits: answers to earlier lines still come
+    pause(from = 0) {
+      if (!this.paused) this.pausedFrom = from;
       this.paused ??= [];
     },
     resume() {
@@ -159,7 +161,7 @@ export async function startBridge(dist, unit) {
           rule.hits++;
         }
         // The unit busy from this line on: its answer and every one after it wait, in order, for `resume()`.
-        if (rule?.act === "stall") flow.pause();
+        if (rule?.act === "stall") flow.pause(seq);
         if (rule?.act === "close") {
           sock.destroy();
           return;
@@ -186,7 +188,7 @@ export async function startBridge(dist, unit) {
             for (const l of lines) sock.write(frame(0x1, Buffer.from(l, "utf8")));
           };
           if (rule?.act === "hold") rule.held.push(deliver);
-          else if (flow.paused) flow.paused.push(deliver);
+          else if (flow.paused && seq >= flow.pausedFrom) flow.paused.push(deliver);
           else if (LAG) setTimeout(deliver, LAG);
           else deliver();
         });
