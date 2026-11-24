@@ -5,6 +5,10 @@
 # the unit's `ed describe` answers, from the firmware's `just editor-kit`
 kit_dir := "editor/kit/0.4"
 
+# The user manual for this release, per machine: chapters in Markdown, joined
+# by `just manual` into manual.md (and llms.txt) beside them
+manual_dir := "manual/preenfm3/0.4"
+
 # The kit into the places the editor reads it from (both gitignored):
 # public/screen.wasm and tests/fixtures/
 kit:
@@ -129,5 +133,15 @@ site-serve port="8000":
 site-test:
     cd site && npm install --no-audit --no-fund --silent && node tests/gen-fixtures.js && npx elm-test && npx elm-review
 
-# Everything the editor and the site must pass
-check: editor-test site-test
+# The manual's manual.md and llms.txt, from its chapters
+manual:
+    node manual/manual.mjs build {{manual_dir}} {{kit_dir}}
+
+# The manual is up to date: manual.md and llms.txt match the chapters, every
+# heading is unique, every link and image resolves, and every page and cell of
+# the kit's describe schemas is named somewhere in it
+manual-check:
+    node manual/manual.mjs check {{manual_dir}} {{kit_dir}}
+
+# Everything the editor, the site and the manual must pass
+check: editor-test site-test manual-check
