@@ -199,6 +199,8 @@ type Notice
       -- (neither the value nor a refusal: it names only its newest
       -- refusals), its value not the one asked for.
     | Untaken Command
+      -- Refusals no `refused` line named: how many (31 is 31 or more).
+    | RefusedUnnamed Int
       -- A hand the editor itself can't carry out, and why (a pad's four routes all in use).
     | Declined String
 
@@ -716,6 +718,9 @@ lastRefusal m =
                     Untaken _ ->
                         Nothing
 
+                    RefusedUnnamed _ ->
+                        Nothing
+
                     Declined _ ->
                         Nothing
             )
@@ -750,6 +755,13 @@ noticeText n =
 
         BusyGaveUp c ->
             "THE UNIT WAS BUSY FOR " ++ Protocol.sketch c ++ ", ASKED " ++ String.fromInt Flow.busyTries ++ " TIMES: GIVEN UP"
+
+        RefusedUnnamed count ->
+            if count >= 31 then
+                "THE UNIT REFUSED AT LEAST 31 MORE EDITS"
+
+            else
+                "THE UNIT REFUSED " ++ String.fromInt count ++ " MORE EDITS"
 
         Untaken c ->
             if String.startsWith "ed route " (Protocol.sketch c) then
@@ -818,6 +830,9 @@ evict all =
                     True
 
                 Untaken _ ->
+                    False
+
+                RefusedUnnamed _ ->
                     False
 
                 Declined _ ->
@@ -1814,6 +1829,13 @@ answer a m =
         -- The followed Part's, in a diff: a whole answer (a new Part, or
         -- `since 0`) starts afresh, and an address the schema lacks is
         -- another engine's.
+        RefusedMore n ->
+            if m.whole then
+                m
+
+            else
+                keep (RefusedUnnamed n) m
+
         Refused at why ->
             if m.whole || Schema.param at m.schema == Nothing then
                 m

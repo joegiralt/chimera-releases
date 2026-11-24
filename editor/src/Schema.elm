@@ -407,6 +407,9 @@ add line (Schema s) =
         Protocol.Refused _ _ ->
             Schema s
 
+        Protocol.RefusedMore _ ->
+            Schema s
+
         Protocol.InputIs r ->
             onMidiMap (\mm -> { mm | inputs = mm.inputs ++ [ r ] }) s
 

@@ -315,6 +315,9 @@ isUnread n =
         BusyGaveUp _ ->
             False
 
+        RefusedUnnamed _ ->
+            False
+
         Untaken _ ->
             False
 
@@ -345,6 +348,9 @@ isRefusalOrUnread n =
 
         BusyGaveUp _ ->
             False
+
+        RefusedUnnamed _ ->
+            True
 
         Untaken _ ->
             False
@@ -1687,6 +1693,18 @@ suite =
                             \_ -> Expect.equal [ Untaken (SetRoute c (Protocol.RouteAmount ten)) ] (later (feed [ "OK 3" ] queued))
                         , test "nothing_said_when_the_routes_show_it" <|
                             \_ -> Expect.equal [] (later (feed [ "route LFO1:FILTER.CUTOFF 10 \"+10\"", "OK 3" ] queued))
+                        , test "refusals_no_line_names_are_said_as_a_count" <|
+                            \_ ->
+                                feed [ "refused FILTER.CUTOFF \"MATRIX FULL\"", "refused more 5", "OK 3" ] following
+                                    |> Model.notices
+                                    |> List.map (.notice >> Model.noticeText)
+                                    |> Expect.equal [ "THE UNIT REFUSED 5 MORE EDITS", "THE UNIT REFUSED: FILTER.CUTOFF: MATRIX FULL" ]
+                        , test "a_capped_count_says_or_more" <|
+                            \_ ->
+                                feed [ "refused more 31", "OK 3" ] following
+                                    |> Model.notices
+                                    |> List.map (.notice >> Model.noticeText)
+                                    |> Expect.equal [ "THE UNIT REFUSED AT LEAST 31 MORE EDITS" ]
                         , test "its_refusal_said_once_and_not_again_as_not_taken" <|
                             \_ ->
                                 later (feed [ "refused FILTER.CUTOFF \"MATRIX FULL\"", "OK 3" ] queued)

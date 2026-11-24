@@ -1078,6 +1078,9 @@ type AnswerLine
       -- A set the unit took and then would not apply, and the box's reason
       -- (its own toast's words).
     | Refused Addr String
+      -- Refusals no `refused` line names (the box lists only a few): how
+      -- many, 31 meaning 31 or more.
+    | RefusedMore Int
       -- A SETTINGS page's place in the box's lists: its list's crumb and its own.
     | Crumb { list : String, row : String }
       -- The SETTINGS section of `since`, whole: what was held for it is dropped.
@@ -1730,6 +1733,9 @@ answer ts =
         [ "val", a, norm, stored, text ] ->
             Maybe.map3 (\x n s -> Val { addr = x, norm = n, stored = s, text = text }) (Addr.fromWire a) (num norm) (num stored)
 
+        [ "refused", "more", n ] ->
+            nat n |> Maybe.map RefusedMore
+
         [ "refused", a, why ] ->
             Addr.fromWire a |> Maybe.map (\x -> Refused x why)
 
@@ -2345,7 +2351,7 @@ kindOf s =
 
 {-| Split on spaces; a `"quoted"` run is one token, quotes dropped and its
 escapes read (ADR 0336): `\\` a backslash, `\"` a quote, `\xHH` a control
-byte. It closes at its first unescaped quote, before a space or the end.
+byte, `\xC2\xHH` a C1 control. It closes at its first unescaped quote, before a space or the end.
 `Nothing` for an unterminated quote, or any other escape.
 -}
 tokens : String -> Maybe (List String)
@@ -2407,15 +2413,41 @@ quoted cs w =
         '\\' :: '"' :: rest ->
             quoted rest ('"' :: w)
 
+        -- A C1 control: its two UTF-8 bytes.
+        '\\' :: 'x' :: 'C' :: '2' :: '\\' :: 'x' :: h :: l :: rest ->
+            hexByte h l
+                |> Maybe.andThen
+                    (\b ->
+                        if b >= 0x80 && b < 0xA0 then
+                            quoted rest (Char.fromCode b :: w)
+
+                        else
+                            Nothing
+                    )
+
         '\\' :: 'x' :: h :: l :: rest ->
-            Maybe.map2 (\a b -> Char.fromCode (16 * a + b)) (hexDigit h) (hexDigit l)
-                |> Maybe.andThen (\c -> quoted rest (c :: w))
+            hexByte h l
+                |> Maybe.andThen
+                    (\b ->
+                        if b < 0x80 then
+                            quoted rest (Char.fromCode b :: w)
+
+                        else
+                            Nothing
+                    )
 
         '\\' :: _ ->
             Nothing
 
         c :: rest ->
             quoted rest (c :: w)
+
+
+{-| `\xHH`'s byte.
+-}
+hexByte : Char -> Char -> Maybe Int
+hexByte h l =
+    Maybe.map2 (\a b -> 16 * a + b) (hexDigit h) (hexDigit l)
 
 
 {-| An uppercase hex digit's value.

@@ -295,6 +295,7 @@ describe("the Part's MOD bay", () => {
     const dests = (await describedParams("ALGO")).filter((p) => (p.words[9] ?? "").includes("d") && !p.addr.startsWith("FILTER.") && !p.addr.startsWith("OUT.")).map((p) => p.addr);
     let full = null;
     expectNotice(/^THE UNIT REFUSED: \S+: MATRIX FULL$/);
+    expectNotice(/^THE UNIT REFUSED (AT LEAST )?\d+ MORE EDITS$/);
     for (const d of [...new Set(dests)]) {
       const got = await unit.ask(`ed route ENV2:${d} 30`);
       if (!got.at(-1).startsWith("OK")) {
@@ -314,11 +315,12 @@ describe("the Part's MOD bay", () => {
       const dropped = made.filter((c) => !routes[c]).map((c) => c.slice("ENV2:".length));
       assert.ok(dropped.length > 0, `${made.length} routes asked, all kept: the matrix never filled`);
       const said = async () => (await noticesOn()).join("\n");
-      // Each said once, as a set's refusal is; the editor keeps its newest notices, the newest refusal among them.
+      // A Part's first drop named (as a set's refusal is), the rest counted: `refused more <n>`.
       await until("the dropped routes' refusals said", async () => {
         const n = await noticesOn();
-        const refusals = n.filter((x) => x.endsWith(": MATRIX FULL"));
-        return n.includes(`THE UNIT REFUSED: ${dropped.at(-1)}: MATRIX FULL`) && refusals.every((x) => dropped.some((d) => x === `THE UNIT REFUSED: ${d}: MATRIX FULL`));
+        const named = n.filter((x) => x.endsWith(": MATRIX FULL"));
+        const more = n.some((x) => / MORE EDITS$/.test(x));
+        return named.length > 0 && named.every((x) => dropped.some((d) => x === `THE UNIT REFUSED: ${d}: MATRIX FULL`)) && (dropped.length === 1 || more);
       }, 5000).catch(async () => {
         throw new Error(`dropped ${dropped.join(" ")}; the editor said: ${await said()}`);
       });

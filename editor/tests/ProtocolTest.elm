@@ -537,6 +537,11 @@ suite =
             , p "ERR set has no address here" "ERR ed set has no CHORUS.MODE here" (SetRefused (addr "CHORUS.MODE") "has no CHORUS.MODE here")
             , p "ERR set not in build" "ERR ed set is not in this build" (Err_ "ed set is not in this build")
             , p "ERR leading space" "  ERR busy" (Err_ "busy")
+            , p "refused more" "refused more 5" (Answer (RefusedMore 5))
+            , p "refused more, capped" "refused more 31" (Answer (RefusedMore 31))
+            , p "refused more, no count" "refused more x" Unknown
+            , p "a C1 control as its two bytes" "val A.B 0 0 \"A\\xC2\\x85B\"" (Answer (Val { addr = addr "A.B", norm = 0, stored = 0, text = "A\u{0085}B" }))
+            , p "a lone lead byte is no text" "val A.B 0 0 \"\\xC2\"" Unknown
             , p "ERR alone" "ERR" (Err_ "")
             , p "CR stripped" "OK 3\u{000D}" (okAt 3)
             ]

@@ -364,9 +364,9 @@ function withAsks(con, log, own) {
 /** The protocol's words: a "quoted" run is one (Protocol.elm's grammar). */
 export function tokens(s) {
   const out = [];
-  // A quoted field's escapes (ADR 0336): \\ a backslash, \" a quote, \xHH a control byte.
+  // A quoted field's escapes (ADR 0336): \\ a backslash, \" a quote, \xHH a control byte, \xC2\xHH a C1 control.
   const re = /"((?:[^"\\]|\\\\|\\"|\\x[0-9A-F]{2})*)"(?= |$)|(\S+)/g;
-  const unescape = (q) => q.replace(/\\(\\|"|x([0-9A-F]{2}))/g, (_, e, h) => (h ? String.fromCharCode(parseInt(h, 16)) : e));
+  const unescape = (q) => q.replace(/\\(\\|"|x(?:C2\\x)?([0-9A-F]{2}))/g, (_, e, h) => (h ? String.fromCharCode(parseInt(h, 16)) : e));
   for (let m; (m = re.exec(s)); ) out.push(m[1] !== undefined ? unescape(m[1]) : m[2]);
   return out;
 }
