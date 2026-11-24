@@ -16,7 +16,9 @@ Chimera is still in development. Some features aren't finished, and you may run 
 
 **[Open the browser editor](https://joegiralt.github.io/chimera-releases/editor/)** (needs Chimera 0.4 or later): a panel in Chrome or Edge that talks to the unit over USB.
 
-[Download Chimera](../../releases) | [Known issues](KNOWN-ISSUES.md) | [Getting Started](GETTING-STARTED.md) | [FAQ](FAQ.md) | [Website](https://joegiralt.github.io/chimera-releases/)
+**[The source code](https://github.com/joegiralt/chimera)**: Chimera is free software (GPLv3). The code, its history and its CI live in [joegiralt/chimera](https://github.com/joegiralt/chimera); this repo holds the releases, the manual, the editor and the website.
+
+[Download Chimera](../../releases) | [Known issues](KNOWN-ISSUES.md) | [Getting Started](GETTING-STARTED.md) | [FAQ](FAQ.md) | [Website](https://joegiralt.github.io/chimera-releases/) | [Source code](https://github.com/joegiralt/chimera)
 
 ---
 
