@@ -1148,7 +1148,14 @@ A MIDI control or load that lands on a refused choice shows the toast `FORMANT B
 
 **Why a budget and not fewer voices:** otherwise one turn could leave a patch playing one voice, or none. Any Sound you can build plays chords.
 
-> **Design note:** the formant operators follow an expired Yamaha patent, the approach behind the FS1R: grains at the note's pitch, a carrier restarted in each grain, two overlapping lanes, and noise ring-modulated up to a centre for the unvoiced bands. The window, width floor, level law (an FS1R gets louder with BW; this does not), VOWEL and its slots are Chimera's own. The vowel table is Peterson and Barney's 1952 data, so somewhere in the firmware a committee of mid-century American men is still saying "hod", "head" and "hid" on your behalf.
+> **Design note:** your voice is a buzz (the vocal folds, firing once per pitch period) shaped by a few resonances in your throat and mouth: the formants. Move them and the buzz says "ah" or "ee". A formant operator builds that directly. At every pitch period it fires a short grain, a little bell-shaped burst of sine at the formant's frequency. The grains repeat at the note's pitch, so you hear the note; the tone inside each grain sits at a fixed place in the spectrum, so you hear the vowel. Shorter grains mean a wider BW; SKIRT is the bell's shape. Two lanes of grains overlap so a long grain is never cut off by the next. The unvoiced NOISE bands do the same with noise ring-modulated up to a centre: breath, sibilance and consonants.
+>
+> The idea is old and good:
+> - **VOSIM** (Kaegi and Tempelaars, 1978) built vowels from trains of squared-sine pulses.
+> - **FOF** (Xavier Rodet's *fonctions d'onde formantique*, IRCAM's CHANT, 1984) made the grain-per-period formant famous, and sang opera with it.
+> - **The FS1R** (Yamaha, 1998) put formant operators inside an FM algorithm, so a formant could be modulated like any operator.
+>
+> Chimera's structure follows the FS1R's expired patent (US 5,610,354). The window, the width floor, the level law (an FS1R gets louder as BW widens; this does not), VOWEL and its slots are Chimera's own. The vowel table is Peterson and Barney's 1952 data, so somewhere in the firmware a committee of mid-century American men is still saying "hod", "head" and "hid" on your behalf.
 
 ## ALGO: the shared pages on an ALGO Part
 
