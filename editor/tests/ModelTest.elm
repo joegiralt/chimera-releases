@@ -700,6 +700,46 @@ suite =
                         m3 |> feed [ "OK 5" ] |> tick 1165
                 in
                 Expect.equal [ [ Since Nothing ], [ Since Nothing ], [], [ Since (gen 5) ] ] [ c1, c2, c3, c4 ]
+        , test "a_busy_since_is_asked_again_quietly_later_each_time" <|
+            \_ ->
+                let
+                    -- Following asks at 99; the unit busy: `ERR busy`.
+                    ( m1, _ ) =
+                        following |> tick 99
+
+                    busy1 : Model.Model
+                    busy1 =
+                        m1 |> feed [ "ERR busy" ]
+
+                    -- Not at the next clock: after the busy wait (50 ms).
+                    ( _, early ) =
+                        busy1 |> tick 132
+
+                    ( m2, again ) =
+                        busy1 |> tick 150
+
+                    -- Busy again: the wait doubles (100 ms).
+                    busy2 : Model.Model
+                    busy2 =
+                        m2 |> feed [ "ERR busy" ]
+
+                    ( _, early2 ) =
+                        busy2 |> tick 200
+
+                    ( m3, again2 ) =
+                        busy2 |> tick 250
+
+                    -- Taken: the next goes at the next clock.
+                    ( _, next ) =
+                        m3 |> feed [ cutoffLine "777", "OK 7" ] |> tick 283
+                in
+                Expect.all
+                    [ \_ -> Expect.equal [] (Model.notices busy2 |> List.map .notice)
+                    , \_ -> Expect.equal ( [], [ Since Nothing ] ) ( early, again )
+                    , \_ -> Expect.equal ( [], [ Since Nothing ] ) ( early2, again2 )
+                    , \_ -> Expect.equal [ Since (gen 7) ] next
+                    ]
+                    ()
         , test "following_never_halts_a_lost_answer_is_asked_for_again" <|
             \_ ->
                 let

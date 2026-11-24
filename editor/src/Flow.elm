@@ -1,7 +1,7 @@
 -- SPDX-License-Identifier: GPL-3.0-or-later
 
 
-module Flow exposing (Edit(..), Expiry(..), Flow, acked, answerLost, busy, busyTries, expire, forget, forgetRoutesTo, heard, idle, inFlight, target, untaken, want)
+module Flow exposing (Edit(..), Expiry(..), Flow, acked, answerLost, busy, busyTries, busyWaitMs, expire, forget, forgetRoutesTo, heard, idle, inFlight, target, untaken, want)
 
 {-| The edits' window: one edit on the wire at a time (an `ed set`, or an
 `ed route` of a matrix cell). A hand moves faster than the unit answers, so

@@ -162,12 +162,23 @@ describe("ERR busy", () => {
     assert.equal(sets.length, 4, `sets: ${sets.join(", ")}`);
     assert.ok(sets.every((s) => s === sets[0]), "each send is the hand's latest value");
     assert.ok(Math.abs(now.stored - Number(tokens(sets[0])[3])) < 1e-4);
-    // Backing off: each wait at least as long as the one before.
+    // Backing off: each send at least its wait after the one before (50 ms, doubling; the answer's own time on top,
+    // which a slow link makes uneven).
     const at = bridge.flow.sent.map((l, i) => [l, bridge.flow.sentAt[i]]).slice(from).filter(([l]) => l.startsWith(`ed set ${addr} `)).map(([, t]) => t);
     const gaps = at.slice(1).map((t, i) => t - at[i]);
-    assert.ok(gaps.every((g, i) => i === 0 || g >= gaps[i - 1] - 5), `gaps ${gaps.join(" ")} ms`);
+    assert.ok(gaps.every((g, i) => g >= 50 * 2 ** i - 5), `gaps ${gaps.join(" ")} ms`);
     assert.ok(gaps[0] >= 20, `the first retry after ${gaps[0]} ms`);
     await sliderFollows(addr);
+  });
+
+  test("C3: `ERR busy` to a poll: asked again quietly, no notice, and following goes on", async () => {
+    await onEngine(1, "ALGO");
+    const { addr } = await firstKnob("ALGO");
+    const busy = bridge.flow.rule({ match: /^ed since /, act: "answer", lines: ["ERR busy"], times: 3 });
+    await until("the busy answers given", () => busy.hits === 3, 5000);
+    await unit.ok(`ed set ${addr} ${(await unit.get(addr)).norm > 0.5 ? 0.25 : 0.75}`);
+    await sliderFollows(addr);
+    await polled(3);
   });
 
   test("C3: `ERR busy` mid-burst: the hand's last value is what the unit ends on", async () => {

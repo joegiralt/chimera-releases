@@ -276,6 +276,10 @@ type alias Model =
     -- The edits' window: the one set on the wire, and the wants waiting.
     , flow : Flow
 
+    -- `ERR busy` to `since`: how many in a row, and the poll waits till when.
+    , sinceBusy : Int
+    , sinceShut : Maybe Time.Posix
+
     -- A hand's latest wants while the page is read (an engine change, a
     -- schema asked again), by what they edit: they go to the window once
     -- the page is the unit's.
@@ -396,6 +400,8 @@ init =
     , routes = Dict.empty
     , held = Dict.empty
     , hands = Dict.empty
+    , sinceBusy = 0
+    , sinceShut = Nothing
     , checked = Set.empty
     , restarted = False
     , incoming = Schema.empty
@@ -1419,7 +1425,12 @@ tick t m0 =
                         ( { mf | asked = Just t, owed = mf.owed + 1, leftover = False }, window ++ [ Since mf.gen ] )
                 in
                 if mf.owed == 0 then
-                    again
+                    -- The unit busy: the poll waits.
+                    if mf.sinceShut |> Maybe.map (\u -> ms t < ms u) |> Maybe.withDefault False then
+                        ( mf, window )
+
+                    else
+                        again
 
                 else if timedOut && mf.owed == 1 && not mf.leftover then
                     again
@@ -1857,6 +1868,20 @@ refusedCommand why m =
             Nothing ->
                 m1
 
+    else if why == "busy" && (List.head m.awaiting |> Maybe.map askedBy) == Just AskedSince then
+        -- Nor for a poll: asked again quietly, later each time in a row.
+        let
+            inARow : Int
+            inARow =
+                m.sinceBusy + 1
+        in
+        { m
+            | awaiting = List.drop 1 m.awaiting
+            , owed = max 0 (m.owed - 1)
+            , sinceBusy = inARow
+            , sinceShut = Just (Time.millisToPosix (Time.posixToMillis m.now + Flow.busyWaitMs inARow))
+        }
+
     else
         refusedCommandOf why m
 
@@ -2292,7 +2317,7 @@ ok done more m0 =
         Following ->
             case done of
                 Just g ->
-                    ( following g (max 0 (m.owed - 1)) more m, [] )
+                    ( following g (max 0 (m.owed - 1)) more { m | sinceBusy = 0, sinceShut = Nothing }, [] )
 
                 Nothing ->
                     ( m, [] )

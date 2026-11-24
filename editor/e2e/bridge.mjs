@@ -82,6 +82,7 @@ export async function startBridge(dist, unit) {
       this.maxSetsInFlight = this.setsInFlight;
     },
     // Paused, the unit's answers wait here, in order: a unit slower than the hand.
+    answered: Promise.resolve(), // the latest line's answer (a made-up one waits for it)
     paused: null,
     pausedFrom: 0, // the first line (by its number in `sent`) whose answer waits: answers to earlier lines still come
     pause(from = 0) {
@@ -173,8 +174,13 @@ export async function startBridge(dist, unit) {
           flow.maxSetsInFlight = Math.max(flow.maxSetsInFlight, flow.setsInFlight);
         }
         const out = rule?.act === "rewrite" ? rule.map(line) : line;
-        const ask = () => (rule?.act === "answer" ? Promise.resolve({ lines: rule.lines }) : unit.con.ask(out, "editor"));
+        // The unit's own answer: E2E_LAG late, as over the real unit's USB console.
+        const late = (c) => (LAG ? new Promise((r) => setTimeout(() => r(c), LAG)) : c);
+        // A made-up answer still comes in its turn: after the answers to the lines sent before it, as the unit's would.
+        const before = flow.answered;
+        const ask = () => (rule?.act === "answer" ? before.then(() => ({ lines: rule.lines })) : unit.con.ask(out, "editor").then(late));
         const answered = rule?.act === "defer" ? new Promise((r) => rule.held.push(() => ask().then(r))) : ask();
+        if (rule?.act !== "defer") flow.answered = answered.catch(() => {});
         answered.then((c) => {
           const deliver = () => {
             if (isSet) flow.setsInFlight--;
@@ -189,7 +195,6 @@ export async function startBridge(dist, unit) {
           };
           if (rule?.act === "hold") rule.held.push(deliver);
           else if (flow.paused && seq >= flow.pausedFrom) flow.paused.push(deliver);
-          else if (LAG) setTimeout(deliver, LAG);
           else deliver();
         });
       }

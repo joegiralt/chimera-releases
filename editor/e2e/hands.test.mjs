@@ -205,7 +205,13 @@ describe("knobs", () => {
     await page.mouse.down();
     await frames();
     await page.mouse.move(x, y - 15, { steps: 3 });
-    await until("the drag's set landed", async () => (await unit.get(p.addr)).stored > 0.2 && !bridge.flow.setsInFlight);
+    // Every set of the drag so far landed: none in flight, the unit on the last one sent (a want may still wait a beat).
+    await until("the drag's sets landed", async () => {
+      const last = bridge.flow.sent.findLast((l) => l.startsWith(`ed set ${p.addr} `));
+      return !!last && !bridge.flow.setsInFlight && Math.abs((await unit.get(p.addr)).stored - Number(tokens(last)[3])) < 1e-4;
+    });
+    await frames();
+    await until("nothing more of it", () => !bridge.flow.setsInFlight);
     const part1 = (await unit.get(p.addr)).stored;
     await unit.ok("key B2");
     await until("the editor on Part 2", async () => (await page.locator(".unit").innerText()).includes("PART 2"), 5000);
