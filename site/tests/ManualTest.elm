@@ -93,6 +93,22 @@ suite =
                 List.filter (\r -> Route.doc r /= Nothing && r /= Install) Route.all
                     |> List.filter (\r -> r == Manual || List.any (\c -> r == Chapter c) Chapter.all)
                     |> Expect.equal (Manual :: List.map Chapter Chapter.all)
+         , test "each chapter's title is its file's heading" <|
+            \_ ->
+                Chapter.all
+                    |> List.map (\c -> ( Chapter.file c, Chapter.title c ))
+                    |> Expect.equal
+                        (Chapter.all
+                            |> List.map
+                                (\c ->
+                                    ( Chapter.file c
+                                    , source (Chapter.file c)
+                                        |> Maybe.andThen (String.lines >> List.head)
+                                        |> Maybe.map (String.dropLeft 2)
+                                        |> Maybe.withDefault "(no heading)"
+                                    )
+                                )
+                        )
          , test "chapters link to their neighbours" <|
             \_ ->
                 Chapter.all
