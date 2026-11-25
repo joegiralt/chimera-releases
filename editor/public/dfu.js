@@ -167,10 +167,44 @@ var ChimeraDfu = (function () {
       await dev.selectAlternateInterface(f.number, 0);
       return f;
     } catch (e) {
+      try { await dev.close(); } catch (x) {}
       if (e && e.guard) throw e;
       var err = new Error((e && e.message) || String(e));
       err.unopenable = true;
       throw err;
+    }
+  }
+
+  /** The configuration descriptor, whole (standard GET_DESCRIPTOR). */
+  async function configDescriptor(dev) {
+    var get = function (n) { return dev.controlTransferIn({ requestType: 'standard', recipient: 'device', request: 6, value: 0x0200, index: 0 }, n); };
+    var head = await get(9);
+    return (await get(head.data.getUint16(2, true))).data;
+  }
+
+  /** The DFU alternate's name: WebUSB's interfaceName, or (null there, as
+   * Chrome on Windows may leave it) its string descriptor, read here. */
+  async function altName(dev, f) {
+    if (f.alt.interfaceName) return f.alt.interfaceName;
+    try {
+      var d = await configDescriptor(dev);
+      var index = 0;
+      for (var at = 0; at + 9 <= d.byteLength; ) {
+        var len = d.getUint8(at);
+        if (len < 2) break;
+        if (d.getUint8(at + 1) === 4 && d.getUint8(at + 2) === f.number && d.getUint8(at + 3) === 0) index = d.getUint8(at + 8);
+        at += len;
+      }
+      if (!index) return null;
+      var str = function (value, lang, n) { return dev.controlTransferIn({ requestType: 'standard', recipient: 'device', request: 6, value: value, index: lang }, n); };
+      var langs = (await str(0x0300, 0, 255)).data;
+      var lang = langs.byteLength >= 4 ? langs.getUint16(2, true) : 0x0409;
+      var s = (await str(0x0300 | index, lang, 255)).data;
+      var out = '';
+      for (var i = 2; i + 1 < Math.min(s.byteLength, s.getUint8(0)); i += 2) out += String.fromCharCode(s.getUint16(i, true));
+      return out || null;
+    } catch (e) {
+      return null;
     }
   }
 
@@ -241,14 +275,17 @@ var ChimeraDfu = (function () {
     plan(at, image.length, 1024); // the guards, before the device is touched
     progress = progress || function () {};
     var f = await open(dev).catch(function (e) { e.started = false; throw e; });
-    var name = f.alt.interfaceName;
+    var name = await altName(dev, f);
     if (!isH7(name)) {
       try { await dev.close(); } catch (e) {}
       throw Object.assign(Guard('refused: this DFU device is not the PreenFM3\'s STM32H7 (its flash: ' + (name || 'not named') + '). Unplug other boards in DFU mode'), { started: false });
     }
     var size = await transferSize(dev);
     var p = plan(at, image.length, size);
-    if (!layoutFits(layout(name), p.erase)) throw Object.assign(Guard('refused: the device lays out its flash as ' + name + ', not 128 KB sectors from 0x08020000'), { started: false });
+    if (!layoutFits(layout(name), p.erase)) {
+      try { await dev.close(); } catch (e) {}
+      throw Object.assign(Guard('refused: the device lays out its flash as ' + name + ', not 128 KB sectors from 0x08020000'), { started: false });
+    }
     var l = link(dev, f.number);
     var total = p.erase.length + p.blocks.length;
     var done = 0;
@@ -297,13 +334,6 @@ var ChimeraDfu = (function () {
     try { await dev.close(); } catch (e) {}
   }
 
-  /** A DFU device this page may use already (picked before), or null. */
-  async function known() {
-    if (!navigator.usb) return null;
-    var ds = await navigator.usb.getDevices();
-    return ds.find(function (d) { return d.vendorId === ID.vendorId && d.productId === ID.productId; }) || null;
-  }
-
   /** The browser's chooser for the DFU device (a click's): the device, or
    * null when nothing was picked. */
   async function choose() {
@@ -319,7 +349,7 @@ var ChimeraDfu = (function () {
     BASE: BASE, AREA: AREA, SECTOR: SECTOR, ID: ID,
     FirmwareAddress: FirmwareAddress, isH7: isH7, setAddress: setAddress, eraseSector: eraseSector, checkCommand: checkCommand,
     checkImage: checkImage, plan: plan, layout: layout, layoutFits: layoutFits,
-    write: write, known: known, choose: choose,
+    write: write, choose: choose,
   };
 })();
 

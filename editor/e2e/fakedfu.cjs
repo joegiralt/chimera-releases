@@ -17,10 +17,14 @@
 // spec has dfuDNLOAD-IDLE), `pickOther` (the chooser returns the first of
 // `addOther`'s devices). `addOther(layout)` puts another DfuSe device on the
 // bus, already permitted, with that flash layout string; its `sent` counts
-// every control transfer it was given.
+// every control transfer it was given. `noName` leaves the alternate's
+// interfaceName null (as Chrome on Windows may), the name then only in its
+// string descriptor (`nameString`, default the H7's); `claimFails` refuses
+// the interface claim.
 function fakeUsb(scope, opts) {
   opts = opts || {};
   var SIZE = 2 * 1024 * 1024, FLASH = 0x08000000, SECTOR = 0x20000, XFER = 2048;
+  var LAYOUT = '@Internal Flash  /0x08000000/16*128Kg';
   var mem = new Uint8Array(SIZE).fill(0xa5);
   mem.fill(0xb0, 0, SECTOR); // the bootloader
   var log = { commands: [], erased: [], writes: [], massErase: false, left: false, image: null, opens: 0, requests: 0 };
@@ -104,13 +108,24 @@ function fakeUsb(scope, opts) {
       guard();
       device.configuration = {
         configurationValue: 1,
-        interfaces: [{ interfaceNumber: 0, alternates: [{ alternateSetting: 0, interfaceClass: 0xfe, interfaceSubclass: 0x01, interfaceProtocol: 0x02, interfaceName: '@Internal Flash  /0x08000000/16*128Kg' }] }],
+        interfaces: [{ interfaceNumber: 0, alternates: [{ alternateSetting: 0, interfaceClass: 0xfe, interfaceSubclass: 0x01, interfaceProtocol: 0x02, interfaceName: mode.noName ? null : LAYOUT }] }],
       };
     },
-    async claimInterface() { guard(); },
+    async claimInterface() {
+      guard();
+      if (mode.claimFails) throw new DOMException('Unable to claim interface.', 'NetworkError');
+    },
     async selectAlternateInterface() { guard(); },
     async controlTransferIn(setup, length) {
       guard();
+      if (setup.requestType === 'standard' && setup.request === 6 && (setup.value >> 8) === 3) {
+        // String descriptors: 0 the language list, 4 the alternate's name.
+        var str = (setup.value & 0xff) === 0 ? null : (setup.value & 0xff) === 4 ? (mode.nameString || LAYOUT) : '';
+        var sd = str === null ? [4, 3, 0x09, 0x04] : [2 + str.length * 2, 3];
+        if (str) for (var k = 0; k < str.length; k++) sd.push(str.charCodeAt(k) & 0xff, str.charCodeAt(k) >> 8);
+        var sb = new Uint8Array(sd).slice(0, length);
+        return { status: 'ok', data: new DataView(sb.buffer) };
+      }
       if (setup.requestType === 'standard' && setup.request === 6) {
         if (mode.badDescriptor) return { status: 'stall' };
         var d = configDescriptor().slice(0, length);
@@ -163,7 +178,7 @@ function fakeUsb(scope, opts) {
   var others = [];
   function addOther(layout) {
     var o = {
-      vendorId: 0x0483, productId: 0xdf11, productName: 'STM32  BOOTLOADER', opened: false, configuration: null, sent: 0,
+      vendorId: 0x0483, productId: 0xdf11, productName: 'STM32  BOOTLOADER', opened: false, configuration: null, sent: 0, outs: 0,
       async open() { o.opened = true; },
       async close() { o.opened = false; },
       async selectConfiguration() {
@@ -172,7 +187,7 @@ function fakeUsb(scope, opts) {
       async claimInterface() {},
       async selectAlternateInterface() {},
       async controlTransferIn() { o.sent++; return { status: 'stall' }; },
-      async controlTransferOut() { o.sent++; return { status: 'stall' }; },
+      async controlTransferOut() { o.sent++; o.outs++; return { status: 'stall' }; },
     };
     others.push(o);
     return o;

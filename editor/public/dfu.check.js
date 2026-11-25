@@ -127,7 +127,9 @@ async function onlyTheH7() {
     var e = await rejects(D.write(other, image(4096), D.BASE), 'a write to ' + layout);
     eq(e.guard, true, 'a guard refusal for ' + layout);
     eq(e.started, false, 'started on ' + layout);
-    eq(other.sent, 0, 'transfers sent to ' + layout);
+    // A device with no name has its string descriptor read; nothing is ever sent to it.
+    eq(layout ? other.sent : other.outs, 0, 'transfers sent to ' + layout);
+    eq(other.opened, false, 'left open: ' + layout);
     if (layout) eq(/not the PreenFM3/.test(e.message), true, 'the refusal names it: ' + e.message);
   }
   eq(D.isH7('@Internal Flash  /0x08000000/16*128Kg'), true, 'the H7');
@@ -171,8 +173,40 @@ async function startedAndLeave() {
   eq(usb.log.writes.reduce(function (n, w) { return n + w.length; }, 0), img.length, 'every byte written before the leave');
 }
 
+// A null interfaceName: the alternate's string descriptor is read instead.
+async function nameFromDescriptor() {
+  var scope = { navigator: {} };
+  var usb = fakeUsb(scope, { present: true, granted: true, mode: { noName: true } });
+  var img = image(10 * 1024);
+  await D.write(usb.device, img, D.BASE);
+  eq(usb.log.left, true, 'written with the name from its descriptor');
+  scope = { navigator: {} };
+  usb = fakeUsb(scope, { present: true, granted: true, mode: { noName: true, nameString: '@Internal Flash  /0x08000000/04*016Kg,01*064Kg,07*128Kg' } });
+  var e = await rejects(D.write(usb.device, img, D.BASE), 'an F4 named only in its descriptor');
+  eq(e.guard, true, 'a guard refusal (F4 by descriptor)');
+  eq(usb.log.commands.length, 0, 'commands sent to an F4 named by descriptor');
+  eq(usb.device.opened, false, 'the F4 left open');
+}
+
+// A refusal or a failed claim leaves the device closed; no dead helpers.
+async function closedOnRefusal() {
+  var scope = { navigator: {} };
+  var usb = fakeUsb(scope, { present: true, granted: true });
+  var other = usb.addOther('@Internal Flash  /0x08000000/08*128Kg');
+  await rejects(D.write(other, image(4096), D.BASE), 'a 1 MB layout');
+  eq(other.opened, false, 'left open after a layout refusal');
+  scope = { navigator: {} };
+  usb = fakeUsb(scope, { present: true, granted: true, mode: { claimFails: true } });
+  var e = await rejects(D.write(usb.device, image(4096), D.BASE), 'a failed claim');
+  eq(e.unopenable, true, 'a failed claim is unopenable');
+  eq(usb.device.opened, false, 'left open after a failed claim');
+  eq('known' in D, false, 'the dead known() is still there');
+}
+
 (async function () {
   guards();
+  await nameFromDescriptor();
+  await closedOnRefusal();
   await onlyTheH7();
   await noGuessedTransferSize();
   await strictSettle();
