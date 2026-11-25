@@ -118,8 +118,65 @@ async function eraseRefused() {
   eq(usb.log.writes.length, 0, 'writes after a refused erase');
 }
 
+// Only the PreenFM3's chip: an STM32H7's internal flash, 16 sectors of 128 KB.
+async function onlyTheH7() {
+  for (var layout of ['@Internal Flash  /0x08000000/04*016Kg,01*064Kg,07*128Kg', '@Internal Flash  /0x08000000/04*032Kg,01*128Kg,03*256Kg', null, '@Option Bytes  /0x5200201C/01*128 e']) {
+    var scope = { navigator: {} };
+    var usb = fakeUsb(scope, { present: true, granted: true });
+    var other = usb.addOther(layout);
+    var e = await rejects(D.write(other, image(4096), D.BASE), 'a write to ' + layout);
+    eq(e.guard, true, 'a guard refusal for ' + layout);
+    eq(e.started, false, 'started on ' + layout);
+    eq(other.sent, 0, 'transfers sent to ' + layout);
+    if (layout) eq(/not the PreenFM3/.test(e.message), true, 'the refusal names it: ' + e.message);
+  }
+  eq(D.isH7('@Internal Flash  /0x08000000/16*128Kg'), true, 'the H7');
+  eq(D.isH7('@Internal Flash  /0x08000000/08*128Kg'), false, 'an H7 with 1 MB');
+}
+
+// A descriptor that can't be read refuses the write: no guessed transfer size.
+async function noGuessedTransferSize() {
+  var scope = { navigator: {} };
+  var usb = fakeUsb(scope, { present: true, granted: true, mode: { badDescriptor: true } });
+  var e = await rejects(D.write(usb.device, image(4096), D.BASE), 'an unreadable descriptor');
+  eq(e.guard, true, 'a guard refusal (descriptor)');
+  eq(usb.log.commands.length, 0, 'commands sent without a transfer size');
+}
+
+// After a download the spec allows dfuDNBUSY or dfuDNLOAD-IDLE, never dfuIDLE.
+async function strictSettle() {
+  var scope = { navigator: {} };
+  var usb = fakeUsb(scope, { present: true, granted: true, mode: { idleAfterDownload: true } });
+  var e = await rejects(D.write(usb.device, image(4096), D.BASE), 'dfuIDLE after a download');
+  eq(e.refused, true, 'refused');
+  eq(usb.log.writes.length, 0, 'written past a wrong state');
+}
+
+// Whether a write started (an erase sent) and whether it failed at the leave.
+async function startedAndLeave() {
+  var scope = { navigator: {} };
+  var usb = fakeUsb(scope, { present: true, granted: true, mode: { unopenable: true } });
+  eq((await rejects(D.write(usb.device, image(4096), D.BASE), 'unopenable')).started, false, 'started (unopenable)');
+  scope = { navigator: {} };
+  usb = fakeUsb(scope, { present: true, granted: true, mode: { cutAfter: 3 } });
+  var cut = await rejects(D.write(usb.device, image(100 * 1024), D.BASE), 'cut');
+  eq(cut.started, true, 'started (cut)');
+  eq(!!cut.leave, false, 'leave (cut)');
+  scope = { navigator: {} };
+  usb = fakeUsb(scope, { present: true, granted: true, mode: { failLeave: true } });
+  var img = image(10 * 1024);
+  var left = await rejects(D.write(usb.device, img, D.BASE), 'a failed leave');
+  eq(left.leave, true, 'leave (failed leave)');
+  eq(left.started, true, 'started (failed leave)');
+  eq(usb.log.writes.reduce(function (n, w) { return n + w.length; }, 0), img.length, 'every byte written before the leave');
+}
+
 (async function () {
   guards();
+  await onlyTheH7();
+  await noGuessedTransferSize();
+  await strictSettle();
+  await startedAndLeave();
   await happyWrite();
   await refusedBeforeTheWire();
   await unopenable();

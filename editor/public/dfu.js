@@ -21,7 +21,7 @@ var ChimeraDfu = (function () {
 
   // DFU 1.1 requests and states.
   var DNLOAD = 1, GETSTATUS = 3, CLRSTATUS = 4, ABORT = 6;
-  var IDLE = 2, DNBUSY = 4, DNLOAD_IDLE = 5, MANIFEST = 7, ERROR = 10;
+  var IDLE = 2, DNLOAD_SYNC = 3, DNBUSY = 4, DNLOAD_IDLE = 5, MANIFEST = 7, ERROR = 10;
   // DfuSe commands, on block 0.
   var SET_ADDRESS = 0x21, ERASE = 0x41;
 
@@ -89,6 +89,12 @@ var ChimeraDfu = (function () {
     return { erase: erase, blocks: blocks };
   }
 
+  /** The PreenFM3's chip, an STM32H750 as its ROM loader names it: internal
+   * flash at 0x08000000, sixteen 128 KB sectors. An F4, F7 or anything else
+   * (another board in DFU mode) is not written. */
+  var H7 = /^@Internal Flash\s*\/0x08000000\/16\*128K[a-g]?\s*$/i;
+  function isH7(name) { return H7.test(name || ''); }
+
   /** "@Internal Flash  /0x08000000/16*128Kg" as [{ at, size, count }]. */
   function layout(name) {
     var m = /^@[^/]*\/0x([0-9a-f]+)\/(.*)$/i.exec(name || '');
@@ -128,7 +134,7 @@ var ChimeraDfu = (function () {
     return null;
   }
 
-  /** The DFU functional descriptor's wTransferSize, else 1024. */
+  /** The DFU functional descriptor's wTransferSize, or a Guard: never a guess. */
   async function transferSize(dev) {
     try {
       var head = await dev.controlTransferIn({ requestType: 'standard', recipient: 'device', request: 6, value: 0x0200, index: 0 }, 9);
@@ -144,8 +150,8 @@ var ChimeraDfu = (function () {
         }
         at += len;
       }
-    } catch (e) { /* the default below */ }
-    return 1024;
+    } catch (e) { /* refused below */ }
+    throw Guard('refused: the device\'s DFU descriptor (its transfer size) could not be read; nothing was written');
   }
 
   /** The device, opened and its DFU interface claimed. A device that can't
@@ -200,8 +206,10 @@ var ChimeraDfu = (function () {
         err.refused = true;
         throw err;
       }
-      if (s.state === DNLOAD_IDLE || s.state === IDLE) return;
-      if (s.state === DNBUSY || s.state === 3) {
+      // After a download the spec allows only dfuDNLOAD-SYNC or dfuDNBUSY
+      // (wait the device's poll time) and then dfuDNLOAD-IDLE (done).
+      if (s.state === DNLOAD_IDLE) return;
+      if (s.state === DNBUSY || s.state === DNLOAD_SYNC) {
         await sleep(Math.max(s.poll, 1));
         continue;
       }
@@ -232,18 +240,23 @@ var ChimeraDfu = (function () {
     checkImage(image);
     plan(at, image.length, 1024); // the guards, before the device is touched
     progress = progress || function () {};
-    var f = await open(dev);
-    if (f.alt.interfaceName && !/^@Internal Flash/i.test(f.alt.interfaceName)) throw Guard('refused: alternate 0 is not the internal flash (' + f.alt.interfaceName + ')');
+    var f = await open(dev).catch(function (e) { e.started = false; throw e; });
+    var name = f.alt.interfaceName;
+    if (!isH7(name)) {
+      try { await dev.close(); } catch (e) {}
+      throw Object.assign(Guard('refused: this DFU device is not the PreenFM3\'s STM32H7 (its flash: ' + (name || 'not named') + '). Unplug other boards in DFU mode'), { started: false });
+    }
     var size = await transferSize(dev);
     var p = plan(at, image.length, size);
-    var segs = layout(f.alt.interfaceName);
-    if (segs && !layoutFits(segs, p.erase)) throw Guard('refused: the device lays out its flash as ' + f.alt.interfaceName + ', not 128 KB sectors from 0x08020000');
+    if (!layoutFits(layout(name), p.erase)) throw Object.assign(Guard('refused: the device lays out its flash as ' + name + ', not 128 KB sectors from 0x08020000'), { started: false });
     var l = link(dev, f.number);
     var total = p.erase.length + p.blocks.length;
     var done = 0;
+    var started = false;
     try {
       await idle(l);
       for (var i = 0; i < p.erase.length; i++) {
+        started = true;
         await l.command(eraseSector(p.erase[i]));
         await settle(l, 'an erase');
         progress(++done, total);
@@ -258,9 +271,17 @@ var ChimeraDfu = (function () {
       }
     } catch (e) {
       if (!e.guard && !e.refused) e.lost = true;
+      e.started = started;
       throw e;
     }
-    await leave(l, dev);
+    try {
+      await leave(l, dev);
+    } catch (e) {
+      // Every block is written: the firmware is in; the unit didn't start it.
+      e.leave = true;
+      e.started = true;
+      throw e;
+    }
   }
 
   /** Start the firmware: the address, an empty download, a status. The
@@ -296,7 +317,7 @@ var ChimeraDfu = (function () {
 
   return {
     BASE: BASE, AREA: AREA, SECTOR: SECTOR, ID: ID,
-    FirmwareAddress: FirmwareAddress, setAddress: setAddress, eraseSector: eraseSector, checkCommand: checkCommand,
+    FirmwareAddress: FirmwareAddress, isH7: isH7, setAddress: setAddress, eraseSector: eraseSector, checkCommand: checkCommand,
     checkImage: checkImage, plan: plan, layout: layout, layoutFits: layoutFits,
     write: write, known: known, choose: choose,
   };

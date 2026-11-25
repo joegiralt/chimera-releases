@@ -11,7 +11,13 @@
 // command (`commands`), the sectors erased, the blocks written, a mass erase
 // (`massErase`), the leave. Modes: `unopenable` (open() is refused, as
 // Windows does without WinUSB), `cutAfter` (n data blocks, then the cable is
-// pulled), `refuseErase` (the device reports an erase error).
+// pulled), `refuseErase` (the device reports an erase error), `failLeave`
+// (the cable pulled at the leave, every block written), `badDescriptor` (its
+// configuration descriptor stalls), `idleAfterDownload` (dfuIDLE where the
+// spec has dfuDNLOAD-IDLE), `pickOther` (the chooser returns the first of
+// `addOther`'s devices). `addOther(layout)` puts another DfuSe device on the
+// bus, already permitted, with that flash layout string; its `sent` counts
+// every control transfer it was given.
 function fakeUsb(scope, opts) {
   opts = opts || {};
   var SIZE = 2 * 1024 * 1024, FLASH = 0x08000000, SECTOR = 0x20000, XFER = 2048;
@@ -106,6 +112,7 @@ function fakeUsb(scope, opts) {
     async controlTransferIn(setup, length) {
       guard();
       if (setup.requestType === 'standard' && setup.request === 6) {
+        if (mode.badDescriptor) return { status: 'stall' };
         var d = configDescriptor().slice(0, length);
         return { status: 'ok', data: new DataView(d.buffer) };
       }
@@ -114,7 +121,7 @@ function fakeUsb(scope, opts) {
         if (pending) {
           status = run(pending);
           pending = null;
-          if (status !== 0) { state = 10; st = 10; } else { st = 4; state = 5; poll = 1; }
+          if (status !== 0) { state = 10; st = 10; } else if (mode.idleAfterDownload) { st = 2; state = 2; } else { st = 4; state = 5; poll = 1; }
         } else if (state === 7) {
           leave();
           st = 8;
@@ -129,6 +136,11 @@ function fakeUsb(scope, opts) {
       var d = bytes(data);
       if (setup.request === 1) {
         if (d.length === 0) { state = 7; return { status: 'ok', bytesWritten: 0 }; }
+        if (mode.failLeave && setup.value === 0 && d[0] === 0x21 && log.writes.length > 0 && (d[1] | (d[2] << 8) | (d[3] << 16) | (d[4] << 24)) >>> 0 === 0x08020000) {
+          present = false;
+          device.opened = false;
+          throw lost();
+        }
         if (setup.value >= 2) {
           if (mode.cutAfter !== undefined && blocks >= mode.cutAfter) {
             present = false;
@@ -148,11 +160,30 @@ function fakeUsb(scope, opts) {
     },
   };
 
+  var others = [];
+  function addOther(layout) {
+    var o = {
+      vendorId: 0x0483, productId: 0xdf11, productName: 'STM32  BOOTLOADER', opened: false, configuration: null, sent: 0,
+      async open() { o.opened = true; },
+      async close() { o.opened = false; },
+      async selectConfiguration() {
+        o.configuration = { configurationValue: 1, interfaces: [{ interfaceNumber: 0, alternates: [{ alternateSetting: 0, interfaceClass: 0xfe, interfaceSubclass: 0x01, interfaceProtocol: 0x02, interfaceName: layout }] }] };
+      },
+      async claimInterface() {},
+      async selectAlternateInterface() {},
+      async controlTransferIn() { o.sent++; return { status: 'stall' }; },
+      async controlTransferOut() { o.sent++; return { status: 'stall' }; },
+    };
+    others.push(o);
+    return o;
+  }
+
   var granted = !!opts.granted;
   var usb = {
-    async getDevices() { return present && granted ? [device] : []; },
+    async getDevices() { return (present && granted ? [device] : []).concat(others); },
     async requestDevice(o) {
       log.requests++;
+      if (mode.pickOther && others.length) return others[0];
       if (!present || mode.cancel) throw new DOMException('No device selected.', 'NotFoundError');
       var f = (o && o.filters) || [];
       if (!f.some(function (x) { return x.vendorId === device.vendorId && x.productId === device.productId; })) throw new DOMException('No device selected.', 'NotFoundError');
@@ -175,6 +206,9 @@ function fakeUsb(scope, opts) {
       listeners.connect.forEach(function (f) { f({ device: device }); });
     },
     unplug: function () { present = false; device.opened = false; },
+    addOther: addOther,
+    revoke: function () { granted = false; },
+    removeOthers: function () { others.length = 0; },
     present: function () { return present; },
   };
   if (!opts.noUsb) Object.defineProperty(scope.navigator, 'usb', { value: usb, configurable: true });
