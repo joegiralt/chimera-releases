@@ -83,7 +83,7 @@ SETTINGS › SYSTEM › USB CONFIG is a dimmed placeholder (LATER): nothing to s
 
 ## USB: notes for Linux, macOS and Windows
 
-USB MIDI and audio work driverless on Linux, macOS and Windows 11. Computer sleep and unplugging and replugging the cable haven't been tried yet; the known issues page says how to report what you find.
+USB MIDI and audio work driverless on Linux, macOS and Windows 11 (thanks to Xavier Hosxe, of PreenFM fame, for testing all three). Computer sleep and unplugging and replugging the cable haven't been tried yet; the known issues page says how to report what you find.
 
 | System | Note |
 |---|---|

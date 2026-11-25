@@ -4,7 +4,7 @@ Check here before filing. Known and being worked on. Chimera 0.4.0.
 
 ## USB
 
-- **Computer sleep, and unplugging and replugging the USB cable, haven't been tried yet.** USB MIDI and audio are class compliant and work without a driver on Linux, macOS and Windows (macOS and Windows 11 confirmed by a tester on 0.4.0). If USB doesn't come back after sleep or a replug, please tell us in a [new issue](../../issues/new/choose).
+- **Computer sleep, and unplugging and replugging the USB cable, haven't been tried yet.** USB MIDI and audio are class compliant and work without a driver on Linux, macOS and Windows (macOS and Windows 11 confirmed on 0.4.0: shout out to Xavier, of PreenFM fame, for testing all three platforms for us). If USB doesn't come back after sleep or a replug, please tell us in a [new issue](../../issues/new/choose).
 - **Windows USB audio can glitch when Chimera is both the input and the output**, for example recording in FL Studio with ASIO4ALL.
 - **USB MIDI is one port, not six.** Chimera shows up as one MIDI port, **Chimera**, carrying all 16 channels; each Part still plays from its own channel.
 - On Linux, PipeWire may start the Chimera audio output at 40 % volume. Set it to 100 % in your sound settings.
