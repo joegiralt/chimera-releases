@@ -17,8 +17,8 @@ export const OLD_PUT = "ERR put takes /CHIMERA/PROJECTS/P#######.A or /CHIMERA/S
 export class FakeFirmware {
   /** `bridge`, the `page` (its fake DFU device), the `release` it may be updated to;
    * the unit's `build` and `bank2`, its project `state`, `old` (firmware before bank 2). */
-  constructor({ bridge, page, release, build = "0.4.0 de07edf9", bank2 = "open 0.4.0 de07edf9 seal=ffffffffffffffff", state = "SAVED", old = false, dfuSilent = false, selfUpdate = false, selfAbort = null, selfRefuse = null }) {
-    Object.assign(this, { bridge, page, release, build, bank2, state, old, dfuSilent, selfUpdate, selfAbort, selfRefuse });
+  constructor({ bridge, page, release, build = "0.4.0 de07edf9", bank2 = "open 0.4.0 de07edf9 seal=ffffffffffffffff", state = "SAVED", old = false, dfuSilent = false, selfUpdate = false, selfAbort = null, selfRefuse = null, unit = null, unitAfter = null }) {
+    Object.assign(this, { bridge, page, release, build, bank2, state, old, dfuSilent, selfUpdate, selfAbort, selfRefuse, unit, unitAfter });
     this.cardBin = null; // /CHIMERA.BIN on the card's root
     this.bank1Last = null;
     this.putting = null; // { size, crc, data: [] } while a put's lines come
@@ -35,7 +35,9 @@ export class FakeFirmware {
   }
 
   status() {
-    const self = this.selfUpdate ? ["selfupdate 1", ...(this.bank1Last ? [`bank1 last ${this.bank1Last}`] : [])] : [];
+    // `unit <uid>` after `selfupdate 1`, before `bank1 last` (ADR 0344).
+    const id = this.unit ? [`unit ${this.unit}`] : [];
+    const self = this.selfUpdate ? ["selfupdate 1", ...id, ...(this.bank1Last ? [`bank1 last ${this.bank1Last}`] : [])] : id;
     return [`firmware ${this.build.split(" ")[0]} release`, `build ${this.build}`, "protocol 4", "project FAKE", `state ${this.state}`, "part 1", `bank2 ${this.bank2}`, ...self, "OK"];
   }
 
@@ -161,6 +163,8 @@ export class FakeFirmware {
 
   /** The page's DFU device left with `image` at 0x08020000: the unit boots it. */
   flashed(image) {
+    // Another unit answers after the restart (unitAfter): the test's other board.
+    if (this.unitAfter) this.unit = this.unitAfter;
     const img = Buffer.from(image);
     this.log.push(`flashed ${img.length}`);
     if (img.equals(this.release.bin)) {

@@ -528,6 +528,29 @@ describe("UPDATE from the browser", () => {
     await backToEditor();
   });
 
+  test("U22: the unit's identity: the same unit back is done; another unit's console stops it, CHECK AGAIN once it's gone", async () => {
+    const A = "0034002b3138510a37363337", B = "0011002233445566778899aa";
+    const same = await ready({ unit: A });
+    await openUpdate();
+    await start();
+    await until("DONE", async () => {
+      if (await button("CHOOSE UPDATE DEVICE").count()) await button("CHOOSE UPDATE DEVICE").click().catch(() => {});
+      return (await meta()) === "DONE";
+    }, UPDATE_WAIT);
+    assert.equal(same.unit, A);
+    await backToEditor("BACK TO THE EDITOR");
+    const fake = await ready({ unit: A, unitAfter: B });
+    await openUpdate();
+    await start();
+    await until("the other unit said", async () => /IS ANOTHER ONE/.test(await said()), UPDATE_WAIT);
+    assert.match(await said(), new RegExp(`unit ${B}`));
+    // The other board unplugged: this unit answers again.
+    fake.unit = A;
+    await button("CHECK AGAIN").click();
+    await until("DONE", async () => (await meta()) === "DONE", UPDATE_WAIT);
+    await backToEditor("BACK TO THE EDITOR");
+  });
+
   // Last: its pages take the bridge's one console from the main page.
   test("U17: on connect, a newer release is offered; NOT NOW keeps it away for the session; UPDATE opens the update", async () => {
     await ready();

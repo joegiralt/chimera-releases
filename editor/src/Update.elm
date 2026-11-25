@@ -104,6 +104,10 @@ type alias UnitNow =
     , modified : Bool
     , bank2 : Maybe String
     , selfUpdate : Maybe SelfUpdate
+
+    -- Which unit: `status`'s `unit <24 hex>` (the chip's UID; bank 2 open,
+    -- 0.4.1 on). None means it can't say, never that it is another.
+    , unit : Maybe String
     }
 
 
@@ -145,6 +149,46 @@ selfUpdateOf lines =
 binRemote : String
 binRemote =
     "/CHIMERA.BIN"
+
+
+{-| A unit's identity: 24 lowercase hex digits, the H750's 96-bit UID.
+-}
+unitId : String -> Maybe String
+unitId s =
+    if String.length s == 24 && String.all Char.isHexDigit s then
+        Just (String.toLower s)
+
+    else
+        Nothing
+
+
+{-| The unit that answered after a restart isn't the one being updated:
+both said who they are, and they differ. A unit that can't say is not
+another.
+-}
+otherUnit : UnitNow -> Answer -> Maybe String
+otherUnit u a =
+    case a of
+        Said lines _ ->
+            case ( u.unit, (readStatus lines).unit ) of
+                ( Just was, Just now ) ->
+                    if was /= now then
+                        Just now
+
+                    else
+                        Nothing
+
+                ( Just _, Nothing ) ->
+                    Nothing
+
+                ( Nothing, _ ) ->
+                    Nothing
+
+        NoAnswer ->
+            Nothing
+
+        Gone ->
+            Nothing
 
 
 {-| The loaded project, as `ed since` names it: its id and generation, the
@@ -304,6 +348,8 @@ type PostFail
     | GarbledAfter String
       -- The self-update's restart not back in three minutes.
     | SelfNotBack String
+      -- Another unit answered after the restart (its `unit`).
+    | OtherUnit String
 
 
 type Stage
@@ -367,7 +413,9 @@ type Request
     | FindDevice Int
     | PickDevice
     | Write Release
-    | Back Int Bool
+      -- The wait for the console: its seconds, whether a restart comes first,
+      -- and the unit's identity (`status`'s `unit`) to pick its port by.
+    | Back Int Bool (Maybe String)
     | PickPort
     | Hold Bool
     | End
@@ -794,6 +842,9 @@ hand msg ((Model m) as model) =
                 ( Nothing, Just ( _, _, ( _, SelfNotBack _ ) ) ) ->
                     ignore
 
+                ( Nothing, Just ( _, _, ( _, OtherUnit _ ) ) ) ->
+                    ignore
+
                 ( Nothing, Nothing ) ->
                     ignore
 
@@ -842,7 +893,7 @@ hand msg ((Model m) as model) =
         ConnectPort ->
             case stoppedAfterOf m.stage of
                 Just ( u, r, ( b, _ ) ) ->
-                    go (Running u r (Post b Restarting)) [ PickPort, Back 120 False ]
+                    go (Running u r (Post b Restarting)) [ PickPort, Back 120 False u.unit ]
 
                 Nothing ->
                     ignore
@@ -937,19 +988,22 @@ afterAgain s =
                         Nothing
 
                     LeaveFailed _ ->
-                        Just ( Running u r (Post b Restarting), [ Back 120 False ] )
+                        Just ( Running u r (Post b Restarting), [ Back 120 False u.unit ] )
 
                     NotBack _ ->
-                        Just ( Running u r (Post b Restarting), [ Back 120 False ] )
+                        Just ( Running u r (Post b Restarting), [ Back 120 False u.unit ] )
 
                     Unfinished _ ->
-                        Just ( Running u r (Post b Restarting), [ Back 120 False ] )
+                        Just ( Running u r (Post b Restarting), [ Back 120 False u.unit ] )
 
                     GarbledAfter _ ->
-                        Just ( Running u r (Post b Restarting), [ Back 120 False ] )
+                        Just ( Running u r (Post b Restarting), [ Back 120 False u.unit ] )
 
                     SelfNotBack _ ->
-                        Just ( Running u r (Post b RestartingSelf), [ Back 180 False ] )
+                        Just ( Running u r (Post b RestartingSelf), [ Back 180 False u.unit ] )
+
+                    OtherUnit _ ->
+                        Just ( Running u r (Post b Restarting), [ Back 120 False u.unit ] )
             )
 
 
@@ -1450,8 +1504,49 @@ install delay =
     Ask TInstall "bank2 install" 120000 delay
 
 
+{-| A step, unless the console that answered after a restart is another
+unit's (both said who they are): then it stops, whatever the step.
+-}
 running : In -> UnitNow -> Release -> Run -> Fields -> ( Model, List Request )
 running i u r run m =
+    let
+        answered : Maybe Answer
+        answered =
+            case ( i.back, answerFor TVerify i ) of
+                ( Just (Ok a), _ ) ->
+                    Just a
+
+                ( Just (Err _), v ) ->
+                    v
+
+                ( Nothing, v ) ->
+                    v
+
+        after : Maybe Bk2
+        after =
+            case run of
+                Post b _ ->
+                    Just b
+
+                Pre _ ->
+                    Nothing
+
+                Writing _ _ ->
+                    Nothing
+    in
+    case ( after, answered |> Maybe.andThen (otherUnit u) ) of
+        ( Just b, Just id ) ->
+            ( Model { m | stage = StoppedAfter u r b (OtherUnit id) }, [] )
+
+        ( Just _, Nothing ) ->
+            runningOn i u r run m
+
+        ( Nothing, _ ) ->
+            runningOn i u r run m
+
+
+runningOn : In -> UnitNow -> Release -> Run -> Fields -> ( Model, List Request )
+runningOn i u r run m =
     let
         ignore : ( Model, List Request )
         ignore =
@@ -1663,19 +1758,19 @@ running i u r run m =
             case answerFor TSelf i of
                 Just (Said _ end) ->
                     if String.startsWith "OK bank1 verified " end then
-                        to (Post Staged RestartingSelf) [ Back 180 True ]
+                        to (Post Staged RestartingSelf) [ Back 180 True u.unit ]
 
                     else if end == "OK already installed" then
                         to (Post Staged Verifying) [ status TVerify 0 ]
 
                     else if isOk end then
-                        to (Post Staged RestartingSelf) [ Back 180 True ]
+                        to (Post Staged RestartingSelf) [ Back 180 True u.unit ]
 
                     else
                         before (SelfRefused end)
 
                 Just Gone ->
-                    to (Post Staged RestartingSelf) [ Back 180 True ]
+                    to (Post Staged RestartingSelf) [ Back 180 True u.unit ]
 
                 Just NoAnswer ->
                     after Staged (SelfNotBack "it didn't answer bank1 install")
@@ -1765,7 +1860,7 @@ running i u r run m =
                 ( Nothing, Just w ) ->
                     case w of
                         WriteOk ->
-                            to (Post at.bk2 Restarting) [ Back 120 False ]
+                            to (Post at.bk2 Restarting) [ Back 120 False u.unit ]
 
                         Unopenable ->
                             before (CantOpen at)
@@ -1841,7 +1936,7 @@ running i u r run m =
             case answerFor TInstall i of
                 Just (Said _ end) ->
                     if String.startsWith "OK bank2 open " end then
-                        to (Post b RestartingAfterInstall) [ Back 60 True ]
+                        to (Post b RestartingAfterInstall) [ Back 60 True u.unit ]
 
                     else if isOk end then
                         to (Post b Verifying) [ status TVerify 0 ]
@@ -1855,7 +1950,7 @@ running i u r run m =
 
                 -- The install may have opened the door and restarted the unit.
                 Just Gone ->
-                    to (Post b RestartingAfterInstall) [ Back 60 True ]
+                    to (Post b RestartingAfterInstall) [ Back 60 True u.unit ]
 
                 Just NoAnswer ->
                     after b (Unfinished "The unit didn't answer bank2 install")
@@ -2030,6 +2125,7 @@ readStatus lines =
     , modified = List.member "state MODIFIED" lines
     , bank2 = after "bank2"
     , selfUpdate = selfUpdateOf lines
+    , unit = after "unit" |> Maybe.andThen unitId
     }
 
 
@@ -2210,7 +2306,7 @@ or `ed hello`'s `0.4.0-de07edf9`) and a release's.
 -}
 offerFor : String -> String -> Offer
 offerFor unitBuild version =
-    offer { build = Just (String.replace "-" " " unitBuild), modified = False, bank2 = Nothing, selfUpdate = Nothing } { version = version, seal = "", format = 0, binSize = 0, bk2Size = 0, binSha = "", bk2Sha = "", binCrc = "", source = Latest }
+    offer { build = Just (String.replace "-" " " unitBuild), modified = False, bank2 = Nothing, selfUpdate = Nothing, unit = Nothing } { version = version, seal = "", format = 0, binSize = 0, bk2Size = 0, binSha = "", bk2Sha = "", binCrc = "", source = Latest }
 
 
 offer : UnitNow -> Release -> Offer
@@ -2311,8 +2407,8 @@ encode r =
         Write rel ->
             op "write" [ ( "seal", E.string rel.seal ), ( "sha", E.string rel.binSha ) ]
 
-        Back secs restart ->
-            op "back" [ ( "secs", E.int secs ), ( "restart", E.bool restart ) ]
+        Back secs restart unit ->
+            op "back" [ ( "secs", E.int secs ), ( "restart", E.bool restart ), ( "unit", Maybe.map E.string unit |> Maybe.withDefault E.null ) ]
 
         PickPort ->
             op "pickPort" []
@@ -2507,6 +2603,9 @@ backCause c =
     case c of
         "several" ->
             "more than one unit's console is on USB, and the editor can't tell which is this one: unplug the others"
+
+        "other" ->
+            "no console on USB is this unit's: unplug the other units"
 
         "busy" ->
             "it still answers busy"
@@ -3354,6 +3453,13 @@ failedAfter f =
                 , li [] [ text "Press button 1 (flash). Chimera installs CHIMERA.BK2 on its first start: leave it on while the screen says DON'T POWER OFF." ]
                 ]
             ]
+
+        OtherUnit id ->
+            [ say ("THE UNIT THAT ANSWERED AFTER THE RESTART IS ANOTHER ONE (unit " ++ id ++ "), not the one being updated.")
+            , say "Unplug the other units (or close the programs using them), keep this one connected, then press CHECK AGAIN."
+            , buttons [ btn "CHECK AGAIN" CheckAgain, btn "CLOSE" Close ]
+            ]
+                ++ bootloaderSteps
 
         GarbledAfter why ->
             [ say ("THE UPDATE STOPPED AFTER THE FIRMWARE WRITE BEGAN: " ++ why ++ ".")

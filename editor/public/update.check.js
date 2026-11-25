@@ -111,8 +111,36 @@ function deviceChoice() {
   eq(U.pickedDevice(b, [a], [a, b]).device, b, 'the one new pick');
 }
 
+// After a restart with several consoles granted: each is asked `status` and
+// the one whose `unit` is this unit's kept; none of them, 'other'.
+async function pickedByUnit() {
+  var claim = null, open = null, closed = 0;
+  var units = { p1: 'unit 0034002b3138510a37363337', p2: 'unit 0011002233445566778899aa' };
+  var ports = {
+    isOpen: function () { return false; },
+    take: function (c) { claim = c; },
+    giveBack: function () { return 'open'; },
+    reopen: function () { return Promise.resolve('several'); },
+    candidates: function () { return Promise.resolve(['p1', 'p2']); },
+    openPort: function (p) { open = p; claim.state('open'); return Promise.resolve(true); },
+    close: function () { closed++; open = null; claim.state('lost'); return Promise.resolve(); },
+    write: function (l) {
+      if (l === 'status') setTimeout(function () { claim.line('build 0.4.1 abcd1234'); claim.line(units[open]); claim.line('OK'); }, 1);
+      return Promise.resolve(true);
+    },
+  };
+  U.attach({ ports: { updateIn: { send: function () {} } } }, ports);
+  await U.run({ op: 'begin' });
+  eq(await U.relink('0011002233445566778899aa'), true, 'the matching unit kept');
+  eq(open, 'p2', 'the port kept');
+  eq(closed, 1, 'the other unit\'s port closed');
+  claim.state('lost');
+  eq(await U.relink('ffffffffffffffffffffffff'), 'other', 'no console is this unit');
+}
+
 (async function () {
   await checks();
+  await pickedByUnit();
   await onlyTheConfirmedRelease();
   deviceChoice();
   await putLines();

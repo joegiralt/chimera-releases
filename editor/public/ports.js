@@ -191,6 +191,25 @@ var ChimeraPorts = (function () {
   }
   function isOpen() { return !!link; }
 
+  // The console's granted ports (by USB id), to open one at a time when
+  // several are there and the unit is picked by what `status` says of it.
+  async function candidates() {
+    if (lastSocket || !('serial' in navigator)) return [];
+    var ports = [];
+    try { ports = await navigator.serial.getPorts(); } catch (e) { return []; }
+    return ports.filter(function (p) {
+      var info = p.getInfo ? p.getInfo() : CONSOLE;
+      return info.usbVendorId === CONSOLE.usbVendorId && info.usbProductId === CONSOLE.usbProductId;
+    });
+  }
+
+  async function openPort(p) {
+    await drop();
+    try { await p.open(SERIAL); } catch (e) { return false; }
+    adopt(p)();
+    return true;
+  }
+
   async function reopen() {
     if (link) return true;
     if (lastSocket) {
@@ -277,6 +296,9 @@ var ChimeraPorts = (function () {
     write: write,
     isOpen: isOpen,
     reopen: reopen,
+    candidates: candidates,
+    openPort: openPort,
+    close: drop,
     liner: liner,
     recall: recall,
     keep: keep,

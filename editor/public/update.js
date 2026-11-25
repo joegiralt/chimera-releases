@@ -238,11 +238,28 @@ var ChimeraUpdate = (function () {
 
   /** The link opened again: a port this page was given (by the console's
    * USB id); 'several' when more than one unit's console is there. */
-  async function relink() {
+  async function relink(unit) {
     inbox = [];
     var r = await ports.reopen();
+    if (r === 'several' && unit) r = await byUnit(unit);
     linkUp = r === true;
     return r;
+  }
+
+  /** Several consoles granted: each opened in turn and asked `status`; the
+   * one whose `unit` line is this unit's is kept. 'other' when none is. */
+  async function byUnit(unit) {
+    var ps = await ports.candidates();
+    for (var i = 0; i < ps.length; i++) {
+      if (!(await ports.openPort(ps[i]))) continue;
+      linkUp = true;
+      var a = await ask1('status', SILENCE_MS);
+      if (a.lines && a.lines.indexOf('unit ' + unit) >= 0) return true;
+      await ports.close();
+      linkUp = false;
+      inbox = [];
+    }
+    return 'other';
   }
 
   /** `ask1`, again while the unit says `ERR busy`: 5 tries, 200 ms apart, doubling. */
@@ -319,7 +336,7 @@ var ChimeraUpdate = (function () {
    * `status`, not busy, within `secs`. With `restart`, first the link going
    * (up to 10 s): the unit restarts a moment after its OK. A wait, never a
    * write: its timeout cuts nothing. */
-  async function back(secs, restart) {
+  async function back(secs, restart, unit) {
     var end = Date.now() + secs * 1000;
     if (restart) {
       for (var t = Date.now() + 10000; linkUp && Date.now() < t; ) await nextLine(Math.min(250, t - Date.now()));
@@ -328,8 +345,8 @@ var ChimeraUpdate = (function () {
     var cause = 'off';
     for (;;) {
       if (!linkUp) {
-        var r = await relink();
-        if (r === 'several') cause = 'several';
+        var r = await relink(unit);
+        if (r === 'several' || r === 'other') cause = r;
         else if (!linkUp) cause = 'off';
       }
       if (linkUp) {
@@ -469,7 +486,7 @@ var ChimeraUpdate = (function () {
       case 'findDevice': return findDevice(m.secs);
       case 'pickDevice': return pickDevice();
       case 'write': return write(m);
-      case 'back': return back(m.secs, !!m.restart);
+      case 'back': return back(m.secs, !!m.restart, typeof m.unit === 'string' ? m.unit : null);
       case 'pickPort': return pickPort();
       case 'hold': return hold(!!m.on);
       case 'end':
@@ -486,6 +503,7 @@ var ChimeraUpdate = (function () {
     adopt: adopt,
     held: function () { return held; },
     newDevice: newDevice,
+    relink: relink,
     pickedDevice: pickedDevice,
     run: run,
     attach: function (a, p) {

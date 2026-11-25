@@ -124,6 +124,127 @@ shown m =
     Update.view (\_ -> Update.Close) identity (Page.init Tokens.Day) m |> List.singleton |> Html.div [] |> Query.fromHtml
 
 
+idA : String
+idA =
+    "0034002b3138510a37363337"
+
+
+idB : String
+idB =
+    "0011002233445566778899aa"
+
+
+withUnit : String -> Answer -> Answer
+withUnit id a =
+    case a of
+        Said lines end ->
+            Said (lines ++ [ "unit " ++ id ]) end
+
+        NoAnswer ->
+            a
+
+        Gone ->
+            a
+
+
+idUnit : Update.UnitNow
+idUnit =
+    { unit | unit = Just idA }
+
+
+idStarted : Update.Model
+idStarted =
+    events [ Begun { open = True, webusb = True, windows = False }, Answered TStatus (withUnit idA old), ReleaseIs (Ok rel) ] (Tuple.first Update.begin) |> hands [ Start, Go ]
+
+
+idFlashed : Update.Model
+idFlashed =
+    events [ Answered TStatus (withUnit idA old), Answered TPut (Said [] "OK"), Answered TDfu Gone, DeviceIs Found, WriteDone WriteOk ] idStarted
+
+
+isBack : Request -> Bool
+isBack r =
+    case r of
+        Back _ _ _ ->
+            True
+
+        Begin ->
+            False
+
+        FetchLatest ->
+            False
+
+        ChooseFiles ->
+            False
+
+        Ask _ _ _ _ ->
+            False
+
+        Put _ ->
+            False
+
+        PutBin _ _ ->
+            False
+
+        Dfu ->
+            False
+
+        FindDevice _ ->
+            False
+
+        PickDevice ->
+            False
+
+        Write _ ->
+            False
+
+        PickPort ->
+            False
+
+        Hold _ ->
+            False
+
+        End ->
+            False
+
+
+isDone : Stage -> Bool
+isDone st =
+    case st of
+        Done _ _ _ ->
+            True
+
+        Opening ->
+            False
+
+        Reading _ _ ->
+            False
+
+        Ready _ _ ->
+            False
+
+        Choosing _ _ ->
+            False
+
+        Confirm _ _ ->
+            False
+
+        Running _ _ _ ->
+            False
+
+        StoppedBefore _ _ _ ->
+            False
+
+        StoppedAfter _ _ _ _ ->
+            False
+
+        NoLink ->
+            False
+
+        Closing ->
+            False
+
+
 isGarbled : Event -> Bool
 isGarbled e =
     case e of
@@ -172,7 +293,7 @@ suite =
     describe "Update"
         [ test "status_is_read" <|
             \_ ->
-                Expect.equal { build = Just "0.4.0 de07edf9", modified = False, bank2 = Just "open 0.4.0 de07edf9 seal=ffffffffffffffff", selfUpdate = Nothing } unit
+                Expect.equal { build = Just "0.4.0 de07edf9", modified = False, bank2 = Just "open 0.4.0 de07edf9 seal=ffffffffffffffff", selfUpdate = Nothing, unit = Nothing } unit
         , test "the_panel_asks_status_and_the_release_and_shows_both" <|
             \_ ->
                 Expect.equal ( Ready unit (Got rel), [ Ask TStatus "status" 2000 0, FetchLatest ] )
@@ -246,7 +367,7 @@ suite =
                 \_ -> Expect.equal [ Just { version = 1 }, Nothing, Nothing ] [ (Update.readStatus [ "selfupdate 1" ]).selfUpdate, (Update.readStatus [ "selfupdate yes" ]).selfUpdate, (Update.readStatus [ "build 0.4.0 de07edf9" ]).selfUpdate ]
             , test "bk2_then_bin_to_the_card_root_then_bank1_install_then_status" <|
                 \_ ->
-                    Expect.equal ( Done selfUnit rel selfNew, [ Put rel, PutBin rel "/CHIMERA.BIN", Ask TSelf "bank1 install 900000 0a1b2c3d" 120000 0, Back 180 True ] )
+                    Expect.equal ( Done selfUnit rel selfNew, [ Put rel, PutBin rel "/CHIMERA.BIN", Ask TSelf "bank1 install 900000 0a1b2c3d" 120000 0, Back 180 True Nothing ] )
                         (steps
                             [ Answered TStatus selfOld
                             , Copied { done = 5, total = 10 }
@@ -321,7 +442,7 @@ suite =
             \_ -> Expect.equal [ Newer, Same, Older ] [ Update.offerFor "0.4.0-de07edf9" "0.4.1 abcd1234", Update.offerFor "0.4.1-abcd1234" "0.4.1 abcd1234", Update.offerFor "0.5.0-11112222" "0.4.1 abcd1234" ]
         , test "the_happy_path_stages_then_flashes_then_checks" <|
             \_ ->
-                Expect.equal ( Done unit rel newUnit, [ Put rel, Dfu, FindDevice 10, Write rel, Back 120 False ] )
+                Expect.equal ( Done unit rel newUnit, [ Put rel, Dfu, FindDevice 10, Write rel, Back 120 False Nothing ] )
                     (steps
                         [ Answered TStatus old
                         , Copied { done = 1000, total = 1048576 }
@@ -346,7 +467,7 @@ suite =
                     (steps [ Answered TInstall (Said [] "ERR bank2: busy") ] (events [ BackDone (Ok (status "0.4.1 abcd1234" "NEW" "empty")) ] (flashed (Said [] "OK"))))
         , test "older_firmware_takes_the_bk2_after_the_flash" <|
             \_ ->
-                Expect.equal ( Done unit rel (Update.readStatus [ "firmware 0.4.1 release", "build 0.4.1 abcd1234", "protocol 4", "state NEW", "bank2 open 0.4.1 abcd1234 seal=0123456789abcdef" ]), [ Put rel, Ask TInstall "bank2 install" 120000 0, Back 60 True ] )
+                Expect.equal ( Done unit rel (Update.readStatus [ "firmware 0.4.1 release", "build 0.4.1 abcd1234", "protocol 4", "state NEW", "bank2 open 0.4.1 abcd1234 seal=0123456789abcdef" ]), [ Put rel, Ask TInstall "bank2 install" 120000 0, Back 60 True Nothing ] )
                     (steps
                         [ BackDone (Ok (status "0.4.1 abcd1234" "NEW" "empty"))
                         , Answered TPut (Said [] "OK")
@@ -566,6 +687,24 @@ suite =
                         |> hands [ Cancel ]
                         |> shown
                         |> Query.has [ Sel.containing [ Sel.text "Nothing has been written" ] ]
+            ]
+        , describe "the unit's identity (status's unit line)"
+            [ test "read_as_24_hex_digits" <|
+                \_ -> Expect.equal [ Just "0034002b3138510a37363337", Nothing ] [ (Update.readStatus [ "unit 0034002B3138510A37363337" ]).unit, (Update.readStatus [ "unit 1234" ]).unit ]
+            , test "the_wait_after_the_flash_names_the_unit" <|
+                \_ -> Expect.equal [ Back 120 False (Just idA) ] (steps [ Answered TStatus (withUnit idA old), Answered TPut (Said [] "OK"), Answered TDfu Gone, DeviceIs Found, WriteDone WriteOk ] idStarted |> Tuple.second |> List.filter isBack)
+            , test "the_same_unit_back_is_done" <|
+                \_ -> Expect.equal True (isDone (steps [ BackDone (Ok (withUnit idA new)) ] idFlashed |> Tuple.first))
+            , test "another_unit_back_stops" <|
+                \_ ->
+                    Expect.equal (StoppedAfter idUnit rel Staged (OtherUnit idB))
+                        (steps [ BackDone (Ok (withUnit idB new)) ] idFlashed |> Tuple.first)
+            , test "no_unit_line_is_not_another_unit" <|
+                \_ -> Expect.equal True (isDone (steps [ BackDone (Ok new) ] idFlashed |> Tuple.first))
+            , test "a_dry_run_result_reads_without_error_and_isnt_this_install" <|
+                \_ ->
+                    Expect.equal (StoppedAfter selfUnit rel Staged (Unfinished "The unit says bank1 last dry ok 0a1b2c3d"))
+                        (steps [ BackDone (Ok (Said [ "build 0.4.1 abcd1234", "bank2 open 0.4.1 abcd1234 seal=0123456789abcdef", "selfupdate 1", "bank1 last dry ok 0a1b2c3d" ] "OK")) ] installing |> Tuple.first)
             ]
         , describe "answers read strictly"
             [ test "a_malformed_answer_is_an_error_not_no_answer" <|
