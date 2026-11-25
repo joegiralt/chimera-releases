@@ -4,7 +4,9 @@
 port module Main exposing (main)
 
 import Browser
-import Html exposing (Html)
+import Html exposing (Html, button, div, p, text)
+import Html.Attributes exposing (class)
+import Html.Events exposing (onClick)
 import Json.Decode as Decode
 import Model
 import Transport
@@ -26,13 +28,29 @@ type alias App =
     { unit : Model.Model
     , page : EnginePage.State
     , updating : Maybe Update.Model
+    , offer : Offer
     }
+
+
+{-| The offer on connect: once a unit on USB is followed, its firmware
+against the site's latest. A newer release is offered once a page session
+(NOT NOW keeps it away); the same or an older one never is.
+-}
+type Offer
+    = NotAsked
+    | Asking String
+    | Offered { have : String, latest : String }
+    | Settled
 
 
 type Msg
     = Unit Model.Msg
     | Page EnginePage.Msg
     | Updating Update.Msg
+    | LatestIs (Maybe String)
+    | NotNow
+    | UpdateNow
+    | Ignore
 
 
 main : Program Decode.Value App Msg
@@ -52,14 +70,14 @@ subscriptions app =
             Sub.batch [ Sub.map Updating Update.subscriptions, Sub.map Page (EnginePage.subscriptions app.page) ]
 
         Nothing ->
-            Sub.batch [ Sub.map Unit Model.subscriptions, Sub.map Page (EnginePage.subscriptions app.page) ]
+            Sub.batch [ Sub.map Unit Model.subscriptions, Sub.map Page (EnginePage.subscriptions app.page), Update.latestSub LatestIs Ignore ]
 
 
 {-| The stored theme, else the OS's: what theme.js read at start.
 -}
 init : Decode.Value -> ( App, Cmd Msg )
 init flags =
-    ( { unit = Model.init, page = EnginePage.init (Tokens.fromPreference (Tokens.preference flags)), updating = Nothing }, Cmd.none )
+    ( { unit = Model.init, page = EnginePage.init (Tokens.fromPreference (Tokens.preference flags)), updating = Nothing, offer = NotAsked }, Cmd.none )
 
 
 update : Msg -> App -> ( App, Cmd Msg )
@@ -69,8 +87,41 @@ update msg app =
             let
                 ( unit, cmd ) =
                     Model.update m app.unit
+
+                ( offer, ask ) =
+                    asking unit app.offer
             in
-            ( { app | unit = unit, page = EnginePage.follow unit app.page }, Cmd.map Unit cmd )
+            ( { app | unit = unit, page = EnginePage.follow unit app.page, offer = offer }, Cmd.batch [ Cmd.map Unit cmd, ask ] )
+
+        LatestIs latest ->
+            case ( app.offer, latest ) of
+                ( Asking have, Just v ) ->
+                    if Update.offerFor have v == Update.Newer then
+                        ( { app | offer = Offered { have = have, latest = v } }, Cmd.none )
+
+                    else
+                        ( { app | offer = Settled }, Cmd.none )
+
+                ( Asking _, Nothing ) ->
+                    ( { app | offer = Settled }, Cmd.none )
+
+                ( NotAsked, _ ) ->
+                    ( app, Cmd.none )
+
+                ( Offered _, _ ) ->
+                    ( app, Cmd.none )
+
+                ( Settled, _ ) ->
+                    ( app, Cmd.none )
+
+        NotNow ->
+            ( { app | offer = Settled }, Cmd.none )
+
+        UpdateNow ->
+            update (Page EnginePage.OpenUpdate) { app | offer = Settled }
+
+        Ignore ->
+            ( app, Cmd.none )
 
         Page EnginePage.OpenUpdate ->
             case app.updating of
@@ -128,11 +179,51 @@ update msg app =
                             ( { app | updating = Just next }, Cmd.map Updating cmd )
 
 
+{-| The offer asked once a unit on USB is followed and its firmware known.
+-}
+asking : Model.Model -> Offer -> ( Offer, Cmd Msg )
+asking unit offer =
+    case ( offer, Model.firmware unit, unit.via ) of
+        ( NotAsked, Just have, Just Model.ViaUnit ) ->
+            ( Asking have, Update.askLatest )
+
+        ( NotAsked, _, _ ) ->
+            ( offer, Cmd.none )
+
+        ( Asking _, _, _ ) ->
+            ( offer, Cmd.none )
+
+        ( Offered _, _, _ ) ->
+            ( offer, Cmd.none )
+
+        ( Settled, _, _ ) ->
+            ( offer, Cmd.none )
+
+
 view : App -> Html Msg
 view app =
-    case app.updating of
-        Just u ->
+    case ( app.updating, app.offer ) of
+        ( Just u, _ ) ->
             Update.view (EnginePage.PageMsg >> Page) Updating app.page.page u
 
-        Nothing ->
+        ( Nothing, Offered o ) ->
+            div []
+                [ div [ class "ui offerbar" ]
+                    [ p [] [ text ("Chimera " ++ number o.latest ++ " is available. You're running " ++ number o.have ++ ". Update now?") ]
+                    , div [ class "connect" ]
+                        [ button [ class "hbtn", onClick UpdateNow ] [ text "UPDATE" ]
+                        , button [ class "hbtn", onClick NotNow ] [ text "NOT NOW" ]
+                        ]
+                    ]
+                , Html.map Page (EnginePage.view app.unit app.page)
+                ]
+
+        ( Nothing, _ ) ->
             Html.map Page (EnginePage.view app.unit app.page)
+
+
+{-| A version's number: `0.4.1` of `0.4.1 abcd1234` or `0.4.1-abcd1234`.
+-}
+number : String -> String
+number v =
+    String.replace "-" " " v |> String.words |> List.head |> Maybe.withDefault v

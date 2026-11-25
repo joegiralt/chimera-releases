@@ -8,6 +8,7 @@ port module Update exposing
     , Event(..)
     , Flash(..)
     , InDfu
+    , Loaded
     , Model
     , Msg(..)
     , Offer(..)
@@ -20,6 +21,7 @@ port module Update exposing
     , ReleaseState(..)
     , Request(..)
     , Run(..)
+    , SelfUpdate
     , Source(..)
     , Stage(..)
     , Ticket(..)
@@ -27,12 +29,16 @@ port module Update exposing
     , Verdict(..)
     , Version
     , WriteResult(..)
+    , askLatest
     , begin
     , beginStuck
     , decode
     , holding
+    , latestSub
     , offer
+    , offerFor
     , parseVersion
+    , press
     , readStatus
     , stage
     , step
@@ -40,6 +46,7 @@ port module Update exposing
     , update
     , verdict
     , view
+    , withSelfUpdate
     )
 
 {-| The update from the browser: what `chimera-usb.py update` does, as a
@@ -97,7 +104,55 @@ type alias UnitNow =
     { build : Maybe String
     , modified : Bool
     , bank2 : Maybe String
+    , selfUpdate : Maybe SelfUpdate
     }
+
+
+{-| A unit that writes its own firmware from the card (0.4.1 on, being
+designed): the path CHIMERA.BIN goes to, and the verb that installs it.
+With it the update is `put` CHIMERA.BK2, `put` CHIMERA.BIN, the install,
+the restart and `status`: no DFU, no device to pick, no Windows driver.
+Without it (0.4.0), the DFU path.
+-}
+type alias SelfUpdate =
+    { binRemote : String, install : String }
+
+
+{-| The hook for the self-update capability: what `status` will say of it.
+The line and the verbs are the firmware's to name; until they are, no unit
+offers it, and every update takes the DFU path.
+-}
+selfUpdateOf : List String -> Maybe SelfUpdate
+selfUpdateOf lines =
+    selfUpdateLine |> Maybe.andThen (\read -> List.filterMap read lines |> List.head)
+
+
+{-| How `status`'s capability line reads, once the firmware names it: none yet.
+-}
+selfUpdateLine : Maybe (String -> Maybe SelfUpdate)
+selfUpdateLine =
+    Nothing
+
+
+{-| A unit at READY taken to offer self-update: the typed hook's other end,
+for the tests (and the firmware's bring-up) until `selfUpdateOf` reads the
+real capability line.
+-}
+withSelfUpdate : SelfUpdate -> Model -> Model
+withSelfUpdate su (Model m) =
+    case readyOf m.stage of
+        Just ( u, rel ) ->
+            Model { m | stage = Ready { u | selfUpdate = Just su } rel }
+
+        Nothing ->
+            Model m
+
+
+{-| The loaded project, as `ed since` names it: its id and generation, the
+witness an `ed project load … discard` takes.
+-}
+type alias Loaded =
+    { id : Int, gen : Int }
 
 
 {-| A version as a release names it, `0.4.1 abcd1234`: compared by its
@@ -187,7 +242,15 @@ type alias InDfu =
 -}
 type PreRun
     = Checking
+      -- Unsaved changes: the loaded project read (`ed since`, paged), then saved or dropped.
+    | ReadingProject
+    | Saving Bool
+    | Discarding
+    | Settling Int
     | Copying Progress
+      -- The self-update path: CHIMERA.BIN onto the card, then the unit's own install.
+    | CopyingBin Progress
+    | InstallingSelf
     | EnteringDfu Bk2
     | FindingDevice Bk2
       -- The browser asks which device: a click.
@@ -213,7 +276,7 @@ type Run
 {-| A stop before the write: the flash is as it was.
 -}
 type PreFail
-    = Unsaved
+    = Unsaved (Maybe Loaded)
     | NothingFlashed String
       -- `dfu` unanswered: the unit may be in update mode, its screen dark.
     | DfuSilent Bk2
@@ -274,7 +337,11 @@ type Model
 -}
 type Ticket
     = TStatus
+    | TProject
+    | TSave
     | TPut
+    | TPutBin
+    | TSelf
     | TDfu
     | TInstall
     | TVerify
@@ -287,6 +354,7 @@ type Request
       -- The ticket, the line, the first byte's wait (ms), a delay before it (ms).
     | Ask Ticket String Int Int
     | Put Release
+    | PutBin Release String
     | Dfu
     | FindDevice Int
     | PickDevice
@@ -338,6 +406,8 @@ type Event
     | Ended String
       -- What `update.js` said and this editor can't read.
     | Garbled String
+      -- An answer for the offer on connect, not for an update: changes nothing here.
+    | Unrelated
 
 
 type Msg
@@ -351,6 +421,8 @@ type Msg
     | CheckAgain
     | TryAgain
     | ConnectPort
+    | SaveAndUpdate
+    | DiscardAndUpdate
     | Close
 
 
@@ -382,6 +454,29 @@ stage (Model m) =
 subscriptions : Sub Msg
 subscriptions =
     updateIn FromJs
+
+
+{-| The site's latest release, asked for the offer on connect (its manifest only).
+-}
+askLatest : Cmd msg
+askLatest =
+    updateOut (E.object [ ( "op", E.string "latest" ) ])
+
+
+{-| The latest release's version (`0.4.1 abcd1234`), or Nothing when the site has none.
+Every other answer is ignored.
+-}
+latestSub : (Maybe String -> msg) -> msg -> Sub msg
+latestSub toMsg ignored =
+    updateIn
+        (\v ->
+            case D.decodeValue (D.field "op" D.string) v of
+                Ok "latest" ->
+                    toMsg (D.decodeValue (D.field "version" D.string) v |> Result.toMaybe)
+
+                _ ->
+                    ignored
+        )
 
 
 {-| A message in; the model, what to send, and the link's state once the
@@ -423,6 +518,12 @@ update msg model =
                     Nothing
 
                 ConnectPort ->
+                    Nothing
+
+                SaveAndUpdate ->
+                    Nothing
+
+                DiscardAndUpdate ->
                     Nothing
 
                 Close ->
@@ -486,6 +587,9 @@ endedLink e =
         Garbled _ ->
             Nothing
 
+        Unrelated ->
+            Nothing
+
 
 {-| Whether the tab is held: while anything past CHECKING runs.
 -}
@@ -495,7 +599,25 @@ holding (Model m) =
         Just ( _, _, Pre Checking ) ->
             False
 
+        Just ( _, _, Pre ReadingProject ) ->
+            False
+
+        Just ( _, _, Pre (Saving _) ) ->
+            True
+
+        Just ( _, _, Pre Discarding ) ->
+            True
+
+        Just ( _, _, Pre (Settling _) ) ->
+            True
+
         Just ( _, _, Pre (Copying _) ) ->
+            True
+
+        Just ( _, _, Pre (CopyingBin _) ) ->
+            True
+
+        Just ( _, _, Pre InstallingSelf ) ->
             True
 
         Just ( _, _, Pre (EnteringDfu _) ) ->
@@ -522,8 +644,14 @@ send reqs =
     Cmd.batch (List.map (encode >> updateOut) reqs)
 
 
-{-| A hand on the panel.
+{-| A hand on the panel: the model and the requests it sends (`update`'s
+pure half, as `step` is for what comes back).
 -}
+press : Msg -> Model -> ( Model, List Request )
+press =
+    hand
+
+
 hand : Msg -> Model -> ( Model, List Request )
 hand msg ((Model m) as model) =
     let
@@ -586,14 +714,37 @@ hand msg ((Model m) as model) =
                     ignore
 
         Cancel ->
-            case ( confirmOf m.stage, pickingOf m.stage ) of
-                ( Just ( u, r ), _ ) ->
+            case ( confirmOf m.stage, pickingOf m.stage, unsavedOf m.stage ) of
+                ( Just ( u, r ), _, _ ) ->
                     go (Ready u (Got r)) []
 
-                ( Nothing, Just ( u, r, b ) ) ->
+                ( Nothing, Just ( u, r, b ), _ ) ->
                     go (StoppedBefore u r (PickCancelled b)) []
 
-                ( Nothing, Nothing ) ->
+                -- Unsaved changes, and the user keeps them: back to the offer.
+                ( Nothing, Nothing, Just ( u, r, _ ) ) ->
+                    go (Ready u (Got r)) []
+
+                ( Nothing, Nothing, Nothing ) ->
+                    ignore
+
+        SaveAndUpdate ->
+            case unsavedOf m.stage of
+                Just ( u, r, _ ) ->
+                    go (Running u r (Pre (Saving False))) [ Ask TSave "ed project save" 15000 0 ]
+
+                Nothing ->
+                    ignore
+
+        DiscardAndUpdate ->
+            case unsavedOf m.stage of
+                Just ( u, r, Just l ) ->
+                    go (Running u r (Pre Discarding)) [ Ask TSave ("ed project load " ++ String.fromInt l.id ++ " " ++ String.fromInt l.gen ++ " discard") 15000 0 ]
+
+                Just ( _, _, Nothing ) ->
+                    ignore
+
+                Nothing ->
                     ignore
 
         Pick ->
@@ -640,7 +791,7 @@ hand msg ((Model m) as model) =
             case stoppedBeforeOf m.stage of
                 Just ( u, r, f ) ->
                     case f of
-                        Unsaved ->
+                        Unsaved _ ->
                             go (Running u r (Pre Checking)) [ status TStatus 0 ]
 
                         NothingFlashed _ ->
@@ -763,13 +914,46 @@ inUpdateMode f =
         Guarded d _ ->
             Just d
 
-        Unsaved ->
+        Unsaved _ ->
             Nothing
 
         NothingFlashed _ ->
             Nothing
 
         GarbledBefore _ ->
+            Nothing
+
+
+{-| A stop on unsaved changes: the loaded project, if it can be reloaded.
+-}
+unsavedOf : Stage -> Maybe ( UnitNow, Release, Maybe Loaded )
+unsavedOf s =
+    case stoppedBeforeOf s of
+        Just ( u, r, Unsaved l ) ->
+            Just ( u, r, l )
+
+        Just ( _, _, NothingFlashed _ ) ->
+            Nothing
+
+        Just ( _, _, DfuSilent _ ) ->
+            Nothing
+
+        Just ( _, _, PickCancelled _ ) ->
+            Nothing
+
+        Just ( _, _, WrongDevice _ _ ) ->
+            Nothing
+
+        Just ( _, _, CantOpen _ ) ->
+            Nothing
+
+        Just ( _, _, Guarded _ _ ) ->
+            Nothing
+
+        Just ( _, _, GarbledBefore _ ) ->
+            Nothing
+
+        Nothing ->
             Nothing
 
 
@@ -856,7 +1040,25 @@ pickingOf s =
         Just ( _, _, Pre Checking ) ->
             Nothing
 
+        Just ( _, _, Pre ReadingProject ) ->
+            Nothing
+
+        Just ( _, _, Pre (Saving _) ) ->
+            Nothing
+
+        Just ( _, _, Pre Discarding ) ->
+            Nothing
+
+        Just ( _, _, Pre (Settling _) ) ->
+            Nothing
+
         Just ( _, _, Pre (Copying _) ) ->
+            Nothing
+
+        Just ( _, _, Pre (CopyingBin _) ) ->
+            Nothing
+
+        Just ( _, _, Pre InstallingSelf ) ->
             Nothing
 
         Just ( _, _, Pre (EnteringDfu _) ) ->
@@ -1047,6 +1249,9 @@ classify e =
         Ended _ ->
             none
 
+        Unrelated ->
+            none
+
 
 answerFor : Ticket -> In -> Maybe Answer
 answerFor t i =
@@ -1219,7 +1424,7 @@ running i u r run m =
 
                 Just ((Said _ _) as a) ->
                     if (unitOf a).modified then
-                        before Unsaved
+                        to (Pre ReadingProject) [ Ask TProject "ed since 0" 2000 0 ]
 
                     else
                         to (Pre (Copying { done = 0, total = r.bk2Size })) [ Put r ]
@@ -1230,20 +1435,156 @@ running i u r run m =
                 Nothing ->
                     ignore
 
+        -- The project line may be on a later page of `ed since`.
+        Pre ReadingProject ->
+            case answerFor TProject i of
+                Just (Said lines end) ->
+                    case ( loadedOf lines, String.words end ) of
+                        ( Just l, _ ) ->
+                            before (Unsaved l)
+
+                        ( Nothing, [ "OK", next, "more" ] ) ->
+                            to (Pre ReadingProject) [ Ask TProject ("ed since " ++ next) 2000 0 ]
+
+                        ( Nothing, _ ) ->
+                            before (Unsaved Nothing)
+
+                Just NoAnswer ->
+                    before (Unsaved Nothing)
+
+                Just Gone ->
+                    before (NothingFlashed "The unit isn't connected")
+
+                Nothing ->
+                    ignore
+
+        -- A project never saved has no file of its own: saved as BEFORE_UPDATE.
+        Pre (Saving asNew) ->
+            case answerFor TSave i of
+                Just (Said _ end) ->
+                    if isOk end then
+                        to (Pre (Settling 0)) [ status TStatus 500 ]
+
+                    else if not asNew && String.contains "no file of its own" end then
+                        to (Pre (Saving True)) [ Ask TSave "ed project saveas BEFORE_UPDATE" 15000 0 ]
+
+                    else
+                        before (NothingFlashed ("The project couldn't be saved: " ++ end))
+
+                Just NoAnswer ->
+                    before (NothingFlashed "The unit didn't answer the save")
+
+                Just Gone ->
+                    before (NothingFlashed "The unit was disconnected during the save")
+
+                Nothing ->
+                    ignore
+
+        Pre Discarding ->
+            case answerFor TSave i of
+                Just (Said _ end) ->
+                    if isOk end then
+                        to (Pre (Settling 0)) [ status TStatus 500 ]
+
+                    else
+                        before (NothingFlashed ("The changes couldn't be discarded: " ++ end))
+
+                Just NoAnswer ->
+                    before (NothingFlashed "The unit didn't answer the reload")
+
+                Just Gone ->
+                    before (NothingFlashed "The unit was disconnected during the reload")
+
+                Nothing ->
+                    ignore
+
+        -- The save or reload is the unit's card work: `status` until the project is clean.
+        Pre (Settling n) ->
+            case answerFor TStatus i of
+                Just ((Said _ _) as a) ->
+                    if not (unitOf a).modified then
+                        to (Pre (Copying { done = 0, total = r.bk2Size })) [ Put r ]
+
+                    else if n < 20 then
+                        to (Pre (Settling (n + 1))) [ status TStatus 500 ]
+
+                    else
+                        before (Unsaved Nothing)
+
+                Just NoAnswer ->
+                    if n < 20 then
+                        to (Pre (Settling (n + 1))) [ status TStatus 500 ]
+
+                    else
+                        before (NothingFlashed "The unit stopped answering after the save")
+
+                Just Gone ->
+                    before (NothingFlashed "The unit was disconnected after the save")
+
+                Nothing ->
+                    ignore
+
         Pre (Copying _) ->
             case ( i.copied, answerFor TPut i ) of
                 ( Just p, _ ) ->
                     to (Pre (Copying p)) []
 
                 ( Nothing, Just a ) ->
-                    case staging r a of
-                        Ok b ->
+                    case ( staging r a, u.selfUpdate ) of
+                        -- A unit that writes its own firmware: CHIMERA.BIN onto the card next.
+                        ( Ok Staged, Just su ) ->
+                            to (Pre (CopyingBin { done = 0, total = r.binSize })) [ PutBin r su.binRemote ]
+
+                        ( Ok b, _ ) ->
                             to (Pre (EnteringDfu b)) [ Dfu ]
 
-                        Err why ->
+                        ( Err why, _ ) ->
                             before (NothingFlashed why)
 
                 ( Nothing, Nothing ) ->
+                    ignore
+
+        Pre (CopyingBin _) ->
+            case ( i.copied, answerFor TPutBin i, u.selfUpdate ) of
+                ( Just p, _, _ ) ->
+                    to (Pre (CopyingBin p)) []
+
+                ( Nothing, Just (Said _ end), Just su ) ->
+                    if isOk end then
+                        to (Pre InstallingSelf) [ Ask TSelf su.install 120000 0 ]
+
+                    else
+                        before (NothingFlashed ("The unit refused CHIMERA.BIN: " ++ end))
+
+                ( Nothing, Just (Said _ end), Nothing ) ->
+                    before (NothingFlashed ("The unit can't install CHIMERA.BIN itself: " ++ end))
+
+                ( Nothing, Just NoAnswer, _ ) ->
+                    before (NothingFlashed "The unit stopped answering while CHIMERA.BIN was copied")
+
+                ( Nothing, Just Gone, _ ) ->
+                    before (NothingFlashed "The unit was disconnected while CHIMERA.BIN was copied")
+
+                ( Nothing, Nothing, _ ) ->
+                    ignore
+
+        -- Its own install: once accepted (or the unit gone to it), the firmware area is being written.
+        Pre InstallingSelf ->
+            case answerFor TSelf i of
+                Just (Said _ end) ->
+                    if isOk end then
+                        to (Post Staged RestartingAfterInstall) [ Back 120 True ]
+
+                    else
+                        before (NothingFlashed ("The unit refused the install: " ++ end))
+
+                Just Gone ->
+                    to (Post Staged RestartingAfterInstall) [ Back 120 True ]
+
+                Just NoAnswer ->
+                    after Staged (NotBack "it didn't answer the install")
+
+                Nothing ->
                     ignore
 
         Pre (EnteringDfu b) ->
@@ -1491,7 +1832,27 @@ readStatus lines =
     { build = after "build"
     , modified = List.member "state MODIFIED" lines
     , bank2 = after "bank2"
+    , selfUpdate = selfUpdateOf lines
     }
+
+
+{-| `ed since`'s `project "<name>" <id|new> <clean|edited> gen <g|->` line
+as the loaded project's id and generation; none for a project never saved.
+-}
+loadedOf : List String -> Maybe (Maybe Loaded)
+loadedOf lines =
+    lines
+        |> List.filter (String.startsWith "project \"")
+        |> List.head
+        |> Maybe.map
+            (\l ->
+                case String.words (String.dropLeft (Maybe.withDefault 0 (List.head (List.reverse (String.indexes "\"" l))) + 1) l) of
+                    [ id, _, "gen", g ] ->
+                        Maybe.map2 Loaded (String.toInt id) (String.toInt g)
+
+                    _ ->
+                        Nothing
+            )
 
 
 unitOf : Answer -> UnitNow
@@ -1647,6 +2008,14 @@ type Offer
     | Unknown
 
 
+{-| `offer` for two versions as text: the unit's (`status`'s `0.4.0 de07edf9`
+or `ed hello`'s `0.4.0-de07edf9`) and a release's.
+-}
+offerFor : String -> String -> Offer
+offerFor unitBuild version =
+    offer { build = Just (String.replace "-" " " unitBuild), modified = False, bank2 = Nothing, selfUpdate = Nothing } { version = version, seal = "", format = 0, binSize = 0, bk2Size = 0, binSha = "", bk2Sha = "", source = Latest }
+
+
 offer : UnitNow -> Release -> Offer
 offer u r =
     case ( u.build |> Maybe.andThen parseVersion, parseVersion r.version ) of
@@ -1682,6 +2051,18 @@ ticketId t =
         TStatus ->
             "status"
 
+        TProject ->
+            "project"
+
+        TSave ->
+            "save"
+
+        TPutBin ->
+            "putbin"
+
+        TSelf ->
+            "self"
+
         TPut ->
             "put"
 
@@ -1716,7 +2097,10 @@ encode r =
             op "ask" [ ( "id", E.string (ticketId t) ), ( "line", E.string line ), ( "wait", E.int wait ), ( "delay", E.int delay ) ]
 
         Put rel ->
-            op "put" [ ( "id", E.string (ticketId TPut) ), ( "seal", E.string rel.seal ), ( "sha", E.string rel.bk2Sha ) ]
+            op "put" [ ( "id", E.string (ticketId TPut) ), ( "file", E.string "bk2" ), ( "seal", E.string rel.seal ), ( "sha", E.string rel.bk2Sha ) ]
+
+        PutBin rel remote ->
+            op "put" [ ( "id", E.string (ticketId TPutBin) ), ( "file", E.string "bin" ), ( "remote", E.string remote ), ( "seal", E.string rel.seal ), ( "sha", E.string rel.binSha ) ]
 
         Dfu ->
             op "dfu" [ ( "id", E.string (ticketId TDfu) ) ]
@@ -1815,6 +2199,9 @@ event =
                     "ended" ->
                         D.map Ended (D.field "link" D.string)
 
+                    "latest" ->
+                        D.succeed Unrelated
+
                     _ ->
                         D.fail ("not an update event: " ++ op)
             )
@@ -1863,6 +2250,18 @@ ticket =
                 case s of
                     "status" ->
                         D.succeed TStatus
+
+                    "project" ->
+                        D.succeed TProject
+
+                    "save" ->
+                        D.succeed TSave
+
+                    "putbin" ->
+                        D.succeed TPutBin
+
+                    "self" ->
+                        D.succeed TSelf
 
                     "put" ->
                         D.succeed TPut
@@ -2018,8 +2417,26 @@ runTitle run =
         Pre Checking ->
             "CHECKING"
 
+        Pre ReadingProject ->
+            "CHECKING"
+
+        Pre (Saving _) ->
+            "SAVING THE PROJECT"
+
+        Pre Discarding ->
+            "DROPPING THE CHANGES"
+
+        Pre (Settling _) ->
+            "CHECKING"
+
         Pre (Copying _) ->
             "COPYING BANK 2"
+
+        Pre (CopyingBin _) ->
+            "COPYING FIRMWARE"
+
+        Pre InstallingSelf ->
+            "WRITING FIRMWARE"
 
         Pre (EnteringDfu _) ->
             "RESTARTING INTO UPDATE MODE"
@@ -2245,7 +2662,7 @@ confirm m u r =
                 "This updates the unit's firmware."
         )
     , say "Don't unplug the unit or power it off until this page says DONE. It takes about two minutes."
-    , say "Unsaved changes block the update: save the project first (hold MENU), or load another."
+    , say "If the project has unsaved changes, you'll be asked to save or drop them first."
     , say "Your projects and Sounds on the card stay. The bootloader is never touched."
     , buttons
         [ btn
@@ -2273,8 +2690,26 @@ stages run =
                 Pre Checking ->
                     0
 
+                Pre ReadingProject ->
+                    0
+
+                Pre (Saving _) ->
+                    0
+
+                Pre Discarding ->
+                    0
+
+                Pre (Settling _) ->
+                    0
+
                 Pre (Copying _) ->
                     1
+
+                Pre (CopyingBin _) ->
+                    2
+
+                Pre InstallingSelf ->
+                    3
 
                 Pre (EnteringDfu _) ->
                     2
@@ -2296,6 +2731,24 @@ stages run =
             case run of
                 Pre (Copying p) ->
                     Just p
+
+                Pre (CopyingBin p) ->
+                    Just p
+
+                Pre ReadingProject ->
+                    Nothing
+
+                Pre (Saving _) ->
+                    Nothing
+
+                Pre Discarding ->
+                    Nothing
+
+                Pre (Settling _) ->
+                    Nothing
+
+                Pre InstallingSelf ->
+                    Nothing
 
                 Post _ (CopyingLate p) ->
                     Just p
@@ -2397,6 +2850,24 @@ runningText windows run =
         Pre (Copying _) ->
             [ say "Don't unplug the unit or power it off." ]
 
+        Pre ReadingProject ->
+            [ say "Don't unplug the unit or power it off." ]
+
+        Pre (Saving _) ->
+            [ say "Saving the project…" ]
+
+        Pre Discarding ->
+            [ say "Reloading the project as last saved…" ]
+
+        Pre (Settling _) ->
+            [ say "Waiting for the unit to finish with the card…" ]
+
+        Pre (CopyingBin _) ->
+            [ say "Don't unplug the unit or power it off." ]
+
+        Pre InstallingSelf ->
+            [ say "Don't unplug the unit or power it off." ]
+
         Pre (EnteringDfu _) ->
             [ say "Don't unplug the unit or power it off." ]
 
@@ -2458,10 +2929,26 @@ leaveUpdateMode =
 failedBefore : Bool -> UnitNow -> PreFail -> List (Html Msg)
 failedBefore windows u f =
     case f of
-        Unsaved ->
-            [ say "THE PROJECT HAS UNSAVED CHANGES. Save it (hold MENU) or load another, then press TRY AGAIN."
-            , say "Nothing was written."
-            , buttons [ btn "TRY AGAIN" TryAgain, btn "CLOSE" Close ]
+        Unsaved loaded ->
+            [ say "THE PROJECT HAS UNSAVED CHANGES. Save them or drop them, and the update goes on; or CANCEL and keep working."
+            , case loaded of
+                Just _ ->
+                    say "SAVE AND UPDATE saves the project over its own file. DISCARD AND UPDATE reloads it as last saved, dropping the changes."
+
+                Nothing ->
+                    say "This project was never saved: SAVE AND UPDATE saves it as a new project named BEFORE_UPDATE."
+            , buttons
+                (btn "SAVE AND UPDATE" SaveAndUpdate
+                    :: (case loaded of
+                            Just _ ->
+                                [ btn "DISCARD AND UPDATE" DiscardAndUpdate ]
+
+                            Nothing ->
+                                []
+                       )
+                    ++ [ btn "CANCEL" Cancel ]
+                )
+            , say "Nothing has been written."
             ]
 
         NothingFlashed why ->
@@ -2509,6 +2996,9 @@ failedBefore windows u f =
         CantOpen d ->
             [ say "THE BROWSER CAN'T OPEN THE UNIT'S UPDATE DEVICE. The bootloader is never touched."
             , written d
+            , say "Another program may hold it: on Linux, fwupd takes every new DFU device for a moment (the editor waited 10 seconds for it). Press WRITE AGAIN to try once more."
+            , say "Or write it from a terminal with dfu-util, in the folder holding the release's CHIMERA.BIN:"
+            , p [ class "code" ] [ text "dfu-util -a0 -d 0x0483:0xdf11 -s 0x8020000:leave -D CHIMERA.BIN" ]
             ]
                 ++ (if windows then
                         driverSteps

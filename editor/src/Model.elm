@@ -21,6 +21,7 @@ module Model exposing
     , armedOn
     , download
     , downloadUrl
+    , firmware
     , init
     , lastRefusal
     , notice
@@ -237,6 +238,9 @@ type Seat
 
 type alias Model =
     { link : Maybe Link
+
+    -- The unit's firmware as `ed hello` names it (`0.4.0-de07edf9`).
+    , firmware : Maybe String
     , via : Maybe Via
     , schema : Schema
     , mixer : Schema
@@ -403,6 +407,7 @@ pollMs =
 init : Model
 init =
     { link = Nothing
+    , firmware = Nothing
     , via = Nothing
     , schema = Schema.empty
     , mixer = Schema.empty
@@ -2047,6 +2052,13 @@ downloadUrl =
     "https://joegiralt.github.io/chimera-releases/install"
 
 
+{-| The firmware the followed unit runs, as `ed hello` named it, once it is followed.
+-}
+firmware : Model -> Maybe String
+firmware m =
+    status m |> Maybe.andThen (\_ -> m.firmware)
+
+
 {-| The download page, while the unit is too old for this editor.
 -}
 download : Model -> Maybe String
@@ -2075,7 +2087,7 @@ answer : AnswerLine -> Model -> Model
 answer a m =
     case a of
         HelloIs (Speaks h) ->
-            { m | part = Just h.part, engine = Just h.engine, partEngines = Dict.insert (Unit.partNumber h.part) h.engine m.partEngines }
+            { m | firmware = Just h.build, part = Just h.part, engine = Just h.engine, partEngines = Dict.insert (Unit.partNumber h.part) h.engine m.partEngines }
 
         HelloIs (TooNew n) ->
             { m | stage = Halted (OtherProtocol n) }

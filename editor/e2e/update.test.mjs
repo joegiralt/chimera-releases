@@ -17,7 +17,7 @@
 import assert from "node:assert/strict";
 import { createRequire } from "node:module";
 import { describe, test } from "node:test";
-import { bridge, followPart, openEditor, page, setup, statusText, until } from "./harness.mjs";
+import { bridge, followPart, openEditor, page, secondEditor, setup, statusText, until } from "./harness.mjs";
 import { FakeFirmware, serveRelease } from "./fakeupdate.mjs";
 
 const { makeRelease } = createRequire(import.meta.url)("./fakerelease.cjs");
@@ -139,7 +139,7 @@ describe("UPDATE from the browser", () => {
     const confirm = await said();
     assert.match(confirm, /0\.4\.0 \(de07edf9\) → 0\.4\.1 \(abcd1234\)/);
     assert.match(confirm, /Don't unplug the unit or power it off/);
-    assert.match(confirm, /Unsaved changes block the update/);
+    assert.match(confirm, /unsaved changes, you'll be asked to save or drop them/);
     await watchStages();
     await button("START UPDATE").click();
     // A page that was never given the DFU device asks for it once.
@@ -170,15 +170,43 @@ describe("UPDATE from the browser", () => {
     await backToEditor();
   });
 
-  test("U2: unsaved changes refuse it: nothing put, no dfu", async () => {
+  test("U2: unsaved changes: the choices; CANCEL keeps them and writes nothing", async () => {
     const fake = await ready({ state: "MODIFIED" });
     await openUpdate();
     await start();
-    await until("the refusal", async () => /UNSAVED CHANGES/.test(await said()), 10000);
-    assert.match(await said(), /Save it \(hold MENU\) or load another/);
-    assert.match(await said(), /Nothing was written/);
-    assert.deepEqual(fake.log.filter((l) => /^(put|dfu|bank2)/.test(l)), []);
+    await until("the choices", async () => /UNSAVED CHANGES/.test(await said()), 10000);
+    for (const b of ["SAVE AND UPDATE", "DISCARD AND UPDATE", "CANCEL"]) await button(b).waitFor();
+    assert.match(await said(), /Nothing has been written/);
+    await button("CANCEL").click();
+    await until("back to the offer", async () => (await meta()) === "READY", 5000);
+    assert.deepEqual(fake.log.filter((l) => /^(put|dfu|bank2|ed project)/.test(l)), []);
     await backToEditor();
+  });
+
+  test("U2b: SAVE AND UPDATE saves the project, then updates", async () => {
+    const fake = await ready({ state: "MODIFIED" });
+    await openUpdate();
+    await start();
+    await button("SAVE AND UPDATE").click();
+    // A page never given the DFU device asks for it once (run alone, this test is the first).
+    await until("DONE", async () => {
+      if (await button("CHOOSE UPDATE DEVICE").count()) await button("CHOOSE UPDATE DEVICE").click().catch(() => {});
+      return (await meta()) === "DONE";
+    }, UPDATE_WAIT);
+    const verbs = fake.log.filter((l) => /^(put|dfu|ed project)/.test(l)).map((l) => (l.startsWith("put ") ? l.split(" ").slice(0, 2) : l.split(" ").slice(0, 3)).join(" "));
+    assert.deepEqual(verbs.slice(0, 3), ["ed project save", "put /CHIMERA/SYSTEM/BANK2.BK2", "dfu"]);
+    await backToEditor("BACK TO THE EDITOR");
+  });
+
+  test("U2c: DISCARD AND UPDATE reloads the project as saved, then updates", async () => {
+    const fake = await ready({ state: "MODIFIED" });
+    await openUpdate();
+    await start();
+    await button("DISCARD AND UPDATE").click();
+    await until("DONE", async () => (await meta()) === "DONE", UPDATE_WAIT);
+    assert.ok(fake.log.includes("ed project load 3 7 discard"), `no discard: ${fake.log}`);
+    assert.ok(fake.log.indexOf("ed project load 3 7 discard") < fake.log.findIndex((l) => l.startsWith("put ")));
+    await backToEditor("BACK TO THE EDITOR");
   });
 
   test("U3: a checksum mismatch: the release refused before anything is written", async () => {
@@ -296,7 +324,7 @@ describe("UPDATE from the browser", () => {
 
   test("U9: a DFU device already there before `dfu` (an F4 board) is never taken; the new one is, and the tab is held meanwhile", async () => {
     const fake = await ready();
-    await page.evaluate(() => (window.__other = window.__usb.addOther("@Internal Flash  /0x08000000/04*016Kg,01*064Kg,07*128Kg")));
+    await page.evaluate(() => (window.__other = window.__usb.addOther("@Internal Flash   /0x08000000/04*016Kg,01*064Kg,07*128Kg")));
     await openUpdate();
     assert.equal(await held(), false, "held before START");
     await start();
@@ -313,7 +341,7 @@ describe("UPDATE from the browser", () => {
     const fake = await ready();
     await page.evaluate(() => {
       window.__usb.revoke();
-      window.__other = window.__usb.addOther("@Internal Flash  /0x08000000/16*128Kg");
+      window.__other = window.__usb.addOther("@Internal Flash   /0x08000000/16*128Kg");
       window.__usb.mode.pickOther = true;
     });
     await openUpdate();
@@ -439,5 +467,35 @@ describe("UPDATE from the browser", () => {
     await until("DONE", async () => (await meta()) === "DONE", UPDATE_WAIT);
     assert.equal(fake.build, "0.4.1 abcd1234");
     await backToEditor("BACK TO THE EDITOR");
+  });
+
+  // Last: its pages take the bridge's one console from the main page.
+  test("U17: on connect, a newer release is offered; NOT NOW keeps it away for the session; UPDATE opens the update", async () => {
+    await ready();
+    const p = await secondEditor();
+    const offerbar = p.locator(".offerbar");
+    const connectAndFollow = async () => {
+      await p.getByRole("button", { name: "CONNECT UNIT" }).click();
+      await until("following", async () => /^UNIT · PART \d+ · \S+$/.test((await p.locator(".unit").innerText().catch(() => "")).trim()), 30000);
+    };
+    await connectAndFollow();
+    await offerbar.waitFor({ timeout: 10000 });
+    assert.match(await offerbar.innerText(), /Chimera 0\.4\.1 is available\. You're running 0\.4\.0\. Update now\?/);
+    await offerbar.getByRole("button", { name: "NOT NOW" }).click();
+    await until("the offer gone", async () => (await offerbar.count()) === 0, 3000);
+    // Reconnected in the same session: not offered again.
+    await p.evaluate(() => window.__serial.unplug());
+    await p.getByRole("button", { name: "CONNECT UNIT" }).waitFor();
+    await connectAndFollow();
+    await new Promise((r) => setTimeout(r, 1500));
+    assert.equal(await offerbar.count(), 0, "offered again after NOT NOW");
+    // A new session (a reload): offered again, and UPDATE opens the update's page.
+    await p.reload();
+    await connectAndFollow();
+    await offerbar.waitFor({ timeout: 10000 });
+    await offerbar.getByRole("button", { name: "UPDATE" }).click();
+    await until("the update's page", async () => (await p.locator(".pagehead .meta").innerText().catch(() => "")) === "READY", 10000);
+    await p.locator(".upd button", { hasText: "CLOSE" }).click();
+    await p.close();
   });
 });

@@ -275,11 +275,10 @@ var ChimeraUpdate = (function () {
   /** `put BANK2.BK2 <size> <crc32>`, the data once the unit says READY, then
    * its last line: { end } (OK, OK PRESENT, OK staged:..., or the ERR),
    * GONE or { noAnswer }. Progress as `copied`. */
-  async function put1() {
-    var data = held.bk2;
+  async function put1(data, remote) {
     if (!linkUp) await relink();
     await drain(50);
-    var head = 'put ' + BANK2_REMOTE + ' ' + data.length + ' ' + crc32(data).toString(16).padStart(8, '0');
+    var head = 'put ' + remote + ' ' + data.length + ' ' + crc32(data).toString(16).padStart(8, '0');
     if (!linkUp || !(await ports.write(head))) return GONE;
     var first = await nextLine(PUT_WAIT_MS);
     if (first === 'gone') return GONE;
@@ -298,11 +297,16 @@ var ChimeraUpdate = (function () {
     return { lines: [], end: last };
   }
 
+  /** CHIMERA.BK2 to bank 2's staging path, or (a unit that installs its own
+   * firmware: `file` 'bin') CHIMERA.BIN to the path the unit names. */
   async function put(m) {
-    if (!confirmed(m, 'bk2')) return;
+    var file = m.file === 'bin' ? 'bin' : 'bk2';
+    if (!confirmed(m, file)) return;
+    if (file === 'bin' && !m.remote) return say({ op: 'mismatch', detail: 'no path for CHIMERA.BIN' });
+    var data = held[file], remote = file === 'bin' ? m.remote : BANK2_REMOTE;
     var wait = BUSY_WAIT_MS, a;
     for (var i = 0; i < BUSY_TRIES; i++) {
-      a = await put1();
+      a = await put1(data, remote);
       if (a.end !== 'ERR busy') break;
       await sleep(wait);
       wait *= 2;
@@ -442,6 +446,18 @@ var ChimeraUpdate = (function () {
         if (linkUp) await drain(150);
         return say({ op: 'begun', open: linkUp, webusb: !!navigator.usb, windows: windows() });
       case 'release': return release(m.how);
+      // The site's latest release, its manifest only: for the offer on connect.
+      case 'latest': {
+        try {
+          var r = await fetch(new URL(LATEST, location.href).href + 'manifest.json', { cache: 'no-store' });
+          if (!r.ok) throw new Error(String(r.status));
+          var mf = await r.json();
+          if (typeof mf.version !== 'string' || typeof mf.build !== 'string') throw new Error('no version');
+          return say({ op: 'latest', version: mf.version + ' ' + mf.build });
+        } catch (e) {
+          return say({ op: 'latest', none: true });
+        }
+      }
       case 'ask': {
         if (m.delay) await sleep(m.delay);
         var a = await ask(m.line, m.wait || SILENCE_MS);

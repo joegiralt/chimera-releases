@@ -28,15 +28,18 @@ All four end on the same install screen, and your projects and Sounds stay on th
 
 You need Chrome or Edge (they have Web Serial and WebUSB; Firefox and Safari don't), a data USB cable, and the unit connected in the [browser editor](18-browser-editor.md).
 
-1. **Hold MENU** to save your project: unsaved changes stop the update before anything is written.
-2. Press **UPDATE** in the editor's top bar. It shows **THIS UNIT** (the version the unit runs) and **LATEST** (the newest release). When they match it offers **REINSTALL…** instead; when the release is older than the unit's firmware, **DOWNGRADE…**, with a warning.
+1. Connect the unit in the editor. When a newer release is out, the editor says so right away (**Chimera 0.4.1 is available. You're running 0.4.0. Update now?**): press **UPDATE**, or **NOT NOW** to be asked again only the next time you open the editor. It never offers the same version, or an older one.
+2. Or press **UPDATE** in the editor's top bar at any time. It shows **THIS UNIT** (the version the unit runs) and **LATEST** (the newest release). When they match it offers **REINSTALL…** instead; when the release is older than the unit's firmware, **DOWNGRADE…**, with a warning.
 3. Press **UPDATE…**, read the confirm screen, and press **START UPDATE**. Don't unplug the unit or power it off until the page says **DONE**.
+4. If the project has unsaved changes, the page asks first: **SAVE AND UPDATE** saves it over its own file (a project never saved becomes **BEFORE_UPDATE**), **DISCARD AND UPDATE** reloads it as last saved, and **CANCEL** keeps working with the changes and updates nothing.
 
 The page goes through **CHECKING**, **COPYING BANK 2** (with a percentage), **RESTARTING INTO UPDATE MODE**, **WRITING FIRMWARE** (with a percentage) and **INSTALLING**, and ends on **UPDATED** with the old and new versions. The first time, the browser asks which device to use for update mode: press **CHOOSE UPDATE DEVICE** and pick **STM32 BOOTLOADER**. The editor writes only to the one STM32 DFU device that appears after the unit restarts into update mode, and only if its flash is laid out as the PreenFM3's STM32H7; one that was already there, or a board with another chip, is refused. It can't tell two STM32H7 boards apart, though: another one in DFU mode (a Daisy Seed, say), picked in the browser's list or plugged in at the same moment, could pass. Keep other boards out of DFU mode while you update. While it runs, the browser asks before you close or reload the tab.
 
 When the new firmware starts with `CHIMERA.BK2` on the card but bank 2 not installed, the editor sends `bank2 install` to finish it. The update tool stops there instead (and the next start installs it); the editor's way ends in the same place without another restart by hand.
 
 **CHOOSE FILES…** takes a release's `CHIMERA.BIN`, `CHIMERA.BK2` and `SHA256SUMS` from your computer instead (choose all three at once). Every file is checked against `SHA256SUMS`, and the two as one build, before anything is written.
+
+**If the browser can't open update mode's device**, another program may hold it: on Linux, fwupd takes every new DFU device for a moment, and the editor waits up to 10 seconds for it. Press **WRITE AGAIN**, or write the firmware from a terminal with `dfu-util -a0 -d 0x0483:0xdf11 -s 0x8020000:leave -D CHIMERA.BIN`.
 
 **On Windows**, the browser needs a driver for update mode, once: the editor says so and lists the steps (Zadig, select **STM32 BOOTLOADER**, **WinUSB**, **Install Driver**), then **WRITE AGAIN**.
 

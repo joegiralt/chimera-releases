@@ -71,7 +71,7 @@ async function putLines() {
   U.attach(app, ports);
   await U.run({ op: 'begin' });
   var rel = U.held().release;
-  await U.run({ op: 'put', id: 'put', seal: rel.seal, sha: rel.bk2Sha });
+  await U.run({ op: 'put', id: 'put', file: 'bk2', seal: rel.seal, sha: rel.bk2Sha });
   eq(wrote[0], 'put /CHIMERA/SYSTEM/BANK2.BK2 ' + r.bk2.length + ' ' + crc32(r.bk2).toString(16).padStart(8, '0'), 'the put line');
   eq(wrote.slice(1).every(function (l) { return l.length <= 64; }), true, 'lines of 48 bytes');
   eq(Buffer.concat(wrote.slice(1).map(function (l) { return Buffer.from(l, 'base64'); })).equals(r.bk2), true, 'the data whole');

@@ -133,13 +133,16 @@ isGarbled e =
         Ended _ ->
             False
 
+        Unrelated ->
+            False
+
 
 suite : Test
 suite =
     describe "Update"
         [ test "status_is_read" <|
             \_ ->
-                Expect.equal { build = Just "0.4.0 de07edf9", modified = False, bank2 = Just "open 0.4.0 de07edf9 seal=ffffffffffffffff" } unit
+                Expect.equal { build = Just "0.4.0 de07edf9", modified = False, bank2 = Just "open 0.4.0 de07edf9 seal=ffffffffffffffff", selfUpdate = Nothing } unit
         , test "the_panel_asks_status_and_the_release_and_shows_both" <|
             \_ ->
                 Expect.equal ( Ready unit (Got rel), [ Ask TStatus "status" 2000 0, FetchLatest ] )
@@ -159,10 +162,85 @@ suite =
             ]
         , test "go_asks_status_first" <|
             \_ -> Expect.equal (Running unit rel (Pre Checking)) (Update.stage started)
-        , test "unsaved_changes_stop_it_and_nothing_is_written" <|
+        , describe "unsaved changes: save or drop them, and the update goes on"
+            [ test "modified_reads_the_loaded_project_through_its_pages_then_asks" <|
+                \_ ->
+                    Expect.equal ( StoppedBefore unit rel (Unsaved (Just { id = 3, gen = 7 })), [ Ask TProject "ed since 0" 2000 0, Ask TProject "ed since 41" 2000 0 ] )
+                        (steps
+                            [ Answered TStatus (status "0.4.0 de07edf9" "MODIFIED" "open")
+                            , Answered TProject (Said [ "part 5 DRUM", "val DRUM.PAD1 0 0 \"0\"" ] "OK 41 more")
+                            , Answered TProject (Said [ "project \"MY SONG\" 3 edited gen 7", "sound 1 \"INIT\" edited" ] "OK 42")
+                            ]
+                            started
+                        )
+            , test "a_project_never_saved_can_only_be_saved" <|
+                \_ ->
+                    Expect.equal (StoppedBefore unit rel (Unsaved Nothing))
+                        (steps [ Answered TStatus (status "0.4.0 de07edf9" "MODIFIED" "open"), Answered TProject (Said [ "project \"NEW PROJECT\" new edited gen -" ] "OK 9") ] started |> Tuple.first)
+            , test "save_and_update_saves_waits_for_clean_then_copies" <|
+                \_ ->
+                    let
+                        asked : Update.Model
+                        asked =
+                            events [ Answered TStatus (status "0.4.0 de07edf9" "MODIFIED" "open"), Answered TProject (Said [ "project \"MY SONG\" 3 edited gen 7" ] "OK 9") ] started
+
+                        ( saving, saveReqs ) =
+                            Update.press SaveAndUpdate asked
+                    in
+                    Expect.equal ( Running unit rel (Pre (Copying { done = 0, total = rel.bk2Size })), [ Ask TSave "ed project save" 15000 0, Ask TStatus "status" 2000 500, Ask TStatus "status" 2000 500, Put rel ] )
+                        (steps [ Answered TSave (Said [] "OK"), Answered TStatus (status "0.4.0 de07edf9" "MODIFIED" "open"), Answered TStatus old ] saving
+                            |> Tuple.mapSecond (\later -> saveReqs ++ later)
+                        )
+            , test "a_project_never_saved_is_saved_as_before_update" <|
+                \_ ->
+                    let
+                        ( saving, _ ) =
+                            Update.press SaveAndUpdate (events [ Answered TStatus (status "0.4.0 de07edf9" "MODIFIED" "open"), Answered TProject (Said [ "project \"NEW PROJECT\" new edited gen -" ] "OK 9") ] started)
+                    in
+                    Expect.equal ( Running unit rel (Pre (Saving True)), [ Ask TSave "ed project saveas BEFORE_UPDATE" 15000 0 ] )
+                        (steps [ Answered TSave (Said [] "ERR ed project save has no file of its own: saveas") ] saving)
+            , test "discard_and_update_reloads_with_discard" <|
+                \_ ->
+                    let
+                        ( discarding, reqs ) =
+                            Update.press DiscardAndUpdate (events [ Answered TStatus (status "0.4.0 de07edf9" "MODIFIED" "open"), Answered TProject (Said [ "project \"MY SONG\" 3 edited gen 7" ] "OK 9") ] started)
+                    in
+                    Expect.equal ( Running unit rel (Pre Discarding), [ Ask TSave "ed project load 3 7 discard" 15000 0 ] ) ( Update.stage discarding, reqs )
+            , test "cancel_keeps_the_changes_and_goes_back_to_the_offer" <|
+                \_ ->
+                    Expect.equal (Ready unit (Got rel))
+                        (Update.stage (hands [ Cancel ] (events [ Answered TStatus (status "0.4.0 de07edf9" "MODIFIED" "open"), Answered TProject (Said [ "project \"MY SONG\" 3 edited gen 7" ] "OK 9") ] started)))
+            ]
+        , test "the_self_update_path_puts_both_files_then_installs_no_dfu" <|
             \_ ->
-                Expect.equal ( StoppedBefore unit rel Unsaved, [] )
-                    (steps [ Answered TStatus (status "0.4.0 de07edf9" "MODIFIED" "open") ] started)
+                let
+                    su : Update.SelfUpdate
+                    su =
+                        { binRemote = "/CHIMERA/SYSTEM/BANK1.BIN", install = "selfinstall" }
+
+                    going : Update.Model
+                    going =
+                        events opened (Tuple.first Update.begin) |> Update.withSelfUpdate su |> hands [ Start, Go ]
+
+                    suUnit : Update.UnitNow
+                    suUnit =
+                        { unit | selfUpdate = Just su }
+                in
+                Expect.equal ( Done suUnit rel newUnit, [ Put rel, PutBin rel "/CHIMERA/SYSTEM/BANK1.BIN", Ask TSelf "selfinstall" 120000 0, Back 120 True ] )
+                    (steps
+                        [ Answered TStatus old
+                        , Answered TPut (Said [] "OK")
+                        , Copied { done = 5, total = 10 }
+                        , Answered TPutBin (Said [] "OK")
+                        , Answered TSelf (Said [] "OK installing")
+                        , BackDone (Ok (Said [ "build 0.4.1 abcd1234", "state NEW", "bank2 open 0.4.1 abcd1234 seal=0123456789abcdef" ] "OK"))
+                        ]
+                        going
+                    )
+        , test "without_the_capability_the_dfu_path" <|
+            \_ -> Expect.equal Nothing (Update.readStatus [ "build 0.4.0 de07edf9", "selfupdate yes" ]).selfUpdate
+        , test "the_offer_on_connect_compares_hello_builds" <|
+            \_ -> Expect.equal [ Newer, Same, Older ] [ Update.offerFor "0.4.0-de07edf9" "0.4.1 abcd1234", Update.offerFor "0.4.1-abcd1234" "0.4.1 abcd1234", Update.offerFor "0.5.0-11112222" "0.4.1 abcd1234" ]
         , test "the_happy_path_stages_then_flashes_then_checks" <|
             \_ ->
                 Expect.equal ( Done unit rel newUnit, [ Put rel, Dfu, FindDevice 10, Write rel, Back 120 False ] )
@@ -306,7 +384,7 @@ suite =
         , test "unsaved_then_try_again_asks_status_again" <|
             \_ ->
                 Expect.equal (Running unit rel (Pre Checking))
-                    (Update.stage (hands [ TryAgain ] (events [ Answered TStatus (status "0.4.0 de07edf9" "MODIFIED" "open") ] started)))
+                    (Update.stage (hands [ TryAgain ] (events [ Answered TStatus (status "0.4.0 de07edf9" "MODIFIED" "open"), Answered TProject (Said [] "OK 9") ] started)))
         , test "a_release_that_fails_its_checks_offers_choosing_files" <|
             \_ ->
                 Expect.equal (Ready unit (Missing "CHIMERA.BIN does not match SHA256SUMS"))

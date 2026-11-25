@@ -22,6 +22,7 @@ export class FakeFirmware {
     this.putting = null; // { size, crc, data: [] } while a put's lines come
     this.staged = null; // the .bk2 on the card
     this.unplugAt = null; // bytes of a put after which the cable is pulled
+    this.updating = false; // an update has the link (status asked, no greeting since)
     this.log = [];
     this.handle = this.handle.bind(this);
   }
@@ -44,9 +45,22 @@ export class FakeFirmware {
 
   handle(line) {
     if (this.putting) return this.data(line);
+    // The editor's own greeting: the update is over; its polls go to the simulator.
+    if (line === "ed hello") this.updating = false;
+    // While an update owns the link (it asks status first), `ed since` names the
+    // loaded project, so unsaved changes can be saved or dropped.
+    if (this.updating && /^ed since \d+$/.test(line) && this.state === "MODIFIED") return [`project "MY SONG" 3 edited gen 7`, "OK 9"];
+    if (!this.updating && !/^(status|put |dfu|bank2)/.test(line)) return null;
     this.log.push(line);
     const w = line.split(" ");
-    if (line === "status") return this.status();
+    if (line === "status") {
+      this.updating = true;
+      return this.status();
+    }
+    if (line === "ed project save" || line === "ed project load 3 7 discard") {
+      this.state = "SAVED";
+      return ["OK"];
+    }
     if (w[0] === "put" && w[1] === "/CHIMERA/SYSTEM/BANK2.BK2") {
       if (this.old) return [OLD_PUT];
       this.putting = { size: Number(w[2]), crc: parseInt(w[3], 16), data: [], bytes: 0 };
