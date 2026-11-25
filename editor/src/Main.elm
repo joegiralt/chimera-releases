@@ -84,6 +84,18 @@ update msg app =
                     in
                     ( { app | updating = Just u }, cmd )
 
+        Page EnginePage.OpenStuck ->
+            case app.updating of
+                Just _ ->
+                    ( app, Cmd.none )
+
+                Nothing ->
+                    let
+                        ( u, cmd ) =
+                            Update.beginStuck
+                    in
+                    ( { app | updating = Just u }, cmd )
+
         Page m ->
             let
                 ( page, asks, store ) =

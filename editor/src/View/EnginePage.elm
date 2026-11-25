@@ -98,6 +98,8 @@ type Msg
     | MixFx String
       -- UPDATE: the firmware update's page (`Update`, which Main opens).
     | OpenUpdate
+      -- The connect page's FINISH THE UPDATE: a unit already in update mode.
+    | OpenStuck
 
 
 {-| What the page shows: the followed Part's engine page, or the unit's
@@ -305,8 +307,11 @@ update msg m s0 =
         MixFx k ->
             ( { s | fx = Just k }, [], Nothing )
 
-        -- Main takes it before it gets here.
+        -- Main takes these before they get here.
         OpenUpdate ->
+            ( s, [], Nothing )
+
+        OpenStuck ->
             ( s, [], Nothing )
 
 
@@ -1029,6 +1034,8 @@ connectPage m s =
                                     [ button [ class "hbtn", onClick (Unit (Model.Connect Model.ViaUnit)) ] [ text "CONNECT UNIT" ]
                                     , button [ class "hbtn", onClick (Unit (Model.Connect Model.ViaSimulator)) ] [ text "CONNECT SIMULATOR" ]
                                     ]
+                                    -- A unit left in update mode by a stopped update: finish it.
+                                    :: div [ class "connect" ] [ button [ class "hbtn", onClick OpenStuck ] [ text "UNIT STUCK IN UPDATE MODE? FINISH THE UPDATE" ] ]
                                     -- A unit too old for this editor: where its update is,
                                     -- and on USB, the update itself.
                                     :: (case Model.download m of

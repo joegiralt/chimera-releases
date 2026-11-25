@@ -15,8 +15,8 @@ export const OLD_PUT = "ERR put takes /CHIMERA/PROJECTS/P#######.A or /CHIMERA/S
 export class FakeFirmware {
   /** `bridge`, the `page` (its fake DFU device), the `release` it may be updated to;
    * the unit's `build` and `bank2`, its project `state`, `old` (firmware before bank 2). */
-  constructor({ bridge, page, release, build = "0.4.0 de07edf9", bank2 = "open 0.4.0 de07edf9 seal=ffffffffffffffff", state = "SAVED", old = false }) {
-    Object.assign(this, { bridge, page, release, build, bank2, state, old });
+  constructor({ bridge, page, release, build = "0.4.0 de07edf9", bank2 = "open 0.4.0 de07edf9 seal=ffffffffffffffff", state = "SAVED", old = false, dfuSilent = false }) {
+    Object.assign(this, { bridge, page, release, build, bank2, state, old, dfuSilent });
     this.putting = null; // { size, crc, data: [] } while a put's lines come
     this.staged = null; // the .bk2 on the card
     this.unplugAt = null; // bytes of a put after which the cable is pulled
@@ -49,6 +49,16 @@ export class FakeFirmware {
       if (this.old) return [OLD_PUT];
       this.putting = { size: Number(w[2]), crc: parseInt(w[3], 16), data: [], bytes: 0 };
       return ["READY"];
+    }
+    if (line === "dfu" && this.dfuSilent) {
+      // A unit that went to update mode without a word: its console goes
+      // only after the editor has given up waiting for one.
+      setTimeout(() => {
+        this.bridge.down = true;
+        this.bridge.hangUp();
+        this.page.evaluate(() => window.__usb.plug()).catch(() => {});
+      }, 2500);
+      return [];
     }
     if (line === "dfu") {
       this.bridge.down = true;
@@ -105,6 +115,14 @@ export class FakeFirmware {
       this.build = "garbage";
     }
     setTimeout(() => (this.bridge.down = false), 300);
+  }
+
+  /** The unit powered off and on in update mode's place: the console off
+   * the bus, then back (its firmware whatever was written last). */
+  powerCycle(image) {
+    this.bridge.down = true;
+    this.bridge.hangUp();
+    this.flashed(image);
   }
 }
 

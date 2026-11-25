@@ -4,13 +4,14 @@
 module UpdateTest exposing (suite)
 
 import Expect
+import Json.Encode as E
 import Test exposing (Test, describe, test)
-import Update exposing (Answer(..), Bk2(..), Device(..), Event(..), Failure(..), Msg(..), Offer(..), Release, Request(..), Run(..), Source(..), Stage(..), Verdict(..), WriteResult(..))
+import Update exposing (Answer(..), Bk2(..), Device(..), Event(..), Msg(..), Offer(..), PostFail(..), PostRun(..), PreFail(..), PreRun(..), Release, ReleaseState(..), Request(..), Run(..), Source(..), Stage(..), Ticket(..), Verdict(..), WriteResult(..))
 
 
 rel : Release
 rel =
-    { version = "0.4.1 abcd1234", seal = "0123456789abcdef", format = 2, binSize = 900000, bk2Size = 1048576, source = Latest }
+    { version = "0.4.1 abcd1234", seal = "0123456789abcdef", format = 2, binSize = 900000, bk2Size = 1048576, binSha = "b1n", bk2Sha = "b2k", source = Latest }
 
 
 status : String -> String -> String -> Answer
@@ -28,23 +29,24 @@ new =
     status "0.4.1 abcd1234" "NEW" "open 0.4.1 abcd1234 seal=0123456789abcdef"
 
 
-{-| Events in turn from the panel's opening: the last stage and every request.
--}
-run : List Event -> ( Stage, List Request )
-run =
-    List.foldl
-        (\e ( m, reqs ) -> Update.step e m |> Tuple.mapSecond ((++) reqs))
-        ( Tuple.first Update.begin, [] )
-        >> Tuple.mapFirst Update.stage
+newUnit : Update.UnitNow
+newUnit =
+    Update.readStatus [ "build 0.4.1 abcd1234", "state NEW", "bank2 open 0.4.1 abcd1234 seal=0123456789abcdef" ]
 
 
-{-| The panel open on `old` with the release, START and GO pressed: CHECKING.
--}
-started : Update.Model
-started =
-    [ Begun { open = True, webusb = True, windows = False }, Answered "status" old, ReleaseIs (Ok rel) ]
-        |> List.foldl (\e m -> Update.step e m |> Tuple.first) (Tuple.first Update.begin)
-        |> hands [ Start, Go ]
+unit : Update.UnitNow
+unit =
+    Update.readStatus [ "build 0.4.0 de07edf9", "state SAVED", "bank2 open 0.4.0 de07edf9 seal=ffffffffffffffff" ]
+
+
+opened : List Event
+opened =
+    [ Begun { open = True, webusb = True, windows = False }, Answered TStatus old, ReleaseIs (Ok rel) ]
+
+
+events : List Event -> Update.Model -> Update.Model
+events es m =
+    List.foldl (\e acc -> Update.step e acc |> Tuple.first) m es
 
 
 hands : List Msg -> Update.Model -> Update.Model
@@ -58,14 +60,68 @@ steps es m =
         |> Tuple.mapFirst Update.stage
 
 
-unit : Update.UnitNow
-unit =
-    Update.readStatus [ "build 0.4.0 de07edf9", "state SAVED", "bank2 open 0.4.0 de07edf9 seal=ffffffffffffffff" ]
+{-| The panel open on `old` with the release, START and GO pressed: CHECKING.
+-}
+started : Update.Model
+started =
+    events opened (Tuple.first Update.begin) |> hands [ Start, Go ]
+
+
+{-| Through the flash: copied (staged or not), dfu, the device, the write.
+-}
+flashed : Answer -> Update.Model
+flashed put =
+    events [ Answered TStatus old, Answered TPut put, Answered TDfu Gone, DeviceIs Found, WriteDone WriteOk ] started
 
 
 oldPut : String
 oldPut =
     "ERR put takes /CHIMERA/PROJECTS/P#######.A or /CHIMERA/SOUNDS/S#######.A [--over], its size and CRC-32 in hex"
+
+
+offerOf : String -> Offer
+offerOf build =
+    Update.offer (Update.readStatus [ "build " ++ build ]) rel
+
+
+isGarbled : Event -> Bool
+isGarbled e =
+    case e of
+        Garbled _ ->
+            True
+
+        Begun _ ->
+            False
+
+        ReleaseIs _ ->
+            False
+
+        ReleaseCancelled ->
+            False
+
+        Answered _ _ ->
+            False
+
+        Copied _ ->
+            False
+
+        Written _ ->
+            False
+
+        DeviceIs _ ->
+            False
+
+        WriteDone _ ->
+            False
+
+        BackDone _ ->
+            False
+
+        Mismatch _ ->
+            False
+
+        Ended _ ->
+            False
 
 
 suite : Test
@@ -76,127 +132,157 @@ suite =
                 Expect.equal { build = Just "0.4.0 de07edf9", modified = False, bank2 = Just "open 0.4.0 de07edf9 seal=ffffffffffffffff" } unit
         , test "the_panel_asks_status_and_the_release_and_shows_both" <|
             \_ ->
-                Expect.equal ( Ready unit (Update.Got rel), [ Begin, Ask "status" 2000, FetchLatest ] )
-                    (run [ Begun { open = True, webusb = True, windows = False }, Answered "status" old, ReleaseIs (Ok rel) ] |> Tuple.mapSecond ((::) Begin))
+                Expect.equal ( Ready unit (Got rel), [ Ask TStatus "status" 2000 0, FetchLatest ] )
+                    (steps opened (Tuple.first Update.begin))
         , test "no_link_says_so" <|
-            \_ -> Expect.equal NoLink (run [ Begun { open = False, webusb = True, windows = False } ] |> Tuple.first)
-        , test "the_versions_offer" <|
-            \_ ->
-                Expect.equal [ Newer, Same, Unknown ]
-                    [ Update.offer unit rel
-                    , Update.offer (Update.readStatus [ "build 0.4.1 abcd1234+" ]) rel
-                    , Update.offer (Update.readStatus []) rel
-                    ]
+            \_ -> Expect.equal NoLink (steps [ Begun { open = False, webusb = True, windows = False } ] (Tuple.first Update.begin) |> Tuple.first)
+        , describe "versions, by their numbers"
+            [ test "newer_same_other_build_unknown" <|
+                \_ -> Expect.equal [ Newer, Same, OtherBuild, Unknown ] [ offerOf "0.4.0 de07edf9", offerOf "0.4.1 abcd1234+", offerOf "0.4.1 ffff0000", Update.offer (Update.readStatus []) rel ]
+            , test "an_older_release_is_a_downgrade" <|
+                \_ -> Expect.equal [ Older, Older, Older ] [ offerOf "0.5.0 11112222", offerOf "0.4.2 11112222", offerOf "1.0.0 11112222" ]
+            , test "not_a_string_compare" <|
+                -- "0.10.0" sorts before "0.9.0" as text; as numbers it is newer.
+                \_ -> Expect.equal Older (Update.offer (Update.readStatus [ "build 0.10.0 aaaa0000" ]) { rel | version = "0.9.0 bbbb1111" })
+            , test "parsed" <|
+                \_ -> Expect.equal (Just { major = 0, minor = 10, patch = 2, build = "abc" }) (Update.parseVersion "0.10.2 abc+")
+            ]
         , test "go_asks_status_first" <|
-            \_ -> Expect.equal (Running unit rel Checking) (Update.stage started)
+            \_ -> Expect.equal (Running unit rel (Pre Checking)) (Update.stage started)
         , test "unsaved_changes_stop_it_and_nothing_is_written" <|
             \_ ->
-                Expect.equal ( Stopped unit rel Unsaved, [] )
-                    (steps [ Answered "status" (status "0.4.0 de07edf9" "MODIFIED" "open") ] started)
+                Expect.equal ( StoppedBefore unit rel Unsaved, [] )
+                    (steps [ Answered TStatus (status "0.4.0 de07edf9" "MODIFIED" "open") ] started)
         , test "the_happy_path_stages_then_flashes_then_checks" <|
             \_ ->
-                Expect.equal
-                    ( Done unit rel (Update.readStatus [ "build 0.4.1 abcd1234", "state NEW", "bank2 open 0.4.1 abcd1234 seal=0123456789abcdef" ])
-                    , [ Put, Dfu, FindDevice 10, Write, Back 120 False ]
-                    )
+                Expect.equal ( Done unit rel newUnit, [ Put rel, Dfu, FindDevice 10, Write rel, Back 120 False ] )
                     (steps
-                        [ Answered "status" old
+                        [ Answered TStatus old
                         , Copied { done = 1000, total = 1048576 }
-                        , PutDone (Said [] "OK")
-                        , DfuDone Gone
+                        , Answered TPut (Said [] "OK")
+                        , Answered TDfu Gone
                         , DeviceIs Found
                         , Written { done = 3, total = 10 }
                         , WriteDone WriteOk
-                        , BackDone (Ok (Said [ "firmware 0.4.1 release", "build 0.4.1 abcd1234", "state NEW", "bank2 open 0.4.1 abcd1234 seal=0123456789abcdef" ] "OK"))
+                        , BackDone (Ok (Said [ "build 0.4.1 abcd1234", "state NEW", "bank2 open 0.4.1 abcd1234 seal=0123456789abcdef" ] "OK"))
                         ]
                         started
                     )
+        , test "an_answer_to_another_request_changes_nothing" <|
+            \_ -> Expect.equal ( Running unit rel (Pre Checking), [] ) (steps [ Answered TDfu Gone, Answered TPut (Said [] "OK"), Answered TVerify new, WriteDone WriteOk, BackDone (Ok new) ] started)
         , test "a_staged_bk2_not_installed_at_boot_gets_bank2_install" <|
             \_ ->
-                Expect.equal ( Done unit rel (Update.readStatus [ "firmware 0.4.1 release", "build 0.4.1 abcd1234", "protocol 4", "state NEW", "bank2 open 0.4.1 abcd1234 seal=0123456789abcdef" ]), [ Put, Dfu, FindDevice 10, Write, Back 120 False, Ask "bank2 install" 120000, Back 60 True ] )
-                    (steps
-                        [ Answered "status" old
-                        , PutDone (Said [] "OK")
-                        , DfuDone (Said [] "OK")
-                        , DeviceIs Found
-                        , WriteDone WriteOk
-                        , BackDone (Ok (status "0.4.1 abcd1234" "NEW" "empty"))
-                        , Answered "bank2 install" (Said [ "audio stopped 812 ms" ] "OK bank2 open 0.4.1 abcd1234")
-                        , BackDone (Ok new)
-                        ]
-                        started
-                    )
+                Expect.equal ( Running unit rel (Post Staged (Installing 1)), [ Ask TInstall "bank2 install" 120000 0 ] )
+                    (steps [ BackDone (Ok (status "0.4.1 abcd1234" "NEW" "empty")) ] (flashed (Said [] "OK")))
+        , test "bank2_busy_is_asked_again_200_ms_later" <|
+            \_ ->
+                Expect.equal ( Running unit rel (Post Staged (Installing 2)), [ Ask TInstall "bank2 install" 120000 200 ] )
+                    (steps [ Answered TInstall (Said [] "ERR bank2: busy") ] (events [ BackDone (Ok (status "0.4.1 abcd1234" "NEW" "empty")) ] (flashed (Said [] "OK"))))
         , test "older_firmware_takes_the_bk2_after_the_flash" <|
             \_ ->
-                Expect.equal ( Done unit rel (Update.readStatus [ "firmware 0.4.1 release", "build 0.4.1 abcd1234", "protocol 4", "state NEW", "bank2 open 0.4.1 abcd1234 seal=0123456789abcdef" ]), [ Put, Dfu, FindDevice 10, Write, Back 120 False, Put, Ask "bank2 install" 120000, Back 60 True ] )
+                Expect.equal ( Done unit rel (Update.readStatus [ "firmware 0.4.1 release", "build 0.4.1 abcd1234", "protocol 4", "state NEW", "bank2 open 0.4.1 abcd1234 seal=0123456789abcdef" ]), [ Put rel, Ask TInstall "bank2 install" 120000 0, Back 60 True ] )
                     (steps
-                        [ Answered "status" old
-                        , PutDone (Said [] oldPut)
-                        , DfuDone (Said [] "OK")
-                        , DeviceIs Found
-                        , WriteDone WriteOk
-                        , BackDone (Ok (status "0.4.1 abcd1234" "NEW" "empty"))
-                        , PutDone (Said [] "OK")
-                        , Answered "bank2 install" (Said [] "OK bank2 open 0.4.1 abcd1234")
+                        [ BackDone (Ok (status "0.4.1 abcd1234" "NEW" "empty"))
+                        , Answered TPut (Said [] "OK")
+                        , Answered TInstall (Said [ "audio stopped 812 ms" ] "OK bank2 open 0.4.1 abcd1234")
                         , BackDone (Ok new)
                         ]
-                        started
+                        (flashed (Said [] oldPut))
                     )
         , test "a_0_3_wording_names_bank2_for_a_big_bk2" <|
             \_ ->
-                Expect.equal (Running unit rel (EnteringDfu AfterFlash))
-                    (steps [ Answered "status" old, PutDone (Said [] "ERR put takes P#######.A, S#######.A or BANK2.BK2 (512 KB)") ] started |> Tuple.first)
+                Expect.equal (Running unit rel (Pre (EnteringDfu AfterFlash)))
+                    (steps [ Answered TStatus old, Answered TPut (Said [] "ERR put takes P#######.A, S#######.A or BANK2.BK2 (512 KB)") ] started |> Tuple.first)
         , test "another_put_refusal_stops_before_the_flash" <|
             \_ ->
-                Expect.equal ( Stopped unit rel (NothingFlashed "The unit refused CHIMERA.BK2: ERR put: card full"), [ Put ] )
-                    (steps [ Answered "status" old, PutDone (Said [] "ERR put: card full") ] started)
+                Expect.equal (StoppedBefore unit rel (NothingFlashed "The unit refused CHIMERA.BK2: ERR put: card full"))
+                    (steps [ Answered TStatus old, Answered TPut (Said [] "ERR put: card full") ] started |> Tuple.first)
         , test "an_unplug_mid_copy_stops_with_nothing_flashed" <|
             \_ ->
-                Expect.equal (Stopped unit rel (NothingFlashed "The unit was disconnected while CHIMERA.BK2 was copied"))
-                    (steps [ Answered "status" old, Copied { done = 5, total = 10 }, PutDone Gone ] started |> Tuple.first)
-        , test "dfu_refused_stops_before_the_flash" <|
-            \_ ->
-                Expect.equal (Stopped unit rel (NothingFlashed "The unit refused update mode: ERR dfu is not in this build"))
-                    (steps [ Answered "status" old, PutDone (Said [] "OK"), DfuDone (Said [] "ERR dfu is not in this build") ] started |> Tuple.first)
-        , test "no_device_known_asks_for_a_pick" <|
-            \_ ->
-                Expect.equal (Running unit rel (PickingDevice Staged False))
-                    (steps [ Answered "status" old, PutDone (Said [] "OK"), DfuDone Gone, DeviceIs NotFound ] started |> Tuple.first)
-        , test "a_pick_writes" <|
+                Expect.equal (StoppedBefore unit rel (NothingFlashed "The unit was disconnected while CHIMERA.BK2 was copied"))
+                    (steps [ Answered TStatus old, Copied { done = 5, total = 10 }, Answered TPut Gone ] started |> Tuple.first)
+        , test "no_answer_to_dfu_says_it_may_be_in_update_mode_and_can_go_on" <|
             \_ ->
                 let
-                    ( picking, _ ) =
-                        List.foldl (\e ( m, _ ) -> Update.step e m) ( started, [] ) [ Answered "status" old, PutDone (Said [] "OK"), DfuDone Gone, DeviceIs NotFound ]
+                    silent : Update.Model
+                    silent =
+                        events [ Answered TStatus old, Answered TPut (Said [] "OK"), Answered TDfu NoAnswer ] started
                 in
-                Expect.equal ( Running unit rel (Writing Staged { done = 0, total = 1 }), [ Write ] )
-                    (steps [ DeviceIs Found ] (hands [ Pick ] picking))
-        , test "a_device_that_wont_open_says_how_and_can_write_again" <|
+                Expect.equal [ StoppedBefore unit rel (DfuSilent Staged), Running unit rel (Pre (PickingDevice Staged)) ]
+                    [ Update.stage silent, Update.stage (hands [ Pick ] silent) ]
+        , test "no_new_device_asks_for_a_pick" <|
+            \_ ->
+                Expect.equal (Running unit rel (Pre (PickingDevice Staged)))
+                    (steps [ Answered TStatus old, Answered TPut (Said [] "OK"), Answered TDfu Gone, DeviceIs NotFound ] started |> Tuple.first)
+        , test "the_pick_stage_can_be_cancelled_and_written_again" <|
             \_ ->
                 let
-                    ( stopped, _ ) =
-                        List.foldl (\e ( m, _ ) -> Update.step e m) ( started, [] ) [ Answered "status" old, PutDone (Said [] "OK"), DfuDone Gone, DeviceIs Found, WriteDone Unopenable ]
+                    picking : Update.Model
+                    picking =
+                        events [ Answered TStatus old, Answered TPut (Said [] "OK"), Answered TDfu Gone, DeviceIs NotFound ] started
+
+                    cancelled : Update.Model
+                    cancelled =
+                        hands [ Cancel ] picking
                 in
-                Expect.equal [ Stopped unit rel (CantOpen Staged), Running unit rel (FindingDevice Staged) ]
+                Expect.equal [ StoppedBefore unit rel (PickCancelled Staged), Running unit rel (Pre (PickingDevice Staged)) ]
+                    [ Update.stage cancelled, Update.stage (hands [ WriteAgain ] cancelled) ]
+        , test "a_pick_that_comes_back_empty_stops_with_write_again" <|
+            \_ ->
+                Expect.equal (StoppedBefore unit rel (PickCancelled Staged))
+                    (steps [ Answered TStatus old, Answered TPut (Said [] "OK"), Answered TDfu Gone, DeviceIs NotFound, DeviceIs Cancelled ] started |> Tuple.first)
+        , test "the_wrong_device_is_refused_before_writing" <|
+            \_ ->
+                Expect.equal ( StoppedBefore unit rel (WrongDevice Staged "two"), [ Put rel, Dfu, FindDevice 10 ] )
+                    (steps [ Answered TStatus old, Answered TPut (Said [] "OK"), Answered TDfu Gone, DeviceIs (Wrong "two") ] started)
+        , test "a_device_that_wont_open_can_write_again" <|
+            \_ ->
+                let
+                    stopped : Update.Model
+                    stopped =
+                        events [ Answered TStatus old, Answered TPut (Said [] "OK"), Answered TDfu Gone, DeviceIs Found, WriteDone Unopenable ] started
+                in
+                Expect.equal [ StoppedBefore unit rel (CantOpen Staged), Running unit rel (Pre (PickingDevice Staged)) ]
                     [ Update.stage stopped, Update.stage (hands [ WriteAgain ] stopped) ]
-        , test "a_cut_write_says_how_to_finish_and_can_write_again" <|
+        , test "a_cut_write_is_after_the_write_and_can_write_again" <|
             \_ ->
                 let
-                    ( stopped, _ ) =
-                        List.foldl (\e ( m, _ ) -> Update.step e m) ( started, [] ) [ Answered "status" old, PutDone (Said [] oldPut), DfuDone Gone, DeviceIs Found, WriteDone (Cut "gone") ]
+                    stopped : Update.Model
+                    stopped =
+                        events [ Answered TStatus old, Answered TPut (Said [] oldPut), Answered TDfu Gone, DeviceIs Found, WriteDone (Cut True "gone") ] started
                 in
-                Expect.equal [ Stopped unit rel (WriteCut AfterFlash "gone"), Running unit rel (FindingDevice AfterFlash) ]
+                Expect.equal [ StoppedAfter unit rel AfterFlash (WriteCut "gone"), Running unit rel (Pre (PickingDevice AfterFlash)) ]
                     [ Update.stage stopped, Update.stage (hands [ WriteAgain ] stopped) ]
-        , test "a_guard_refusal_writes_nothing" <|
+        , test "a_write_that_never_started_wrote_nothing" <|
             \_ ->
-                Expect.equal (Stopped unit rel (Guarded "refused: 0x8000000"))
-                    (steps [ Answered "status" old, PutDone (Said [] "OK"), DfuDone Gone, DeviceIs Found, WriteDone (GuardRefused "refused: 0x8000000") ] started |> Tuple.first)
+                Expect.equal (StoppedBefore unit rel (Guarded Staged "idle"))
+                    (steps [ Answered TStatus old, Answered TPut (Said [] "OK"), Answered TDfu Gone, DeviceIs Found, WriteDone (Refused False "idle") ] started |> Tuple.first)
+        , test "a_failed_leave_is_firmware_written_not_a_cut" <|
+            \_ ->
+                let
+                    stopped : Update.Model
+                    stopped =
+                        events [ Answered TStatus old, Answered TPut (Said [] "OK"), Answered TDfu Gone, DeviceIs Found, WriteDone (LeaveFail "gone") ] started
+                in
+                Expect.equal [ StoppedAfter unit rel Staged (LeaveFailed "gone"), Running unit rel (Post Staged Restarting) ]
+                    [ Update.stage stopped, Update.stage (hands [ CheckAgain ] stopped) ]
+        , test "try_again_after_a_flash_asks_the_unit_never_starts_over" <|
+            \_ ->
+                let
+                    unfinished : Update.Model
+                    unfinished =
+                        events [ BackDone (Ok (status "0.4.0 de07edf9" "NEW" "empty")) ] (flashed (Said [] "OK"))
+                in
+                Expect.equal [ StoppedAfter unit rel Staged (Unfinished "The unit says build 0.4.0 de07edf9: the new firmware (0.4.1 abcd1234) isn't the one running"), Running unit rel (Post Staged Restarting) ]
+                    [ Update.stage unfinished, Update.stage (hands [ TryAgain ] unfinished) ]
         , test "not_back_can_check_again" <|
             \_ ->
                 let
-                    ( stopped, _ ) =
-                        List.foldl (\e ( m, _ ) -> Update.step e m) ( started, [] ) [ Answered "status" old, PutDone (Said [] "OK"), DfuDone Gone, DeviceIs Found, WriteDone WriteOk, BackDone (Err "off") ]
+                    stopped : Update.Model
+                    stopped =
+                        events [ BackDone (Err "off") ] (flashed (Said [] "OK"))
                 in
-                Expect.equal [ Stopped unit rel (NotBack Staged "off"), Running unit rel (Restarting Staged) ]
+                Expect.equal [ StoppedAfter unit rel Staged (NotBack "off"), Running unit rel (Post Staged Restarting) ]
                     [ Update.stage stopped, Update.stage (hands [ CheckAgain ] stopped) ]
         , test "the_old_firmware_still_running_is_unfinished" <|
             \_ ->
@@ -205,66 +291,68 @@ suite =
             \_ ->
                 Expect.equal (NotFinished "The unit's MIXER slot (0x08180000) holds other code; bank 2 not installed")
                     (Update.verdict rel (status "0.4.1 abcd1234" "NEW" "slot foreign mixer"))
-        , test "an_answer_the_step_isnt_waiting_for_changes_nothing" <|
-            \_ ->
-                Expect.equal ( Running unit rel Checking, [] ) (steps [ DfuDone Gone, WriteDone WriteOk, BackDone (Ok new) ] started)
         , test "close_never_mid_update" <|
-            \_ -> Expect.equal (Running unit rel Checking) (Update.stage (hands [ Close ] started))
+            \_ -> Expect.equal (Running unit rel (Pre Checking)) (Update.stage (hands [ Close ] started))
         , test "unsaved_then_try_again_asks_status_again" <|
             \_ ->
-                let
-                    ( stopped, _ ) =
-                        Update.step (Answered "status" (status "0.4.0 de07edf9" "MODIFIED" "open")) started
-                in
-                Expect.equal (Running unit rel Checking) (Update.stage (hands [ TryAgain ] stopped))
+                Expect.equal (Running unit rel (Pre Checking))
+                    (Update.stage (hands [ TryAgain ] (events [ Answered TStatus (status "0.4.0 de07edf9" "MODIFIED" "open") ] started)))
         , test "a_release_that_fails_its_checks_offers_choosing_files" <|
             \_ ->
-                Expect.equal (Ready unit (Update.Missing "CHIMERA.BIN does not match SHA256SUMS"))
-                    (run [ Begun { open = True, webusb = True, windows = False }, Answered "status" old, ReleaseIs (Err "CHIMERA.BIN does not match SHA256SUMS") ] |> Tuple.first)
+                Expect.equal (Ready unit (Missing "CHIMERA.BIN does not match SHA256SUMS"))
+                    (steps [ Begun { open = True, webusb = True, windows = False }, Answered TStatus old, ReleaseIs (Err "CHIMERA.BIN does not match SHA256SUMS") ] (Tuple.first Update.begin) |> Tuple.first)
         , test "chosen_files_replace_the_release" <|
             \_ ->
                 let
                     ready : Update.Model
                     ready =
-                        [ Begun { open = True, webusb = True, windows = False }, Answered "status" old, ReleaseIs (Err "unreachable") ]
-                            |> List.foldl (\e m -> Update.step e m |> Tuple.first) (Tuple.first Update.begin)
+                        events [ Begun { open = True, webusb = True, windows = False }, Answered TStatus old, ReleaseIs (Err "unreachable") ] (Tuple.first Update.begin)
                 in
-                Expect.equal (Ready unit (Update.Got { rel | source = Chosen }))
+                Expect.equal (Ready unit (Got { rel | source = Chosen }))
                     (steps [ ReleaseIs (Ok { rel | source = Chosen }) ] (hands [ Choose ] ready) |> Tuple.first)
-        , test "ended_hands_the_link_back" <|
+        , test "a_cancelled_chooser_keeps_the_latest" <|
+            \_ ->
+                Expect.equal (Ready unit (Got rel))
+                    (steps [ ReleaseCancelled ] (hands [ Choose ] (events opened (Tuple.first Update.begin))) |> Tuple.first)
+        , test "close_ends" <|
+            \_ -> Expect.equal Closing (Update.stage (hands [ Close ] (events opened (Tuple.first Update.begin))))
+        , test "a_late_put_staged_for_another_firmware_is_unfinished" <|
+            \_ ->
+                Expect.equal (StoppedAfter unit rel AfterFlash (Unfinished "staged: needs firmware 0.4.2 (it installs at that firmware's next start)"))
+                    (steps [ BackDone (Ok (status "0.4.1 abcd1234" "NEW" "empty")), Answered TPut (Said [] "OK staged: needs firmware 0.4.2") ] (flashed (Said [] oldPut)) |> Tuple.first)
+        , test "verdicts" <|
+            \_ ->
+                Expect.equal [ Installed (Update.readStatus [ "firmware 0.4.1 release", "build 0.4.1 abcd1234", "protocol 4", "state NEW", "bank2 open 0.4.1 abcd1234 seal=0123456789abcdef" ]), NeedsInstall "bank2 empty" ]
+                    [ Update.verdict rel new, Update.verdict rel (status "0.4.1 abcd1234" "NEW" "empty") ]
+        , test "the_tab_is_held_while_it_writes_or_waits" <|
+            \_ ->
+                Expect.equal [ False, True, True, False ]
+                    [ Update.holding started
+                    , Update.holding (events [ Answered TStatus old ] started)
+                    , Update.holding (flashed (Said [] "OK"))
+                    , Update.holding (events [ BackDone (Err "off") ] (flashed (Said [] "OK")))
+                    ]
+        , test "a_stuck_unit_fetches_the_release_only_then_picks_the_device" <|
             \_ ->
                 let
                     ready : Update.Model
                     ready =
-                        [ Begun { open = True, webusb = True, windows = False }, Answered "status" old, ReleaseIs (Ok rel) ]
-                            |> List.foldl (\e m -> Update.step e m |> Tuple.first) (Tuple.first Update.begin)
+                        events [ Begun { open = False, webusb = True, windows = False }, ReleaseIs (Ok rel) ] (Tuple.first Update.beginStuck)
                 in
-                Expect.equal Closing (Update.stage (hands [ Close ] ready))
-        , test "a_device_missing_from_a_pick_asks_again" <|
-            \_ ->
-                Expect.equal (Running unit rel (PickingDevice Staged True))
-                    (steps [ Answered "status" old, PutDone (Said [] "OK"), DfuDone Gone, DeviceIs NotFound, DeviceIs NotFound ] started |> Tuple.first)
-        , test "no_webusb_at_the_device_stops" <|
-            \_ ->
-                Expect.equal (Stopped unit rel (CantOpen Staged))
-                    (steps [ Answered "status" old, PutDone (Said [] "OK"), DfuDone Gone, DeviceIs NoWebUsb ] started |> Tuple.first)
-        , test "a_late_put_staged_for_another_firmware_is_unfinished" <|
-            \_ ->
-                Expect.equal (Stopped unit rel (Unfinished "staged: needs firmware 0.4.2 (it installs at that firmware's next start)"))
-                    (steps
-                        [ Answered "status" old
-                        , PutDone (Said [] oldPut)
-                        , DfuDone Gone
-                        , DeviceIs Found
-                        , WriteDone WriteOk
-                        , BackDone (Ok (status "0.4.1 abcd1234" "NEW" "empty"))
-                        , PutDone (Said [] "OK staged: needs firmware 0.4.2")
-                        ]
-                        started
-                        |> Tuple.first
-                    )
-        , test "verdict_installed" <|
-            \_ -> Expect.equal (Installed (Update.readStatus [ "firmware 0.4.1 release", "build 0.4.1 abcd1234", "protocol 4", "state NEW", "bank2 open 0.4.1 abcd1234 seal=0123456789abcdef" ])) (Update.verdict rel new)
-        , test "verdict_needs_install" <|
-            \_ -> Expect.equal (NeedsInstall "bank2 empty") (Update.verdict rel (status "0.4.1 abcd1234" "NEW" "empty"))
+                Expect.equal [ Ready (Update.readStatus []) (Got rel), Running (Update.readStatus []) rel (Pre (PickingDevice AfterFlash)) ]
+                    [ Update.stage ready, Update.stage (hands [ Start, Go ] ready) ]
+        , describe "answers read strictly"
+            [ test "a_malformed_answer_is_an_error_not_no_answer" <|
+                \_ -> Expect.equal True (isGarbled (Update.decode (E.object [ ( "op", E.string "answer" ), ( "id", E.string "status" ) ])))
+            , test "ok_false_is_not_a_write_done" <|
+                \_ -> Expect.equal True (isGarbled (Update.decode (E.object [ ( "op", E.string "write" ), ( "ok", E.bool False ) ])))
+            , test "an_explicit_no_answer_is_one" <|
+                \_ -> Expect.equal (Answered TStatus NoAnswer) (Update.decode (E.object [ ( "op", E.string "answer" ), ( "id", E.string "status" ), ( "noAnswer", E.bool True ) ]))
+            , test "garbled_mid_run_stops_on_its_side_of_the_write" <|
+                \_ ->
+                    Expect.equal [ StoppedBefore unit rel (GarbledBefore "x"), StoppedAfter unit rel Staged (GarbledAfter "x") ]
+                        [ Update.stage (events [ Garbled "x" ] started), Update.stage (events [ Garbled "x" ] (flashed (Said [] "OK"))) ]
+            , test "a_mismatched_release_stops" <|
+                \_ -> Expect.equal (StoppedBefore unit rel (GarbledBefore "not it")) (Update.stage (events [ Answered TStatus old, Mismatch "not it" ] started))
+            ]
         ]

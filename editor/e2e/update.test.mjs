@@ -78,6 +78,9 @@ async function ready(opts = {}, serve = {}) {
   await page.evaluate(() => {
     window.__usb.mode.unopenable = false;
     delete window.__usb.mode.cutAfter;
+    delete window.__usb.mode.pickOther;
+    delete window.__usb.mode.failLeave;
+    window.__usb.removeOthers();
     // Each test reads its own writes: the log starts afresh.
     Object.assign(window.__usb.log, { commands: [], erased: [], writes: [], massErase: false, left: false });
   });
@@ -97,6 +100,13 @@ async function start() {
   await watchStages();
   await button("START UPDATE").click();
 }
+
+/** Whether the page holds a close or reload (its beforeunload prevented). */
+const held = () => page.evaluate(() => {
+  const e = new Event("beforeunload", { cancelable: true });
+  window.dispatchEvent(e);
+  return e.defaultPrevented;
+});
 
 const usbLog = () => page.evaluate(() => ({ ...window.__usb.log, image: null, bootloader: window.__usb.mem.subarray(0, 0x20000).every((b) => b === 0xb0) }));
 
@@ -282,5 +292,123 @@ describe("UPDATE from the browser", () => {
     assert.deepEqual(verbs, ["put /CHIMERA/SYSTEM/BANK2.BK2", "dfu", `flashed ${NEXT.bin.length}`, "put /CHIMERA/SYSTEM/BANK2.BK2", "bank2 install"]);
     assert.equal(fake.bank2, `open 0.4.1 abcd1234 seal=${NEXT.seal}`);
     await backToEditor("BACK TO THE EDITOR");
+  });
+
+  test("U9: a DFU device already there before `dfu` (an F4 board) is never taken; the new one is, and the tab is held meanwhile", async () => {
+    const fake = await ready();
+    await page.evaluate(() => (window.__other = window.__usb.addOther("@Internal Flash  /0x08000000/04*016Kg,01*064Kg,07*128Kg")));
+    await openUpdate();
+    assert.equal(await held(), false, "held before START");
+    await start();
+    await until("the copy under way", async () => /COPYING|RESTARTING|WRITING|INSTALLING/.test(await meta()), 10000);
+    assert.equal(await held(), true, "a close or reload not held mid-update");
+    await until("DONE", async () => (await meta()) === "DONE", UPDATE_WAIT);
+    assert.equal(await held(), false, "still held once DONE");
+    assert.equal(await page.evaluate(() => window.__other.sent), 0, "the board that was there before was written to");
+    assert.equal(fake.build, "0.4.1 abcd1234");
+    await backToEditor("BACK TO THE EDITOR");
+  });
+
+  test("U10: a picked device that was there before `dfu` is refused; WRITE AGAIN picks the right one", async () => {
+    const fake = await ready();
+    await page.evaluate(() => {
+      window.__usb.revoke();
+      window.__other = window.__usb.addOther("@Internal Flash  /0x08000000/16*128Kg");
+      window.__usb.mode.pickOther = true;
+    });
+    await openUpdate();
+    await start();
+    await button("CHOOSE UPDATE DEVICE").waitFor({ timeout: 20000 });
+    await button("CHOOSE UPDATE DEVICE").click();
+    await until("the refusal", async () => /ISN'T THE UNIT'S UPDATE DEVICE/.test(await said()), 10000);
+    assert.match(await said(), /already there before/);
+    assert.match(await said(), /Nothing has been written/);
+    assert.equal(await page.evaluate(() => window.__other.sent), 0);
+    await page.evaluate(() => delete window.__usb.mode.pickOther);
+    await button("WRITE AGAIN").click();
+    await until("DONE", async () => (await meta()) === "DONE", UPDATE_WAIT);
+    assert.equal(fake.build, "0.4.1 abcd1234");
+    await backToEditor("BACK TO THE EDITOR");
+  });
+
+  test("U11: no answer to `dfu`: it may be in update mode; CHOOSE UPDATE DEVICE goes on", async () => {
+    const fake = await ready({ dfuSilent: true });
+    await openUpdate();
+    await start();
+    await until("the silence said", async () => /DIDN'T ANSWER THE REQUEST FOR UPDATE MODE/.test(await said()), UPDATE_WAIT);
+    for (const want of [/screen dark/, /Nothing has been flashed yet/, /button 2 \(DFU Mode\)/, /button 3 \(SD card access\)/]) assert.match(await said(), want);
+    // The hand sees the dark screen (the DFU device up), then picks it.
+    await until("the DFU device up", () => page.evaluate(() => window.__usb.present()), 10000);
+    await button("CHOOSE UPDATE DEVICE").click();
+    await until("DONE", async () => (await meta()) === "DONE", UPDATE_WAIT);
+    assert.equal(fake.build, "0.4.1 abcd1234");
+    await backToEditor("BACK TO THE EDITOR");
+  });
+
+  test("U12: the leave fails: firmware written, the unit didn't restart; a power cycle and CHECK AGAIN finish it", async () => {
+    const fake = await ready();
+    await page.evaluate(() => (window.__usb.mode.failLeave = true));
+    await openUpdate();
+    await start();
+    await until("the stop", async () => /DIDN'T RESTART BY ITSELF/.test(await said()), UPDATE_WAIT);
+    const text = await said();
+    assert.doesNotMatch(text, /CUT OFF|Nothing was flashed/);
+    assert.match(text, /Switch the unit off and on/);
+    fake.powerCycle(NEXT.bin);
+    await button("CHECK AGAIN").click();
+    await until("DONE", async () => (await meta()) === "DONE", UPDATE_WAIT);
+    await backToEditor("BACK TO THE EDITOR");
+  });
+
+  test("U13: TRY AGAIN after the flash asks the unit, never says nothing was flashed", async () => {
+    const fake = await ready();
+    await openUpdate();
+    await start();
+    // The unit back, but its first boot left bank 2 refused: unfinished.
+    const flashed = fake.flashed.bind(fake);
+    fake.flashed = (img) => {
+      flashed(img);
+      fake.bank2 = "slot foreign mixer";
+    };
+    await until("the stop", async () => /UPDATE ISN'T FINISHED/.test(await said()), UPDATE_WAIT);
+    assert.doesNotMatch(await said(), /Nothing was flashed/);
+    fake.bank2 = `open 0.4.1 abcd1234 seal=${NEXT.seal}`;
+    const asked = fake.log.length;
+    await button("TRY AGAIN").click();
+    await until("DONE", async () => (await meta()) === "DONE", UPDATE_WAIT);
+    assert.equal(fake.log.slice(asked).some((l) => /^(put|dfu)/.test(l)), false, "TRY AGAIN after the flash started over");
+    await backToEditor("BACK TO THE EDITOR");
+  });
+
+  test("U14: a unit stuck in update mode: FINISH THE UPDATE on the connect page writes it and installs", async () => {
+    const fake = await ready({ bank2: "empty" });
+    // The unit left in update mode: its console gone, its DFU device up.
+    bridge.down = true;
+    bridge.hangUp();
+    await page.evaluate(() => window.__usb.plug());
+    const stuck = page.getByRole("button", { name: "UNIT STUCK IN UPDATE MODE? FINISH THE UPDATE" });
+    await stuck.waitFor({ timeout: 10000 });
+    await stuck.click();
+    await until("the panel", async () => (await meta()) === "READY", 10000);
+    await button("FINISH THE UPDATE…").click();
+    await button("FINISH THE UPDATE").click();
+    await button("CHOOSE UPDATE DEVICE").click();
+    await until("DONE", async () => (await meta()) === "DONE", UPDATE_WAIT);
+    assert.equal(fake.build, "0.4.1 abcd1234");
+    assert.equal(fake.bank2, `open 0.4.1 abcd1234 seal=${NEXT.seal}`);
+    await backToEditor("BACK TO THE EDITOR");
+  });
+
+  test("U15: an older release is a DOWNGRADE, with its warning", async () => {
+    await ready({ build: "0.5.0 99999999", bank2: "open 0.5.0 99999999 seal=ffffffffffffffff" });
+    await openUpdate();
+    const text = await said();
+    assert.match(text, /OLDER than what the unit runs/);
+    assert.doesNotMatch(text, /An update is ready/);
+    await button("DOWNGRADE…").click();
+    await button("START UPDATE").waitFor();
+    assert.match(await said(), /THIS IS A DOWNGRADE/);
+    await button("CANCEL").click();
+    await backToEditor();
   });
 });

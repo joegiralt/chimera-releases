@@ -6,10 +6,13 @@ port module Update exposing
     , Bk2(..)
     , Device(..)
     , Event(..)
-    , Failure(..)
     , Model
     , Msg(..)
     , Offer(..)
+    , PostFail(..)
+    , PostRun(..)
+    , PreFail(..)
+    , PreRun(..)
     , Progress
     , Release
     , ReleaseState(..)
@@ -17,11 +20,17 @@ port module Update exposing
     , Run(..)
     , Source(..)
     , Stage(..)
+    , Ticket(..)
     , UnitNow
     , Verdict(..)
+    , Version
     , WriteResult(..)
     , begin
+    , beginStuck
+    , decode
+    , holding
     , offer
+    , parseVersion
     , readStatus
     , stage
     , step
@@ -39,15 +48,18 @@ came of it.
   - **Checking:** `status`; a project with unsaved changes stops it, nothing written.
   - **Copying:** `CHIMERA.BK2` put onto the card (`/CHIMERA/SYSTEM/BANK2.BK2`).
     Firmware from before bank 2 refuses the path: the .bk2 then goes after the flash.
-  - **Restarting into update mode:** `dfu`; the unit comes back as the STM32 loader's DFU device.
+  - **Restarting into update mode:** `dfu`; the one STM32 DFU device that
+    comes up after it (never one that was there before).
   - **Writing:** `CHIMERA.BIN` at 0x08020000 (`dfu.js`), then the leave that starts it.
   - **Installing:** the console back, the new firmware running, bank 2 open
     with this release's seal; else `bank2 install` (the .bk2 put first,
     after an older firmware), its restart, and `status` once more.
 
-A stop anywhere says what happened and the way out, in plain words: before
-the write, nothing changed; during or after it, how to finish from the
-bootloader, which is never touched.
+Whether the write has started is in the type: a `Run` is `Pre` (nothing
+written to the flash), `Writing`, or `Post` (the firmware area written),
+and a stop is a `PreFail` or a `PostFail`. Only a `PreFail` can say
+nothing was flashed; a `PostFail`'s way on always asks the unit what it
+runs now.
 
 -}
 
@@ -75,9 +87,9 @@ port updateIn : (D.Value -> msg) -> Sub msg
 -- WHAT THE UNIT AND THE RELEASE ARE
 
 
-{-| The unit as `status` says it: its `build` line's version and hash
-(`0.4.0 de07edf9`), whether the project has unsaved changes, its bank 2
-line (`open 0.4.0 de07edf9 seal=…`). A unit that didn't answer says none.
+{-| The unit as `status` says it: its `build` line (`0.4.0 de07edf9`),
+whether the project has unsaved changes, its bank 2 line (`open 0.4.0
+de07edf9 seal=…`). A unit that didn't answer says none.
 -}
 type alias UnitNow =
     { build : Maybe String
@@ -86,16 +98,43 @@ type alias UnitNow =
     }
 
 
-{-| Where the files came from: the site's copy of the latest release, or
-files the user chose.
+{-| A version as a release names it, `0.4.1 abcd1234`: compared by its
+numbers, its build hash telling two builds of one version apart.
 -}
+type alias Version =
+    { major : Int, minor : Int, patch : Int, build : String }
+
+
+parseVersion : String -> Maybe Version
+parseVersion s =
+    case String.words (trimPlus s) of
+        [ numbers, build ] ->
+            case List.map String.toInt (String.split "." numbers) of
+                [ Just major, Just minor, Just patch ] ->
+                    Just { major = major, minor = minor, patch = patch, build = build }
+
+                _ ->
+                    Nothing
+
+        [] ->
+            Nothing
+
+        [ _ ] ->
+            Nothing
+
+        _ :: _ :: _ :: _ ->
+            Nothing
+
+
 type Source
     = Latest
     | Chosen
 
 
 {-| A pair checked against its SHA256SUMS and as one build (`update.js`):
-the .bk2's version (`0.4.1 abcd1234`), its seal, its format, the sizes.
+the .bk2's version (`0.4.1 abcd1234`), its seal, its format, the sizes,
+and each file's SHA-256, which every write names so the bytes written are
+the ones confirmed.
 -}
 type alias Release =
     { version : String
@@ -103,6 +142,8 @@ type alias Release =
     , format : Int
     , binSize : Int
     , bk2Size : Int
+    , binSha : String
+    , bk2Sha : String
     , source : Source
     }
 
@@ -124,70 +165,117 @@ type alias Progress =
     { done : Int, total : Int }
 
 
-{-| A running update's step.
+{-| Before anything is written to the firmware area.
 -}
-type Run
+type PreRun
     = Checking
     | Copying Progress
     | EnteringDfu Bk2
     | FindingDevice Bk2
-      -- The browser asks once which device: a click. True: a pick came back empty.
-    | PickingDevice Bk2 Bool
-    | Writing Bk2 Progress
-    | Restarting Bk2
+      -- The browser asks which device: a click.
+    | PickingDevice Bk2
+
+
+{-| After the firmware area was written.
+-}
+type PostRun
+    = Restarting
     | CopyingLate Progress
     | Installing Int
     | RestartingAfterInstall
     | Verifying
 
 
-{-| Why an update stopped, and so the way out.
+type Run
+    = Pre PreRun
+    | Writing Bk2 Progress
+    | Post Bk2 PostRun
+
+
+{-| A stop before the write: the flash is as it was.
 -}
-type Failure
-    = -- Nothing written.
-      Unsaved
+type PreFail
+    = Unsaved
     | NothingFlashed String
-      -- In update mode; nothing written yet.
+      -- `dfu` unanswered: the unit may be in update mode, its screen dark.
+    | DfuSilent Bk2
+      -- In update mode, nothing written: no device picked, the wrong one, one that won't open, a guard.
+    | PickCancelled Bk2
+    | WrongDevice Bk2 String
     | CantOpen Bk2
-    | Guarded String
-      -- The firmware area half written.
-    | WriteCut Bk2 String
-      -- The firmware written; the rest not confirmed.
-    | NotBack Bk2 String
+    | Guarded Bk2 String
+    | GarbledBefore String
+
+
+{-| A stop once the write started: the firmware area is not what it was.
+-}
+type PostFail
+    = WriteCut String
+    | LeaveFailed String
+    | NotBack String
     | Unfinished String
+    | GarbledAfter String
 
 
 type Stage
     = Opening
     | Reading (Maybe UnitNow) ReleaseState
     | Ready UnitNow ReleaseState
+      -- CHOOSE FILES' chooser open; what was there before, for a cancel.
+    | Choosing UnitNow ReleaseState
     | Confirm UnitNow Release
     | Running UnitNow Release Run
     | Done UnitNow Release UnitNow
-    | Stopped UnitNow Release Failure
+    | StoppedBefore UnitNow Release PreFail
+    | StoppedAfter UnitNow Release Bk2 PostFail
     | NoLink
     | Closing
 
 
+{-| Opened on a connected unit, or for a unit already sitting in update
+mode (the connect page's FINISH THE UPDATE): no console to ask first.
+-}
+type Mode
+    = Connected
+    | Stuck
+
+
+type alias Fields =
+    { stage : Stage, windows : Bool, webusb : Bool, mode : Mode }
+
+
 type Model
-    = Model { stage : Stage, windows : Bool, webusb : Bool }
+    = Model Fields
 
 
 
 -- WHAT GOES TO update.js, AND WHAT COMES BACK
 
 
+{-| Which request a console answer belongs to.
+-}
+type Ticket
+    = TStatus
+    | TPut
+    | TDfu
+    | TInstall
+    | TVerify
+
+
 type Request
     = Begin
     | FetchLatest
     | ChooseFiles
-    | Ask String Int
-    | Put
+      -- The ticket, the line, the first byte's wait (ms), a delay before it (ms).
+    | Ask Ticket String Int Int
+    | Put Release
     | Dfu
     | FindDevice Int
     | PickDevice
-    | Write
+    | Write Release
     | Back Int Bool
+    | PickPort
+    | Hold Bool
     | End
 
 
@@ -202,29 +290,36 @@ type Answer
 type Device
     = Found
     | NotFound
+    | Cancelled
+    | Wrong String
     | NoWebUsb
 
 
+{-| A write's outcome; `Bool`: whether it had started (an erase sent).
+-}
 type WriteResult
     = WriteOk
     | Unopenable
-    | Cut String
-    | Refused String
+    | Cut Bool String
+    | Refused Bool String
     | GuardRefused String
+    | LeaveFail String
 
 
 type Event
     = Begun { open : Bool, webusb : Bool, windows : Bool }
     | ReleaseIs (Result String Release)
-    | Answered String Answer
+    | ReleaseCancelled
+    | Answered Ticket Answer
     | Copied Progress
-    | PutDone Answer
-    | DfuDone Answer
-    | DeviceIs Device
     | Written Progress
+    | DeviceIs Device
     | WriteDone WriteResult
     | BackDone (Result String Answer)
+    | Mismatch String
     | Ended String
+      -- What `update.js` said and this editor can't read.
+    | Garbled String
 
 
 type Msg
@@ -237,6 +332,7 @@ type Msg
     | WriteAgain
     | CheckAgain
     | TryAgain
+    | ConnectPort
     | Close
 
 
@@ -244,12 +340,20 @@ type Msg
 -- STEPS
 
 
-{-| The panel opening: the link taken from the editor, `status`, and the
-site's latest release.
+{-| The panel opening on a connected unit: the link taken from the editor,
+`status`, and the site's latest release.
 -}
 begin : ( Model, Cmd msg )
 begin =
-    ( Model { stage = Opening, windows = False, webusb = True }, send [ Begin ] )
+    ( Model { stage = Opening, windows = False, webusb = True, mode = Connected }, send [ Begin ] )
+
+
+{-| For a unit already in update mode: the release only; its DFU device
+is picked by hand, then the normal install once the console comes back.
+-}
+beginStuck : ( Model, Cmd msg )
+beginStuck =
+    ( Model { stage = Opening, windows = False, webusb = True, mode = Stuck }, send [ Begin ] )
 
 
 stage : Model -> Stage
@@ -263,86 +367,136 @@ subscriptions =
 
 
 {-| A message in; the model, what to send, and the link's state once the
-update has given it back (the editor then starts over).
+update has given it back (the editor then starts over). The tab is held
+(the browser asks before a close or reload) while an update writes or
+waits on a restart.
 -}
 update : Msg -> Model -> ( Model, Cmd Msg, Maybe String )
 update msg model =
     let
-        ( next, reqs ) =
+        e : Maybe Event
+        e =
             case msg of
                 FromJs v ->
-                    case D.decodeValue event v of
-                        Ok e ->
-                            step e model
-
-                        Err _ ->
-                            ( model, [] )
+                    Just (decode v)
 
                 Choose ->
-                    hand msg model
-
-                Start ->
-                    hand msg model
-
-                Go ->
-                    hand msg model
-
-                Cancel ->
-                    hand msg model
-
-                Pick ->
-                    hand msg model
-
-                WriteAgain ->
-                    hand msg model
-
-                CheckAgain ->
-                    hand msg model
-
-                TryAgain ->
-                    hand msg model
-
-                Close ->
-                    hand msg model
-    in
-    ( next
-    , send reqs
-    , case msg of
-        FromJs v ->
-            case D.decodeValue event v of
-                Ok (Ended l) ->
-                    Just l
-
-                _ ->
                     Nothing
 
-        Choose ->
+                Start ->
+                    Nothing
+
+                Go ->
+                    Nothing
+
+                Cancel ->
+                    Nothing
+
+                Pick ->
+                    Nothing
+
+                WriteAgain ->
+                    Nothing
+
+                CheckAgain ->
+                    Nothing
+
+                TryAgain ->
+                    Nothing
+
+                ConnectPort ->
+                    Nothing
+
+                Close ->
+                    Nothing
+
+        ( next, reqs ) =
+            case e of
+                Just ev ->
+                    step ev model
+
+                Nothing ->
+                    hand msg model
+
+        held : List Request
+        held =
+            if holding next /= holding model then
+                [ Hold (holding next) ]
+
+            else
+                []
+    in
+    ( next, send (held ++ reqs), Maybe.andThen endedLink e )
+
+
+endedLink : Event -> Maybe String
+endedLink e =
+    case e of
+        Ended l ->
+            Just l
+
+        Begun _ ->
             Nothing
 
-        Start ->
+        ReleaseIs _ ->
             Nothing
 
-        Go ->
+        ReleaseCancelled ->
             Nothing
 
-        Cancel ->
+        Answered _ _ ->
             Nothing
 
-        Pick ->
+        Copied _ ->
             Nothing
 
-        WriteAgain ->
+        Written _ ->
             Nothing
 
-        CheckAgain ->
+        DeviceIs _ ->
             Nothing
 
-        TryAgain ->
+        WriteDone _ ->
             Nothing
 
-        Close ->
+        BackDone _ ->
             Nothing
-    )
+
+        Mismatch _ ->
+            Nothing
+
+        Garbled _ ->
+            Nothing
+
+
+{-| Whether the tab is held: while anything past CHECKING runs.
+-}
+holding : Model -> Bool
+holding (Model m) =
+    case runningOf m.stage of
+        Just ( _, _, Pre Checking ) ->
+            False
+
+        Just ( _, _, Pre (Copying _) ) ->
+            True
+
+        Just ( _, _, Pre (EnteringDfu _) ) ->
+            True
+
+        Just ( _, _, Pre (FindingDevice _) ) ->
+            True
+
+        Just ( _, _, Pre (PickingDevice _) ) ->
+            True
+
+        Just ( _, _, Writing _ _ ) ->
+            True
+
+        Just ( _, _, Post _ _ ) ->
+            True
+
+        Nothing ->
+            False
 
 
 send : List Request -> Cmd msg
@@ -355,247 +509,884 @@ send reqs =
 hand : Msg -> Model -> ( Model, List Request )
 hand msg ((Model m) as model) =
     let
-        to : Stage -> Model
-        to s =
-            Model { m | stage = s }
+        ignore : ( Model, List Request )
+        ignore =
+            ( model, [] )
+
+        go : Stage -> List Request -> ( Model, List Request )
+        go s reqs =
+            ( Model { m | stage = s }, reqs )
+
+        pickAgain : ( UnitNow, Release, PreFail ) -> ( Model, List Request )
+        pickAgain ( u, r, f ) =
+            case inUpdateMode f of
+                Just b ->
+                    go (Running u r (Pre (PickingDevice b))) [ PickDevice ]
+
+                Nothing ->
+                    ignore
     in
-    case ( msg, m.stage ) of
-        ( Choose, Ready u _ ) ->
-            ( to (Ready u Fetching), [ ChooseFiles ] )
+    case msg of
+        FromJs _ ->
+            ignore
 
-        ( Start, Ready u (Got r) ) ->
-            ( to (Confirm u r), [] )
+        Choose ->
+            case readyOf m.stage of
+                Just ( u, rel ) ->
+                    go (Choosing u rel) [ ChooseFiles ]
 
-        ( Go, Confirm u r ) ->
-            ( to (Running u r Checking), [ Ask "status" 2000 ] )
+                Nothing ->
+                    ignore
 
-        ( Cancel, Confirm u r ) ->
-            ( to (Ready u (Got r)), [] )
+        Start ->
+            case readyOf m.stage of
+                Just ( u, Got r ) ->
+                    go (Confirm u r) []
 
-        ( Pick, Running u r (PickingDevice b _) ) ->
-            ( to (Running u r (PickingDevice b False)), [ PickDevice ] )
+                Just ( _, Fetching ) ->
+                    ignore
 
-        ( WriteAgain, Stopped u r (CantOpen b) ) ->
-            ( to (Running u r (FindingDevice b)), [ FindDevice 3 ] )
+                Just ( _, Missing _ ) ->
+                    ignore
 
-        ( WriteAgain, Stopped u r (WriteCut b _) ) ->
-            ( to (Running u r (FindingDevice b)), [ FindDevice 3 ] )
+                Nothing ->
+                    ignore
 
-        ( CheckAgain, Stopped u r (NotBack b _) ) ->
-            ( to (Running u r (Restarting b)), [ Back 120 False ] )
+        Go ->
+            case confirmOf m.stage of
+                Just ( u, r ) ->
+                    case m.mode of
+                        Connected ->
+                            go (Running u r (Pre Checking)) [ status TStatus 0 ]
 
-        ( TryAgain, Stopped u r _ ) ->
-            ( to (Running u r Checking), [ Ask "status" 2000 ] )
+                        -- Already in update mode: the device first (a click).
+                        Stuck ->
+                            go (Running u r (Pre (PickingDevice AfterFlash))) []
 
-        ( Close, Running _ _ _ ) ->
-            -- Never mid-update: the page has no CLOSE then.
-            ( model, [] )
+                Nothing ->
+                    ignore
 
-        ( Close, Closing ) ->
-            ( model, [] )
+        Cancel ->
+            case ( confirmOf m.stage, pickingOf m.stage ) of
+                ( Just ( u, r ), _ ) ->
+                    go (Ready u (Got r)) []
 
-        ( Close, _ ) ->
-            ( to Closing, [ End ] )
+                ( Nothing, Just ( u, r, b ) ) ->
+                    go (StoppedBefore u r (PickCancelled b)) []
 
-        _ ->
-            ( model, [] )
+                ( Nothing, Nothing ) ->
+                    ignore
+
+        Pick ->
+            case ( pickingOf m.stage, stoppedBeforeOf m.stage ) of
+                ( Just _, _ ) ->
+                    ( model, [ PickDevice ] )
+
+                ( Nothing, Just stopped ) ->
+                    pickAgain stopped
+
+                ( Nothing, Nothing ) ->
+                    ignore
+
+        -- The click is the chooser's gesture: the device is picked again.
+        WriteAgain ->
+            case ( stoppedBeforeOf m.stage, stoppedAfterOf m.stage ) of
+                ( Just stopped, _ ) ->
+                    pickAgain stopped
+
+                ( Nothing, Just ( u, r, ( b, WriteCut _ ) ) ) ->
+                    go (Running u r (Pre (PickingDevice b))) [ PickDevice ]
+
+                ( Nothing, Just ( _, _, ( _, LeaveFailed _ ) ) ) ->
+                    ignore
+
+                ( Nothing, Just ( _, _, ( _, NotBack _ ) ) ) ->
+                    ignore
+
+                ( Nothing, Just ( _, _, ( _, Unfinished _ ) ) ) ->
+                    ignore
+
+                ( Nothing, Just ( _, _, ( _, GarbledAfter _ ) ) ) ->
+                    ignore
+
+                ( Nothing, Nothing ) ->
+                    ignore
+
+        -- After the write, both ask the unit what it runs now: the link
+        -- opened again, `status`, and the install from there.
+        CheckAgain ->
+            afterAgain m.stage |> Maybe.map (\( s, reqs ) -> go s reqs) |> Maybe.withDefault ignore
+
+        TryAgain ->
+            case stoppedBeforeOf m.stage of
+                Just ( u, r, f ) ->
+                    case f of
+                        Unsaved ->
+                            go (Running u r (Pre Checking)) [ status TStatus 0 ]
+
+                        NothingFlashed _ ->
+                            go (Running u r (Pre Checking)) [ status TStatus 0 ]
+
+                        GarbledBefore _ ->
+                            go (Running u r (Pre Checking)) [ status TStatus 0 ]
+
+                        DfuSilent _ ->
+                            go (Running u r (Pre Checking)) [ status TStatus 0 ]
+
+                        PickCancelled _ ->
+                            ignore
+
+                        WrongDevice _ _ ->
+                            ignore
+
+                        CantOpen _ ->
+                            ignore
+
+                        Guarded _ _ ->
+                            ignore
+
+                Nothing ->
+                    afterAgain m.stage |> Maybe.map (\( s, reqs ) -> go s reqs) |> Maybe.withDefault ignore
+
+        ConnectPort ->
+            case stoppedAfterOf m.stage of
+                Just ( u, r, ( b, _ ) ) ->
+                    go (Running u r (Post b Restarting)) [ PickPort, Back 120 False ]
+
+                Nothing ->
+                    ignore
+
+        Close ->
+            let
+                closing : ( Model, List Request )
+                closing =
+                    go Closing [ End ]
+            in
+            case m.stage of
+                -- Never mid-update: the page has no CLOSE then.
+                Running _ _ _ ->
+                    ignore
+
+                Closing ->
+                    ignore
+
+                Choosing _ _ ->
+                    ignore
+
+                Opening ->
+                    closing
+
+                Reading _ _ ->
+                    closing
+
+                Ready _ _ ->
+                    closing
+
+                Confirm _ _ ->
+                    closing
+
+                Done _ _ _ ->
+                    closing
+
+                StoppedBefore _ _ _ ->
+                    closing
+
+                StoppedAfter _ _ _ _ ->
+                    closing
+
+                NoLink ->
+                    closing
 
 
-{-| What came back from `update.js`, against where the update is: an
-answer the step isn't waiting for changes nothing.
+{-| A stop after the write, asked again: the unit's own state decides.
+-}
+afterAgain : Stage -> Maybe ( Stage, List Request )
+afterAgain s =
+    stoppedAfterOf s
+        |> Maybe.andThen
+            (\( u, r, ( b, f ) ) ->
+                case f of
+                    WriteCut _ ->
+                        Nothing
+
+                    LeaveFailed _ ->
+                        Just ( Running u r (Post b Restarting), [ Back 120 False ] )
+
+                    NotBack _ ->
+                        Just ( Running u r (Post b Restarting), [ Back 120 False ] )
+
+                    Unfinished _ ->
+                        Just ( Running u r (Post b Restarting), [ Back 120 False ] )
+
+                    GarbledAfter _ ->
+                        Just ( Running u r (Post b Restarting), [ Back 120 False ] )
+            )
+
+
+{-| A stop that left the unit in update mode with nothing written: its DFU
+device can be picked again.
+-}
+inUpdateMode : PreFail -> Maybe Bk2
+inUpdateMode f =
+    case f of
+        DfuSilent b ->
+            Just b
+
+        PickCancelled b ->
+            Just b
+
+        WrongDevice b _ ->
+            Just b
+
+        CantOpen b ->
+            Just b
+
+        Guarded b _ ->
+            Just b
+
+        Unsaved ->
+            Nothing
+
+        NothingFlashed _ ->
+            Nothing
+
+        GarbledBefore _ ->
+            Nothing
+
+
+readyOf : Stage -> Maybe ( UnitNow, ReleaseState )
+readyOf s =
+    case s of
+        Ready u rel ->
+            Just ( u, rel )
+
+        Opening ->
+            Nothing
+
+        Reading _ _ ->
+            Nothing
+
+        Choosing _ _ ->
+            Nothing
+
+        Confirm _ _ ->
+            Nothing
+
+        Running _ _ _ ->
+            Nothing
+
+        Done _ _ _ ->
+            Nothing
+
+        StoppedBefore _ _ _ ->
+            Nothing
+
+        StoppedAfter _ _ _ _ ->
+            Nothing
+
+        NoLink ->
+            Nothing
+
+        Closing ->
+            Nothing
+
+
+confirmOf : Stage -> Maybe ( UnitNow, Release )
+confirmOf s =
+    case s of
+        Confirm u r ->
+            Just ( u, r )
+
+        Opening ->
+            Nothing
+
+        Reading _ _ ->
+            Nothing
+
+        Ready _ _ ->
+            Nothing
+
+        Choosing _ _ ->
+            Nothing
+
+        Running _ _ _ ->
+            Nothing
+
+        Done _ _ _ ->
+            Nothing
+
+        StoppedBefore _ _ _ ->
+            Nothing
+
+        StoppedAfter _ _ _ _ ->
+            Nothing
+
+        NoLink ->
+            Nothing
+
+        Closing ->
+            Nothing
+
+
+pickingOf : Stage -> Maybe ( UnitNow, Release, Bk2 )
+pickingOf s =
+    case runningOf s of
+        Just ( u, r, Pre (PickingDevice b) ) ->
+            Just ( u, r, b )
+
+        Just ( _, _, Pre Checking ) ->
+            Nothing
+
+        Just ( _, _, Pre (Copying _) ) ->
+            Nothing
+
+        Just ( _, _, Pre (EnteringDfu _) ) ->
+            Nothing
+
+        Just ( _, _, Pre (FindingDevice _) ) ->
+            Nothing
+
+        Just ( _, _, Writing _ _ ) ->
+            Nothing
+
+        Just ( _, _, Post _ _ ) ->
+            Nothing
+
+        Nothing ->
+            Nothing
+
+
+runningOf : Stage -> Maybe ( UnitNow, Release, Run )
+runningOf s =
+    case s of
+        Running u r run ->
+            Just ( u, r, run )
+
+        Opening ->
+            Nothing
+
+        Reading _ _ ->
+            Nothing
+
+        Ready _ _ ->
+            Nothing
+
+        Choosing _ _ ->
+            Nothing
+
+        Confirm _ _ ->
+            Nothing
+
+        Done _ _ _ ->
+            Nothing
+
+        StoppedBefore _ _ _ ->
+            Nothing
+
+        StoppedAfter _ _ _ _ ->
+            Nothing
+
+        NoLink ->
+            Nothing
+
+        Closing ->
+            Nothing
+
+
+stoppedBeforeOf : Stage -> Maybe ( UnitNow, Release, PreFail )
+stoppedBeforeOf s =
+    case s of
+        StoppedBefore u r f ->
+            Just ( u, r, f )
+
+        Opening ->
+            Nothing
+
+        Reading _ _ ->
+            Nothing
+
+        Ready _ _ ->
+            Nothing
+
+        Choosing _ _ ->
+            Nothing
+
+        Confirm _ _ ->
+            Nothing
+
+        Running _ _ _ ->
+            Nothing
+
+        Done _ _ _ ->
+            Nothing
+
+        StoppedAfter _ _ _ _ ->
+            Nothing
+
+        NoLink ->
+            Nothing
+
+        Closing ->
+            Nothing
+
+
+stoppedAfterOf : Stage -> Maybe ( UnitNow, Release, ( Bk2, PostFail ) )
+stoppedAfterOf s =
+    case s of
+        StoppedAfter u r b f ->
+            Just ( u, r, ( b, f ) )
+
+        Opening ->
+            Nothing
+
+        Reading _ _ ->
+            Nothing
+
+        Ready _ _ ->
+            Nothing
+
+        Choosing _ _ ->
+            Nothing
+
+        Confirm _ _ ->
+            Nothing
+
+        Running _ _ _ ->
+            Nothing
+
+        Done _ _ _ ->
+            Nothing
+
+        StoppedBefore _ _ _ ->
+            Nothing
+
+        NoLink ->
+            Nothing
+
+        Closing ->
+            Nothing
+
+
+{-| An event, as one record of what it carries: each step reads only the
+field it waits for, so an answer it isn't waiting for changes nothing.
+-}
+type alias In =
+    { begun : Maybe { open : Bool, webusb : Bool, windows : Bool }
+    , release : Maybe (Result String Release)
+    , cancelled : Bool
+    , answer : Maybe ( Ticket, Answer )
+    , copied : Maybe Progress
+    , written : Maybe Progress
+    , device : Maybe Device
+    , write : Maybe WriteResult
+    , back : Maybe (Result String Answer)
+    , broken : Maybe String
+    }
+
+
+classify : Event -> In
+classify e =
+    let
+        none : In
+        none =
+            { begun = Nothing, release = Nothing, cancelled = False, answer = Nothing, copied = Nothing, written = Nothing, device = Nothing, write = Nothing, back = Nothing, broken = Nothing }
+    in
+    case e of
+        Begun b ->
+            { none | begun = Just b }
+
+        ReleaseIs r ->
+            { none | release = Just r }
+
+        ReleaseCancelled ->
+            { none | cancelled = True }
+
+        Answered t a ->
+            { none | answer = Just ( t, a ) }
+
+        Copied p ->
+            { none | copied = Just p }
+
+        Written p ->
+            { none | written = Just p }
+
+        DeviceIs d ->
+            { none | device = Just d }
+
+        WriteDone w ->
+            { none | write = Just w }
+
+        BackDone b ->
+            { none | back = Just b }
+
+        Mismatch why ->
+            { none | broken = Just why }
+
+        Garbled why ->
+            { none | broken = Just why }
+
+        Ended _ ->
+            none
+
+
+answerFor : Ticket -> In -> Maybe Answer
+answerFor t i =
+    i.answer
+        |> Maybe.andThen
+            (\( got, a ) ->
+                if got == t then
+                    Just a
+
+                else
+                    Nothing
+            )
+
+
+{-| What came back from `update.js`, against where the update is.
 -}
 step : Event -> Model -> ( Model, List Request )
 step e ((Model m) as model) =
     let
-        to : Stage -> Model
+        i : In
+        i =
+            classify e
+
+        ignore : ( Model, List Request )
+        ignore =
+            ( model, [] )
+
+        to : Stage -> ( Model, List Request )
         to s =
-            Model { m | stage = s }
-
-        running : UnitNow -> Release -> Run -> Model
-        running u r =
-            Running u r >> to
-
-        stop : UnitNow -> Release -> Failure -> ( Model, List Request )
-        stop u r f =
-            ( to (Stopped u r f), [] )
+            ( Model { m | stage = s }, [] )
     in
-    case ( e, m.stage ) of
-        ( Begun b, Opening ) ->
-            if b.open then
-                ( Model { m | stage = Reading Nothing Fetching, windows = b.windows, webusb = b.webusb }, [ Ask "status" 2000, FetchLatest ] )
+    case m.stage of
+        Opening ->
+            case i.begun of
+                Just b ->
+                    let
+                        fields : Fields
+                        fields =
+                            { m | windows = b.windows, webusb = b.webusb }
+                    in
+                    case ( m.mode, b.open ) of
+                        ( Stuck, _ ) ->
+                            ( Model { fields | stage = Reading (Just (readStatus [])) Fetching }, [ FetchLatest ] )
 
-            else
-                ( Model { m | stage = NoLink, windows = b.windows, webusb = b.webusb }, [] )
+                        ( Connected, True ) ->
+                            ( Model { fields | stage = Reading Nothing Fetching }, [ status TStatus 0, FetchLatest ] )
 
-        ( Answered "status" a, Reading Nothing rel ) ->
-            reading (Just (unitOf a)) rel m
+                        ( Connected, False ) ->
+                            ( Model { fields | stage = NoLink }, [] )
 
-        ( ReleaseIs r, Reading u Fetching ) ->
-            reading u (releaseState r) m
+                Nothing ->
+                    ignore
 
-        ( ReleaseIs r, Ready u Fetching ) ->
-            ( to (Ready u (releaseState r)), [] )
+        Reading u rel ->
+            case ( answerFor TStatus i, i.release ) of
+                ( Just a, _ ) ->
+                    reading (Just (unitOf a)) rel m
 
-        -- CHECKING: unsaved changes stop it; a unit too old to say goes on, as the script does.
-        ( Answered "status" a, Running u r Checking ) ->
-            case a of
-                Gone ->
-                    stop u r (NothingFlashed "The unit was disconnected")
+                ( Nothing, Just r ) ->
+                    reading u (releaseState r) m
 
-                Said _ _ ->
-                    if (unitOf a).modified then
-                        stop u r Unsaved
+                ( Nothing, Nothing ) ->
+                    ignore
 
-                    else
-                        ( running u r (Copying { done = 0, total = r.bk2Size }), [ Put ] )
+        Choosing u prev ->
+            case ( i.release, i.cancelled ) of
+                ( Just r, _ ) ->
+                    to (Ready u (releaseState r))
 
-                NoAnswer ->
-                    ( running u r (Copying { done = 0, total = r.bk2Size }), [ Put ] )
+                -- A cancelled chooser keeps what was there.
+                ( Nothing, True ) ->
+                    to (Ready u prev)
 
-        ( Copied p, Running u r (Copying _) ) ->
-            ( running u r (Copying p), [] )
+                ( Nothing, False ) ->
+                    ignore
 
-        ( PutDone a, Running u r (Copying _) ) ->
-            case staging r a of
-                Ok b ->
-                    ( running u r (EnteringDfu b), [ Dfu ] )
+        Running u r run ->
+            case i.broken of
+                Just why ->
+                    -- Fail closed: a step that can't read its answer stops,
+                    -- on the side of the write it is on.
+                    case run of
+                        Pre _ ->
+                            to (StoppedBefore u r (GarbledBefore why))
 
-                Err why ->
-                    stop u r (NothingFlashed why)
+                        Writing b _ ->
+                            to (StoppedAfter u r b (GarbledAfter why))
 
-        ( DfuDone a, Running u r (EnteringDfu b) ) ->
-            case a of
-                Said _ end ->
-                    if isOk end then
-                        ( running u r (FindingDevice b), [ FindDevice 10 ] )
+                        Post b _ ->
+                            to (StoppedAfter u r b (GarbledAfter why))
 
-                    else
-                        stop u r (NothingFlashed ("The unit refused update mode: " ++ end))
+                Nothing ->
+                    running i u r run m
 
-                -- Sent: the OK was lost to the reset, not refused.
-                Gone ->
-                    ( running u r (FindingDevice b), [ FindDevice 10 ] )
+        Ready _ _ ->
+            ignore
 
-                NoAnswer ->
-                    stop u r (NothingFlashed "The unit didn't answer the request for update mode")
+        Confirm _ _ ->
+            ignore
 
-        ( DeviceIs d, Running u r (FindingDevice b) ) ->
-            device d u r b m
+        Done _ _ _ ->
+            ignore
 
-        ( DeviceIs d, Running u r (PickingDevice b _) ) ->
+        StoppedBefore _ _ _ ->
+            ignore
+
+        StoppedAfter _ _ _ _ ->
+            ignore
+
+        NoLink ->
+            ignore
+
+        Closing ->
+            ignore
+
+
+status : Ticket -> Int -> Request
+status t delay =
+    Ask t "status" 2000 delay
+
+
+install : Int -> Request
+install delay =
+    Ask TInstall "bank2 install" 120000 delay
+
+
+running : In -> UnitNow -> Release -> Run -> Fields -> ( Model, List Request )
+running i u r run m =
+    let
+        ignore : ( Model, List Request )
+        ignore =
+            ( Model m, [] )
+
+        to : Run -> List Request -> ( Model, List Request )
+        to next reqs =
+            ( Model { m | stage = Running u r next }, reqs )
+
+        before : PreFail -> ( Model, List Request )
+        before f =
+            ( Model { m | stage = StoppedBefore u r f }, [] )
+
+        after : Bk2 -> PostFail -> ( Model, List Request )
+        after b f =
+            ( Model { m | stage = StoppedAfter u r b f }, [] )
+
+        device : Bk2 -> Device -> ( Model, List Request )
+        device b d =
             case d of
-                NotFound ->
-                    ( running u r (PickingDevice b True), [] )
-
                 Found ->
-                    device d u r b m
+                    to (Writing b { done = 0, total = 1 }) [ Write r ]
+
+                NotFound ->
+                    to (Pre (PickingDevice b)) []
+
+                Cancelled ->
+                    before (PickCancelled b)
+
+                Wrong why ->
+                    before (WrongDevice b why)
 
                 NoWebUsb ->
-                    device d u r b m
+                    before (CantOpen b)
+    in
+    case run of
+        -- CHECKING: unsaved changes stop it; a unit too old to say goes on, as the script does.
+        Pre Checking ->
+            case answerFor TStatus i of
+                Just Gone ->
+                    before (NothingFlashed "The unit isn't connected")
 
-        ( Written p, Running u r (Writing b _) ) ->
-            ( running u r (Writing b p), [] )
+                Just ((Said _ _) as a) ->
+                    if (unitOf a).modified then
+                        before Unsaved
 
-        ( WriteDone w, Running u r (Writing b _) ) ->
-            case w of
-                WriteOk ->
-                    ( running u r (Restarting b), [ Back 120 False ] )
+                    else
+                        to (Pre (Copying { done = 0, total = r.bk2Size })) [ Put r ]
 
-                Unopenable ->
-                    stop u r (CantOpen b)
+                Just NoAnswer ->
+                    to (Pre (Copying { done = 0, total = r.bk2Size })) [ Put r ]
 
-                Cut why ->
-                    stop u r (WriteCut b why)
+                Nothing ->
+                    ignore
 
-                Refused why ->
-                    stop u r (WriteCut b why)
+        Pre (Copying _) ->
+            case ( i.copied, answerFor TPut i ) of
+                ( Just p, _ ) ->
+                    to (Pre (Copying p)) []
 
-                GuardRefused why ->
-                    stop u r (Guarded why)
+                ( Nothing, Just a ) ->
+                    case staging r a of
+                        Ok b ->
+                            to (Pre (EnteringDfu b)) [ Dfu ]
 
-        ( BackDone res, Running u r (Restarting b) ) ->
-            case res of
-                Err cause ->
-                    stop u r (NotBack b cause)
+                        Err why ->
+                            before (NothingFlashed why)
 
-                Ok a ->
+                ( Nothing, Nothing ) ->
+                    ignore
+
+        Pre (EnteringDfu b) ->
+            case answerFor TDfu i of
+                Just (Said _ end) ->
+                    if isOk end then
+                        to (Pre (FindingDevice b)) [ FindDevice 10 ]
+
+                    else
+                        before (NothingFlashed ("The unit refused update mode: " ++ end))
+
+                -- Sent: the OK was lost to the reset, not refused.
+                Just Gone ->
+                    to (Pre (FindingDevice b)) [ FindDevice 10 ]
+
+                Just NoAnswer ->
+                    before (DfuSilent b)
+
+                Nothing ->
+                    ignore
+
+        Pre (FindingDevice b) ->
+            i.device |> Maybe.map (device b) |> Maybe.withDefault ignore
+
+        Pre (PickingDevice b) ->
+            i.device |> Maybe.map (device b) |> Maybe.withDefault ignore
+
+        Writing b _ ->
+            case ( i.written, i.write ) of
+                ( Just p, _ ) ->
+                    to (Writing b p) []
+
+                ( Nothing, Just w ) ->
+                    case w of
+                        WriteOk ->
+                            to (Post b Restarting) [ Back 120 False ]
+
+                        Unopenable ->
+                            before (CantOpen b)
+
+                        GuardRefused why ->
+                            before (Guarded b why)
+
+                        Cut started why ->
+                            if started then
+                                after b (WriteCut why)
+
+                            else
+                                before (Guarded b why)
+
+                        Refused started why ->
+                            if started then
+                                after b (WriteCut why)
+
+                            else
+                                before (Guarded b why)
+
+                        LeaveFail why ->
+                            after b (LeaveFailed why)
+
+                ( Nothing, Nothing ) ->
+                    ignore
+
+        Post b Restarting ->
+            case i.back of
+                Just (Err cause) ->
+                    after b (NotBack cause)
+
+                Just (Ok a) ->
                     case verdict r a of
                         Installed now ->
-                            ( to (Done u r now), [] )
+                            ( Model { m | stage = Done u r now }, [] )
 
+                        -- A difference from the script, kept on purpose: where
+                        -- `chimera-usb.py update` stops on a staged .bk2 its first boot
+                        -- didn't install, this sends `bank2 install` (the unit
+                        -- installs the staged file, or says why not).
                         NeedsInstall _ ->
                             case b of
                                 Staged ->
-                                    ( running u r (Installing 1), [ Ask "bank2 install" 120000 ] )
+                                    to (Post b (Installing 1)) [ install 0 ]
 
                                 AfterFlash ->
-                                    ( running u r (CopyingLate { done = 0, total = r.bk2Size }), [ Put ] )
+                                    to (Post b (CopyingLate { done = 0, total = r.bk2Size })) [ Put r ]
 
                         NotFinished why ->
-                            stop u r (Unfinished why)
+                            after b (Unfinished why)
 
-        ( Copied p, Running u r (CopyingLate _) ) ->
-            ( running u r (CopyingLate p), [] )
+                Nothing ->
+                    ignore
 
-        ( PutDone a, Running u r (CopyingLate _) ) ->
-            case a of
-                Said _ end ->
+        Post b (CopyingLate _) ->
+            case ( i.copied, answerFor TPut i ) of
+                ( Just p, _ ) ->
+                    to (Post b (CopyingLate p)) []
+
+                ( Nothing, Just (Said _ end) ) ->
                     if String.startsWith "OK staged:" end then
-                        stop u r (Unfinished (String.dropLeft 3 end ++ later))
+                        after b (Unfinished (String.dropLeft 3 end ++ later))
 
                     else if isOk end then
-                        ( running u r (Installing 1), [ Ask "bank2 install" 120000 ] )
+                        to (Post b (Installing 1)) [ install 0 ]
 
                     else
-                        stop u r (Unfinished ("Copying CHIMERA.BK2 after the flash: " ++ end))
+                        after b (Unfinished ("Copying CHIMERA.BK2 after the flash: " ++ end))
 
-                NoAnswer ->
-                    stop u r (Unfinished "The unit stopped answering while CHIMERA.BK2 was copied")
+                ( Nothing, Just NoAnswer ) ->
+                    after b (Unfinished "The unit stopped answering while CHIMERA.BK2 was copied")
 
-                Gone ->
-                    stop u r (Unfinished "The unit was disconnected while CHIMERA.BK2 was copied")
+                ( Nothing, Just Gone ) ->
+                    after b (Unfinished "The unit was disconnected while CHIMERA.BK2 was copied")
 
-        ( Answered "bank2 install" a, Running u r (Installing tries) ) ->
-            case a of
-                Said _ end ->
+                ( Nothing, Nothing ) ->
+                    ignore
+
+        Post b (Installing tries) ->
+            case answerFor TInstall i of
+                Just (Said _ end) ->
                     if String.startsWith "OK bank2 open " end then
-                        ( running u r RestartingAfterInstall, [ Back 60 True ] )
+                        to (Post b RestartingAfterInstall) [ Back 60 True ]
 
                     else if isOk end then
-                        ( running u r Verifying, [ Ask "status" 2000 ] )
+                        to (Post b Verifying) [ status TVerify 0 ]
 
                     else if end == "ERR bank2: busy" && tries < 5 then
-                        ( running u r (Installing (tries + 1)), [ Ask "bank2 install" 120000 ] )
+                        -- 0.2 s between tries, as the script waits.
+                        to (Post b (Installing (tries + 1))) [ install 200 ]
 
                     else
-                        stop u r (Unfinished (installRefusal end))
+                        after b (Unfinished (installRefusal end))
 
                 -- The install may have opened the door and restarted the unit.
-                Gone ->
-                    ( running u r RestartingAfterInstall, [ Back 60 True ] )
+                Just Gone ->
+                    to (Post b RestartingAfterInstall) [ Back 60 True ]
 
-                NoAnswer ->
-                    stop u r (Unfinished "The unit didn't answer bank2 install")
+                Just NoAnswer ->
+                    after b (Unfinished "The unit didn't answer bank2 install")
 
-        ( BackDone res, Running u r RestartingAfterInstall ) ->
-            case res of
-                Err cause ->
-                    stop u r (NotBack Staged cause)
+                Nothing ->
+                    ignore
 
-                Ok a ->
-                    finish u r a m
+        Post b RestartingAfterInstall ->
+            case i.back of
+                Just (Err cause) ->
+                    after b (NotBack cause)
 
-        ( Answered "status" a, Running u r Verifying ) ->
-            finish u r a m
+                Just (Ok a) ->
+                    finish u r b a m
 
-        ( Ended _, Closing ) ->
-            ( model, [] )
+                Nothing ->
+                    ignore
 
-        _ ->
-            ( model, [] )
+        Post b Verifying ->
+            case answerFor TVerify i of
+                Just a ->
+                    finish u r b a m
+
+                Nothing ->
+                    ignore
 
 
-reading : Maybe UnitNow -> ReleaseState -> { stage : Stage, windows : Bool, webusb : Bool } -> ( Model, List Request )
+reading : Maybe UnitNow -> ReleaseState -> Fields -> ( Model, List Request )
 reading u rel m =
     case ( u, rel ) of
         ( Just unit, Got _ ) ->
@@ -604,7 +1395,10 @@ reading u rel m =
         ( Just unit, Missing _ ) ->
             ( Model { m | stage = Ready unit rel }, [] )
 
-        _ ->
+        ( Just _, Fetching ) ->
+            ( Model { m | stage = Reading u rel }, [] )
+
+        ( Nothing, _ ) ->
             ( Model { m | stage = Reading u rel }, [] )
 
 
@@ -618,40 +1412,19 @@ releaseState r =
             Missing why
 
 
-device : Device -> UnitNow -> Release -> Bk2 -> { stage : Stage, windows : Bool, webusb : Bool } -> ( Model, List Request )
-device d u r b m =
-    case d of
-        Found ->
-            ( Model { m | stage = Running u r (Writing b { done = 0, total = 1 }) }, [ Write ] )
-
-        NotFound ->
-            ( Model { m | stage = Running u r (PickingDevice b False) }, [] )
-
-        NoWebUsb ->
-            ( Model { m | stage = Stopped u r (CantOpen b) }, [] )
-
-
 {-| The last `status`: done, or what it says instead.
 -}
-finish : UnitNow -> Release -> Answer -> { stage : Stage, windows : Bool, webusb : Bool } -> ( Model, List Request )
-finish u r a m =
+finish : UnitNow -> Release -> Bk2 -> Answer -> Fields -> ( Model, List Request )
+finish u r b a m =
     case verdict r a of
         Installed now ->
             ( Model { m | stage = Done u r now }, [] )
 
         NeedsInstall said ->
-            ( Model
-                { m
-                    | stage =
-                        Stopped u
-                            r
-                            (Unfinished ("The unit says " ++ said ++ ", not bank2 open " ++ r.version ++ " seal=" ++ r.seal ++ " (a staged CHIMERA.BK2 stays on the card for the next start)"))
-                }
-            , []
-            )
+            ( Model { m | stage = StoppedAfter u r b (Unfinished ("The unit says " ++ said ++ ", not bank2 open " ++ r.version ++ " seal=" ++ r.seal ++ " (a staged CHIMERA.BK2 stays on the card for the next start)")) }, [] )
 
         NotFinished why ->
-            ( Model { m | stage = Stopped u r (Unfinished why) }, [] )
+            ( Model { m | stage = StoppedAfter u r b (Unfinished why) }, [] )
 
 
 later : String
@@ -781,11 +1554,11 @@ verdict r a =
                     hash =
                         lastWord r.version
 
-                    running : Maybe String
-                    running =
+                    runs : Maybe String
+                    runs =
                         u.build |> Maybe.andThen (trimPlus >> lastWord)
                 in
-                if hash == Nothing || running /= hash then
+                if hash == Nothing || runs /= hash then
                     NotFinished ("The unit says build " ++ Maybe.withDefault "(none)" u.build ++ ": the new firmware (" ++ r.version ++ ") isn't the one running")
 
                 else
@@ -843,30 +1616,62 @@ foreignSlot line =
         Nothing
 
 
-{-| The unit's version against the release's.
+{-| The unit's version against the release's, by their numbers.
 -}
 type Offer
     = Newer
+    | OtherBuild
     | Same
+    | Older
     | Unknown
 
 
 offer : UnitNow -> Release -> Offer
 offer u r =
-    case u.build |> Maybe.map trimPlus of
-        Nothing ->
+    case ( u.build |> Maybe.andThen parseVersion, parseVersion r.version ) of
+        ( Just have, Just want ) ->
+            case compare ( want.major, want.minor, want.patch ) ( have.major, have.minor, have.patch ) of
+                GT ->
+                    Newer
+
+                LT ->
+                    Older
+
+                EQ ->
+                    if want.build == have.build then
+                        Same
+
+                    else
+                        OtherBuild
+
+        ( Nothing, _ ) ->
             Unknown
 
-        Just b ->
-            if b == r.version then
-                Same
-
-            else
-                Newer
+        ( Just _, Nothing ) ->
+            Unknown
 
 
 
 -- THE WIRE
+
+
+ticketId : Ticket -> String
+ticketId t =
+    case t of
+        TStatus ->
+            "status"
+
+        TPut ->
+            "put"
+
+        TDfu ->
+            "dfu"
+
+        TInstall ->
+            "install"
+
+        TVerify ->
+            "verify"
 
 
 encode : Request -> E.Value
@@ -886,14 +1691,14 @@ encode r =
         ChooseFiles ->
             op "release" [ ( "how", E.string "choose" ) ]
 
-        Ask line wait ->
-            op "ask" [ ( "line", E.string line ), ( "wait", E.int wait ) ]
+        Ask t line wait delay ->
+            op "ask" [ ( "id", E.string (ticketId t) ), ( "line", E.string line ), ( "wait", E.int wait ), ( "delay", E.int delay ) ]
 
-        Put ->
-            op "put" []
+        Put rel ->
+            op "put" [ ( "id", E.string (ticketId TPut) ), ( "seal", E.string rel.seal ), ( "sha", E.string rel.bk2Sha ) ]
 
         Dfu ->
-            op "dfu" []
+            op "dfu" [ ( "id", E.string (ticketId TDfu) ) ]
 
         FindDevice secs ->
             op "findDevice" [ ( "secs", E.int secs ) ]
@@ -901,14 +1706,33 @@ encode r =
         PickDevice ->
             op "pickDevice" []
 
-        Write ->
-            op "write" []
+        Write rel ->
+            op "write" [ ( "seal", E.string rel.seal ), ( "sha", E.string rel.binSha ) ]
 
         Back secs restart ->
             op "back" [ ( "secs", E.int secs ), ( "restart", E.bool restart ) ]
 
+        PickPort ->
+            op "pickPort" []
+
+        Hold on ->
+            op "hold" [ ( "on", E.bool on ) ]
+
         End ->
             op "end" []
+
+
+{-| What `update.js` said, read strictly: anything malformed is `Garbled`
+with the reason, never a missing answer.
+-}
+decode : D.Value -> Event
+decode v =
+    case D.decodeValue event v of
+        Ok e ->
+            e
+
+        Err err ->
+            Garbled ("an answer the editor can't read (" ++ String.left 160 (D.errorToString err) ++ ")")
 
 
 event : Decoder Event
@@ -921,75 +1745,51 @@ event =
                         D.map3 (\o w win -> Begun { open = o, webusb = w, windows = win })
                             (D.field "open" D.bool)
                             (D.field "webusb" D.bool)
-                            (D.oneOf [ D.field "windows" D.bool, D.succeed False ])
+                            (D.field "windows" D.bool)
 
                     "release" ->
                         D.oneOf
                             [ D.field "release" release |> D.map (Ok >> ReleaseIs)
+                            , D.field "cancelled" (exactly True) |> D.map (\_ -> ReleaseCancelled)
                             , D.field "detail" D.string |> D.map (Err >> ReleaseIs)
                             ]
 
                     "answer" ->
-                        D.map2 Answered (D.field "line" D.string) answer
+                        D.map2 Answered (D.field "id" ticket) answer
 
                     "copied" ->
                         D.map Copied (progress "sent")
 
-                    "put" ->
-                        D.map PutDone answer
-
-                    "dfu" ->
-                        D.map DfuDone answer
-
-                    "device" ->
-                        D.map2
-                            (\found unsupported ->
-                                DeviceIs
-                                    (if found then
-                                        Found
-
-                                     else if unsupported then
-                                        NoWebUsb
-
-                                     else
-                                        NotFound
-                                    )
-                            )
-                            (D.field "found" D.bool)
-                            (D.oneOf [ D.field "unsupported" D.bool, D.succeed False ])
-
                     "written" ->
                         D.map Written (progress "done")
 
+                    "device" ->
+                        D.oneOf
+                            [ D.field "found" (exactly True) |> D.map (\_ -> DeviceIs Found)
+                            , D.field "unsupported" (exactly True) |> D.map (\_ -> DeviceIs NoWebUsb)
+                            , D.field "cancelled" (exactly True) |> D.map (\_ -> DeviceIs Cancelled)
+                            , D.field "problem" D.string |> D.map (problem >> Wrong >> DeviceIs)
+                            , D.field "found" (exactly False) |> D.map (\_ -> DeviceIs NotFound)
+                            ]
+
                     "write" ->
                         D.oneOf
-                            [ D.field "ok" D.bool |> D.map (\_ -> WriteDone WriteOk)
-                            , D.map2
-                                (\kind detail ->
-                                    WriteDone
-                                        (case kind of
-                                            "unopenable" ->
-                                                Unopenable
-
-                                            "refused" ->
-                                                Refused detail
-
-                                            "guard" ->
-                                                GuardRefused detail
-
-                                            _ ->
-                                                Cut detail
-                                        )
-                                )
+                            [ D.field "ok" (exactly True) |> D.map (\_ -> WriteDone WriteOk)
+                            , D.map3 writeFault
                                 (D.field "fault" D.string)
                                 (D.field "detail" D.string)
+                                (D.field "started" D.bool)
+                                |> D.andThen identity
                             ]
 
                     "back" ->
                         D.oneOf
-                            [ D.field "cause" D.string |> D.map (Err >> BackDone)
+                            [ D.field "cause" D.string |> D.map (backCause >> Err >> BackDone)
                             , answer |> D.map (Ok >> BackDone)
                             ]
+
+                    "mismatch" ->
+                        D.map Mismatch (D.field "detail" D.string)
 
                     "ended" ->
                         D.map Ended (D.field "link" D.string)
@@ -999,13 +1799,106 @@ event =
             )
 
 
+writeFault : String -> String -> Bool -> Decoder Event
+writeFault kind detail started =
+    case kind of
+        "unopenable" ->
+            D.succeed (WriteDone Unopenable)
+
+        "refused" ->
+            D.succeed (WriteDone (Refused started detail))
+
+        "guard" ->
+            D.succeed (WriteDone (GuardRefused detail))
+
+        "lost" ->
+            D.succeed (WriteDone (Cut started detail))
+
+        "leave" ->
+            D.succeed (WriteDone (LeaveFail detail))
+
+        _ ->
+            D.fail ("not a write fault: " ++ kind)
+
+
+exactly : Bool -> Decoder Bool
+exactly want =
+    D.bool
+        |> D.andThen
+            (\b ->
+                if b == want then
+                    D.succeed b
+
+                else
+                    D.fail "not this one"
+            )
+
+
+ticket : Decoder Ticket
+ticket =
+    D.string
+        |> D.andThen
+            (\s ->
+                case s of
+                    "status" ->
+                        D.succeed TStatus
+
+                    "put" ->
+                        D.succeed TPut
+
+                    "dfu" ->
+                        D.succeed TDfu
+
+                    "install" ->
+                        D.succeed TInstall
+
+                    "verify" ->
+                        D.succeed TVerify
+
+                    _ ->
+                        D.fail ("not a request id: " ++ s)
+            )
+
+
+{-| A console answer: its lines and end, the link gone, or no answer in
+time; each said outright (`gone`, `noAnswer`), never assumed.
+-}
 answer : Decoder Answer
 answer =
     D.oneOf
-        [ D.map2 Said (D.oneOf [ D.field "lines" (D.list D.string), D.succeed [] ]) (D.field "end" D.string)
-        , D.field "gone" D.bool |> D.map (\_ -> Gone)
-        , D.succeed NoAnswer
+        [ D.map2 Said (D.field "lines" (D.list D.string)) (D.field "end" D.string)
+        , D.field "gone" (exactly True) |> D.map (\_ -> Gone)
+        , D.field "noAnswer" (exactly True) |> D.map (\_ -> NoAnswer)
         ]
+
+
+problem : String -> String
+problem p =
+    case p of
+        "several" ->
+            "More than one new STM32 DFU device is on USB: unplug the others, then press WRITE AGAIN"
+
+        "stale" ->
+            "That DFU device was already there before the unit restarted into update mode, so it isn't this unit: press WRITE AGAIN and pick the new one"
+
+        _ ->
+            "No new STM32 DFU device came up (" ++ p ++ ")"
+
+
+backCause : String -> String
+backCause c =
+    case c of
+        "several" ->
+            "more than one unit's console is on USB, and the editor can't tell which is this one: unplug the others"
+
+        "busy" ->
+            "it still answers busy"
+
+        "silent" ->
+            "its console doesn't answer"
+
+        _ ->
+            "its console is not on USB"
 
 
 progress : String -> Decoder Progress
@@ -1015,20 +1908,26 @@ progress key =
 
 release : Decoder Release
 release =
-    D.map6 Release
+    D.map8 Release
         (D.field "version" D.string)
         (D.field "seal" D.string)
         (D.field "format" D.int)
         (D.field "binSize" D.int)
         (D.field "bk2Size" D.int)
+        (D.field "binSha" D.string)
+        (D.field "bk2Sha" D.string)
         (D.field "source" D.string
-            |> D.map
+            |> D.andThen
                 (\s ->
-                    if s == "chosen" then
-                        Chosen
+                    case s of
+                        "chosen" ->
+                            D.succeed Chosen
 
-                    else
-                        Latest
+                        "latest" ->
+                            D.succeed Latest
+
+                        _ ->
+                            D.fail ("not a source: " ++ s)
                 )
         )
 
@@ -1067,6 +1966,9 @@ meta s =
         Ready _ _ ->
             "READY"
 
+        Choosing _ _ ->
+            "READY"
+
         Confirm _ _ ->
             "READY"
 
@@ -1076,7 +1978,10 @@ meta s =
         Done _ _ _ ->
             "DONE"
 
-        Stopped _ _ _ ->
+        StoppedBefore _ _ _ ->
+            "STOPPED"
+
+        StoppedAfter _ _ _ _ ->
             "STOPPED"
 
         NoLink ->
@@ -1089,42 +1994,42 @@ meta s =
 runTitle : Run -> String
 runTitle run =
     case run of
-        Checking ->
+        Pre Checking ->
             "CHECKING"
 
-        Copying _ ->
+        Pre (Copying _) ->
             "COPYING BANK 2"
 
-        EnteringDfu _ ->
+        Pre (EnteringDfu _) ->
             "RESTARTING INTO UPDATE MODE"
 
-        FindingDevice _ ->
+        Pre (FindingDevice _) ->
             "RESTARTING INTO UPDATE MODE"
 
-        PickingDevice _ _ ->
+        Pre (PickingDevice _) ->
             "CHOOSE THE UPDATE DEVICE"
 
         Writing _ _ ->
             "WRITING FIRMWARE"
 
-        Restarting _ ->
-            "INSTALLING"
-
-        CopyingLate _ ->
+        Post _ (CopyingLate _) ->
             "COPYING BANK 2"
 
-        Installing _ ->
+        Post _ Restarting ->
             "INSTALLING"
 
-        RestartingAfterInstall ->
+        Post _ (Installing _) ->
             "INSTALLING"
 
-        Verifying ->
+        Post _ RestartingAfterInstall ->
+            "INSTALLING"
+
+        Post _ Verifying ->
             "INSTALLING"
 
 
-version : Maybe String -> String
-version v =
+showVersion : Maybe String -> String
+showVersion v =
     case v |> Maybe.map (trimPlus >> String.words) of
         Just [ number, hash ] ->
             number ++ " (" ++ hash ++ ")"
@@ -1161,7 +2066,12 @@ latestUrl =
     "https://github.com/joegiralt/chimera-releases/releases/latest"
 
 
-body : { stage : Stage, windows : Bool, webusb : Bool } -> List (Html Msg)
+change : UnitNow -> Release -> Html msg
+change u r =
+    fact "UPDATE" (showVersion u.build ++ " → " ++ showVersion (Just r.version))
+
+
+body : Fields -> List (Html Msg)
 body m =
     case m.stage of
         Opening ->
@@ -1178,99 +2088,157 @@ body m =
         Closing ->
             [ say "Back to the editor…" ]
 
+        Choosing u _ ->
+            [ fact "THIS UNIT" (showVersion u.build), say "Choose CHIMERA.BIN, CHIMERA.BK2 and SHA256SUMS, all three at once…" ]
+
         Ready u rel ->
-            fact "THIS UNIT" (version u.build)
-                :: (case rel of
-                        Fetching ->
-                            [ say "Reading the files…" ]
-
-                        Missing why ->
-                            [ fact "LATEST" "NOT FOUND"
-                            , say (why ++ ".")
-                            , say "Choose the release's files instead: CHIMERA.BIN, CHIMERA.BK2 and SHA256SUMS, all three at once."
-                            , buttons [ btn "CHOOSE FILES…" Choose, btn "CLOSE" Close ]
-                            ]
-
-                        Got r ->
-                            fact
-                                (case r.source of
-                                    Latest ->
-                                        "LATEST"
-
-                                    Chosen ->
-                                        "CHOSEN FILES"
-                                )
-                                (version (Just r.version))
-                                :: (if not m.webusb then
-                                        [ say "USE CHROME OR EDGE: this browser can't reach the unit's update mode (no WebUSB). Firefox and Safari can't update the unit." ]
-
-                                    else
-                                        [ say
-                                            (case offer u r of
-                                                Same ->
-                                                    "This unit already runs this version. You can reinstall it."
-
-                                                Newer ->
-                                                    "An update is ready."
-
-                                                Unknown ->
-                                                    "The unit didn't say its version."
-                                            )
-                                        ]
-                                   )
-                                ++ [ buttons
-                                        ((if m.webusb then
-                                            [ btn
-                                                (case offer u r of
-                                                    Same ->
-                                                        "REINSTALL…"
-
-                                                    Newer ->
-                                                        "UPDATE…"
-
-                                                    Unknown ->
-                                                        "UPDATE…"
-                                                )
-                                                Start
-                                            ]
-
-                                          else
-                                            []
-                                         )
-                                            ++ [ btn "CHOOSE FILES…" Choose, btn "CLOSE" Close ]
-                                        )
-                                   ]
-                   )
+            ready m u rel
 
         Confirm u r ->
-            [ fact "UPDATE" (version u.build ++ " → " ++ version (Just r.version))
-            , say
-                (if offer u r == Same then
-                    "This reinstalls the version the unit already runs."
-
-                 else
-                    "This updates the unit's firmware."
-                )
-            , say "Don't unplug the unit or power it off until this page says DONE. It takes about two minutes."
-            , say "Unsaved changes block the update: save the project first (hold MENU), or load another."
-            , say "Your projects and Sounds on the card stay. The bootloader is never touched."
-            , buttons [ btn "START UPDATE" Go, btn "CANCEL" Cancel ]
-            ]
+            confirm m u r
 
         Running u r run ->
-            fact "UPDATE" (version u.build ++ " → " ++ version (Just r.version))
-                :: stages run
-                :: runningText m.windows run
+            change u r :: stages run :: runningText m.windows run
 
         Done was r now ->
-            [ fact "UPDATED" (version was.build ++ " → " ++ version now.build)
-            , say ("Done. The unit runs " ++ version (Just r.version) ++ ".")
+            [ fact "UPDATED" (showVersion was.build ++ " → " ++ showVersion now.build)
+            , say ("Done. The unit runs " ++ showVersion (Just r.version) ++ ".")
             , buttons [ btn "BACK TO THE EDITOR" Close ]
             ]
 
-        Stopped u r f ->
-            fact "UPDATE" (version u.build ++ " → " ++ version (Just r.version))
-                :: failure m.windows u f
+        StoppedBefore u r f ->
+            change u r :: failedBefore m.windows u f
+
+        StoppedAfter u r _ f ->
+            change u r :: failedAfter f
+
+
+ready : Fields -> UnitNow -> ReleaseState -> List (Html Msg)
+ready m u rel =
+    (case m.mode of
+        Stuck ->
+            say "For a unit sitting in update mode (its screen dark after a stopped update): this writes the firmware to it, then finishes the install once it restarts."
+
+        Connected ->
+            fact "THIS UNIT" (showVersion u.build)
+    )
+        :: (case rel of
+                Fetching ->
+                    [ say "Reading the files…" ]
+
+                Missing why ->
+                    [ fact "LATEST" "NOT FOUND"
+                    , say (why ++ ".")
+                    , say "Choose the release's files instead: CHIMERA.BIN, CHIMERA.BK2 and SHA256SUMS, all three at once."
+                    , buttons [ btn "CHOOSE FILES…" Choose, btn "CLOSE" Close ]
+                    ]
+
+                Got r ->
+                    fact
+                        (case r.source of
+                            Latest ->
+                                "LATEST"
+
+                            Chosen ->
+                                "CHOSEN FILES"
+                        )
+                        (showVersion (Just r.version))
+                        :: (if m.webusb then
+                                [ say (offerText m.mode (offer u r))
+                                , buttons [ btn (offerButton m.mode (offer u r)) Start, btn "CHOOSE FILES…" Choose, btn "CLOSE" Close ]
+                                ]
+
+                            else
+                                [ say "USE CHROME OR EDGE: this browser can't reach the unit's update mode (no WebUSB). Firefox and Safari can't update the unit."
+                                , buttons [ btn "CHOOSE FILES…" Choose, btn "CLOSE" Close ]
+                                ]
+                           )
+           )
+
+
+offerText : Mode -> Offer -> String
+offerText mode o =
+    case ( mode, o ) of
+        ( Stuck, _ ) ->
+            "Finish the update with this release."
+
+        ( Connected, Newer ) ->
+            "An update is ready."
+
+        ( Connected, OtherBuild ) ->
+            "Another build of the same version is ready."
+
+        ( Connected, Same ) ->
+            "This unit already runs this version. You can reinstall it."
+
+        ( Connected, Older ) ->
+            "These files are OLDER than what the unit runs. Installing them is a downgrade."
+
+        ( Connected, Unknown ) ->
+            "The unit didn't say its version."
+
+
+offerButton : Mode -> Offer -> String
+offerButton mode o =
+    case ( mode, o ) of
+        ( Stuck, _ ) ->
+            "FINISH THE UPDATE…"
+
+        ( Connected, Same ) ->
+            "REINSTALL…"
+
+        ( Connected, Older ) ->
+            "DOWNGRADE…"
+
+        ( Connected, Newer ) ->
+            "UPDATE…"
+
+        ( Connected, OtherBuild ) ->
+            "UPDATE…"
+
+        ( Connected, Unknown ) ->
+            "UPDATE…"
+
+
+confirm : Fields -> UnitNow -> Release -> List (Html Msg)
+confirm m u r =
+    [ change u r
+    , say
+        (case ( m.mode, offer u r ) of
+            ( Stuck, _ ) ->
+                "This writes the firmware to the unit in update mode, then installs bank 2 when it restarts."
+
+            ( Connected, Same ) ->
+                "This reinstalls the version the unit already runs."
+
+            ( Connected, Older ) ->
+                "THIS IS A DOWNGRADE: the unit gets an older firmware. Projects and Sounds saved by the newer one may not load the same, or at all."
+
+            ( Connected, Newer ) ->
+                "This updates the unit's firmware."
+
+            ( Connected, OtherBuild ) ->
+                "This updates the unit's firmware."
+
+            ( Connected, Unknown ) ->
+                "This updates the unit's firmware."
+        )
+    , say "Don't unplug the unit or power it off until this page says DONE. It takes about two minutes."
+    , say "Unsaved changes block the update: save the project first (hold MENU), or load another."
+    , say "Your projects and Sounds on the card stay. The bootloader is never touched."
+    , buttons
+        [ btn
+            (case m.mode of
+                Stuck ->
+                    "FINISH THE UPDATE"
+
+                Connected ->
+                    "START UPDATE"
+            )
+            Go
+        , btn "CANCEL" Cancel
+        ]
+    ]
 
 
 {-| The stages in order, the current one marked, done ones ticked.
@@ -1281,73 +2249,61 @@ stages run =
         at : Int
         at =
             case run of
-                Checking ->
+                Pre Checking ->
                     0
 
-                Copying _ ->
+                Pre (Copying _) ->
                     1
 
-                EnteringDfu _ ->
+                Pre (EnteringDfu _) ->
                     2
 
-                FindingDevice _ ->
+                Pre (FindingDevice _) ->
                     2
 
-                PickingDevice _ _ ->
+                Pre (PickingDevice _) ->
                     2
 
                 Writing _ _ ->
                     3
 
-                Restarting _ ->
-                    4
-
-                CopyingLate _ ->
-                    4
-
-                Installing _ ->
-                    4
-
-                RestartingAfterInstall ->
-                    4
-
-                Verifying ->
+                Post _ _ ->
                     4
 
         pct : Maybe Progress
         pct =
             case run of
-                Copying p ->
+                Pre (Copying p) ->
                     Just p
 
-                CopyingLate p ->
+                Post _ (CopyingLate p) ->
                     Just p
 
                 Writing _ p ->
                     Just p
 
-                Checking ->
+                Pre Checking ->
                     Nothing
 
-                EnteringDfu _ ->
+                Pre (EnteringDfu _) ->
                     Nothing
 
-                FindingDevice _ ->
+                Pre (FindingDevice _) ->
                     Nothing
 
-                PickingDevice _ _ ->
+                Pre (PickingDevice _) ->
                     Nothing
 
-                Restarting _ ->
+                Post _ Restarting ->
                     Nothing
 
-                Installing _ ->
+                Post _ (Installing _) ->
                     Nothing
 
-                RestartingAfterInstall ->
+                Post _ RestartingAfterInstall ->
                     Nothing
 
-                Verifying ->
+                Post _ Verifying ->
                     Nothing
 
         names : List String
@@ -1378,9 +2334,9 @@ stages run =
                     ]
                     (text n
                         :: (case ( i == at, pct ) of
-                                ( True, Just p ) ->
-                                    [ span [ class "pct" ] [ text (" " ++ String.fromInt (percent p) ++ " %") ]
-                                    , div [ class "ubar" ] [ div [ style "width" (String.fromInt (percent p) ++ "%") ] [] ]
+                                ( True, Just pr ) ->
+                                    [ span [ class "pct" ] [ text (" " ++ String.fromInt (percent pr) ++ " %") ]
+                                    , div [ class "ubar" ] [ div [ style "width" (String.fromInt (percent pr) ++ "%") ] [] ]
                                     ]
 
                                 _ ->
@@ -1393,63 +2349,43 @@ stages run =
 
 
 percent : Progress -> Int
-percent p =
-    if p.total <= 0 then
+percent pr =
+    if pr.total <= 0 then
         0
 
     else
-        min 100 (p.done * 100 // p.total)
+        min 100 (pr.done * 100 // pr.total)
 
 
 runningText : Bool -> Run -> List (Html Msg)
 runningText windows run =
     case run of
-        PickingDevice _ cancelled ->
-            say "The unit is in update mode (its screen goes dark). The browser asks once which device to use: press CHOOSE UPDATE DEVICE and pick STM32 BOOTLOADER."
-                :: (if cancelled then
-                        say "No device was chosen."
-                            :: (if windows then
-                                    driverSteps
-
-                                else
-                                    []
-                               )
+        Pre (PickingDevice _) ->
+            say "The unit is in update mode (its screen goes dark). The browser asks which device to use: press CHOOSE UPDATE DEVICE and pick STM32 BOOTLOADER."
+                :: (if windows then
+                        [ say "On Windows, if STM32 BOOTLOADER isn't in the list, it needs a driver once: CANCEL shows the steps." ]
 
                     else
                         []
                    )
-                ++ [ buttons [ btn "CHOOSE UPDATE DEVICE" Pick ]
-                   , say "To stop instead: unplug the USB cable and plug it back in. The unit starts as before; nothing has been written."
-                   ]
+                ++ [ buttons [ btn "CHOOSE UPDATE DEVICE" Pick, btn "CANCEL" Cancel ] ]
 
-        Checking ->
+        Pre Checking ->
             [ say "Don't unplug the unit or power it off." ]
 
-        Copying _ ->
+        Pre (Copying _) ->
             [ say "Don't unplug the unit or power it off." ]
 
-        EnteringDfu _ ->
+        Pre (EnteringDfu _) ->
             [ say "Don't unplug the unit or power it off." ]
 
-        FindingDevice _ ->
+        Pre (FindingDevice _) ->
             [ say "Don't unplug the unit or power it off." ]
 
         Writing _ _ ->
             [ say "Don't unplug the unit or power it off." ]
 
-        Restarting _ ->
-            [ say "Don't unplug the unit or power it off." ]
-
-        CopyingLate _ ->
-            [ say "Don't unplug the unit or power it off." ]
-
-        Installing _ ->
-            [ say "Don't unplug the unit or power it off." ]
-
-        RestartingAfterInstall ->
-            [ say "Don't unplug the unit or power it off." ]
-
-        Verifying ->
+        Post _ _ ->
             [ say "Don't unplug the unit or power it off." ]
 
 
@@ -1462,6 +2398,20 @@ driverSteps =
         , li [] [ text "Select STM32 BOOTLOADER." ]
         , li [] [ text "Pick WinUSB and press Install Driver (or Replace Driver)." ]
         , li [] [ text "Come back here and press WRITE AGAIN." ]
+        ]
+    ]
+
+
+bootloaderSteps : List (Html Msg)
+bootloaderSteps =
+    [ say "Or finish from the bootloader, which is never touched:"
+    , ol []
+        [ li [] [ text "Over USB: hold MENU while you power the unit on, press button 2 (DFU Mode), then press WRITE AGAIN here (or, on a page without it, FINISH THE UPDATE on the editor's connect page)." ]
+        , li []
+            [ text "With the SD card: get CHIMERA.BIN and CHIMERA.BK2 from the "
+            , a [ href latestUrl, target "_blank", rel "noopener" ] [ text "release page" ]
+            , text "; hold MENU while you power the unit on, press button 3 (SD card access), copy both files to the card's top folder (choose Replace) and eject it; press MENU, step with − / + until it shows CHIMERA.BIN, and press button 1. Chimera installs CHIMERA.BK2 on its first start: leave it on while the screen says DON'T POWER OFF."
+            ]
         ]
     ]
 
@@ -1479,8 +2429,13 @@ sdSteps =
     ]
 
 
-failure : Bool -> UnitNow -> Failure -> List (Html Msg)
-failure windows u f =
+leaveUpdateMode : Html Msg
+leaveUpdateMode =
+    say "To leave update mode without updating: unplug the USB cable and plug it back in; the unit starts its old firmware as before (CHIMERA.BK2 may already be on the card: that is harmless)."
+
+
+failedBefore : Bool -> UnitNow -> PreFail -> List (Html Msg)
+failedBefore windows u f =
     case f of
         Unsaved ->
             [ say "THE PROJECT HAS UNSAVED CHANGES. Save it (hold MENU) or load another, then press TRY AGAIN."
@@ -1490,8 +2445,43 @@ failure windows u f =
 
         NothingFlashed why ->
             [ say (why ++ ".")
-            , say ("Nothing was flashed: the unit still runs " ++ version u.build ++ ". Check the USB cable, then press TRY AGAIN.")
+            , say ("Nothing was flashed: the unit still runs " ++ showVersion u.build ++ ". Check the USB cable, then press TRY AGAIN.")
             , buttons [ btn "TRY AGAIN" TryAgain, btn "CLOSE" Close ]
+            ]
+
+        GarbledBefore why ->
+            [ say ("THE UPDATE STOPPED: " ++ why ++ ".")
+            , say "Nothing was flashed. Press TRY AGAIN, or CLOSE and reload the page."
+            , buttons [ btn "TRY AGAIN" TryAgain, btn "CLOSE" Close ]
+            ]
+
+        DfuSilent _ ->
+            [ say "THE UNIT DIDN'T ANSWER THE REQUEST FOR UPDATE MODE. It may be in update mode already, its screen dark."
+            , say "If the screen is dark: press CHOOSE UPDATE DEVICE and pick STM32 BOOTLOADER to go on. Nothing has been flashed yet."
+            , say "If it shows its usual screen: press TRY AGAIN."
+            , buttons [ btn "CHOOSE UPDATE DEVICE" Pick, btn "TRY AGAIN" TryAgain, btn "CLOSE" Close ]
+            , leaveUpdateMode
+            ]
+                ++ bootloaderSteps
+
+        PickCancelled _ ->
+            [ say "NO UPDATE DEVICE WAS CHOSEN. The unit is waiting in update mode (its screen dark); nothing has been written."
+            , say "Press WRITE AGAIN and pick STM32 BOOTLOADER."
+            ]
+                ++ (if windows then
+                        driverSteps
+
+                    else
+                        []
+                   )
+                ++ [ buttons [ btn "WRITE AGAIN" WriteAgain, btn "CLOSE" Close ], leaveUpdateMode ]
+                ++ bootloaderSteps
+
+        WrongDevice _ why ->
+            [ say ("THAT ISN'T THE UNIT'S UPDATE DEVICE. " ++ why ++ ".")
+            , say "Nothing has been written."
+            , buttons [ btn "WRITE AGAIN" WriteAgain, btn "CLOSE" Close ]
+            , leaveUpdateMode
             ]
 
         CantOpen _ ->
@@ -1507,15 +2497,20 @@ failure windows u f =
                    )
                 ++ [ buttons [ btn "WRITE AGAIN" WriteAgain, btn "CLOSE" Close ] ]
                 ++ sdSteps
-                ++ [ say "To leave update mode without updating: unplug the USB cable and plug it back in; the unit starts as before." ]
+                ++ [ leaveUpdateMode ]
 
-        Guarded why ->
+        Guarded _ why ->
             [ say ("THE UPDATE STOPPED BEFORE WRITING: " ++ why ++ ".")
-            , say "Nothing was written. The unit is waiting in update mode: unplug the USB cable and plug it back in, and it starts as before."
-            , buttons [ btn "CLOSE" Close ]
+            , say "Nothing was written. Press WRITE AGAIN to pick the device again."
+            , buttons [ btn "WRITE AGAIN" WriteAgain, btn "CLOSE" Close ]
+            , leaveUpdateMode
             ]
 
-        WriteCut _ why ->
+
+failedAfter : PostFail -> List (Html Msg)
+failedAfter f =
+    case f of
+        WriteCut why ->
             [ say ("THE FIRMWARE WRITE WAS CUT OFF (" ++ why ++ ").")
             , say "The unit can't be bricked: its bootloader is never touched. Finish from the bootloader:"
             , ol []
@@ -1524,20 +2519,35 @@ failure windows u f =
             ]
                 ++ sdSteps
 
-        NotBack _ cause ->
+        LeaveFailed why ->
+            [ say ("THE FIRMWARE IS WRITTEN, BUT THE UNIT DIDN'T RESTART BY ITSELF (" ++ why ++ ").")
+            , say "Switch the unit off and on (or unplug the USB cable and plug it back in), then press CHECK AGAIN: it starts the new firmware and installs bank 2."
+            , buttons [ btn "CHECK AGAIN" CheckAgain, btn "CONNECT UNIT…" ConnectPort, btn "CLOSE" Close ]
+            ]
+                ++ bootloaderSteps
+
+        NotBack cause ->
             [ say ("THE FIRMWARE IS WRITTEN, BUT THE UNIT HASN'T ANSWERED (" ++ cause ++ "). What to do depends on its screen:")
             , ol []
                 [ li [] [ text "DON'T POWER OFF: it is still installing. Leave it on; when the screen changes, press CHECK AGAIN." ]
                 , li [] [ text "Its usual screen: press CHECK AGAIN. If it still doesn't answer, switch it off and on (only if the screen does NOT say DON'T POWER OFF), then CHECK AGAIN." ]
-                , li [] [ text "Blank or dark: it is waiting in update mode. Unplug the USB cable, plug it back in, and press TRY AGAIN." ]
+                , li [] [ text "Blank or dark: it is waiting in update mode. Unplug the USB cable, plug it back in, then press CHECK AGAIN." ]
+                , li [] [ text "If this page never had the unit's port (FINISH THE UPDATE from the connect page), press CONNECT UNIT… and pick it." ]
                 ]
-            , buttons [ btn "CHECK AGAIN" CheckAgain, btn "TRY AGAIN" TryAgain, btn "CLOSE" Close ]
+            , buttons [ btn "CHECK AGAIN" CheckAgain, btn "CONNECT UNIT…" ConnectPort, btn "CLOSE" Close ]
             ]
-                ++ sdSteps
+                ++ bootloaderSteps
 
         Unfinished why ->
             [ say ("THE FIRMWARE IS WRITTEN, BUT THE UPDATE ISN'T FINISHED: " ++ why ++ ".")
-            , say "Press TRY AGAIN to run the whole update again."
+            , say "Press TRY AGAIN: the editor asks the unit what it runs now and finishes from there."
             , buttons [ btn "TRY AGAIN" TryAgain, btn "CLOSE" Close ]
             ]
                 ++ sdSteps
+
+        GarbledAfter why ->
+            [ say ("THE UPDATE STOPPED AFTER THE FIRMWARE WRITE BEGAN: " ++ why ++ ".")
+            , say "Press CHECK AGAIN: the editor asks the unit what it runs now and finishes from there."
+            , buttons [ btn "CHECK AGAIN" CheckAgain, btn "CLOSE" Close ]
+            ]
+                ++ bootloaderSteps
