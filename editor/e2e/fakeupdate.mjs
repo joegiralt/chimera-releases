@@ -7,7 +7,9 @@
 // DFU device in; the image the page writes there (`flashed`) becomes the
 // running firmware if it is the release's CHIMERA.BIN, and the first boot
 // installs a staged .bk2 sealed for it, as the real one does.
-import zlib from "node:zlib";
+import { createRequire } from "node:module";
+
+const { crc32 } = createRequire(import.meta.url)("./fakerelease.cjs");
 
 /** The 0.2 firmware's `put` usage line: it refuses bank 2's path. */
 export const OLD_PUT = "ERR put takes /CHIMERA/PROJECTS/P#######.A or /CHIMERA/SOUNDS/S#######.A [--over], its size and CRC-32 in hex";
@@ -95,7 +97,7 @@ export class FakeFirmware {
     if (p.bytes < p.size) return [];
     this.putting = null;
     const all = Buffer.concat(p.data);
-    if (all.length !== p.size || zlib.crc32(all) !== p.crc) return ["ERR put: CRC mismatch"];
+    if (all.length !== p.size || crc32(all) !== p.crc) return ["ERR put: CRC mismatch"];
     this.staged = all;
     return ["OK"];
   }

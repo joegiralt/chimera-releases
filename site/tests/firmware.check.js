@@ -7,7 +7,7 @@ const { execFileSync } = require("child_process");
 const fs = require("fs");
 const os = require("os");
 const path = require("path");
-const { checkPair } = require("../scripts/firmware.js");
+const { checkPair, crc32 } = require("../scripts/firmware.js");
 const { makeRelease } = require("../../editor/e2e/fakerelease.cjs");
 
 const a = makeRelease("0.4.1 abcd1234");
@@ -18,6 +18,12 @@ const torn = Buffer.from(a.bk2);
 torn[400] ^= 1;
 assert.strictEqual(checkPair(a.bin, torn), "CHIMERA.BK2 is damaged");
 assert.strictEqual(checkPair(a.bk2, a.bk2), "CHIMERA.BIN is a .bk2 under a .bin name");
+// dfu.js's checkImage too: the reset vector inside the image at 0x08020000.
+const low = Buffer.from(a.bin);
+low.writeUInt32LE(0x08001001, 4);
+assert.strictEqual(checkPair(low, a.bk2), "CHIMERA.BIN is not a firmware image for 0x08020000");
+// Its own CRC-32 (zlib.crc32 needs Node 20.15 or later): the check value.
+assert.strictEqual(crc32(Buffer.from("123456789")), 0xcbf43926);
 
 // The script itself: a mismatched pair whose SHA256SUMS match is not published.
 const dir = fs.mkdtempSync(path.join(os.tmpdir(), "firmware-check-"));

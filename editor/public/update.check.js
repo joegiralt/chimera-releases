@@ -4,8 +4,7 @@
 // and the put's lines, against a fake console.
 globalThis.ChimeraDfu = require('./dfu.js');
 var U = require('./update.js');
-var zlib = require('node:zlib');
-var { makeRelease } = require('../e2e/fakerelease.cjs');
+var { makeRelease, crc32 } = require('../e2e/fakerelease.cjs');
 
 function fail(msg) { console.error('FAIL ' + msg); process.exit(1); }
 function eq(got, want, what) { if (got !== want) fail(what + ': ' + got + ' want ' + want); }
@@ -17,7 +16,8 @@ var u8 = function (b) { return new Uint8Array(b); };
 
 async function checks() {
   var r = makeRelease('0.4.1 abcd1234');
-  eq(U.crc32(u8(r.bk2)), zlib.crc32(r.bk2), 'crc32 as zlib');
+  eq(U.crc32(u8(Buffer.from('123456789'))), 0xcbf43926, 'crc32: the check value');
+  eq(U.crc32(u8(r.bk2)), crc32(r.bk2), 'crc32 as the release maker\'s');
   var got = await U.adopt(u8(r.bin), u8(r.bk2), r.sums, 'latest', r.manifest);
   eq(got.version, '0.4.1 abcd1234', 'the version');
   eq(got.seal, r.seal, 'the seal');
@@ -72,7 +72,7 @@ async function putLines() {
   await U.run({ op: 'begin' });
   var rel = U.held().release;
   await U.run({ op: 'put', id: 'put', seal: rel.seal, sha: rel.bk2Sha });
-  eq(wrote[0], 'put /CHIMERA/SYSTEM/BANK2.BK2 ' + r.bk2.length + ' ' + zlib.crc32(r.bk2).toString(16).padStart(8, '0'), 'the put line');
+  eq(wrote[0], 'put /CHIMERA/SYSTEM/BANK2.BK2 ' + r.bk2.length + ' ' + crc32(r.bk2).toString(16).padStart(8, '0'), 'the put line');
   eq(wrote.slice(1).every(function (l) { return l.length <= 64; }), true, 'lines of 48 bytes');
   eq(Buffer.concat(wrote.slice(1).map(function (l) { return Buffer.from(l, 'base64'); })).equals(r.bk2), true, 'the data whole');
   var last = said[said.length - 1];

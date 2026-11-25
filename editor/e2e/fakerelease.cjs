@@ -4,7 +4,16 @@
 // SHA-256 prefix, the version) and CHIMERA.BIN (a vector table for
 // 0x08020000 and the seal once), with SHA256SUMS and the site's manifest.
 const crypto = require("node:crypto");
-const zlib = require("node:zlib");
+
+/** CRC-32 (IEEE), its own: zlib.crc32 needs Node 20.15 or later. */
+function crc32(b) {
+  let c = 0xffffffff;
+  for (const x of b) {
+    c ^= x;
+    for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1;
+  }
+  return (c ^ 0xffffffff) >>> 0;
+}
 
 /** `version` is "0.4.1 abcd1234"; `format` the .bk2's (0.4's is 2). */
 function makeRelease(version, { binSize = 300 * 1024, bk2Size = 64 * 1024, format = 2 } = {}) {
@@ -17,7 +26,7 @@ function makeRelease(version, { binSize = 300 * 1024, bk2Size = 64 * 1024, forma
   head.write("CHIMERA2", 0, "ascii");
   head.writeUInt16LE(format, 8);
   head.writeUInt32LE(body.length, 0x0c);
-  head.writeUInt32LE(zlib.crc32(body), 0x10);
+  head.writeUInt32LE(crc32(body), 0x10);
   seal.copy(head, 0x18);
   head.write(version, 0x20, "ascii");
   const bk2 = Buffer.concat([head, body]);
@@ -33,4 +42,4 @@ function makeRelease(version, { binSize = 300 * 1024, bk2Size = 64 * 1024, forma
   return { version, build, seal: seal.toString("hex"), bin, bk2, sums, manifest };
 }
 
-module.exports = { makeRelease };
+module.exports = { makeRelease, crc32 };
