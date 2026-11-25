@@ -60,6 +60,23 @@ export async function until(what, ok, ms = 5000, every = 20) {
   }
 }
 
+/** `ed since <n>` followed through its pages: each answer's lines (its
+ * `OK <m> more` dropped) until one ends `OK <m>`; `ask` answers a line.
+ * { lines, gen }: every page's lines, and the last number. Throws on an
+ * answer that isn't a `since`'s. */
+export async function sinceWhole(ask, n = 0) {
+  const lines = [];
+  for (let pages = 0; pages < 64; pages++) {
+    const got = await ask(`ed since ${n}`);
+    const m = /^OK (\d+)( more)?$/.exec(got.at(-1) ?? "");
+    if (!m) throw new Error(`ed since ${n}: ${got.at(-1)}`);
+    lines.push(...got.slice(0, -1));
+    if (!m[2]) return { lines, gen: Number(m[1]) };
+    n = Number(m[1]);
+  }
+  throw new Error("ed since: more than 64 pages");
+}
+
 const terminal = (l) => l === "OK" || l.startsWith("OK ") || l.startsWith("ERR");
 
 /** The console's one client: requests answered one at a time, in order. */
@@ -333,6 +350,12 @@ function withAsks(con, log, own) {
         return lines.at(-1) !== "ERR busy";
       }, 20000, 200);
       return lines;
+    },
+    /** `ed since <n>` whole: asked again while its answer ends `OK <m> more`
+     * (the unit pages an answer past its byte bound: a DRUM Part's pad lines
+     * push the `sound` lines to a later page). { lines, gen }. */
+    async since(n = 0) {
+      return sinceWhole((line) => unit.ask(line), n);
     },
     /** `ask`, and it must end OK. */
     async ok(line) {

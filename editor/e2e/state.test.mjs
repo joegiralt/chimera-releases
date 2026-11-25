@@ -29,12 +29,12 @@ describe("the box's own hands", () => {
     await onEngine(1, "ALGO");
     await showCell("FILTER.RESO");
     // What the turn moved, as the unit says it: the val lines of a diff.
-    let gen = Number(/^OK (\d+)/.exec((await unit.ask("ed since 0")).at(-1))[1]);
+    let gen = (await unit.since()).gen;
     await unit.ok("turn 1 3");
     const moved = await until("a value moved by the turn", async () => {
-      const got = await unit.ask(`ed since ${gen}`);
-      gen = Number(/^OK (\d+)/.exec(got.at(-1))[1]);
-      return got.map(tokens).find((w) => w[0] === "val")?.[1];
+      const got = await unit.since(gen);
+      gen = got.gen;
+      return got.lines.map(tokens).find((w) => w[0] === "val")?.[1];
     }, 3000);
     if (await slider(moved).count()) await sliderFollows(moved, 3000);
     else {
@@ -159,13 +159,13 @@ describe("the box's own hands", () => {
 
 describe("loads", () => {
   test("G2: a Sound loaded on the followed Part: its engine, values and routes replace the old", async () => {
-    await followPart(6, (await statusText()).endsWith("VA") ? "VA" : (await unit.ask("ed since 0")).find((l) => l.startsWith("engine 6 ")).split(" ")[2]);
+    await followPart(6, (await statusText()).endsWith("VA") ? "VA" : (await unit.since()).lines.find((l) => l.startsWith("engine 6 ")).split(" ")[2]);
     await loadInit(6, "VA");
     await until("the editor on Part 6 VA", async () => (await statusText()) === "SIMULATOR · PART 6 · VA", 10000);
     await slidersSettle();
     const routes = await unitRoutes();
     await until("the unit's routes as the cables", async () => (await page.locator(".bay").first().locator(".att").count()) === Object.keys(routes).length, 5000);
-    assert.ok((await unit.ask("ed since 0")).includes('sound 6 "INIT" clean'));
+    assert.ok((await unit.since()).lines.includes('sound 6 "INIT" clean'));
   });
 
   test("G3: a project loaded while connected: each tab's engine, the followed page and the MIXER the unit's", { skip: simOnly("saves projects on the card") }, async () => {
@@ -174,14 +174,14 @@ describe("loads", () => {
     await until("E2EA saved", async () => (await unit.ask("status")).includes("project E2EA"));
     // A new project: every Part's engine its own (MODAL and VA on 2 and 3 are E2EA's).
     await newProject();
-    await until("Part 3 no longer VA", async () => !(await unit.ask("ed since 0")).includes("engine 3 VA"), 5000);
+    await until("Part 3 no longer VA", async () => !(await unit.since()).lines.includes("engine 3 VA"), 5000);
     await until("P3's tab", async () => !(await page.locator(".ptop .tab", { hasText: "P3" }).innerText()).trim().endsWith("VA"), 5000);
     await unit.ok("ed projects");
-    const listed = await until("E2EA listed", async () => (await unit.ask("ed since 0")).map(tokens).find((w) => w[0] === "proj" && w[2] === "E2EA"), 5000);
+    const listed = await until("E2EA listed", async () => (await unit.since()).lines.map(tokens).find((w) => w[0] === "proj" && w[2] === "E2EA"), 5000);
     await unit.ok(`ed project load ${listed[1]} ${listed[5]} discard`);
     await until("E2EA loaded", async () => (await unit.ask("status")).includes("project E2EA"), 10000);
     await followPart(1, "ALGO");
-    const engines = Object.fromEntries((await unit.ask("ed since 0")).map(tokens).filter((w) => w[0] === "engine").map((w) => [w[1], w[2]]));
+    const engines = Object.fromEntries((await unit.since()).lines.map(tokens).filter((w) => w[0] === "engine").map((w) => [w[1], w[2]]));
     for (let n = 1; n <= 6; n++) await until(`P${n}'s tab ${engines[n]}`, async () => (await page.locator(".ptop .tab", { hasText: `P${n}` }).innerText()).trim().endsWith(engines[n]));
     await slidersSettle();
     await onMixer();
@@ -195,7 +195,7 @@ describe("the box busy elsewhere", () => {
     await onEngine(1, "ALGO");
     // An edit, so a load over Part 1 asks.
     await unit.ok("ed set FILTER.RESO 0.3");
-    await until("Part 1 edited", async () => !(await unit.ask("ed since 0")).includes('sound 1 "INIT" clean') || true);
+    await until("Part 1 edited", async () => !(await unit.since()).lines.includes('sound 1 "INIT" clean') || true);
     await unit.ok("key EDIT+B1");
     await until("the SOUND 1 browser", async () => (await unit.at()) === "SOUND 1");
     await unit.ok("key EDIT");

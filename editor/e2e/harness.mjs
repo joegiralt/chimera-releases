@@ -152,7 +152,7 @@ async function detents(n) {
 /** Part `n` to the INIT Sound on browser row `row`: EDIT+B<n>, the list's top, down `row`, EDIT.
  * Only over a clean Part: an edited one would ask REPLACE? and wait for a hand. */
 export async function loadInit(n, engine) {
-  const sound = (await unit.ask("ed since 0")).find((l) => l.startsWith(`sound ${n} `)) ?? "";
+  const sound = (await unit.since()).lines.find((l) => l.startsWith(`sound ${n} `)) ?? "";
   if (!sound.endsWith(" clean")) throw new Error(`Part ${n} is not clean (${JSON.stringify(sound)}): loading over it would ask REPLACE? and wait for a hand`);
   await unit.ok(`key EDIT+B${n}`);
   await until(`the unit's SOUND ${n} browser`, async () => (await unit.at()) === `SOUND ${n}`);
@@ -160,7 +160,7 @@ export async function loadInit(n, engine) {
   await detents(ENGINES.indexOf(engine));
   await unit.ok("key EDIT");
   await until(`INIT ${engine} on Part ${n}`, async () => {
-    const all = await unit.ask("ed since 0");
+    const all = (await unit.since()).lines;
     return all.includes(`part ${n} ${engine}`) && all.includes(`sound ${n} "INIT" clean`);
   }, 15000);
 }
@@ -534,7 +534,7 @@ export const cableText = (a) => {
 /** The unit's routes of the followed Part: `ed since 0`'s route lines, as { cell: { amount, text } }. */
 export async function unitRoutes() {
   const out = {};
-  for (const l of await unit.ask("ed since 0")) {
+  for (const l of (await unit.since()).lines) {
     const w = tokens(l);
     if (w[0] === "route" && /^-?\d+$/.test(w[2])) out[w[1]] = { amount: Number(w[2]), text: w[3] };
   }
@@ -726,7 +726,7 @@ export async function describeMap(schema) {
 /** The unit's panels now (`ed since 0`'s `panel` lines) as { NAME: VARIANT }. */
 export async function unitPanels() {
   const out = {};
-  for (const l of await unit.ask("ed since 0")) {
+  for (const l of (await unit.since()).lines) {
     const w = tokens(l);
     if (w[0] === "panel") out[w[1]] = w[2];
   }

@@ -290,7 +290,7 @@ describe("the top bar", () => {
   test("D13: each Part's tab names the engine the unit says it has", async () => {
     await onEngine(1, "ALGO");
     const engines = {};
-    for (const l of await unit.ask("ed since 0")) {
+    for (const l of (await unit.since()).lines) {
       const w = tokens(l);
       if (w[0] === "engine") engines[w[1]] = w[2];
     }
@@ -342,7 +342,7 @@ describe("the top bar", () => {
 
   test("D16, G9: TAPE with no sample: SOURCE shows the unit's own text, no error", async () => {
     await onEngine(partOf("TAPE"), "TAPE");
-    const said = (await unit.ask("ed since 0")).map(tokens).find((w) => w[0] === "source");
+    const said = (await unit.since()).lines.map(tokens).find((w) => w[0] === "source");
     assert.ok(said, "the unit says no source line");
     const cell = page.locator(".c.ro", { hasText: "SOURCE" }).locator(".v");
     await until("SOURCE's text", async () => (await cell.innerText()).trim() === said[1]);

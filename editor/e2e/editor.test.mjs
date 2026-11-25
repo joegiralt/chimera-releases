@@ -229,7 +229,7 @@ for (const engine of ENGINES) {
     test("MOD bay: the unit's routes are the cables; patch, amount and unpatch reach the unit", async () => {
       await followPart(n, engine);
       const bay = page.locator(".bay");
-      const unitHas = (await unit.ask("ed since 0")).some((l) => l.startsWith(`routes ${n}`));
+      const unitHas = (await unit.since()).lines.some((l) => l.startsWith(`routes ${n}`));
       assert.ok(unitHas, `the unit reports no routes for Part ${n}`);
       await bay.first().waitFor({ timeout: 5000 * SLOW }).catch(() => {});
       assert.equal(await bay.count(), 1, "the unit reports the Part's routes: the editor draws one MOD bay for them");

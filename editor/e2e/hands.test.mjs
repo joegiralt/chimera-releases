@@ -175,7 +175,7 @@ describe("knobs", () => {
     await unit.ok("ed part 6");
     const vals = {};
     const panels = {};
-    for (const l of await unit.ask("ed since 0")) {
+    for (const l of (await unit.since()).lines) {
       const w = tokens(l);
       if (w[0] === "val") vals[w[1]] = Number(w[3]);
       if (w[0] === "panel") panels[w[1]] = w[2];
