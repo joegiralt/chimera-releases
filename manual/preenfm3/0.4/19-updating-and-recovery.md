@@ -29,16 +29,20 @@ All four end on the same install screen, and your projects and Sounds stay on th
 You need Chrome or Edge (they have Web Serial and WebUSB; Firefox and Safari don't), a data USB cable, and the unit connected in the [browser editor](18-browser-editor.md).
 
 1. **Hold MENU** to save your project: unsaved changes stop the update before anything is written.
-2. Press **UPDATE** in the editor's top bar. It shows **THIS UNIT** (the version the unit runs) and **LATEST** (the newest release). When they match it offers **REINSTALL…** instead.
+2. Press **UPDATE** in the editor's top bar. It shows **THIS UNIT** (the version the unit runs) and **LATEST** (the newest release). When they match it offers **REINSTALL…** instead; when the release is older than the unit's firmware, **DOWNGRADE…**, with a warning.
 3. Press **UPDATE…**, read the confirm screen, and press **START UPDATE**. Don't unplug the unit or power it off until the page says **DONE**.
 
-The page goes through **CHECKING**, **COPYING BANK 2** (with a percentage), **RESTARTING INTO UPDATE MODE**, **WRITING FIRMWARE** (with a percentage) and **INSTALLING**, and ends on **UPDATED** with the old and new versions. The first time, the browser asks which device to use for update mode: press **CHOOSE UPDATE DEVICE** and pick **STM32 BOOTLOADER**.
+The page goes through **CHECKING**, **COPYING BANK 2** (with a percentage), **RESTARTING INTO UPDATE MODE**, **WRITING FIRMWARE** (with a percentage) and **INSTALLING**, and ends on **UPDATED** with the old and new versions. The first time, the browser asks which device to use for update mode: press **CHOOSE UPDATE DEVICE** and pick **STM32 BOOTLOADER**. The editor writes only to the one STM32H7 DFU device that appears after the unit restarts into update mode; another board in DFU mode is never written. While it runs, the browser asks before you close or reload the tab.
+
+When the new firmware starts with `CHIMERA.BK2` on the card but bank 2 not installed, the editor sends `bank2 install` to finish it. The update tool stops there instead (and the next start installs it); the editor's way ends in the same place without another restart by hand.
 
 **CHOOSE FILES…** takes a release's `CHIMERA.BIN`, `CHIMERA.BK2` and `SHA256SUMS` from your computer instead (choose all three at once). Every file is checked against `SHA256SUMS`, and the two as one build, before anything is written.
 
 **On Windows**, the browser needs a driver for update mode, once: the editor says so and lists the steps (Zadig, select **STM32 BOOTLOADER**, **WinUSB**, **Install Driver**), then **WRITE AGAIN**.
 
-**If it stops**, the page says what happened and what to do. Before **WRITING FIRMWARE** nothing has changed. If the write is cut off, the bootloader is untouched: hold **MENU** at power-on, press button 2 (DFU Mode) and press **WRITE AGAIN**, or use [the SD card](#updating-from-the-sd-card).
+**If it stops**, the page says what happened and what to do. Before **WRITING FIRMWARE** the firmware is as it was, though `CHIMERA.BK2` may already be on the card (harmless) and the unit may be waiting in update mode with its screen dark: unplug the cable and plug it back in and it starts as before. If the write is cut off, the bootloader is untouched: hold **MENU** at power-on, press button 2 (DFU Mode) and press **WRITE AGAIN**, or use [the SD card](#updating-from-the-sd-card). After the write, **TRY AGAIN** and **CHECK AGAIN** ask the unit what it runs and finish from there.
+
+**A unit stuck in update mode** (its screen dark after a stopped update, or after button 2 in the bootloader): open the editor and press **UNIT STUCK IN UPDATE MODE? FINISH THE UPDATE** on its connect page. It writes the firmware, then installs bank 2 once the unit restarts (if the page never had the unit's port, **CONNECT UNIT…** asks for it).
 
 ## Updating with the update tool over USB
 

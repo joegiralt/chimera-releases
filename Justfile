@@ -150,7 +150,7 @@ site-serve port="8000":
 
 # The site's Elm tests (every guide at the root included) and elm-review
 site-test:
-    cd site && npm install --no-audit --no-fund --silent && node tests/gen-fixtures.js && node tests/icons.check.js && node tests/pages.check.js && node tests/manual.check.js && npx elm-test && npx elm-review
+    cd site && npm install --no-audit --no-fund --silent && node tests/gen-fixtures.js && node tests/icons.check.js && node tests/pages.check.js && node tests/manual.check.js && node tests/firmware.check.js && npx elm-test && npx elm-review
 
 # The manual's manual.md and llms.txt, from its chapters
 manual:
