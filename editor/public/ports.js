@@ -8,12 +8,18 @@
 var ChimeraPorts = (function () {
   var link = null; // { write(line) -> Promise, close() }
   var app = null;
+  // While an update owns the link (update.js), its lines and state go to
+  // it, not to Elm's model, and the model's own lines are not sent.
+  var claim = null; // { line(l), state(s) }
+  var lastSocket = null; // the URL the socket link was opened to
   var queue = Promise.resolve(); // the last write: the next waits for it
 
   // A socket holding more than this unsent waits before the next line.
   var SOCKET_HIGH = 4096;
 
-  function state(s) { app.ports.linkState.send(s); }
+  function state(s) { if (claim) claim.state(s); else app.ports.linkState.send(s); }
+
+  function emit(l) { if (claim) claim.line(l); else app.ports.lineIn.send(l); }
 
   // Split a stream of text into lines on \n, CR stripped.
   function liner(emit) {
@@ -59,25 +65,34 @@ var ChimeraPorts = (function () {
     if (run) await run();
   }
 
+  var CONSOLE = { usbVendorId: 0x0483, usbProductId: 0x5740 };
+  var SERIAL = { baudRate: 115200, dataBits: 8, stopBits: 1, parity: 'none' };
+
   // Open the port and make it the link; resolves to the read loop, or nothing.
   async function openSerial() {
     await drop();
     if (!('serial' in navigator)) { state('unsupported'); return null; }
     var port;
     try {
-      port = await navigator.serial.requestPort({ filters: [{ usbVendorId: 0x0483, usbProductId: 0x5740 }] });
-      await port.open({ baudRate: 115200, dataBits: 8, stopBits: 1, parity: 'none' });
+      port = await navigator.serial.requestPort({ filters: [CONSOLE] });
+      await port.open(SERIAL);
     } catch (e) {
       // A cancelled chooser is not a fault; a port someone else holds is.
       if (e && e.name === 'NotFoundError') { return null; }
       state('busy');
       return null;
     }
+    lastSocket = null;
+    return adopt(port);
+  }
+
+  // An open port as the link; resolves to its read loop.
+  function adopt(port) {
     var enc = new TextEncoder();
     var writer = port.writable.getWriter();
     var reader = port.readable.getReader();
     var dec = new TextDecoder('utf-8');
-    var feed = liner(function (l) { app.ports.lineIn.send(l); });
+    var feed = liner(emit);
     var mine = {
       write: async function (line) {
         await writer.ready;
@@ -104,9 +119,11 @@ var ChimeraPorts = (function () {
 
   async function openSocket(url) {
     await drop();
+    lastSocket = url;
     var ws;
     try { ws = new WebSocket(url); } catch (e) { state('absent'); return null; }
     var mine = {
+      ws: ws,
       write: function (line) { return drained(ws).then(function () { ws.send(line); }); },
       close: function () { ws.close(); },
     };
@@ -116,7 +133,7 @@ var ChimeraPorts = (function () {
     // The bridge sends one line per message; tolerate a CR or trailing \n.
     ws.onmessage = function (m) {
       String(m.data).split('\n').forEach(function (l, i, a) {
-        if (i < a.length - 1 || l !== '') app.ports.lineIn.send(l.replace(/\r$/, ''));
+        if (i < a.length - 1 || l !== '') emit(l.replace(/\r$/, ''));
       });
     };
     ws.onclose = function () {
@@ -143,9 +160,14 @@ var ChimeraPorts = (function () {
   // to Elm, and the link is dropped and released, so a reconnect can open
   // the same port; the lines queued behind it on that link are said too.
   function send(line) {
+    if (claim) return queue; // the update owns the link: the model is paused
+    return push(line, function () { app.ports.writeFailed.send(line); });
+  }
+
+  function push(line, said) {
     var l = link;
     var failed = function () {
-      app.ports.writeFailed.send(line);
+      said();
       if (l && link === l) { link = null; state('lost'); Promise.resolve(l.close()).catch(function () {}); }
     };
     if (!l) { failed(); return queue; }
@@ -154,6 +176,42 @@ var ChimeraPorts = (function () {
       return l.write(line);
     }).catch(failed);
     return queue;
+  }
+
+  // The update's side (update.js): the link taken from the model and given
+  // back, its own writes (resolving true once written, false if the link
+  // went), and the link opened again after the unit restarts: a serial port
+  // this page was given before (by its USB id), else the same socket.
+  function take(c) { claim = c; }
+  function giveBack() { claim = null; return link ? 'open' : 'lost'; }
+  function write(line) {
+    var ok = true;
+    return push(line, function () { ok = false; }).then(function () { return ok; });
+  }
+  function isOpen() { return !!link; }
+
+  async function reopen() {
+    if (link) return true;
+    if (lastSocket) {
+      openSocket(lastSocket);
+      for (var t = 0; t < 60; t++) {
+        if (!link) return false;
+        if (link.ws && link.ws.readyState === 1) return true;
+        await new Promise(function (r) { setTimeout(r, 50); });
+      }
+      return false;
+    }
+    if (!('serial' in navigator)) return false;
+    var ports = [];
+    try { ports = await navigator.serial.getPorts(); } catch (e) { return false; }
+    for (var i = 0; i < ports.length; i++) {
+      var info = ports[i].getInfo ? ports[i].getInfo() : CONSOLE;
+      if (info.usbVendorId !== CONSOLE.usbVendorId || info.usbProductId !== CONSOLE.usbProductId) continue;
+      try { await ports[i].open(SERIAL); } catch (e) { continue; }
+      adopt(ports[i])();
+      return true;
+    }
+    return false;
   }
 
   // The schema cache: IndexedDB, one store, a schema's describe
@@ -209,6 +267,11 @@ var ChimeraPorts = (function () {
   return {
     release: release,
     send: send,
+    take: take,
+    giveBack: giveBack,
+    write: write,
+    isOpen: isOpen,
+    reopen: reopen,
     liner: liner,
     recall: recall,
     keep: keep,
@@ -230,4 +293,5 @@ if (typeof Elm !== 'undefined' && typeof document !== 'undefined') {
   var main = Elm.Main.init({ node: document.getElementById('app'), flags: theme.flags() });
   if (main.ports.storeTheme) main.ports.storeTheme.subscribe(theme.store);
   ChimeraPorts.attach(main);
+  if (typeof ChimeraUpdate !== 'undefined') ChimeraUpdate.attach(main, ChimeraPorts);
 }

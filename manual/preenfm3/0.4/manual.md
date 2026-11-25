@@ -6651,13 +6651,30 @@ File names never carry a version (that is in the release title, the boot splash 
 
 | Way | When |
 |---|---|
+| [The browser editor](#updating-from-the-browser-editor) | The unit runs Chimera 0.4 or later (or connects as an older unit), in Chrome or Edge. One button |
 | [The update tool over USB](#updating-with-the-update-tool-over-usb) | The unit runs Chimera 0.3 or later, on macOS or Linux. One command |
 | [The SD card](#updating-from-the-sd-card) | A first install, Windows, or if the tool stops |
 | [USB DFU with dfu-util](#updating-over-usb-dfu-with-dfu-util) | When the card can't be used, on macOS or Linux |
 
-All three end on the same install screen, and your projects and Sounds stay on the card.
+All four end on the same install screen, and your projects and Sounds stay on the card.
 
 **Why two halves:** the flash area the bootloader writes is too small for Chimera; the rest lives where the bootloader doesn't reach, so Chimera writes it itself. The tool and install screen make the two halves one step.
+
+## Updating from the browser editor
+
+You need Chrome or Edge (they have Web Serial and WebUSB; Firefox and Safari don't), a data USB cable, and the unit connected in the [browser editor](#the-browser-editor).
+
+1. **Hold MENU** to save your project: unsaved changes stop the update before anything is written.
+2. Press **UPDATE** in the editor's top bar. It shows **THIS UNIT** (the version the unit runs) and **LATEST** (the newest release). When they match it offers **REINSTALL…** instead.
+3. Press **UPDATE…**, read the confirm screen, and press **START UPDATE**. Don't unplug the unit or power it off until the page says **DONE**.
+
+The page goes through **CHECKING**, **COPYING BANK 2** (with a percentage), **RESTARTING INTO UPDATE MODE**, **WRITING FIRMWARE** (with a percentage) and **INSTALLING**, and ends on **UPDATED** with the old and new versions. The first time, the browser asks which device to use for update mode: press **CHOOSE UPDATE DEVICE** and pick **STM32 BOOTLOADER**.
+
+**CHOOSE FILES…** takes a release's `CHIMERA.BIN`, `CHIMERA.BK2` and `SHA256SUMS` from your computer instead (choose all three at once). Every file is checked against `SHA256SUMS`, and the two as one build, before anything is written.
+
+**On Windows**, the browser needs a driver for update mode, once: the editor says so and lists the steps (Zadig, select **STM32 BOOTLOADER**, **WinUSB**, **Install Driver**), then **WRITE AGAIN**.
+
+**If it stops**, the page says what happened and what to do. Before **WRITING FIRMWARE** nothing has changed. If the write is cut off, the bootloader is untouched: hold **MENU** at power-on, press button 2 (DFU Mode) and press **WRITE AGAIN**, or use [the SD card](#updating-from-the-sd-card).
 
 ## Updating with the update tool over USB
 

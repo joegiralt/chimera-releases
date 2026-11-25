@@ -20,7 +20,7 @@ import path from "node:path";
  * is next to the simulator's socket (a timing the simulator never shows). */
 const LAG = Number(process.env.E2E_LAG ?? 0);
 
-const TYPES = { ".html": "text/html", ".js": "text/javascript", ".css": "text/css", ".wasm": "application/wasm", ".png": "image/png" };
+const TYPES = { ".html": "text/html", ".js": "text/javascript", ".css": "text/css", ".wasm": "application/wasm", ".png": "image/png", ".json": "application/json" };
 
 /** Text frames only, as a browser sends them: masked, maybe extended length. */
 function* frames(st) {
@@ -122,11 +122,20 @@ export async function startBridge(dist, unit) {
       for (const r of this.rules) r.release();
       this.rules = [];
     },
+    /** `(line) => lines | null`: lines answer it in the unit's place (none: no answer), null passes it on. */
+    intercept: null,
   };
   let socket = null;
+  const extra = { files: new Map(), down: false };
 
   const server = http.createServer((req, res) => {
     const url = new URL(req.url, "http://x");
+    const served = extra.files.get(url.pathname);
+    if (served) {
+      res.writeHead(200, { "content-type": TYPES[path.extname(url.pathname)] ?? "application/octet-stream", "cache-control": "no-store" });
+      res.end(served);
+      return;
+    }
     const file = path.join(dist, url.pathname === "/" ? "index.html" : path.normalize(url.pathname));
     if (!file.startsWith(dist) || !fs.existsSync(file) || fs.statSync(file).isDirectory()) {
       res.writeHead(404).end();
@@ -137,6 +146,11 @@ export async function startBridge(dist, unit) {
   });
 
   server.on("upgrade", (req, sock) => {
+    // A unit restarting: no console on the bus.
+    if (extra.down) {
+      sock.destroy();
+      return;
+    }
     const key = req.headers["sec-websocket-key"];
     const accept = crypto.createHash("sha1").update(key + "258EAFA5-E914-47DA-95CA-C5AB0DC85B11").digest("base64");
     sock.write(`HTTP/1.1 101 Switching Protocols\r\nUpgrade: websocket\r\nConnection: Upgrade\r\nSec-WebSocket-Accept: ${accept}\r\n\r\n`);
@@ -174,11 +188,12 @@ export async function startBridge(dist, unit) {
           flow.maxSetsInFlight = Math.max(flow.maxSetsInFlight, flow.setsInFlight);
         }
         const out = rule?.act === "rewrite" ? rule.map(line) : line;
+        const faked = flow.intercept?.(out) ?? null;
         // The unit's own answer: E2E_LAG late, as over the real unit's USB console.
         const late = (c) => (LAG ? new Promise((r) => setTimeout(() => r(c), LAG)) : c);
         // A made-up answer still comes in its turn: after the answers to the lines sent before it, as the unit's would.
         const before = flow.answered;
-        const ask = () => (rule?.act === "answer" ? before.then(() => ({ lines: rule.lines })) : unit.con.ask(out, "editor").then(late));
+        const ask = () => (faked ? before.then(() => ({ lines: faked })) : rule?.act === "answer" ? before.then(() => ({ lines: rule.lines })) : unit.con.ask(out, "editor").then(late));
         const answered = rule?.act === "defer" ? new Promise((r) => rule.held.push(() => ask().then(r))) : ask();
         if (rule?.act !== "defer") flow.answered = answered.catch(() => {});
         answered.then((c) => {
@@ -213,6 +228,15 @@ export async function startBridge(dist, unit) {
     /** A line to the linked browser that the unit never said. */
     inject(line) {
       if (socket && !socket.destroyed) socket.write(frame(0x1, Buffer.from(line, "utf8")));
+    },
+    /** Files served at their paths (`/firmware/preenfm3/latest/CHIMERA.BIN`), ahead of the dist. */
+    files: extra.files,
+    /** The console off the bus (true) until cleared: a socket opened meanwhile is refused. */
+    set down(v) {
+      extra.down = v;
+    },
+    get down() {
+      return extra.down;
     },
     /** The link dropped, as an unplugged cable or a killed bridge drops it. */
     hangUp() {

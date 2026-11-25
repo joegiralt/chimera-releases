@@ -96,6 +96,8 @@ type Msg
     | GoPart Part
       -- The MIXER's effect tab, by its block (a send's click picks its effect's).
     | MixFx String
+      -- UPDATE: the firmware update's page (`Update`, which Main opens).
+    | OpenUpdate
 
 
 {-| What the page shows: the followed Part's engine page, or the unit's
@@ -302,6 +304,10 @@ update msg m s0 =
 
         MixFx k ->
             ( { s | fx = Just k }, [], Nothing )
+
+        -- Main takes it before it gets here.
+        OpenUpdate ->
+            ( s, [], Nothing )
 
 
 bayKey : BayId -> String
@@ -1023,14 +1029,21 @@ connectPage m s =
                                     [ button [ class "hbtn", onClick (Unit (Model.Connect Model.ViaUnit)) ] [ text "CONNECT UNIT" ]
                                     , button [ class "hbtn", onClick (Unit (Model.Connect Model.ViaSimulator)) ] [ text "CONNECT SIMULATOR" ]
                                     ]
-                                    -- A unit too old for this editor: where its update is.
+                                    -- A unit too old for this editor: where its update is,
+                                    -- and on USB, the update itself.
                                     :: (case Model.download m of
                                             Just url ->
-                                                [ div [ class "download" ]
-                                                    [ a [ href url, Html.Attributes.target "_blank", rel "noopener" ] [ text "DOWNLOAD CHIMERA 0.4 OR LATER" ]
-                                                    , text (" " ++ String.replace "https://" "" url)
-                                                    ]
-                                                ]
+                                                (if m.via == Just Model.ViaUnit && m.link == Just Transport.Open then
+                                                    [ div [ class "connect" ] [ button [ class "hbtn", onClick OpenUpdate ] [ text "UPDATE THIS UNIT" ] ] ]
+
+                                                 else
+                                                    []
+                                                )
+                                                    ++ [ div [ class "download" ]
+                                                            [ a [ href url, Html.Attributes.target "_blank", rel "noopener" ] [ text "DOWNLOAD CHIMERA 0.4 OR LATER" ]
+                                                            , text (" " ++ String.replace "https://" "" url)
+                                                            ]
+                                                       ]
 
                                             Nothing ->
                                                 []
@@ -1192,14 +1205,15 @@ partName m pt =
             Dict.get (Unit.partNumber pt) m.sounds |> Maybe.map .name |> Maybe.withDefault "PART"
 
 
-{-| The unit's own pages it describes: MIXER, for now.
+{-| The unit's own pages it describes: MIXER, for now; and, for a unit on
+USB, its firmware UPDATE.
 -}
 unitTabs : Model -> State -> List (Page.Tab Msg)
 unitTabs m s =
-    if List.isEmpty (Schema.pages m.mixer) then
+    (if List.isEmpty (Schema.pages m.mixer) then
         []
 
-    else
+     else
         [ { kicker = "UNIT"
           , name = "MIXER"
           , current =
@@ -1211,6 +1225,13 @@ unitTabs m s =
           , go = Show MixerScreen
           }
         ]
+    )
+        ++ (if m.via == Just Model.ViaUnit then
+                [ { kicker = "FIRMWARE", name = "UPDATE", current = Elsewhere, go = OpenUpdate } ]
+
+            else
+                []
+           )
 
 
 {-| The unit's MIXER as a desk (`Layout.Mixer`, from its `describe MIXER`):

@@ -10,6 +10,7 @@
 // page said a notice the test did not expect (`expectNotice`) or threw.
 
 import assert from "node:assert/strict";
+import { createRequire } from "node:module";
 import path from "node:path";
 import { after, afterEach, before } from "node:test";
 import { fileURLToPath } from "node:url";
@@ -19,6 +20,8 @@ import { describeAll } from "./contract.mjs";
 import { SLOW, startUnit, tokens, UNIT, until } from "./unit.mjs";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
+/** The fake DfuSe device (WebUSB, 0483:df11) every page has: absent until `__usb.plug()`. */
+const fakeUsb = createRequire(import.meta.url)("./fakedfu.cjs");
 export const editorDir = path.resolve(here, "..");
 export const root = path.resolve(editorDir, "..");
 
@@ -286,6 +289,7 @@ async function newEditorPage(ctx, ws = bridge.ws) {
     };
   }, ws);
   await p.addInitScript(fakeSerial, ws);
+  await p.addInitScript({ content: `(${fakeUsb.toString()})(window, {});` });
   pages.add(p);
   return p;
 }
