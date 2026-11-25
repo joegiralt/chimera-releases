@@ -95,7 +95,7 @@ var ChimeraDfu = (function () {
   var H7 = /^@Internal Flash\s*\/0x08000000\/16\*128K[a-g]?\s*$/i;
   function isH7(name) { return H7.test(name || ''); }
 
-  /** "@Internal Flash  /0x08000000/16*128Kg" as [{ at, size, count }]. */
+  /** "@Internal Flash   /0x08000000/16*128Kg" as [{ at, size, count }]. */
   function layout(name) {
     var m = /^@[^/]*\/0x([0-9a-f]+)\/(.*)$/i.exec(name || '');
     if (!m) return null;
@@ -157,20 +157,34 @@ var ChimeraDfu = (function () {
   /** The device, opened and its DFU interface claimed. A device that can't
    * be opened (Windows without WinUSB, a Linux node without access, another
    * program holding it) rejects with `unopenable`. */
-  async function open(dev) {
+  async function open(dev, claimMs) {
+    var held = false;
     try {
       if (!dev.opened) await dev.open();
       if (!dev.configuration) await dev.selectConfiguration(1);
       var f = dfuInterface(dev);
       if (!f) throw Guard('this USB device has no DFU interface');
-      await dev.claimInterface(f.number);
-      await dev.selectAlternateInterface(f.number, 0);
-      return f;
+      // fwupd (Linux) claims every new 0483:df11 for a moment, and a claim
+      // then fails busy: try again every 250 ms for the window. Nothing has
+      // been written yet, so the retries are safe.
+      for (var end = Date.now() + claimMs; ; ) {
+        try {
+          await dev.claimInterface(f.number);
+          await dev.selectAlternateInterface(f.number, 0);
+          return f;
+        } catch (e) {
+          held = true;
+          if (Date.now() >= end) throw e;
+          await sleep(250);
+        }
+      }
     } catch (e) {
       try { await dev.close(); } catch (x) {}
       if (e && e.guard) throw e;
       var err = new Error((e && e.message) || String(e));
       err.unopenable = true;
+      // Opened, but its interface never came free: another program holds it.
+      err.held = held;
       throw err;
     }
   }
@@ -270,11 +284,11 @@ var ChimeraDfu = (function () {
    * `progress(done, total)` after each block. Every guard runs before the
    * device is touched. Rejects with `.guard`, `.unopenable`, `.refused` or
    * (anything else: the device went away) `.lost` set. */
-  async function write(dev, image, at, progress) {
+  async function write(dev, image, at, progress, opts) {
     checkImage(image);
     plan(at, image.length, 1024); // the guards, before the device is touched
     progress = progress || function () {};
-    var f = await open(dev).catch(function (e) { e.started = false; throw e; });
+    var f = await open(dev, (opts && opts.claimMs) || 10000).catch(function (e) { e.started = false; throw e; });
     var name = await altName(dev, f);
     if (!isH7(name)) {
       try { await dev.close(); } catch (e) {}

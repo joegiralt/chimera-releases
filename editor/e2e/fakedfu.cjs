@@ -20,11 +20,12 @@
 // every control transfer it was given. `noName` leaves the alternate's
 // interfaceName null (as Chrome on Windows may), the name then only in its
 // string descriptor (`nameString`, default the H7's); `claimFails` refuses
-// the interface claim.
+// the interface claim; `claimBusyFor` (n) fails the first n claims, as a
+// claim does while fwupd holds the device.
 function fakeUsb(scope, opts) {
   opts = opts || {};
   var SIZE = 2 * 1024 * 1024, FLASH = 0x08000000, SECTOR = 0x20000, XFER = 2048;
-  var LAYOUT = '@Internal Flash  /0x08000000/16*128Kg';
+  var LAYOUT = '@Internal Flash   /0x08000000/16*128Kg';
   var mem = new Uint8Array(SIZE).fill(0xa5);
   mem.fill(0xb0, 0, SECTOR); // the bootloader
   var log = { commands: [], erased: [], writes: [], massErase: false, left: false, image: null, opens: 0, requests: 0 };
@@ -114,6 +115,11 @@ function fakeUsb(scope, opts) {
     async claimInterface() {
       guard();
       if (mode.claimFails) throw new DOMException('Unable to claim interface.', 'NetworkError');
+      // fwupd on Linux claims a new DFU device for a moment: the first claims fail busy.
+      if (mode.claimBusyFor > 0) {
+        mode.claimBusyFor--;
+        throw new DOMException('Unable to claim interface.', 'NetworkError');
+      }
     },
     async selectAlternateInterface() { guard(); },
     async controlTransferIn(setup, length) {

@@ -61,8 +61,8 @@ function guards() {
   eq(p.blocks[0].at.value, D.BASE, 'the first block');
   eq(p.blocks.length, Math.ceil((3 * D.SECTOR + 1) / 2048), 'the block count');
   // The layout check: the H7's 128 KB sectors fit; 16 KB pages don't.
-  eq(D.layoutFits(D.layout('@Internal Flash  /0x08000000/16*128Kg'), p.erase), true, 'an H7 layout');
-  eq(D.layoutFits(D.layout('@Internal Flash  /0x08000000/128*016Kg'), p.erase), false, 'a 16 KB page layout');
+  eq(D.layoutFits(D.layout('@Internal Flash   /0x08000000/16*128Kg'), p.erase), true, 'an H7 layout');
+  eq(D.layoutFits(D.layout('@Internal Flash   /0x08000000/128*016Kg'), p.erase), false, 'a 16 KB page layout');
 }
 
 async function happyWrite() {
@@ -120,7 +120,7 @@ async function eraseRefused() {
 
 // Only the PreenFM3's chip: an STM32H7's internal flash, 16 sectors of 128 KB.
 async function onlyTheH7() {
-  for (var layout of ['@Internal Flash  /0x08000000/04*016Kg,01*064Kg,07*128Kg', '@Internal Flash  /0x08000000/04*032Kg,01*128Kg,03*256Kg', null, '@Option Bytes  /0x5200201C/01*128 e']) {
+  for (var layout of ['@Internal Flash   /0x08000000/04*016Kg,01*064Kg,07*128Kg', '@Internal Flash   /0x08000000/04*032Kg,01*128Kg,03*256Kg', null, '@Option Bytes   /0x5200201C/01*128 e']) {
     var scope = { navigator: {} };
     var usb = fakeUsb(scope, { present: true, granted: true });
     var other = usb.addOther(layout);
@@ -132,8 +132,8 @@ async function onlyTheH7() {
     eq(other.opened, false, 'left open: ' + layout);
     if (layout) eq(/not the PreenFM3/.test(e.message), true, 'the refusal names it: ' + e.message);
   }
-  eq(D.isH7('@Internal Flash  /0x08000000/16*128Kg'), true, 'the H7');
-  eq(D.isH7('@Internal Flash  /0x08000000/08*128Kg'), false, 'an H7 with 1 MB');
+  eq(D.isH7('@Internal Flash   /0x08000000/16*128Kg'), true, 'the H7');
+  eq(D.isH7('@Internal Flash   /0x08000000/08*128Kg'), false, 'an H7 with 1 MB');
 }
 
 // A descriptor that can't be read refuses the write: no guessed transfer size.
@@ -181,7 +181,7 @@ async function nameFromDescriptor() {
   await D.write(usb.device, img, D.BASE);
   eq(usb.log.left, true, 'written with the name from its descriptor');
   scope = { navigator: {} };
-  usb = fakeUsb(scope, { present: true, granted: true, mode: { noName: true, nameString: '@Internal Flash  /0x08000000/04*016Kg,01*064Kg,07*128Kg' } });
+  usb = fakeUsb(scope, { present: true, granted: true, mode: { noName: true, nameString: '@Internal Flash   /0x08000000/04*016Kg,01*064Kg,07*128Kg' } });
   var e = await rejects(D.write(usb.device, img, D.BASE), 'an F4 named only in its descriptor');
   eq(e.guard, true, 'a guard refusal (F4 by descriptor)');
   eq(usb.log.commands.length, 0, 'commands sent to an F4 named by descriptor');
@@ -192,19 +192,54 @@ async function nameFromDescriptor() {
 async function closedOnRefusal() {
   var scope = { navigator: {} };
   var usb = fakeUsb(scope, { present: true, granted: true });
-  var other = usb.addOther('@Internal Flash  /0x08000000/08*128Kg');
+  var other = usb.addOther('@Internal Flash   /0x08000000/08*128Kg');
   await rejects(D.write(other, image(4096), D.BASE), 'a 1 MB layout');
   eq(other.opened, false, 'left open after a layout refusal');
   scope = { navigator: {} };
   usb = fakeUsb(scope, { present: true, granted: true, mode: { claimFails: true } });
-  var e = await rejects(D.write(usb.device, image(4096), D.BASE), 'a failed claim');
+  var e = await rejects(D.write(usb.device, image(4096), D.BASE, null, { claimMs: 300 }), 'a failed claim');
   eq(e.unopenable, true, 'a failed claim is unopenable');
   eq(usb.device.opened, false, 'left open after a failed claim');
   eq('known' in D, false, 'the dead known() is still there');
 }
 
+// The real STM32H750 ROM's alternates, verbatim (dfu-util -l on the unit):
+// three spaces after the name.
+var REAL_FLASH = '@Internal Flash   /0x08000000/16*128Kg';
+var REAL_OPTIONS = '@Option Bytes   /0x5200201C/01*128 e';
+
+async function theRealH750() {
+  eq(D.isH7(REAL_FLASH), true, 'the H750 ROM\'s flash alternate');
+  eq(D.isH7(REAL_OPTIONS), false, 'the option bytes alternate');
+  var scope = { navigator: {} };
+  var usb = fakeUsb(scope, { present: true, granted: true });
+  var opts = usb.addOther(REAL_OPTIONS);
+  var e = await rejects(D.write(opts, image(4096), D.BASE), 'the option bytes');
+  eq(e.guard, true, 'the option bytes refused');
+  eq(opts.sent, 0, 'sent to the option bytes');
+}
+
+// fwupd (Linux) claims every new 0483:df11 a moment: the claim is retried
+// every 250 ms, up to the window, before the device counts as unopenable;
+// nothing is written meanwhile.
+async function busyClaimRetried() {
+  var scope = { navigator: {} };
+  var usb = fakeUsb(scope, { present: true, granted: true, mode: { claimBusyFor: 3 } });
+  await D.write(usb.device, image(4096), D.BASE, null, { claimMs: 3000 });
+  eq(usb.log.left, true, 'written once the claim went through');
+  scope = { navigator: {} };
+  usb = fakeUsb(scope, { present: true, granted: true, mode: { claimFails: true } });
+  var t = Date.now();
+  var e = await rejects(D.write(usb.device, image(4096), D.BASE, null, { claimMs: 800 }), 'a claim that never goes through');
+  eq(e.unopenable && e.held, true, 'unopenable, held by another program');
+  eq(Date.now() - t >= 700, true, 'retried for the window');
+  eq(usb.log.commands.length, 0, 'commands sent without the claim');
+}
+
 (async function () {
   guards();
+  await theRealH750();
+  await busyClaimRetried();
   await nameFromDescriptor();
   await closedOnRefusal();
   await onlyTheH7();
