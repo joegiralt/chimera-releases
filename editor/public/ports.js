@@ -182,6 +182,7 @@ var ChimeraPorts = (function () {
   // back, its own writes (resolving true once written, false if the link
   // went), and the link opened again after the unit restarts: a serial port
   // this page was given before (by its USB id), else the same socket.
+  // `reopen` resolves true, false, or 'several' (more than one unit).
   function take(c) { claim = c; }
   function giveBack() { claim = null; return link ? 'open' : 'lost'; }
   function write(line) {
@@ -204,14 +205,18 @@ var ChimeraPorts = (function () {
     if (!('serial' in navigator)) return false;
     var ports = [];
     try { ports = await navigator.serial.getPorts(); } catch (e) { return false; }
-    for (var i = 0; i < ports.length; i++) {
-      var info = ports[i].getInfo ? ports[i].getInfo() : CONSOLE;
-      if (info.usbVendorId !== CONSOLE.usbVendorId || info.usbProductId !== CONSOLE.usbProductId) continue;
-      try { await ports[i].open(SERIAL); } catch (e) { continue; }
-      adopt(ports[i])();
-      return true;
-    }
-    return false;
+    // Only the console's USB id; with more than one such port there is no
+    // telling which is this unit (the console names no serial number), so
+    // none is taken: 'several'.
+    var mine = ports.filter(function (p) {
+      var info = p.getInfo ? p.getInfo() : CONSOLE;
+      return info.usbVendorId === CONSOLE.usbVendorId && info.usbProductId === CONSOLE.usbProductId;
+    });
+    if (mine.length > 1) return 'several';
+    if (!mine.length) return false;
+    try { await mine[0].open(SERIAL); } catch (e) { return false; }
+    adopt(mine[0])();
+    return true;
   }
 
   // The schema cache: IndexedDB, one store, a schema's describe

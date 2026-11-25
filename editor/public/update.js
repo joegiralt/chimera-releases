@@ -99,9 +99,12 @@ var ChimeraUpdate = (function () {
   async function adopt(bin, bk2, sumsText, source, manifest) {
     var want = sums(sumsText);
     if (!want['CHIMERA.BIN'] || !want['CHIMERA.BK2']) throw Fault('sums', 'SHA256SUMS lists no CHIMERA.BIN and CHIMERA.BK2');
-    if ((await sha256(bin)) !== want['CHIMERA.BIN']) throw Fault('checksum', 'CHIMERA.BIN does not match SHA256SUMS: a damaged or different file');
-    if ((await sha256(bk2)) !== want['CHIMERA.BK2']) throw Fault('checksum', 'CHIMERA.BK2 does not match SHA256SUMS: a damaged or different file');
+    var binSha = await sha256(bin), bk2Sha = await sha256(bk2);
+    if (binSha !== want['CHIMERA.BIN']) throw Fault('checksum', 'CHIMERA.BIN does not match SHA256SUMS: a damaged or different file');
+    if (bk2Sha !== want['CHIMERA.BK2']) throw Fault('checksum', 'CHIMERA.BK2 does not match SHA256SUMS: a damaged or different file');
     var r = await checkPair(bin, bk2);
+    r.binSha = binSha;
+    r.bk2Sha = bk2Sha;
     if (manifest && manifest.version + ' ' + manifest.build !== r.version) throw Fault('pair', 'the site says ' + manifest.version + ' ' + manifest.build + ' but CHIMERA.BK2 is ' + r.version);
     r.source = source;
     held = { bin: bin, bk2: bk2, release: r };
@@ -145,7 +148,21 @@ var ChimeraUpdate = (function () {
           res(await adopt(new Uint8Array(await bin.arrayBuffer()), new Uint8Array(await bk2.arrayBuffer()), await sum.text(), 'chosen', null));
         } catch (e) { rej(e); }
       });
-      input.addEventListener('cancel', function () { input.remove(); rej(Fault('cancelled', 'no files chosen')); });
+      var settled = false;
+      var cancelled = function () {
+        if (settled || (input.files && input.files.length)) return;
+        settled = true;
+        input.remove();
+        rej(Fault('cancelled', 'no files chosen'));
+      };
+      input.addEventListener('change', function () { settled = true; }, true);
+      input.addEventListener('cancel', cancelled);
+      // Browsers without a `cancel` event: the page gets its focus back when
+      // the chooser closes; no `change` a second later is a cancel.
+      window.addEventListener('focus', function back() {
+        window.removeEventListener('focus', back);
+        setTimeout(cancelled, 1000);
+      });
       document.body.appendChild(input);
       input.click();
     });
@@ -156,6 +173,7 @@ var ChimeraUpdate = (function () {
       var r = how === 'choose' ? await choose() : await latest();
       say({ op: 'release', release: r });
     } catch (e) {
+      if (e.fault === 'cancelled') return say({ op: 'release', cancelled: true });
       say({ op: 'release', fault: e.fault || 'unreachable', detail: e.message || String(e) });
     }
   }
@@ -201,8 +219,10 @@ var ChimeraUpdate = (function () {
   function terminal(l) { return l === 'OK' || l.indexOf('OK ') === 0 || l === 'ERR' || l.indexOf('ERR ') === 0; }
 
   /** `line`'s answer: { lines, end } (end: its OK or ERR line), GONE, or
-   * { noAnswer: true }; the first line waited for `first` ms. */
+   * { noAnswer: true }; the first line waited for `first` ms. A link that
+   * went (the unit restarted, the cable came back) is opened again first. */
   async function ask1(line, first) {
+    if (!linkUp) await relink();
     await drain(50);
     if (!linkUp || !(await ports.write(line))) return GONE;
     var lines = [];
@@ -213,6 +233,15 @@ var ChimeraUpdate = (function () {
       if (terminal(l)) return { lines: lines, end: l };
       lines.push(l);
     }
+  }
+
+  /** The link opened again: a port this page was given (by the console's
+   * USB id); 'several' when more than one unit's console is there. */
+  async function relink() {
+    inbox = [];
+    var r = await ports.reopen();
+    linkUp = r === true;
+    return r;
   }
 
   /** `ask1`, again while the unit says `ERR busy`: 5 tries, 200 ms apart, doubling. */
@@ -233,18 +262,29 @@ var ChimeraUpdate = (function () {
     return btoa(s);
   }
 
+  /** The request names the release the user confirmed (its seal and the
+   * file's SHA-256): the bytes held must be that release's. */
+  function confirmed(m, file) {
+    var r = held && held.release;
+    var sha = r && (file === 'bin' ? r.binSha : r.bk2Sha);
+    if (r && m.seal === r.seal && m.sha === sha) return true;
+    say({ op: 'mismatch', detail: 'the files held are not the release you confirmed' });
+    return false;
+  }
+
   /** `put BANK2.BK2 <size> <crc32>`, the data once the unit says READY, then
    * its last line: { end } (OK, OK PRESENT, OK staged:..., or the ERR),
    * GONE or { noAnswer }. Progress as `copied`. */
   async function put1() {
     var data = held.bk2;
+    if (!linkUp) await relink();
     await drain(50);
     var head = 'put ' + BANK2_REMOTE + ' ' + data.length + ' ' + crc32(data).toString(16).padStart(8, '0');
     if (!linkUp || !(await ports.write(head))) return GONE;
     var first = await nextLine(PUT_WAIT_MS);
     if (first === 'gone') return GONE;
     if (first === null) return { noAnswer: true };
-    if (first !== 'READY') return { end: first };
+    if (first !== 'READY') return { lines: [], end: first };
     say({ op: 'copied', sent: 0, total: data.length });
     for (var at = 0; at < data.length; at += PUT_LINE * PUT_BATCH) {
       var lines = [];
@@ -255,10 +295,11 @@ var ChimeraUpdate = (function () {
     var last = await nextLine(PUT_WAIT_MS);
     if (last === 'gone') return GONE;
     if (last === null) return { noAnswer: true };
-    return { end: last };
+    return { lines: [], end: last };
   }
 
-  async function put() {
+  async function put(m) {
+    if (!confirmed(m, 'bk2')) return;
     var wait = BUSY_WAIT_MS, a;
     for (var i = 0; i < BUSY_TRIES; i++) {
       a = await put1();
@@ -266,14 +307,13 @@ var ChimeraUpdate = (function () {
       await sleep(wait);
       wait *= 2;
     }
-    say(Object.assign({ op: 'put' }, a));
+    say(Object.assign({ op: 'answer', id: m.id }, a));
   }
 
-  /** The unit back after a restart: the link opened again (a port this page
-   * was given, by the console's USB id) and answering `status`, not busy,
-   * within `secs`. With `restart`, first the link going (up to 10 s): the
-   * unit restarts a moment after its OK. A wait, never a write: its timeout
-   * cuts nothing. */
+  /** The unit back after a restart: the link opened again and answering
+   * `status`, not busy, within `secs`. With `restart`, first the link going
+   * (up to 10 s): the unit restarts a moment after its OK. A wait, never a
+   * write: its timeout cuts nothing. */
   async function back(secs, restart) {
     var end = Date.now() + secs * 1000;
     if (restart) {
@@ -283,9 +323,9 @@ var ChimeraUpdate = (function () {
     var cause = 'off';
     for (;;) {
       if (!linkUp) {
-        inbox = [];
-        linkUp = await ports.reopen();
-        if (!linkUp) cause = 'off';
+        var r = await relink();
+        if (r === 'several') cause = 'several';
+        else if (!linkUp) cause = 'off';
       }
       if (linkUp) {
         var a = await ask1('status', Math.max(50, Math.min(SILENCE_MS, end - Date.now())));
@@ -293,57 +333,100 @@ var ChimeraUpdate = (function () {
         cause = a.gone ? 'off' : a.end ? 'busy' : 'silent';
       }
       var left = end - Date.now();
-      if (left <= 0) return say({ op: 'back', timeout: true, cause: cause });
+      if (left <= 0) return say({ op: 'back', cause: cause });
       await sleep(Math.min(BACK_POLL_MS, left));
     }
-  }
-
-  /** `dfu`: its answer, or GONE (the unit reset before its OK: sent, not refused). */
-  async function dfu() {
-    var a = await ask1('dfu', SILENCE_MS);
-    say(Object.assign({ op: 'dfu' }, a));
   }
 
   // ---- the DFU device ----
 
   var device = null;
+  var before = []; // the DFU devices on the bus (and this page's) before `dfu`
 
   function windows() {
     var p = (navigator.userAgentData && navigator.userAgentData.platform) || navigator.platform || '';
     return /win/i.test(p);
   }
 
-  /** A DFU device this page was given before, waited for up to `secs` (it
-   * comes up a moment after `dfu`). */
+  async function dfuDevices() {
+    if (!navigator.usb) return [];
+    var ds = await navigator.usb.getDevices().catch(function () { return []; });
+    return ds.filter(function (d) { return d.vendorId === ChimeraDfu.ID.vendorId && d.productId === ChimeraDfu.ID.productId; });
+  }
+
+  /** The one DFU device that came up after `dfu` (chimera-usb.py's "exactly
+   * one"): { device }, or { problem: 'none' | 'several' }. */
+  function newDevice(was, now) {
+    var fresh = now.filter(function (d) { return was.indexOf(d) < 0; });
+    if (fresh.length === 1) return { device: fresh[0] };
+    return { problem: fresh.length ? 'several' : 'none' };
+  }
+
+  /** A device the user picked: not one that was there before `dfu`, and
+   * the only new one. */
+  function pickedDevice(d, was, now) {
+    if (was.indexOf(d) >= 0) return { problem: 'stale' };
+    var fresh = now.filter(function (x) { return was.indexOf(x) < 0 && x !== d; });
+    return fresh.length ? { problem: 'several' } : { device: d };
+  }
+
+  /** `dfu`, the DFU devices there before it noted first: its answer, or GONE
+   * (the unit reset before its OK: sent, not refused). */
+  async function dfu(m) {
+    before = await dfuDevices();
+    var a = await ask1('dfu', SILENCE_MS);
+    say(Object.assign({ op: 'answer', id: m.id }, a));
+  }
+
+  /** The DFU device that appears after `dfu`, waited for up to `secs`; one
+   * this page was given before is taken only if it wasn't there before. */
   async function findDevice(secs) {
-    if (!navigator.usb) return say({ op: 'device', found: false, unsupported: true });
+    if (!navigator.usb) return say({ op: 'device', unsupported: true });
     for (var end = Date.now() + secs * 1000; ; ) {
-      device = await ChimeraDfu.known().catch(function () { return null; });
-      if (device) return say({ op: 'device', found: true });
+      var got = newDevice(before, await dfuDevices());
+      if (got.device) { device = got.device; return say({ op: 'device', found: true }); }
+      if (got.problem === 'several') return say({ op: 'device', problem: 'several' });
       if (Date.now() >= end) return say({ op: 'device', found: false });
       await sleep(250);
     }
   }
 
   async function pickDevice() {
-    if (!navigator.usb) return say({ op: 'device', found: false, unsupported: true });
-    try {
-      device = await ChimeraDfu.choose();
-    } catch (e) {
-      device = null;
-    }
-    say({ op: 'device', found: !!device, picked: true });
+    if (!navigator.usb) return say({ op: 'device', unsupported: true });
+    var d = null;
+    try { d = await ChimeraDfu.choose(); } catch (e) { d = null; }
+    if (!d) return say({ op: 'device', found: false, cancelled: true });
+    var got = pickedDevice(d, before, await dfuDevices());
+    if (got.problem) return say({ op: 'device', problem: got.problem });
+    device = got.device;
+    say({ op: 'device', found: true });
   }
 
-  async function write() {
-    if (!device) return say({ op: 'write', fault: 'lost', detail: 'no update device' });
+  async function write(m) {
+    if (!confirmed(m, 'bin')) return;
+    if (!device) return say({ op: 'write', fault: 'guard', detail: 'no update device chosen', started: false });
     try {
       await ChimeraDfu.write(device, held.bin, ChimeraDfu.BASE, function (done, total) { say({ op: 'written', done: done, total: total }); });
       say({ op: 'write', ok: true });
     } catch (e) {
-      var kind = e.guard ? 'guard' : e.unopenable ? 'unopenable' : e.refused ? 'refused' : 'lost';
-      say({ op: 'write', fault: kind, detail: e.message || String(e), windows: windows() });
+      var kind = e.leave ? 'leave' : e.guard ? 'guard' : e.unopenable ? 'unopenable' : e.refused ? 'refused' : 'lost';
+      say({ op: 'write', fault: kind, detail: e.message || String(e), started: !!e.started });
     }
+  }
+
+  /** The console's port granted by a click (the chooser), for a unit this
+   * page never connected: the wait for it then opens it. */
+  async function pickPort() {
+    try { await navigator.serial.requestPort({ filters: [{ usbVendorId: 0x0483, usbProductId: 0x5740 }] }); } catch (e) { /* the wait says what came of it */ }
+  }
+
+  // While an update writes (the card, the flash) or waits on a restart, a
+  // closed or reloaded tab would strand it: the browser asks first.
+  function guardUnload(e) { e.preventDefault(); e.returnValue = ''; return ''; }
+  function hold(on) {
+    if (typeof window === 'undefined') return;
+    window.removeEventListener('beforeunload', guardUnload);
+    if (on) window.addEventListener('beforeunload', guardUnload);
   }
 
   // ---- Elm's requests ----
@@ -352,23 +435,29 @@ var ChimeraUpdate = (function () {
     switch (m.op) {
       case 'begin':
         inbox = [];
+        before = [];
+        device = null;
         linkUp = ports.isOpen();
         ports.take({ line: onLine, state: onState });
-        await drain(150);
+        if (linkUp) await drain(150);
         return say({ op: 'begun', open: linkUp, webusb: !!navigator.usb, windows: windows() });
       case 'release': return release(m.how);
       case 'ask': {
+        if (m.delay) await sleep(m.delay);
         var a = await ask(m.line, m.wait || SILENCE_MS);
-        return say(Object.assign({ op: 'answer', line: m.line }, a));
+        return say(Object.assign({ op: 'answer', id: m.id }, a));
       }
-      case 'put': return put();
-      case 'dfu': return dfu();
+      case 'put': return put(m);
+      case 'dfu': return dfu(m);
       case 'findDevice': return findDevice(m.secs);
       case 'pickDevice': return pickDevice();
-      case 'write': return write();
+      case 'write': return write(m);
       case 'back': return back(m.secs, !!m.restart);
+      case 'pickPort': return pickPort();
+      case 'hold': return hold(!!m.on);
       case 'end':
         inbox = [];
+        hold(false);
         return say({ op: 'ended', link: ports.giveBack() });
     }
   }
@@ -379,6 +468,8 @@ var ChimeraUpdate = (function () {
     checkPair: checkPair,
     adopt: adopt,
     held: function () { return held; },
+    newDevice: newDevice,
+    pickedDevice: pickedDevice,
     run: run,
     attach: function (a, p) {
       app = a;

@@ -70,17 +70,50 @@ async function putLines() {
   var app = { ports: { updateIn: { send: function (m) { said.push(m); } }, updateOut: { subscribe: function () {} } } };
   U.attach(app, ports);
   await U.run({ op: 'begin' });
-  await U.run({ op: 'put' });
+  var rel = U.held().release;
+  await U.run({ op: 'put', id: 'put', seal: rel.seal, sha: rel.bk2Sha });
   eq(wrote[0], 'put /CHIMERA/SYSTEM/BANK2.BK2 ' + r.bk2.length + ' ' + zlib.crc32(r.bk2).toString(16).padStart(8, '0'), 'the put line');
   eq(wrote.slice(1).every(function (l) { return l.length <= 64; }), true, 'lines of 48 bytes');
   eq(Buffer.concat(wrote.slice(1).map(function (l) { return Buffer.from(l, 'base64'); })).equals(r.bk2), true, 'the data whole');
   var last = said[said.length - 1];
-  eq(last.op + ' ' + last.end, 'put OK', 'the answer');
+  eq(last.op + ' ' + last.id + ' ' + last.end, 'answer put OK', 'the answer, with its request id');
   eq(said.filter(function (m) { return m.op === 'copied'; }).pop().sent, r.bk2.length, 'progress to the end');
+}
+
+// The bytes are the confirmed release's: a put or a write naming another
+// seal or hash is refused before anything is sent.
+async function onlyTheConfirmedRelease() {
+  var r = makeRelease('0.4.1 abcd1234', { bk2Size: 4096 + 256 });
+  var rel = await U.adopt(u8(r.bin), u8(r.bk2), r.sums, 'latest', null);
+  var sha = function (b) { return require('node:crypto').createHash('sha256').update(b).digest('hex'); };
+  eq(rel.binSha, sha(r.bin), 'the .bin\'s hash held');
+  eq(rel.bk2Sha, sha(r.bk2), 'the .bk2\'s hash held');
+  var wrote = [], said = [];
+  var ports = { isOpen: function () { return true; }, take: function () {}, giveBack: function () { return 'open'; }, write: function (l) { wrote.push(l); return Promise.resolve(true); } };
+  U.attach({ ports: { updateIn: { send: function (m) { said.push(m); } } } }, ports);
+  await U.run({ op: 'begin' });
+  await U.run({ op: 'put', id: 'put', seal: rel.seal, sha: 'ff'.repeat(32) });
+  await U.run({ op: 'write', id: 'write', seal: '0000000000000000', sha: rel.binSha });
+  eq(wrote.length, 0, 'lines sent for another release');
+  eq(said.filter(function (m) { return m.op === 'mismatch'; }).length, 2, 'both refused as not the confirmed release');
+}
+
+// The DFU device: exactly one, and one that appeared after `dfu` (never one
+// that was there before, however permitted).
+function deviceChoice() {
+  var a = { n: 'a' }, b = { n: 'b' }, c = { n: 'c' };
+  eq(U.newDevice([a], [a, b]).device, b, 'the one that appeared');
+  eq(U.newDevice([a], [a]).problem, 'none', 'nothing new');
+  eq(U.newDevice([], [b, c]).problem, 'several', 'two new');
+  eq(U.pickedDevice(a, [a], [a, b]).problem, 'stale', 'a pick that was there before dfu');
+  eq(U.pickedDevice(b, [a], [a, b, c]).problem, 'several', 'a pick beside another new one');
+  eq(U.pickedDevice(b, [a], [a, b]).device, b, 'the one new pick');
 }
 
 (async function () {
   await checks();
+  await onlyTheConfirmedRelease();
+  deviceChoice();
   await putLines();
   console.log('update.js: ok');
 })().catch(function (e) { fail(e.stack || e); });

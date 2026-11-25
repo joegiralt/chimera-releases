@@ -216,7 +216,20 @@ async function keptIsRecalled() {
 // A check that never finishes (a promise nobody settles) fails, never exits quietly.
 setTimeout(function () { fail('a check never finished'); }, 5000);
 
+// After a restart, two consoles with the unit's USB id: no telling which
+// is this unit, so neither is opened.
+async function severalUnitsRefused() {
+  var opened = 0;
+  var port = function () { return { getInfo: function () { return { usbVendorId: 0x0483, usbProductId: 0x5740 }; }, open: function () { opened++; return Promise.resolve(); } }; };
+  var other = { getInfo: function () { return { usbVendorId: 0x1234, usbProductId: 0x1 }; }, open: function () { opened++; return Promise.resolve(); } };
+  Object.defineProperty(globalThis, 'navigator', { configurable: true, value: { serial: { getPorts: function () { return Promise.resolve([port(), other, port()]); } } } });
+  var app = fakeApp(); P.attach(app);
+  eq(await P.reopen(), 'several', 'two units: several');
+  eq(opened, 0, 'a port opened among several');
+}
+
 (async function () {
+  await severalUnitsRefused();
   await teardownOrder();
   await noStoreIsAMiss();
   await keptIsRecalled();
