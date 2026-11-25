@@ -94,12 +94,12 @@ export async function newProject() {
   await unit.ok("key EDIT");
   await until("SETTINGS > PROJECT > LOAD", async () => (await unit.at()) === "SETTINGS > PROJECT > LOAD");
   // LOAD's rows wrap: one up from the first is the last, + CREATE NEW.
-  await unit.ok("turn 1 -1");
+  await detents(-1);
   await at("SETTINGS > PROJECT > LOAD");
   await unit.ok("key EDIT");
   if (edited) {
-    await unit.ok("turn 1 -64");
-    await unit.ok("turn 1 1");
+    await toEnd(-1);
+    await detents(1);
     await unit.ok("key EDIT");
   }
   await until("a new project (state NEW)", async () => (await projectState()) === "NEW", 5000).catch(async (e) => {
@@ -110,6 +110,45 @@ export async function newProject() {
   await until("Part 1's pages", async () => (await unit.at()).startsWith("PART 1 > "));
 }
 
+/* Encoder 1 turned by the box's own queue (`turn`: a detent every 25 ms),
+ * each move confirmed on its screen before the next key. On the real unit
+ * (0.4.0's menu acceleration) a queued turn could land after the `key EDIT`
+ * sent behind it, and EDIT took the wrong row; no console line names the
+ * browser's highlighted row, so the screen is the state read. */
+
+/** The screen unchanged for `ms` (two shots that far apart alike). */
+async function stillFor(ms) {
+  let last = await unit.shot();
+  for (const end = Date.now() + 15000 * SLOW; ; ) {
+    if (Date.now() > end) throw new Error(`the unit's screen never held still for ${ms} ms`);
+    await new Promise((r) => setTimeout(r, ms));
+    const now = await unit.shot();
+    if (now.equals(last)) return;
+    last = now;
+  }
+}
+
+/** Encoder 1 to the list's end (`dir` -1: the top), and every queued
+ * detent landed: 64 detents take the queue 1.6 s, so the screen must hold
+ * still for longer than that. */
+async function toEnd(dir) {
+  await unit.ok(`turn 1 ${64 * dir}`);
+  await stillFor(2000);
+}
+
+/** `n` detents of encoder 1, one at a time, each seen to move the screen;
+ * one that moves nothing (a one-row list, a clamped prompt) is waited out
+ * instead: the screen still for well past a detent's 25 ms. */
+async function detents(n) {
+  for (let i = 0; i < Math.abs(n); i++) {
+    const was = await unit.shot();
+    await unit.ok(`turn 1 ${Math.sign(n)}`);
+    const moved = await until("the detent on the unit's screen", async () => !(await unit.shot()).equals(was), 1000).catch(() => false);
+    if (!moved) await stillFor(500);
+  }
+  if (n) await stillFor(300);
+}
+
 /** Part `n` to the INIT Sound on browser row `row`: EDIT+B<n>, the list's top, down `row`, EDIT.
  * Only over a clean Part: an edited one would ask REPLACE? and wait for a hand. */
 export async function loadInit(n, engine) {
@@ -117,9 +156,8 @@ export async function loadInit(n, engine) {
   if (!sound.endsWith(" clean")) throw new Error(`Part ${n} is not clean (${JSON.stringify(sound)}): loading over it would ask REPLACE? and wait for a hand`);
   await unit.ok(`key EDIT+B${n}`);
   await until(`the unit's SOUND ${n} browser`, async () => (await unit.at()) === `SOUND ${n}`);
-  await unit.ok("turn 1 -64");
-  const row = ENGINES.indexOf(engine);
-  if (row > 0) await unit.ok(`turn 1 ${row}`);
+  await toEnd(-1);
+  await detents(ENGINES.indexOf(engine));
   await unit.ok("key EDIT");
   await until(`INIT ${engine} on Part ${n}`, async () => {
     const all = await unit.ask("ed since 0");
