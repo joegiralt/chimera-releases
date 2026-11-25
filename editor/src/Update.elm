@@ -6,6 +6,8 @@ port module Update exposing
     , Bk2(..)
     , Device(..)
     , Event(..)
+    , Flash(..)
+    , InDfu
     , Model
     , Msg(..)
     , Offer(..)
@@ -165,7 +167,23 @@ type alias Progress =
     { done : Int, total : Int }
 
 
-{-| Before anything is written to the firmware area.
+{-| Whether the firmware area has been touched: an earlier write was cut
+off (WRITE AGAIN), or the unit was found sitting in update mode (FINISH
+THE UPDATE), and so may hold half an image. Only `Untouched` may say
+nothing was written, or that unplugging starts the old firmware again.
+-}
+type Flash
+    = Untouched
+    | Touched
+
+
+{-| The unit in update mode: where CHIMERA.BK2 is, and the firmware area's state.
+-}
+type alias InDfu =
+    { bk2 : Bk2, flash : Flash }
+
+
+{-| Before this write.
 -}
 type PreRun
     = Checking
@@ -173,7 +191,7 @@ type PreRun
     | EnteringDfu Bk2
     | FindingDevice Bk2
       -- The browser asks which device: a click.
-    | PickingDevice Bk2
+    | PickingDevice InDfu
 
 
 {-| After the firmware area was written.
@@ -188,7 +206,7 @@ type PostRun
 
 type Run
     = Pre PreRun
-    | Writing Bk2 Progress
+    | Writing InDfu Progress
     | Post Bk2 PostRun
 
 
@@ -200,10 +218,10 @@ type PreFail
       -- `dfu` unanswered: the unit may be in update mode, its screen dark.
     | DfuSilent Bk2
       -- In update mode, nothing written: no device picked, the wrong one, one that won't open, a guard.
-    | PickCancelled Bk2
-    | WrongDevice Bk2 String
-    | CantOpen Bk2
-    | Guarded Bk2 String
+    | PickCancelled InDfu
+    | WrongDevice InDfu String
+    | CantOpen InDfu
+    | Guarded InDfu String
     | GarbledBefore String
 
 
@@ -520,8 +538,8 @@ hand msg ((Model m) as model) =
         pickAgain : ( UnitNow, Release, PreFail ) -> ( Model, List Request )
         pickAgain ( u, r, f ) =
             case inUpdateMode f of
-                Just b ->
-                    go (Running u r (Pre (PickingDevice b))) [ PickDevice ]
+                Just d ->
+                    go (Running u r (Pre (PickingDevice d))) [ PickDevice ]
 
                 Nothing ->
                     ignore
@@ -560,8 +578,9 @@ hand msg ((Model m) as model) =
                             go (Running u r (Pre Checking)) [ status TStatus 0 ]
 
                         -- Already in update mode: the device first (a click).
+                        -- It may hold half an image: touched until written whole.
                         Stuck ->
-                            go (Running u r (Pre (PickingDevice AfterFlash))) []
+                            go (Running u r (Pre (PickingDevice { bk2 = AfterFlash, flash = Touched }))) []
 
                 Nothing ->
                     ignore
@@ -595,7 +614,7 @@ hand msg ((Model m) as model) =
                     pickAgain stopped
 
                 ( Nothing, Just ( u, r, ( b, WriteCut _ ) ) ) ->
-                    go (Running u r (Pre (PickingDevice b))) [ PickDevice ]
+                    go (Running u r (Pre (PickingDevice { bk2 = b, flash = Touched }))) [ PickDevice ]
 
                 ( Nothing, Just ( _, _, ( _, LeaveFailed _ ) ) ) ->
                     ignore
@@ -726,23 +745,23 @@ afterAgain s =
 {-| A stop that left the unit in update mode with nothing written: its DFU
 device can be picked again.
 -}
-inUpdateMode : PreFail -> Maybe Bk2
+inUpdateMode : PreFail -> Maybe InDfu
 inUpdateMode f =
     case f of
         DfuSilent b ->
-            Just b
+            Just { bk2 = b, flash = Untouched }
 
-        PickCancelled b ->
-            Just b
+        PickCancelled d ->
+            Just d
 
-        WrongDevice b _ ->
-            Just b
+        WrongDevice d _ ->
+            Just d
 
-        CantOpen b ->
-            Just b
+        CantOpen d ->
+            Just d
 
-        Guarded b _ ->
-            Just b
+        Guarded d _ ->
+            Just d
 
         Unsaved ->
             Nothing
@@ -828,7 +847,7 @@ confirmOf s =
             Nothing
 
 
-pickingOf : Stage -> Maybe ( UnitNow, Release, Bk2 )
+pickingOf : Stage -> Maybe ( UnitNow, Release, InDfu )
 pickingOf s =
     case runningOf s of
         Just ( u, r, Pre (PickingDevice b) ) ->
@@ -1113,8 +1132,8 @@ step e ((Model m) as model) =
                         Pre _ ->
                             to (StoppedBefore u r (GarbledBefore why))
 
-                        Writing b _ ->
-                            to (StoppedAfter u r b (GarbledAfter why))
+                        Writing at _ ->
+                            to (StoppedAfter u r at.bk2 (GarbledAfter why))
 
                         Post b _ ->
                             to (StoppedAfter u r b (GarbledAfter why))
@@ -1173,23 +1192,23 @@ running i u r run m =
         after b f =
             ( Model { m | stage = StoppedAfter u r b f }, [] )
 
-        device : Bk2 -> Device -> ( Model, List Request )
-        device b d =
+        device : InDfu -> Device -> ( Model, List Request )
+        device at d =
             case d of
                 Found ->
-                    to (Writing b { done = 0, total = 1 }) [ Write r ]
+                    to (Writing at { done = 0, total = 1 }) [ Write r ]
 
                 NotFound ->
-                    to (Pre (PickingDevice b)) []
+                    to (Pre (PickingDevice at)) []
 
                 Cancelled ->
-                    before (PickCancelled b)
+                    before (PickCancelled at)
 
                 Wrong why ->
-                    before (WrongDevice b why)
+                    before (WrongDevice at why)
 
                 NoWebUsb ->
-                    before (CantOpen b)
+                    before (CantOpen at)
     in
     case run of
         -- CHECKING: unsaved changes stop it; a unit too old to say goes on, as the script does.
@@ -1247,43 +1266,45 @@ running i u r run m =
                     ignore
 
         Pre (FindingDevice b) ->
-            i.device |> Maybe.map (device b) |> Maybe.withDefault ignore
+            i.device |> Maybe.map (device { bk2 = b, flash = Untouched }) |> Maybe.withDefault ignore
 
-        Pre (PickingDevice b) ->
-            i.device |> Maybe.map (device b) |> Maybe.withDefault ignore
+        Pre (PickingDevice at) ->
+            i.device |> Maybe.map (device at) |> Maybe.withDefault ignore
 
-        Writing b _ ->
+        Writing at _ ->
+            let
+                -- A write that erased, or one over an area already touched, is past "nothing written".
+                cut : Bool -> String -> ( Model, List Request )
+                cut started why =
+                    if started || at.flash == Touched then
+                        after at.bk2 (WriteCut why)
+
+                    else
+                        before (Guarded at why)
+            in
             case ( i.written, i.write ) of
                 ( Just p, _ ) ->
-                    to (Writing b p) []
+                    to (Writing at p) []
 
                 ( Nothing, Just w ) ->
                     case w of
                         WriteOk ->
-                            to (Post b Restarting) [ Back 120 False ]
+                            to (Post at.bk2 Restarting) [ Back 120 False ]
 
                         Unopenable ->
-                            before (CantOpen b)
+                            before (CantOpen at)
 
                         GuardRefused why ->
-                            before (Guarded b why)
+                            before (Guarded at why)
 
                         Cut started why ->
-                            if started then
-                                after b (WriteCut why)
-
-                            else
-                                before (Guarded b why)
+                            cut started why
 
                         Refused started why ->
-                            if started then
-                                after b (WriteCut why)
-
-                            else
-                                before (Guarded b why)
+                            cut started why
 
                         LeaveFail why ->
-                            after b (LeaveFailed why)
+                            after at.bk2 (LeaveFailed why)
 
                 ( Nothing, Nothing ) ->
                     ignore
@@ -2117,7 +2138,7 @@ ready : Fields -> UnitNow -> ReleaseState -> List (Html Msg)
 ready m u rel =
     (case m.mode of
         Stuck ->
-            say "For a unit sitting in update mode (its screen dark after a stopped update): this writes the firmware to it, then finishes the install once it restarts."
+            fact "THIS UNIT" "UNKNOWN (IN UPDATE MODE)"
 
         Connected ->
             fact "THIS UNIT" (showVersion u.build)
@@ -2160,7 +2181,7 @@ offerText : Mode -> Offer -> String
 offerText mode o =
     case ( mode, o ) of
         ( Stuck, _ ) ->
-            "Finish the update with this release."
+            "For a unit sitting in update mode (its screen dark after a stopped update). Can't tell which version this unit had: in update mode it can't say. This writes the release's firmware to it, then finishes the install once it restarts."
 
         ( Connected, Newer ) ->
             "An update is ready."
@@ -2206,7 +2227,7 @@ confirm m u r =
     , say
         (case ( m.mode, offer u r ) of
             ( Stuck, _ ) ->
-                "This writes the firmware to the unit in update mode, then installs bank 2 when it restarts."
+                "Can't tell which version this unit had, so this can't say whether it is an update, a reinstall or a downgrade. It writes the firmware to the unit in update mode, then installs bank 2 when it restarts."
 
             ( Connected, Same ) ->
                 "This reinstalls the version the unit already runs."
@@ -2464,8 +2485,9 @@ failedBefore windows u f =
             ]
                 ++ bootloaderSteps
 
-        PickCancelled _ ->
-            [ say "NO UPDATE DEVICE WAS CHOSEN. The unit is waiting in update mode (its screen dark); nothing has been written."
+        PickCancelled d ->
+            [ say "NO UPDATE DEVICE WAS CHOSEN. The unit is waiting in update mode (its screen dark)."
+            , written d
             , say "Press WRITE AGAIN and pick STM32 BOOTLOADER."
             ]
                 ++ (if windows then
@@ -2474,19 +2496,21 @@ failedBefore windows u f =
                     else
                         []
                    )
-                ++ [ buttons [ btn "WRITE AGAIN" WriteAgain, btn "CLOSE" Close ], leaveUpdateMode ]
-                ++ bootloaderSteps
+                ++ [ buttons [ btn "WRITE AGAIN" WriteAgain, btn "CLOSE" Close ] ]
+                ++ wayOut d
 
-        WrongDevice _ why ->
+        WrongDevice d why ->
             [ say ("THAT ISN'T THE UNIT'S UPDATE DEVICE. " ++ why ++ ".")
-            , say "Nothing has been written."
+            , written d
             , buttons [ btn "WRITE AGAIN" WriteAgain, btn "CLOSE" Close ]
-            , leaveUpdateMode
             ]
+                ++ wayOut d
 
-        CantOpen _ ->
-            say "THE BROWSER CAN'T OPEN THE UNIT'S UPDATE DEVICE. Nothing has been written, and the bootloader is never touched."
-                :: (if windows then
+        CantOpen d ->
+            [ say "THE BROWSER CAN'T OPEN THE UNIT'S UPDATE DEVICE. The bootloader is never touched."
+            , written d
+            ]
+                ++ (if windows then
                         driverSteps
 
                     else
@@ -2496,15 +2520,41 @@ failedBefore windows u f =
                         ]
                    )
                 ++ [ buttons [ btn "WRITE AGAIN" WriteAgain, btn "CLOSE" Close ] ]
-                ++ sdSteps
-                ++ [ leaveUpdateMode ]
+                ++ wayOut d
 
-        Guarded _ why ->
+        Guarded d why ->
             [ say ("THE UPDATE STOPPED BEFORE WRITING: " ++ why ++ ".")
-            , say "Nothing was written. Press WRITE AGAIN to pick the device again."
+            , written d
+            , say "Press WRITE AGAIN to pick the device again."
             , buttons [ btn "WRITE AGAIN" WriteAgain, btn "CLOSE" Close ]
-            , leaveUpdateMode
             ]
+                ++ wayOut d
+
+
+{-| What this stop wrote, by the firmware area's state: nothing, or, over
+an area an earlier write left half done, nothing more.
+-}
+written : InDfu -> Html msg
+written d =
+    case d.flash of
+        Untouched ->
+            say "Nothing has been written."
+
+        Touched ->
+            say "THE FIRMWARE AREA IS ONLY PARTLY WRITTEN (an earlier write was cut off, or the unit was left in update mode). Don't just unplug it: it won't start its old firmware. Finish the write here, or from the bootloader."
+
+
+{-| The ways out of update mode: unplugging only while nothing was written;
+else finishing the write, here or from the bootloader.
+-}
+wayOut : InDfu -> List (Html Msg)
+wayOut d =
+    case d.flash of
+        Untouched ->
+            leaveUpdateMode :: bootloaderSteps
+
+        Touched ->
+            bootloaderSteps
 
 
 failedAfter : PostFail -> List (Html Msg)

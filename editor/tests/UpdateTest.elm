@@ -4,9 +4,14 @@
 module UpdateTest exposing (suite)
 
 import Expect
+import Html
 import Json.Encode as E
 import Test exposing (Test, describe, test)
-import Update exposing (Answer(..), Bk2(..), Device(..), Event(..), Msg(..), Offer(..), PostFail(..), PostRun(..), PreFail(..), PreRun(..), Release, ReleaseState(..), Request(..), Run(..), Source(..), Stage(..), Ticket(..), Verdict(..), WriteResult(..))
+import Test.Html.Query as Query
+import Test.Html.Selector as Sel
+import Ui.Page as Page
+import Ui.Tokens as Tokens
+import Update exposing (Answer(..), Bk2(..), Device(..), Event(..), Flash(..), InDfu, Msg(..), Offer(..), PostFail(..), PostRun(..), PreFail(..), PreRun(..), Release, ReleaseState(..), Request(..), Run(..), Source(..), Stage(..), Ticket(..), Verdict(..), WriteResult(..))
 
 
 rel : Release
@@ -82,6 +87,11 @@ oldPut =
 offerOf : String -> Offer
 offerOf build =
     Update.offer (Update.readStatus [ "build " ++ build ]) rel
+
+
+shown : Update.Model -> Query.Single Update.Msg
+shown m =
+    Update.view (\_ -> Update.Close) identity (Page.init Tokens.Day) m |> List.singleton |> Html.div [] |> Query.fromHtml
 
 
 isGarbled : Event -> Bool
@@ -208,11 +218,11 @@ suite =
                     silent =
                         events [ Answered TStatus old, Answered TPut (Said [] "OK"), Answered TDfu NoAnswer ] started
                 in
-                Expect.equal [ StoppedBefore unit rel (DfuSilent Staged), Running unit rel (Pre (PickingDevice Staged)) ]
+                Expect.equal [ StoppedBefore unit rel (DfuSilent Staged), Running unit rel (Pre (PickingDevice { bk2 = Staged, flash = Untouched })) ]
                     [ Update.stage silent, Update.stage (hands [ Pick ] silent) ]
         , test "no_new_device_asks_for_a_pick" <|
             \_ ->
-                Expect.equal (Running unit rel (Pre (PickingDevice Staged)))
+                Expect.equal (Running unit rel (Pre (PickingDevice { bk2 = Staged, flash = Untouched })))
                     (steps [ Answered TStatus old, Answered TPut (Said [] "OK"), Answered TDfu Gone, DeviceIs NotFound ] started |> Tuple.first)
         , test "the_pick_stage_can_be_cancelled_and_written_again" <|
             \_ ->
@@ -225,15 +235,15 @@ suite =
                     cancelled =
                         hands [ Cancel ] picking
                 in
-                Expect.equal [ StoppedBefore unit rel (PickCancelled Staged), Running unit rel (Pre (PickingDevice Staged)) ]
+                Expect.equal [ StoppedBefore unit rel (PickCancelled { bk2 = Staged, flash = Untouched }), Running unit rel (Pre (PickingDevice { bk2 = Staged, flash = Untouched })) ]
                     [ Update.stage cancelled, Update.stage (hands [ WriteAgain ] cancelled) ]
         , test "a_pick_that_comes_back_empty_stops_with_write_again" <|
             \_ ->
-                Expect.equal (StoppedBefore unit rel (PickCancelled Staged))
+                Expect.equal (StoppedBefore unit rel (PickCancelled { bk2 = Staged, flash = Untouched }))
                     (steps [ Answered TStatus old, Answered TPut (Said [] "OK"), Answered TDfu Gone, DeviceIs NotFound, DeviceIs Cancelled ] started |> Tuple.first)
         , test "the_wrong_device_is_refused_before_writing" <|
             \_ ->
-                Expect.equal ( StoppedBefore unit rel (WrongDevice Staged "two"), [ Put rel, Dfu, FindDevice 10 ] )
+                Expect.equal ( StoppedBefore unit rel (WrongDevice { bk2 = Staged, flash = Untouched } "two"), [ Put rel, Dfu, FindDevice 10 ] )
                     (steps [ Answered TStatus old, Answered TPut (Said [] "OK"), Answered TDfu Gone, DeviceIs (Wrong "two") ] started)
         , test "a_device_that_wont_open_can_write_again" <|
             \_ ->
@@ -242,7 +252,7 @@ suite =
                     stopped =
                         events [ Answered TStatus old, Answered TPut (Said [] "OK"), Answered TDfu Gone, DeviceIs Found, WriteDone Unopenable ] started
                 in
-                Expect.equal [ StoppedBefore unit rel (CantOpen Staged), Running unit rel (Pre (PickingDevice Staged)) ]
+                Expect.equal [ StoppedBefore unit rel (CantOpen { bk2 = Staged, flash = Untouched }), Running unit rel (Pre (PickingDevice { bk2 = Staged, flash = Untouched })) ]
                     [ Update.stage stopped, Update.stage (hands [ WriteAgain ] stopped) ]
         , test "a_cut_write_is_after_the_write_and_can_write_again" <|
             \_ ->
@@ -251,11 +261,11 @@ suite =
                     stopped =
                         events [ Answered TStatus old, Answered TPut (Said [] oldPut), Answered TDfu Gone, DeviceIs Found, WriteDone (Cut True "gone") ] started
                 in
-                Expect.equal [ StoppedAfter unit rel AfterFlash (WriteCut "gone"), Running unit rel (Pre (PickingDevice AfterFlash)) ]
+                Expect.equal [ StoppedAfter unit rel AfterFlash (WriteCut "gone"), Running unit rel (Pre (PickingDevice { bk2 = AfterFlash, flash = Touched })) ]
                     [ Update.stage stopped, Update.stage (hands [ WriteAgain ] stopped) ]
         , test "a_write_that_never_started_wrote_nothing" <|
             \_ ->
-                Expect.equal (StoppedBefore unit rel (Guarded Staged "idle"))
+                Expect.equal (StoppedBefore unit rel (Guarded { bk2 = Staged, flash = Untouched } "idle"))
                     (steps [ Answered TStatus old, Answered TPut (Said [] "OK"), Answered TDfu Gone, DeviceIs Found, WriteDone (Refused False "idle") ] started |> Tuple.first)
         , test "a_failed_leave_is_firmware_written_not_a_cut" <|
             \_ ->
@@ -339,8 +349,68 @@ suite =
                     ready =
                         events [ Begun { open = False, webusb = True, windows = False }, ReleaseIs (Ok rel) ] (Tuple.first Update.beginStuck)
                 in
-                Expect.equal [ Ready (Update.readStatus []) (Got rel), Running (Update.readStatus []) rel (Pre (PickingDevice AfterFlash)) ]
+                Expect.equal [ Ready (Update.readStatus []) (Got rel), Running (Update.readStatus []) rel (Pre (PickingDevice { bk2 = AfterFlash, flash = Touched })) ]
                     [ Update.stage ready, Update.stage (hands [ Start, Go ] ready) ]
+        , describe "the firmware area already touched (a cut write, a stuck unit)"
+            [ test "write_again_after_a_cut_stays_touched_through_every_stop" <|
+                \_ ->
+                    let
+                        cutThenPick : Update.Model
+                        cutThenPick =
+                            events [ Answered TStatus old, Answered TPut (Said [] "OK"), Answered TDfu Gone, DeviceIs Found, WriteDone (Cut True "gone") ] started
+                                |> hands [ WriteAgain ]
+
+                        touched : InDfu
+                        touched =
+                            { bk2 = Staged, flash = Touched }
+                    in
+                    Expect.equal
+                        [ Running unit rel (Pre (PickingDevice touched))
+                        , StoppedBefore unit rel (PickCancelled touched)
+                        , StoppedBefore unit rel (CantOpen touched)
+                        , StoppedBefore unit rel (Guarded touched "layout")
+                        , StoppedBefore unit rel (WrongDevice touched "two")
+                        , StoppedAfter unit rel Staged (WriteCut "idle")
+                        ]
+                        [ Update.stage cutThenPick
+                        , Update.stage (hands [ Cancel ] cutThenPick)
+                        , Update.stage (events [ DeviceIs Found, WriteDone Unopenable ] cutThenPick)
+                        , Update.stage (events [ DeviceIs Found, WriteDone (GuardRefused "layout") ] cutThenPick)
+                        , Update.stage (events [ DeviceIs (Wrong "two") ] cutThenPick)
+
+                        -- A refusal before this write's first erase is still past "nothing written".
+                        , Update.stage (events [ DeviceIs Found, WriteDone (Refused False "idle") ] cutThenPick)
+                        ]
+            , test "a_stop_after_a_cut_never_says_nothing_was_written_or_unplug" <|
+                \_ ->
+                    events [ Answered TStatus old, Answered TPut (Said [] "OK"), Answered TDfu Gone, DeviceIs Found, WriteDone (Cut True "gone") ] started
+                        |> hands [ WriteAgain, Cancel ]
+                        |> shown
+                        |> Expect.all
+                            [ Query.hasNot [ Sel.containing [ Sel.text "Nothing has been written" ] ]
+                            , Query.hasNot [ Sel.containing [ Sel.text "starts its old firmware as before" ] ]
+                            , Query.has [ Sel.containing [ Sel.text "ONLY PARTLY WRITTEN" ] ]
+                            ]
+            , test "the_stuck_path_starts_touched_and_says_the_version_is_unknown" <|
+                \_ ->
+                    let
+                        ready : Update.Model
+                        ready =
+                            events [ Begun { open = False, webusb = True, windows = False }, ReleaseIs (Ok rel) ] (Tuple.first Update.beginStuck)
+                    in
+                    Expect.all
+                        [ \_ -> shown ready |> Query.has [ Sel.containing [ Sel.text "Can't tell which version this unit had" ] ]
+                        , \_ -> shown (hands [ Start, Go, Cancel ] ready) |> Query.hasNot [ Sel.containing [ Sel.text "Nothing has been written" ] ]
+                        , \_ -> Expect.equal (StoppedBefore (Update.readStatus []) rel (PickCancelled { bk2 = AfterFlash, flash = Touched })) (Update.stage (hands [ Start, Go, Cancel ] ready))
+                        ]
+                        ()
+            , test "an_untouched_stop_says_nothing_was_written" <|
+                \_ ->
+                    events [ Answered TStatus old, Answered TPut (Said [] "OK"), Answered TDfu Gone, DeviceIs NotFound ] started
+                        |> hands [ Cancel ]
+                        |> shown
+                        |> Query.has [ Sel.containing [ Sel.text "Nothing has been written" ] ]
+            ]
         , describe "answers read strictly"
             [ test "a_malformed_answer_is_an_error_not_no_answer" <|
                 \_ -> Expect.equal True (isGarbled (Update.decode (E.object [ ( "op", E.string "answer" ), ( "id", E.string "status" ) ])))

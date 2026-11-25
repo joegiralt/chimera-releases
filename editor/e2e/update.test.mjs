@@ -390,9 +390,16 @@ describe("UPDATE from the browser", () => {
     await stuck.waitFor({ timeout: 10000 });
     await stuck.click();
     await until("the panel", async () => (await meta()) === "READY", 10000);
+    assert.match(await said(), /Can't tell which version this unit had/);
     await button("FINISH THE UPDATE…").click();
     await button("FINISH THE UPDATE").click();
-    await button("CHOOSE UPDATE DEVICE").click();
+    // CANCEL at the device: the area may hold half an image, so no "nothing written", no "unplug".
+    await button("CANCEL").click();
+    await until("the stop", async () => /NO UPDATE DEVICE WAS CHOSEN/.test(await said()), 5000);
+    const stopped = await said();
+    assert.match(stopped, /ONLY PARTLY WRITTEN/);
+    assert.doesNotMatch(stopped, /Nothing has been written|starts its old firmware/);
+    await button("WRITE AGAIN").click();
     await until("DONE", async () => (await meta()) === "DONE", UPDATE_WAIT);
     assert.equal(fake.build, "0.4.1 abcd1234");
     assert.equal(fake.bank2, `open 0.4.1 abcd1234 seal=${NEXT.seal}`);
@@ -410,5 +417,27 @@ describe("UPDATE from the browser", () => {
     assert.match(await said(), /THIS IS A DOWNGRADE/);
     await button("CANCEL").click();
     await backToEditor();
+  });
+
+  test("U16: after a cut write, a pick that finds no device never says nothing was written or to unplug", async () => {
+    const fake = await ready();
+    await page.evaluate(() => (window.__usb.mode.cutAfter = 20));
+    await openUpdate();
+    await start();
+    await until("the cut", async () => /THE FIRMWARE WRITE WAS CUT OFF/.test(await said()), UPDATE_WAIT);
+    // WRITE AGAIN with the unit not yet back in DFU mode: the chooser finds nothing.
+    await button("WRITE AGAIN").click();
+    await until("the empty pick", async () => /NO UPDATE DEVICE WAS CHOSEN/.test(await said()), 10000);
+    const text = await said();
+    assert.match(text, /ONLY PARTLY WRITTEN/);
+    assert.doesNotMatch(text, /Nothing has been written|starts its old firmware/);
+    await page.evaluate(() => {
+      delete window.__usb.mode.cutAfter;
+      window.__usb.plug();
+    });
+    await button("WRITE AGAIN").click();
+    await until("DONE", async () => (await meta()) === "DONE", UPDATE_WAIT);
+    assert.equal(fake.build, "0.4.1 abcd1234");
+    await backToEditor("BACK TO THE EDITOR");
   });
 });
