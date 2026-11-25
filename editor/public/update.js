@@ -105,6 +105,7 @@ var ChimeraUpdate = (function () {
     var r = await checkPair(bin, bk2);
     r.binSha = binSha;
     r.bk2Sha = bk2Sha;
+    r.binCrc = crc32(bin).toString(16).padStart(8, '0'); // `bank1 install`'s CRC-32/ISO-HDLC
     if (manifest && manifest.version + ' ' + manifest.build !== r.version) throw Fault('pair', 'the site says ' + manifest.version + ' ' + manifest.build + ' but CHIMERA.BK2 is ' + r.version);
     r.source = source;
     held = { bin: bin, bk2: bk2, release: r };

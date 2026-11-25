@@ -46,7 +46,6 @@ port module Update exposing
     , update
     , verdict
     , view
-    , withSelfUpdate
     )
 
 {-| The update from the browser: what `chimera-usb.py update` does, as a
@@ -108,44 +107,44 @@ type alias UnitNow =
     }
 
 
-{-| A unit that writes its own firmware from the card (0.4.1 on, being
-designed): the path CHIMERA.BIN goes to, and the verb that installs it.
-With it the update is `put` CHIMERA.BK2, `put` CHIMERA.BIN, the install,
-the restart and `status`: no DFU, no device to pick, no Windows driver.
-Without it (0.4.0), the DFU path.
+{-| A unit that writes its own firmware from the card (ADR 0344, 0.4.1 on):
+`status` says `selfupdate <n>`. With it the update is `put` CHIMERA.BK2
+(skipped when its seal is the one installed), `put /CHIMERA.BIN`, `bank1
+install <size> <crc>`, the restart and `status`: no DFU, no device to pick,
+no Windows driver. Without it (0.4.0, or bank 2 closed), the DFU path.
 -}
 type alias SelfUpdate =
-    { binRemote : String, install : String }
+    { version : Int }
 
 
-{-| The hook for the self-update capability: what `status` will say of it.
-The line and the verbs are the firmware's to name; until they are, no unit
-offers it, and every update takes the DFU path.
--}
 selfUpdateOf : List String -> Maybe SelfUpdate
 selfUpdateOf lines =
-    selfUpdateLine |> Maybe.andThen (\read -> List.filterMap read lines |> List.head)
+    lines
+        |> List.filterMap
+            (\l ->
+                case String.words l of
+                    [ "selfupdate", n ] ->
+                        String.toInt n
+                            |> Maybe.andThen
+                                (\v ->
+                                    if v >= 1 then
+                                        Just { version = v }
+
+                                    else
+                                        Nothing
+                                )
+
+                    _ ->
+                        Nothing
+            )
+        |> List.head
 
 
-{-| How `status`'s capability line reads, once the firmware names it: none yet.
+{-| Where CHIMERA.BIN goes for the unit's own install: the card's root.
 -}
-selfUpdateLine : Maybe (String -> Maybe SelfUpdate)
-selfUpdateLine =
-    Nothing
-
-
-{-| A unit at READY taken to offer self-update: the typed hook's other end,
-for the tests (and the firmware's bring-up) until `selfUpdateOf` reads the
-real capability line.
--}
-withSelfUpdate : SelfUpdate -> Model -> Model
-withSelfUpdate su (Model m) =
-    case readyOf m.stage of
-        Just ( u, rel ) ->
-            Model { m | stage = Ready { u | selfUpdate = Just su } rel }
-
-        Nothing ->
-            Model m
+binRemote : String
+binRemote =
+    "/CHIMERA.BIN"
 
 
 {-| The loaded project, as `ed since` names it: its id and generation, the
@@ -201,6 +200,7 @@ type alias Release =
     , bk2Size : Int
     , binSha : String
     , bk2Sha : String
+    , binCrc : String
     , source : Source
     }
 
@@ -261,6 +261,8 @@ type PreRun
 -}
 type PostRun
     = Restarting
+      -- The unit writing its own bank 1, restarting, installing bank 2.
+    | RestartingSelf
     | CopyingLate Progress
     | Installing Int
     | RestartingAfterInstall
@@ -286,6 +288,10 @@ type PreFail
     | CantOpen InDfu
     | Guarded InDfu String
     | GarbledBefore String
+      -- The self-update path: `bank1 install` refused (nothing written), or
+      -- the unit back on its old firmware after aborting the install.
+    | SelfRefused String
+    | SelfAborted String
 
 
 {-| A stop once the write started: the firmware area is not what it was.
@@ -296,6 +302,8 @@ type PostFail
     | NotBack String
     | Unfinished String
     | GarbledAfter String
+      -- The self-update's restart not back in three minutes.
+    | SelfNotBack String
 
 
 type Stage
@@ -423,6 +431,7 @@ type Msg
     | ConnectPort
     | SaveAndUpdate
     | DiscardAndUpdate
+    | UseDfu
     | Close
 
 
@@ -524,6 +533,9 @@ update msg model =
                     Nothing
 
                 DiscardAndUpdate ->
+                    Nothing
+
+                UseDfu ->
                     Nothing
 
                 Close ->
@@ -779,6 +791,9 @@ hand msg ((Model m) as model) =
                 ( Nothing, Just ( _, _, ( _, GarbledAfter _ ) ) ) ->
                     ignore
 
+                ( Nothing, Just ( _, _, ( _, SelfNotBack _ ) ) ) ->
+                    ignore
+
                 ( Nothing, Nothing ) ->
                     ignore
 
@@ -803,6 +818,12 @@ hand msg ((Model m) as model) =
                         DfuSilent _ ->
                             go (Running u r (Pre Checking)) [ status TStatus 0 ]
 
+                        SelfRefused _ ->
+                            go (Running u r (Pre Checking)) [ status TStatus 0 ]
+
+                        SelfAborted _ ->
+                            go (Running u r (Pre Checking)) [ status TStatus 0 ]
+
                         PickCancelled _ ->
                             ignore
 
@@ -822,6 +843,42 @@ hand msg ((Model m) as model) =
             case stoppedAfterOf m.stage of
                 Just ( u, r, ( b, _ ) ) ->
                     go (Running u r (Post b Restarting)) [ PickPort, Back 120 False ]
+
+                Nothing ->
+                    ignore
+
+        -- The self-update refused or undone: the same update by DFU instead.
+        UseDfu ->
+            case stoppedBeforeOf m.stage of
+                Just ( u, r, SelfRefused _ ) ->
+                    go (Running { u | selfUpdate = Nothing } r (Pre Checking)) [ status TStatus 0 ]
+
+                Just ( u, r, SelfAborted _ ) ->
+                    go (Running { u | selfUpdate = Nothing } r (Pre Checking)) [ status TStatus 0 ]
+
+                Just ( _, _, Unsaved _ ) ->
+                    ignore
+
+                Just ( _, _, NothingFlashed _ ) ->
+                    ignore
+
+                Just ( _, _, DfuSilent _ ) ->
+                    ignore
+
+                Just ( _, _, PickCancelled _ ) ->
+                    ignore
+
+                Just ( _, _, WrongDevice _ _ ) ->
+                    ignore
+
+                Just ( _, _, CantOpen _ ) ->
+                    ignore
+
+                Just ( _, _, Guarded _ _ ) ->
+                    ignore
+
+                Just ( _, _, GarbledBefore _ ) ->
+                    ignore
 
                 Nothing ->
                     ignore
@@ -890,6 +947,9 @@ afterAgain s =
 
                     GarbledAfter _ ->
                         Just ( Running u r (Post b Restarting), [ Back 120 False ] )
+
+                    SelfNotBack _ ->
+                        Just ( Running u r (Post b RestartingSelf), [ Back 180 False ] )
             )
 
 
@@ -923,6 +983,12 @@ inUpdateMode f =
         GarbledBefore _ ->
             Nothing
 
+        SelfRefused _ ->
+            Nothing
+
+        SelfAborted _ ->
+            Nothing
+
 
 {-| A stop on unsaved changes: the loaded project, if it can be reloaded.
 -}
@@ -951,6 +1017,12 @@ unsavedOf s =
             Nothing
 
         Just ( _, _, GarbledBefore _ ) ->
+            Nothing
+
+        Just ( _, _, SelfRefused _ ) ->
+            Nothing
+
+        Just ( _, _, SelfAborted _ ) ->
             Nothing
 
         Nothing ->
@@ -1397,6 +1469,25 @@ running i u r run m =
         after b f =
             ( Model { m | stage = StoppedAfter u r b f }, [] )
 
+        -- The self-update's bar counts both files.
+        both : Int
+        both =
+            r.bk2Size + r.binSize
+
+        -- The first copy: CHIMERA.BK2, unless a self-updating unit already has
+        -- its seal open (then CHIMERA.BIN straight away).
+        copyFirst : ( Model, List Request )
+        copyFirst =
+            case ( u.selfUpdate, sealOpen r u ) of
+                ( Just _, True ) ->
+                    to (Pre (CopyingBin { done = r.bk2Size, total = both })) [ PutBin r binRemote ]
+
+                ( Just _, False ) ->
+                    to (Pre (Copying { done = 0, total = both })) [ Put r ]
+
+                ( Nothing, _ ) ->
+                    to (Pre (Copying { done = 0, total = r.bk2Size })) [ Put r ]
+
         device : InDfu -> Device -> ( Model, List Request )
         device at d =
             case d of
@@ -1427,10 +1518,10 @@ running i u r run m =
                         to (Pre ReadingProject) [ Ask TProject "ed since 0" 2000 0 ]
 
                     else
-                        to (Pre (Copying { done = 0, total = r.bk2Size })) [ Put r ]
+                        copyFirst
 
                 Just NoAnswer ->
-                    to (Pre (Copying { done = 0, total = r.bk2Size })) [ Put r ]
+                    copyFirst
 
                 Nothing ->
                     ignore
@@ -1503,7 +1594,7 @@ running i u r run m =
             case answerFor TStatus i of
                 Just ((Said _ _) as a) ->
                     if not (unitOf a).modified then
-                        to (Pre (Copying { done = 0, total = r.bk2Size })) [ Put r ]
+                        copyFirst
 
                     else if n < 20 then
                         to (Pre (Settling (n + 1))) [ status TStatus 500 ]
@@ -1527,13 +1618,13 @@ running i u r run m =
         Pre (Copying _) ->
             case ( i.copied, answerFor TPut i ) of
                 ( Just p, _ ) ->
-                    to (Pre (Copying p)) []
+                    to (Pre (Copying { p | total = Maybe.withDefault p.total (Maybe.map (\_ -> both) u.selfUpdate) })) []
 
                 ( Nothing, Just a ) ->
                     case ( staging r a, u.selfUpdate ) of
                         -- A unit that writes its own firmware: CHIMERA.BIN onto the card next.
-                        ( Ok Staged, Just su ) ->
-                            to (Pre (CopyingBin { done = 0, total = r.binSize })) [ PutBin r su.binRemote ]
+                        ( Ok Staged, Just _ ) ->
+                            to (Pre (CopyingBin { done = r.bk2Size, total = both })) [ PutBin r binRemote ]
 
                         ( Ok b, _ ) ->
                             to (Pre (EnteringDfu b)) [ Dfu ]
@@ -1545,44 +1636,88 @@ running i u r run m =
                     ignore
 
         Pre (CopyingBin _) ->
-            case ( i.copied, answerFor TPutBin i, u.selfUpdate ) of
-                ( Just p, _, _ ) ->
-                    to (Pre (CopyingBin p)) []
+            case ( i.copied, answerFor TPutBin i ) of
+                ( Just p, _ ) ->
+                    to (Pre (CopyingBin { done = r.bk2Size + p.done, total = both })) []
 
-                ( Nothing, Just (Said _ end), Just su ) ->
+                ( Nothing, Just (Said _ end) ) ->
                     if isOk end then
-                        to (Pre InstallingSelf) [ Ask TSelf su.install 120000 0 ]
+                        to (Pre InstallingSelf) [ Ask TSelf ("bank1 install " ++ String.fromInt r.binSize ++ " " ++ r.binCrc) 120000 0 ]
 
                     else
                         before (NothingFlashed ("The unit refused CHIMERA.BIN: " ++ end))
 
-                ( Nothing, Just (Said _ end), Nothing ) ->
-                    before (NothingFlashed ("The unit can't install CHIMERA.BIN itself: " ++ end))
-
-                ( Nothing, Just NoAnswer, _ ) ->
+                ( Nothing, Just NoAnswer ) ->
                     before (NothingFlashed "The unit stopped answering while CHIMERA.BIN was copied")
 
-                ( Nothing, Just Gone, _ ) ->
+                ( Nothing, Just Gone ) ->
                     before (NothingFlashed "The unit was disconnected while CHIMERA.BIN was copied")
 
-                ( Nothing, Nothing, _ ) ->
+                ( Nothing, Nothing ) ->
                     ignore
 
-        -- Its own install: once accepted (or the unit gone to it), the firmware area is being written.
+        -- `bank1 install`: verified and restarting (the unit writes its own
+        -- bank 1, restarts, installs bank 2: up to three minutes), already
+        -- installed, or refused with nothing written.
         Pre InstallingSelf ->
             case answerFor TSelf i of
                 Just (Said _ end) ->
-                    if isOk end then
-                        to (Post Staged RestartingAfterInstall) [ Back 120 True ]
+                    if String.startsWith "OK bank1 verified " end then
+                        to (Post Staged RestartingSelf) [ Back 180 True ]
+
+                    else if end == "OK already installed" then
+                        to (Post Staged Verifying) [ status TVerify 0 ]
+
+                    else if isOk end then
+                        to (Post Staged RestartingSelf) [ Back 180 True ]
 
                     else
-                        before (NothingFlashed ("The unit refused the install: " ++ end))
+                        before (SelfRefused end)
 
                 Just Gone ->
-                    to (Post Staged RestartingAfterInstall) [ Back 120 True ]
+                    to (Post Staged RestartingSelf) [ Back 180 True ]
 
                 Just NoAnswer ->
-                    after Staged (NotBack "it didn't answer the install")
+                    after Staged (SelfNotBack "it didn't answer bank1 install")
+
+                Nothing ->
+                    ignore
+
+        -- Back as the new firmware: bank 1 written and checked (`bank1 last
+        -- ok <crc>`), the build, bank 2 open; or the old firmware, untouched.
+        Post b RestartingSelf ->
+            case i.back of
+                Just (Err cause) ->
+                    after b (SelfNotBack cause)
+
+                Just (Ok ((Said lines _) as a)) ->
+                    case bank1Last lines of
+                        Just ( "aborted", why ) ->
+                            before (SelfAborted why)
+
+                        Just ( "ok", crc ) ->
+                            if crcEq crc r.binCrc then
+                                case verdict r a of
+                                    Installed now ->
+                                        ( Model { m | stage = Done u r now }, [] )
+
+                                    NeedsInstall _ ->
+                                        to (Post b (Installing 1)) [ install 0 ]
+
+                                    NotFinished why ->
+                                        after b (Unfinished why)
+
+                            else
+                                after b (Unfinished ("The unit says bank1 last ok " ++ crc ++ ", not this release's CHIMERA.BIN (" ++ r.binCrc ++ ")"))
+
+                        Just ( word, rest ) ->
+                            after b (Unfinished ("The unit says bank1 last " ++ word ++ " " ++ rest))
+
+                        Nothing ->
+                            after b (Unfinished "The unit's status has no bank1 line")
+
+                Just (Ok a) ->
+                    after b (Unfinished (Maybe.withDefault "no status" (verdictWhy (verdict r a))))
 
                 Nothing ->
                     ignore
@@ -1787,6 +1922,68 @@ finish u r b a m =
 
         NotFinished why ->
             ( Model { m | stage = StoppedAfter u r b (Unfinished why) }, [] )
+
+
+{-| Bank 2 already open with this release's seal: its .bk2 needn't go again.
+-}
+sealOpen : Release -> UnitNow -> Bool
+sealOpen r u =
+    case u.bank2 of
+        Just b ->
+            String.startsWith "open " b && String.endsWith (" seal=" ++ r.seal) b
+
+        Nothing ->
+            False
+
+
+{-| `status`'s `bank1 last <ok|aborted|…> <rest>`.
+-}
+bank1Last : List String -> Maybe ( String, String )
+bank1Last lines =
+    lines
+        |> List.filterMap
+            (\l ->
+                case String.words l of
+                    "bank1" :: "last" :: word :: rest ->
+                        Just ( word, String.join " " rest )
+
+                    _ ->
+                        Nothing
+            )
+        |> List.head
+
+
+{-| Two CRC-32s in hex, whatever their case or leading zeros.
+-}
+crcEq : String -> String -> Bool
+crcEq a b =
+    let
+        norm : String -> String
+        norm =
+            String.toLower >> String.trim >> dropZeros
+
+        dropZeros : String -> String
+        dropZeros x =
+            if String.startsWith "0" x && String.length x > 1 then
+                dropZeros (String.dropLeft 1 x)
+
+            else
+                x
+    in
+    norm a == norm b
+
+
+verdictWhy : Verdict -> Maybe String
+verdictWhy v =
+    case v of
+        Installed _ ->
+            Nothing
+
+        NeedsInstall why ->
+            Just why
+
+        NotFinished why ->
+            Just why
 
 
 later : String
@@ -2013,7 +2210,7 @@ or `ed hello`'s `0.4.0-de07edf9`) and a release's.
 -}
 offerFor : String -> String -> Offer
 offerFor unitBuild version =
-    offer { build = Just (String.replace "-" " " unitBuild), modified = False, bank2 = Nothing, selfUpdate = Nothing } { version = version, seal = "", format = 0, binSize = 0, bk2Size = 0, binSha = "", bk2Sha = "", source = Latest }
+    offer { build = Just (String.replace "-" " " unitBuild), modified = False, bank2 = Nothing, selfUpdate = Nothing } { version = version, seal = "", format = 0, binSize = 0, bk2Size = 0, binSha = "", bk2Sha = "", binCrc = "", source = Latest }
 
 
 offer : UnitNow -> Release -> Offer
@@ -2328,7 +2525,7 @@ progress key =
 
 release : Decoder Release
 release =
-    D.map8 Release
+    D.map7 (\v seal format binSize bk2Size binSha bk2Sha -> \binCrc src -> Release v seal format binSize bk2Size binSha bk2Sha binCrc src)
         (D.field "version" D.string)
         (D.field "seal" D.string)
         (D.field "format" D.int)
@@ -2336,20 +2533,24 @@ release =
         (D.field "bk2Size" D.int)
         (D.field "binSha" D.string)
         (D.field "bk2Sha" D.string)
-        (D.field "source" D.string
-            |> D.andThen
-                (\s ->
-                    case s of
-                        "chosen" ->
-                            D.succeed Chosen
+        |> D.andThen (\mk -> D.map2 mk (D.field "binCrc" D.string) source)
 
-                        "latest" ->
-                            D.succeed Latest
 
-                        _ ->
-                            D.fail ("not a source: " ++ s)
-                )
-        )
+source : Decoder Source
+source =
+    D.field "source" D.string
+        |> D.andThen
+            (\s ->
+                case s of
+                    "chosen" ->
+                        D.succeed Chosen
+
+                    "latest" ->
+                        D.succeed Latest
+
+                    _ ->
+                        D.fail ("not a source: " ++ s)
+            )
 
 
 
@@ -2392,8 +2593,8 @@ meta s =
         Confirm _ _ ->
             "READY"
 
-        Running _ _ run ->
-            runTitle run
+        Running _ r run ->
+            runTitle r run
 
         Done _ _ _ ->
             "DONE"
@@ -2411,8 +2612,8 @@ meta s =
             "CLOSING"
 
 
-runTitle : Run -> String
-runTitle run =
+runTitle : Release -> Run -> String
+runTitle r run =
     case run of
         Pre Checking ->
             "CHECKING"
@@ -2432,11 +2633,12 @@ runTitle run =
         Pre (Copying _) ->
             "COPYING BANK 2"
 
+        -- The self-update, as the owner's screen says it.
         Pre (CopyingBin _) ->
-            "COPYING FIRMWARE"
+            "INSTALLING " ++ showVersion (Just r.version)
 
         Pre InstallingSelf ->
-            "WRITING FIRMWARE"
+            "INSTALLING " ++ showVersion (Just r.version)
 
         Pre (EnteringDfu _) ->
             "RESTARTING INTO UPDATE MODE"
@@ -2455,6 +2657,9 @@ runTitle run =
 
         Post _ Restarting ->
             "INSTALLING"
+
+        Post _ RestartingSelf ->
+            "RESTARTING · INSTALLING BANK 2"
 
         Post _ (Installing _) ->
             "INSTALLING"
@@ -2536,7 +2741,7 @@ body m =
             confirm m u r
 
         Running u r run ->
-            change u r :: stages run :: runningText m.windows run
+            change u r :: stages (u.selfUpdate /= Nothing) r run :: runningText m.windows run
 
         Done was r now ->
             [ fact "UPDATED" (showVersion was.build ++ " → " ++ showVersion now.build)
@@ -2545,7 +2750,7 @@ body m =
             ]
 
         StoppedBefore u r f ->
-            change u r :: failedBefore m.windows u f
+            change u r :: failedBefore m.windows m.webusb u f
 
         StoppedAfter u r _ f ->
             change u r :: failedAfter f
@@ -2581,7 +2786,8 @@ ready m u rel =
                                 "CHOSEN FILES"
                         )
                         (showVersion (Just r.version))
-                        :: (if m.webusb then
+                        -- The self-update needs no WebUSB; the DFU path does.
+                        :: (if m.webusb || u.selfUpdate /= Nothing then
                                 [ say (offerText m.mode (offer u r))
                                 , buttons [ btn (offerButton m.mode (offer u r)) Start, btn "CHOOSE FILES…" Choose, btn "CLOSE" Close ]
                                 ]
@@ -2681,50 +2887,66 @@ confirm m u r =
 
 {-| The stages in order, the current one marked, done ones ticked.
 -}
-stages : Run -> Html msg
-stages run =
+stages : Bool -> Release -> Run -> Html msg
+stages self r run =
     let
+        -- The self-update's steps, as the owner's screen has them: no update mode.
+        selfAt : Int -> Int
+        selfAt dfuAt =
+            if not self then
+                dfuAt
+
+            else if dfuAt == 0 then
+                0
+
+            else if dfuAt < 4 then
+                1
+
+            else
+                2
+
         at : Int
         at =
-            case run of
-                Pre Checking ->
-                    0
+            selfAt <|
+                case run of
+                    Pre Checking ->
+                        0
 
-                Pre ReadingProject ->
-                    0
+                    Pre ReadingProject ->
+                        0
 
-                Pre (Saving _) ->
-                    0
+                    Pre (Saving _) ->
+                        0
 
-                Pre Discarding ->
-                    0
+                    Pre Discarding ->
+                        0
 
-                Pre (Settling _) ->
-                    0
+                    Pre (Settling _) ->
+                        0
 
-                Pre (Copying _) ->
-                    1
+                    Pre (Copying _) ->
+                        1
 
-                Pre (CopyingBin _) ->
-                    2
+                    Pre (CopyingBin _) ->
+                        1
 
-                Pre InstallingSelf ->
-                    3
+                    Pre InstallingSelf ->
+                        1
 
-                Pre (EnteringDfu _) ->
-                    2
+                    Pre (EnteringDfu _) ->
+                        2
 
-                Pre (FindingDevice _) ->
-                    2
+                    Pre (FindingDevice _) ->
+                        2
 
-                Pre (PickingDevice _) ->
-                    2
+                    Pre (PickingDevice _) ->
+                        2
 
-                Writing _ _ ->
-                    3
+                    Writing _ _ ->
+                        3
 
-                Post _ _ ->
-                    4
+                    Post _ _ ->
+                        4
 
         pct : Maybe Progress
         pct =
@@ -2771,6 +2993,9 @@ stages run =
                 Post _ Restarting ->
                     Nothing
 
+                Post _ RestartingSelf ->
+                    Nothing
+
                 Post _ (Installing _) ->
                     Nothing
 
@@ -2782,7 +3007,11 @@ stages run =
 
         names : List String
         names =
-            [ "CHECKING", "COPYING BANK 2", "RESTARTING INTO UPDATE MODE", "WRITING FIRMWARE", "INSTALLING" ]
+            if self then
+                [ "CHECKING", "INSTALLING " ++ showVersion (Just r.version), "RESTARTING · INSTALLING BANK 2" ]
+
+            else
+                [ "CHECKING", "COPYING BANK 2", "RESTARTING INTO UPDATE MODE", "WRITING FIRMWARE", "INSTALLING" ]
     in
     ol [ class "ustages" ]
         (List.indexedMap
@@ -2926,8 +3155,25 @@ leaveUpdateMode =
     say "To leave update mode without updating: unplug the USB cable and plug it back in; the unit starts its old firmware as before (CHIMERA.BK2 may already be on the card: that is harmless)."
 
 
-failedBefore : Bool -> UnitNow -> PreFail -> List (Html Msg)
-failedBefore windows u f =
+{-| After a refused or undone self-update: try it again, or the DFU path
+(where the browser has WebUSB).
+-}
+selfWayOut : Bool -> Html Msg
+selfWayOut webusb =
+    buttons
+        (btn "TRY AGAIN" TryAgain
+            :: (if webusb then
+                    [ btn "USE UPDATE MODE (DFU)" UseDfu ]
+
+                else
+                    []
+               )
+            ++ [ btn "CLOSE" Close ]
+        )
+
+
+failedBefore : Bool -> Bool -> UnitNow -> PreFail -> List (Html Msg)
+failedBefore windows webusb u f =
     case f of
         Unsaved loaded ->
             [ say "THE PROJECT HAS UNSAVED CHANGES. Save them or drop them, and the update goes on; or CANCEL and keep working."
@@ -2955,6 +3201,18 @@ failedBefore windows u f =
             [ say (why ++ ".")
             , say ("Nothing was flashed: the unit still runs " ++ showVersion u.build ++ ". Check the USB cable, then press TRY AGAIN.")
             , buttons [ btn "TRY AGAIN" TryAgain, btn "CLOSE" Close ]
+            ]
+
+        SelfRefused why ->
+            [ say ("THE UNIT REFUSED TO INSTALL THE FIRMWARE ITSELF: " ++ why ++ ".")
+            , say ("Nothing was written: the unit still runs " ++ showVersion u.build ++ ".")
+            , selfWayOut webusb
+            ]
+
+        SelfAborted why ->
+            [ say ("THE UNIT STOPPED ITS OWN INSTALL (" ++ why ++ ") AND STARTED ITS OLD FIRMWARE AGAIN, UNTOUCHED.")
+            , say ("It still runs " ++ showVersion u.build ++ ".")
+            , selfWayOut webusb
             ]
 
         GarbledBefore why ->
@@ -3084,6 +3342,18 @@ failedAfter f =
             , buttons [ btn "TRY AGAIN" TryAgain, btn "CLOSE" Close ]
             ]
                 ++ sdSteps
+
+        SelfNotBack cause ->
+            [ say ("THE UNIT HASN'T COME BACK FROM ITS OWN INSTALL (" ++ cause ++ "). It writes its firmware, restarts and installs bank 2: up to three minutes.")
+            , say "If its screen says DON'T POWER OFF, leave it on and press CHECK AGAIN when it changes. Otherwise press CHECK AGAIN."
+            , buttons [ btn "CHECK AGAIN" CheckAgain, btn "CONNECT UNIT…" ConnectPort, btn "CLOSE" Close ]
+            , say "If it never comes back, finish from the bootloader, which is never touched: CHIMERA.BIN is already on the card."
+            , ol []
+                [ li [] [ text "Hold MENU while you power the unit on." ]
+                , li [] [ text "Under Firmware to flash, step with − / + until it shows CHIMERA.BIN." ]
+                , li [] [ text "Press button 1 (flash). Chimera installs CHIMERA.BK2 on its first start: leave it on while the screen says DON'T POWER OFF." ]
+                ]
+            ]
 
         GarbledAfter why ->
             [ say ("THE UPDATE STOPPED AFTER THE FIRMWARE WRITE BEGAN: " ++ why ++ ".")

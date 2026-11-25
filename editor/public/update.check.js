@@ -22,6 +22,7 @@ async function checks() {
   eq(got.version, '0.4.1 abcd1234', 'the version');
   eq(got.seal, r.seal, 'the seal');
   eq(got.format, 2, 'the format');
+  eq(got.binCrc, crc32(r.bin).toString(16).padStart(8, '0'), 'the .bin\'s CRC for bank1 install');
   eq(U.held().release, got, 'held once checked');
 
   // SHA256SUMS: a file that doesn't match is refused before anything else.

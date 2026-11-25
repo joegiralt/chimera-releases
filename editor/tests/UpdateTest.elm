@@ -16,7 +16,37 @@ import Update exposing (Answer(..), Bk2(..), Device(..), Event(..), Flash(..), I
 
 rel : Release
 rel =
-    { version = "0.4.1 abcd1234", seal = "0123456789abcdef", format = 2, binSize = 900000, bk2Size = 1048576, binSha = "b1n", bk2Sha = "b2k", source = Latest }
+    { version = "0.4.1 abcd1234", seal = "0123456789abcdef", format = 2, binSize = 900000, bk2Size = 1048576, binSha = "b1n", bk2Sha = "b2k", binCrc = "0a1b2c3d", source = Latest }
+
+
+selfOld : Answer
+selfOld =
+    Said [ "build 0.4.0 de07edf9", "state SAVED", "bank2 open 0.4.0 de07edf9 seal=ffffffffffffffff", "selfupdate 1" ] "OK"
+
+
+selfUnit : Update.UnitNow
+selfUnit =
+    { unit | selfUpdate = Just { version = 1 } }
+
+
+selfBack : Answer
+selfBack =
+    Said [ "build 0.4.1 abcd1234", "state NEW", "bank2 open 0.4.1 abcd1234 seal=0123456789abcdef", "selfupdate 1", "bank1 last ok 0a1b2c3d" ] "OK"
+
+
+selfNew : Update.UnitNow
+selfNew =
+    Update.readStatus [ "build 0.4.1 abcd1234", "state NEW", "bank2 open 0.4.1 abcd1234 seal=0123456789abcdef", "selfupdate 1", "bank1 last ok 0a1b2c3d" ]
+
+
+selfStarted : Update.Model
+selfStarted =
+    events [ Begun { open = True, webusb = True, windows = False }, Answered TStatus selfOld, ReleaseIs (Ok rel) ] (Tuple.first Update.begin) |> hands [ Start, Go ]
+
+
+installing : Update.Model
+installing =
+    events [ Answered TStatus selfOld, Answered TPut (Said [] "OK"), Answered TPutBin (Said [] "OK"), Answered TSelf (Said [] "OK bank1 verified 900000 0a1b2c3d, restarting") ] selfStarted
 
 
 status : String -> String -> String -> Answer
@@ -211,34 +241,82 @@ suite =
                     Expect.equal (Ready unit (Got rel))
                         (Update.stage (hands [ Cancel ] (events [ Answered TStatus (status "0.4.0 de07edf9" "MODIFIED" "open"), Answered TProject (Said [ "project \"MY SONG\" 3 edited gen 7" ] "OK 9") ] started)))
             ]
-        , test "the_self_update_path_puts_both_files_then_installs_no_dfu" <|
-            \_ ->
-                let
-                    su : Update.SelfUpdate
-                    su =
-                        { binRemote = "/CHIMERA/SYSTEM/BANK1.BIN", install = "selfinstall" }
-
-                    going : Update.Model
-                    going =
-                        events opened (Tuple.first Update.begin) |> Update.withSelfUpdate su |> hands [ Start, Go ]
-
-                    suUnit : Update.UnitNow
-                    suUnit =
-                        { unit | selfUpdate = Just su }
-                in
-                Expect.equal ( Done suUnit rel newUnit, [ Put rel, PutBin rel "/CHIMERA/SYSTEM/BANK1.BIN", Ask TSelf "selfinstall" 120000 0, Back 120 True ] )
-                    (steps
-                        [ Answered TStatus old
-                        , Answered TPut (Said [] "OK")
-                        , Copied { done = 5, total = 10 }
-                        , Answered TPutBin (Said [] "OK")
-                        , Answered TSelf (Said [] "OK installing")
-                        , BackDone (Ok (Said [ "build 0.4.1 abcd1234", "state NEW", "bank2 open 0.4.1 abcd1234 seal=0123456789abcdef" ] "OK"))
+        , describe "the self-update path (ADR 0344): no DFU"
+            [ test "the_capability_is_status_selfupdate_1" <|
+                \_ -> Expect.equal [ Just { version = 1 }, Nothing, Nothing ] [ (Update.readStatus [ "selfupdate 1" ]).selfUpdate, (Update.readStatus [ "selfupdate yes" ]).selfUpdate, (Update.readStatus [ "build 0.4.0 de07edf9" ]).selfUpdate ]
+            , test "bk2_then_bin_to_the_card_root_then_bank1_install_then_status" <|
+                \_ ->
+                    Expect.equal ( Done selfUnit rel selfNew, [ Put rel, PutBin rel "/CHIMERA.BIN", Ask TSelf "bank1 install 900000 0a1b2c3d" 120000 0, Back 180 True ] )
+                        (steps
+                            [ Answered TStatus selfOld
+                            , Copied { done = 5, total = 10 }
+                            , Answered TPut (Said [] "OK")
+                            , Copied { done = 5, total = 10 }
+                            , Answered TPutBin (Said [] "OK")
+                            , Answered TSelf (Said [] "OK bank1 verified 900000 0a1b2c3d, restarting")
+                            , BackDone (Ok selfBack)
+                            ]
+                            selfStarted
+                        )
+            , test "the_bk2_is_skipped_when_its_seal_is_already_installed" <|
+                \_ ->
+                    let
+                        sealed : Answer
+                        sealed =
+                            Said [ "build 0.4.0 de07edf9", "state SAVED", "bank2 open 0.4.1 abcd1234 seal=0123456789abcdef", "selfupdate 1" ] "OK"
+                    in
+                    Expect.equal [ PutBin rel "/CHIMERA.BIN" ]
+                        (Update.step (Answered TStatus sealed) (events [ Begun { open = True, webusb = True, windows = False }, Answered TStatus sealed, ReleaseIs (Ok rel) ] (Tuple.first Update.begin) |> hands [ Start, Go ]) |> Tuple.second)
+            , test "the_bar_counts_both_files" <|
+                \_ ->
+                    Expect.equal (Running selfUnit rel (Pre (CopyingBin { done = rel.bk2Size + 100, total = rel.bk2Size + rel.binSize })))
+                        (steps [ Answered TStatus selfOld, Answered TPut (Said [] "OK"), Copied { done = 100, total = rel.binSize } ] selfStarted |> Tuple.first)
+            , test "already_installed_is_done_without_a_restart" <|
+                \_ ->
+                    Expect.equal ( Running selfUnit rel (Post Staged Verifying), [ Ask TVerify "status" 2000 0 ] )
+                        (steps [ Answered TSelf (Said [] "OK already installed") ] (events [ Answered TStatus selfOld, Answered TPut (Said [] "OK"), Answered TPutBin (Said [] "OK") ] selfStarted))
+            , test "err_bank1_wrote_nothing_retry_or_dfu" <|
+                \_ ->
+                    let
+                        refused : Update.Model
+                        refused =
+                            events [ Answered TStatus selfOld, Answered TPut (Said [] "OK"), Answered TPutBin (Said [] "OK"), Answered TSelf (Said [] "ERR bank1: card read failed") ] selfStarted
+                    in
+                    Expect.equal
+                        [ StoppedBefore selfUnit rel (SelfRefused "ERR bank1: card read failed")
+                        , Running selfUnit rel (Pre Checking)
+                        , Running { selfUnit | selfUpdate = Nothing } rel (Pre Checking)
                         ]
-                        going
-                    )
-        , test "without_the_capability_the_dfu_path" <|
-            \_ -> Expect.equal Nothing (Update.readStatus [ "build 0.4.0 de07edf9", "selfupdate yes" ]).selfUpdate
+                        [ Update.stage refused, Update.stage (hands [ TryAgain ] refused), Update.stage (hands [ UseDfu ] refused) ]
+            , test "an_aborted_install_is_the_old_firmware_untouched" <|
+                \_ ->
+                    Expect.equal (StoppedBefore selfUnit rel (SelfAborted "verify failed"))
+                        (steps [ BackDone (Ok (Said [ "build 0.4.0 de07edf9", "bank2 open 0.4.0 de07edf9 seal=ffffffffffffffff", "selfupdate 1", "bank1 last aborted verify failed" ] "OK")) ] installing |> Tuple.first)
+            , test "back_but_another_crc_is_unfinished" <|
+                \_ ->
+                    Expect.equal (StoppedAfter selfUnit rel Staged (Unfinished "The unit says bank1 last ok deadbeef, not this release's CHIMERA.BIN (0a1b2c3d)"))
+                        (steps [ BackDone (Ok (Said [ "build 0.4.1 abcd1234", "bank2 open 0.4.1 abcd1234 seal=0123456789abcdef", "bank1 last ok deadbeef" ] "OK")) ] installing |> Tuple.first)
+            , test "not_back_in_three_minutes_says_how_and_checks_again" <|
+                \_ ->
+                    let
+                        stopped : Update.Model
+                        stopped =
+                            events [ BackDone (Err "off") ] installing
+                    in
+                    Expect.all
+                        [ \_ -> Expect.equal [ StoppedAfter selfUnit rel Staged (SelfNotBack "off"), Running selfUnit rel (Post Staged RestartingSelf) ] [ Update.stage stopped, Update.stage (hands [ CheckAgain ] stopped) ]
+                        , \_ -> shown stopped |> Query.has [ Sel.containing [ Sel.text "Under Firmware to flash, step with − / + until it shows CHIMERA.BIN." ] ]
+                        ]
+                        ()
+            , test "the_stage_reads_installing_the_version_and_no_picker" <|
+                \_ ->
+                    events [ Answered TStatus selfOld, Answered TPut (Said [] "OK") ] selfStarted
+                        |> shown
+                        |> Expect.all
+                            [ Query.has [ Sel.containing [ Sel.text "INSTALLING 0.4.1 (abcd1234)" ] ]
+                            , Query.hasNot [ Sel.containing [ Sel.text "RESTARTING INTO UPDATE MODE" ] ]
+                            ]
+            ]
         , test "the_offer_on_connect_compares_hello_builds" <|
             \_ -> Expect.equal [ Newer, Same, Older ] [ Update.offerFor "0.4.0-de07edf9" "0.4.1 abcd1234", Update.offerFor "0.4.1-abcd1234" "0.4.1 abcd1234", Update.offerFor "0.5.0-11112222" "0.4.1 abcd1234" ]
         , test "the_happy_path_stages_then_flashes_then_checks" <|

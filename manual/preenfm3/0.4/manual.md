@@ -6673,6 +6673,8 @@ The page goes through **CHECKING**, **COPYING BANK 2** (with a percentage), **RE
 
 When the new firmware starts with `CHIMERA.BK2` on the card but bank 2 not installed, the editor sends `bank2 install` to finish it. The update tool stops there instead (and the next start installs it); the editor's way ends in the same place without another restart by hand.
 
+**A unit that updates itself** (firmware 0.4.1 and later, which says so to the editor) takes a shorter way: the editor copies `CHIMERA.BK2` (unless the same one is already installed) and `CHIMERA.BIN` onto the card, and the unit writes its own firmware. The page shows **INSTALLING** and the version with a bar, then **RESTARTING · INSTALLING BANK 2** (up to three minutes), then **UPDATED**. There is no update mode, no device to pick and no Windows driver. If the unit gives up, it starts its old firmware untouched and the page offers **TRY AGAIN** or **USE UPDATE MODE (DFU)**. If it doesn't come back within three minutes, hold **MENU** at power-on, step to `CHIMERA.BIN` (already on the card) and press button 1.
+
 **CHOOSE FILES…** takes a release's `CHIMERA.BIN`, `CHIMERA.BK2` and `SHA256SUMS` from your computer instead (choose all three at once). Every file is checked against `SHA256SUMS`, and the two as one build, before anything is written.
 
 **If the browser can't open update mode's device**, another program may hold it: on Linux, fwupd takes every new DFU device for a moment, and the editor waits up to 10 seconds for it. Press **WRITE AGAIN**, or write the firmware from a terminal with `dfu-util -a0 -d 0x0483:0xdf11 -s 0x8020000:leave -D CHIMERA.BIN`.

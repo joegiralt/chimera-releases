@@ -20,7 +20,7 @@ import { describe, test } from "node:test";
 import { bridge, followPart, openEditor, page, secondEditor, setup, statusText, until } from "./harness.mjs";
 import { FakeFirmware, serveRelease } from "./fakeupdate.mjs";
 
-const { makeRelease } = createRequire(import.meta.url)("./fakerelease.cjs");
+const { makeRelease, crc32 } = createRequire(import.meta.url)("./fakerelease.cjs");
 
 setup({ engines: ["ALGO"] });
 
@@ -467,6 +467,65 @@ describe("UPDATE from the browser", () => {
     await until("DONE", async () => (await meta()) === "DONE", UPDATE_WAIT);
     assert.equal(fake.build, "0.4.1 abcd1234");
     await backToEditor("BACK TO THE EDITOR");
+  });
+
+  test("U18: a unit that updates itself (selfupdate 1): both files, bank1 install, the restart; no DFU, no picker", async () => {
+    const fake = await ready({ selfUpdate: true });
+    await page.evaluate(() => Object.assign(window.__usb.log, { opens: 0, requests: 0 }));
+    await openUpdate();
+    await start();
+    await until("DONE", async () => (await meta()) === "DONE", UPDATE_WAIT).catch(async (e) => { throw new Error(`${e.message}: ${await meta()} :: ${await said()} :: ${fake.log.join(" | ")}`); });
+    const stages = await stagesSeen();
+    assert.ok(stages.includes("INSTALLING 0.4.1 (abcd1234)"), `stages: ${stages}`);
+    assert.ok(!stages.some((s) => /UPDATE MODE|WRITING FIRMWARE|CHOOSE/.test(s)), `a DFU stage on the self-update path: ${stages}`);
+    const verbs = fake.log.filter((l) => /^(put|dfu|bank1|bank2)/.test(l)).map((l) => l.split(" ").slice(0, 2).join(" "));
+    assert.deepEqual(verbs, ["put /CHIMERA/SYSTEM/BANK2.BK2", "put /CHIMERA.BIN", "bank1 install"]);
+    assert.ok(fake.log.includes(`bank1 install ${NEXT.bin.length} ${crc32(NEXT.bin).toString(16).padStart(8, "0")}`), "bank1 install's size and CRC");
+    assert.equal(fake.cardBin.equals(NEXT.bin), true, "CHIMERA.BIN on the card's root");
+    assert.equal(fake.build, "0.4.1 abcd1234");
+    const usb = await page.evaluate(() => ({ opens: window.__usb.log.opens, requests: window.__usb.log.requests }));
+    assert.deepEqual(usb, { opens: 0, requests: 0 }, "WebUSB used on the self-update path");
+    await backToEditor("BACK TO THE EDITOR");
+  });
+
+  test("U19: the self-update skips CHIMERA.BK2 when its seal is already the installed one", async () => {
+    const fake = await ready({ selfUpdate: true, bank2: `open 0.4.1 abcd1234 seal=${NEXT.seal}` });
+    await openUpdate();
+    await start();
+    await until("DONE", async () => (await meta()) === "DONE", UPDATE_WAIT);
+    assert.equal(fake.log.some((l) => l.startsWith("put /CHIMERA/SYSTEM/BANK2.BK2")), false, "the .bk2 sent again");
+    assert.ok(fake.log.some((l) => l.startsWith("put /CHIMERA.BIN")));
+    await backToEditor("BACK TO THE EDITOR");
+  });
+
+  test("U20: an aborted self-install: the old firmware untouched; USE UPDATE MODE (DFU) finishes it", async () => {
+    const fake = await ready({ selfUpdate: true, selfAbort: "verify failed" });
+    await openUpdate();
+    await start();
+    await until("the abort said", async () => /STARTED ITS OLD FIRMWARE AGAIN, UNTOUCHED/.test(await said()), UPDATE_WAIT);
+    assert.match(await said(), /It still runs 0\.4\.0 \(de07edf9\)/);
+    fake.selfAbort = null;
+    await button("USE UPDATE MODE (DFU)").click();
+    await until("DONE", async () => {
+      if (await button("CHOOSE UPDATE DEVICE").count()) await button("CHOOSE UPDATE DEVICE").click().catch(() => {});
+      return (await meta()) === "DONE";
+    }, UPDATE_WAIT);
+    assert.ok(fake.log.includes("dfu"), "the DFU path not taken");
+    assert.equal(fake.build, "0.4.1 abcd1234");
+    await backToEditor("BACK TO THE EDITOR");
+  });
+
+  test("U21: bank1 install refused: nothing written, said, with TRY AGAIN and the DFU way", async () => {
+    const fake = await ready({ selfUpdate: true, selfRefuse: "card read failed" });
+    await openUpdate();
+    await start();
+    await until("the refusal", async () => /REFUSED TO INSTALL THE FIRMWARE ITSELF/.test(await said()), UPDATE_WAIT);
+    const text = await said();
+    assert.match(text, /ERR bank1: card read failed/);
+    assert.match(text, /Nothing was written: the unit still runs 0\.4\.0 \(de07edf9\)/);
+    for (const b of ["TRY AGAIN", "USE UPDATE MODE (DFU)", "CLOSE"]) await button(b).waitFor();
+    assert.equal(fake.build, "0.4.0 de07edf9");
+    await backToEditor();
   });
 
   // Last: its pages take the bridge's one console from the main page.
