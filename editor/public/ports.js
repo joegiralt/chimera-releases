@@ -10,16 +10,16 @@ var ChimeraPorts = (function () {
   var app = null;
   // While an update owns the link (update.js), its lines and state go to
   // it, not to Elm's model, and the model's own lines are not sent.
-  var claim = null; // { line(l), state(s) }
+  var claim = null; // { line(line), state(name) }
   var lastSocket = null; // the URL the socket link was opened to
   var queue = Promise.resolve(); // the last write: the next waits for it
 
   // A socket holding more than this unsent waits before the next line.
   var SOCKET_HIGH = 4096;
 
-  function state(s) { if (claim) claim.state(s); else app.ports.linkState.send(s); }
+  function state(name) { if (claim) claim.state(name); else app.ports.linkState.send(name); }
 
-  function emit(l) { if (claim) claim.line(l); else app.ports.lineIn.send(l); }
+  function emit(line) { if (claim) claim.line(line); else app.ports.lineIn.send(line); }
 
   // Split a stream of text into lines on \n, CR stripped.
   function liner(emit) {
@@ -131,9 +131,9 @@ var ChimeraPorts = (function () {
     link = mine;
     ws.onopen = function () { opened = true; state('open'); };
     // The bridge sends one line per message; tolerate a CR or trailing \n.
-    ws.onmessage = function (m) {
-      String(m.data).split('\n').forEach(function (l, i, a) {
-        if (i < a.length - 1 || l !== '') emit(l.replace(/\r$/, ''));
+    ws.onmessage = function (message) {
+      String(message.data).split('\n').forEach(function (line, idx, all) {
+        if (idx < all.length - 1 || line !== '') emit(line.replace(/\r$/, ''));
       });
     };
     ws.onclose = function () {
@@ -183,7 +183,7 @@ var ChimeraPorts = (function () {
   // went), and the link opened again after the unit restarts: a serial port
   // this page was given before (by its USB id), else the same socket.
   // `reopen` resolves true, false, or 'several' (more than one unit).
-  function take(c) { claim = c; }
+  function take(claimer) { claim = claimer; }
   function giveBack() { claim = null; return link ? 'open' : 'lost'; }
   function write(line) {
     var ok = true;
@@ -196,17 +196,17 @@ var ChimeraPorts = (function () {
   async function candidates() {
     if (lastSocket || !('serial' in navigator)) return [];
     var ports = [];
-    try { ports = await navigator.serial.getPorts(); } catch (e) { return []; }
-    return ports.filter(function (p) {
-      var info = p.getInfo ? p.getInfo() : CONSOLE;
+    try { ports = await navigator.serial.getPorts(); } catch (error) { return []; }
+    return ports.filter(function (port) {
+      var info = port.getInfo ? port.getInfo() : CONSOLE;
       return info.usbVendorId === CONSOLE.usbVendorId && info.usbProductId === CONSOLE.usbProductId;
     });
   }
 
-  async function openPort(p) {
+  async function openPort(port) {
     await drop();
-    try { await p.open(SERIAL); } catch (e) { return false; }
-    adopt(p)();
+    try { await port.open(SERIAL); } catch (error) { return false; }
+    adopt(port)();
     return true;
   }
 
@@ -214,26 +214,26 @@ var ChimeraPorts = (function () {
     if (link) return true;
     if (lastSocket) {
       openSocket(lastSocket);
-      for (var t = 0; t < 60; t++) {
+      for (var tries = 0; tries < 60; tries++) {
         if (!link) return false;
         if (link.ws && link.ws.readyState === 1) return true;
-        await new Promise(function (r) { setTimeout(r, 50); });
+        await new Promise(function (resolve) { setTimeout(resolve, 50); });
       }
       return false;
     }
     if (!('serial' in navigator)) return false;
     var ports = [];
-    try { ports = await navigator.serial.getPorts(); } catch (e) { return false; }
+    try { ports = await navigator.serial.getPorts(); } catch (error) { return false; }
     // Only the console's USB id; with more than one such port there is no
     // telling which is this unit (the console names no serial number), so
     // none is taken: 'several'.
-    var mine = ports.filter(function (p) {
-      var info = p.getInfo ? p.getInfo() : CONSOLE;
+    var mine = ports.filter(function (port) {
+      var info = port.getInfo ? port.getInfo() : CONSOLE;
       return info.usbVendorId === CONSOLE.usbVendorId && info.usbProductId === CONSOLE.usbProductId;
     });
     if (mine.length > 1) return 'several';
     if (!mine.length) return false;
-    try { await mine[0].open(SERIAL); } catch (e) { return false; }
+    try { await mine[0].open(SERIAL); } catch (error) { return false; }
     adopt(mine[0])();
     return true;
   }

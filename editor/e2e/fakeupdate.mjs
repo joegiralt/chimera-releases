@@ -94,7 +94,7 @@ export class FakeFirmware {
     if (this.updating && /^ed since \d+$/.test(line) && this.state === "MODIFIED") return [`project "MY SONG" 3 edited gen 7`, "OK 9"];
     if (!this.updating && !/^(status|put |dfu|bank1|bank2)/.test(line)) return null;
     this.log.push(line);
-    const w = line.split(" ");
+    const words = line.split(" ");
     if (line === "status") {
       this.updating = true;
       return this.status();
@@ -103,16 +103,16 @@ export class FakeFirmware {
       this.state = "SAVED";
       return ["OK"];
     }
-    if (w[0] === "put" && w[1] === "/CHIMERA/SYSTEM/BANK2.BK2") {
+    if (words[0] === "put" && words[1] === "/CHIMERA/SYSTEM/BANK2.BK2") {
       if (this.old) return [OLD_PUT];
-      this.putting = { size: Number(w[2]), crc: parseInt(w[3], 16), data: [], bytes: 0, to: "staged" };
+      this.putting = { size: Number(words[2]), crc: parseInt(words[3], 16), data: [], bytes: 0, to: "staged" };
       return ["READY"];
     }
-    if (w[0] === "put" && w[1] === "/CHIMERA.BIN" && this.selfUpdate) {
-      this.putting = { size: Number(w[2]), crc: parseInt(w[3], 16), data: [], bytes: 0, to: "cardBin" };
+    if (words[0] === "put" && words[1] === "/CHIMERA.BIN" && this.selfUpdate) {
+      this.putting = { size: Number(words[2]), crc: parseInt(words[3], 16), data: [], bytes: 0, to: "cardBin" };
       return ["READY"];
     }
-    if (w[0] === "bank1" && w[1] === "install" && this.selfUpdate) return this.bank1Install(Number(w[2]), parseInt(w[3], 16));
+    if (words[0] === "bank1" && words[1] === "install" && this.selfUpdate) return this.bank1Install(Number(words[2]), parseInt(words[3], 16));
     if (line === "dfu" && this.dfuSilent) {
       // A unit that went to update mode without a word: its console goes
       // only after the editor has given up waiting for one.
@@ -134,32 +134,32 @@ export class FakeFirmware {
     if (line === "bank2") return [`bank2 ${this.bank2}`, "OK"];
     if (line === "bank2 install") {
       if (!this.staged) return ["ERR bank2: nothing staged"];
-      const v = this.release.version;
-      if (this.build !== v) return [`ERR bank2: staged: needs firmware ${v}`];
-      if (this.bank2 === `open ${v} seal=${this.release.seal}`) return ["OK already installed"];
-      this.bank2 = `open ${v} seal=${this.release.seal}`;
+      const wanted = this.release.version;
+      if (this.build !== wanted) return [`ERR bank2: staged: needs firmware ${wanted}`];
+      if (this.bank2 === `open ${wanted} seal=${this.release.seal}`) return ["OK already installed"];
+      this.bank2 = `open ${wanted} seal=${this.release.seal}`;
       this.restart();
-      return ["audio stopped 800 ms", `OK bank2 open ${v}`];
+      return ["audio stopped 800 ms", `OK bank2 open ${wanted}`];
     }
     return null;
   }
 
   data(line) {
-    const p = this.putting;
-    const b = Buffer.from(line, "base64");
-    p.data.push(b);
-    p.bytes += b.length;
-    if (this.unplugAt !== null && p.bytes >= this.unplugAt) {
+    const putting = this.putting;
+    const chunk = Buffer.from(line, "base64");
+    putting.data.push(chunk);
+    putting.bytes += chunk.length;
+    if (this.unplugAt !== null && putting.bytes >= this.unplugAt) {
       this.unplugAt = null;
       this.putting = null;
       this.bridge.hangUp();
       return [];
     }
-    if (p.bytes < p.size) return [];
+    if (putting.bytes < putting.size) return [];
     this.putting = null;
-    const all = Buffer.concat(p.data);
-    if (all.length !== p.size || crc32(all) !== p.crc) return ["ERR put: CRC mismatch"];
-    this[p.to] = all;
+    const all = Buffer.concat(putting.data);
+    if (all.length !== putting.size || crc32(all) !== putting.crc) return ["ERR put: CRC mismatch"];
+    this[putting.to] = all;
     return ["OK"];
   }
 
@@ -194,11 +194,11 @@ export class FakeFirmware {
 /** The release's files served where the editor looks for the latest
  * (`../firmware/preenfm3/latest/`, from the editor at the bridge's root);
  * `sums` overrides SHA256SUMS. */
-export function serveRelease(bridge, r, { sums = r.sums } = {}) {
+export function serveRelease(bridge, served, { sums = served.sums } = {}) {
   const at = "/firmware/preenfm3/latest/";
   bridge.files.clear();
-  bridge.files.set(at + "manifest.json", Buffer.from(JSON.stringify(r.manifest)));
-  bridge.files.set(at + "CHIMERA.BIN", r.bin);
-  bridge.files.set(at + "CHIMERA.BK2", r.bk2);
+  bridge.files.set(at + "manifest.json", Buffer.from(JSON.stringify(served.manifest)));
+  bridge.files.set(at + "CHIMERA.BIN", served.bin);
+  bridge.files.set(at + "CHIMERA.BK2", served.bk2);
   bridge.files.set(at + "SHA256SUMS", Buffer.from(sums));
 }

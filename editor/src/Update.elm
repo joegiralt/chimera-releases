@@ -79,8 +79,8 @@ beginStuck =
 
 
 stage : Model -> Stage
-stage (Model m) =
-    m.stage
+stage (Model fields) =
+    fields.stage
 
 
 subscriptions : Sub Msg
@@ -101,10 +101,10 @@ Every other answer is ignored.
 latestSub : (Maybe String -> msg) -> msg -> Sub msg
 latestSub toMsg ignored =
     updateIn
-        (\v ->
-            case D.decodeValue (D.field "op" D.string) v of
+        (\value ->
+            case D.decodeValue (D.field "op" D.string) value of
                 Ok "latest" ->
-                    toMsg (D.decodeValue (D.field "version" D.string) v |> Result.toMaybe)
+                    toMsg (D.decodeValue (D.field "version" D.string) value |> Result.toMaybe)
 
                 _ ->
                     ignored
@@ -119,11 +119,11 @@ waits on a restart.
 update : Msg -> Model -> ( Model, Cmd Msg, Maybe String )
 update msg model =
     let
-        e : Maybe Event
-        e =
+        event : Maybe Event
+        event =
             case msg of
-                FromJs v ->
-                    Just (decode v)
+                FromJs value ->
+                    Just (decode value)
 
                 Choose ->
                     Nothing
@@ -165,7 +165,7 @@ update msg model =
                     Nothing
 
         ( next, reqs ) =
-            case e of
+            case event of
                 Just ev ->
                     step ev model
 
@@ -180,14 +180,14 @@ update msg model =
             else
                 []
     in
-    ( next, send (held ++ reqs), Maybe.andThen endedLink e )
+    ( next, send (held ++ reqs), Maybe.andThen endedLink event )
 
 
 endedLink : Event -> Maybe String
-endedLink e =
-    case e of
-        Ended l ->
-            Just l
+endedLink event =
+    case event of
+        Ended link ->
+            Just link
 
         Begun _ ->
             Nothing
@@ -232,8 +232,8 @@ endedLink e =
 {-| Whether the tab is held: while anything past CHECKING runs.
 -}
 holding : Model -> Bool
-holding (Model m) =
-    case runningOf m.stage of
+holding (Model fields) =
+    case runningOf fields.stage of
         Just ( _, _, Pre Checking ) ->
             False
 

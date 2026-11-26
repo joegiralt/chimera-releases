@@ -11,21 +11,21 @@ import Update.Types exposing (Bk2(..), Flash(..), InDfu, Loaded, Mode(..), Model
 
 
 hand : Msg -> Model -> ( Model, List Request )
-hand msg ((Model m) as model) =
+hand msg ((Model fields) as model) =
     let
         ignore : ( Model, List Request )
         ignore =
             ( model, [] )
 
         go : Stage -> List Request -> ( Model, List Request )
-        go s reqs =
-            ( Model { m | stage = s }, reqs )
+        go stage reqs =
+            ( Model { fields | stage = stage }, reqs )
 
         pickAgain : ( UnitNow, Release, PreFail ) -> ( Model, List Request )
-        pickAgain ( u, r, f ) =
-            case inUpdateMode f of
-                Just d ->
-                    go (Running u r (Pre (PickingDevice d))) [ PickDevice ]
+        pickAgain ( unit, release, failure ) =
+            case inUpdateMode failure of
+                Just inDfu ->
+                    go (Running unit release (Pre (PickingDevice inDfu))) [ PickDevice ]
 
                 Nothing ->
                     ignore
@@ -35,17 +35,17 @@ hand msg ((Model m) as model) =
             ignore
 
         Choose ->
-            case readyOf m.stage of
-                Just ( u, rel ) ->
-                    go (Choosing u rel) [ ChooseFiles ]
+            case readyOf fields.stage of
+                Just ( unit, rel ) ->
+                    go (Choosing unit rel) [ ChooseFiles ]
 
                 Nothing ->
                     ignore
 
         Start ->
-            case readyOf m.stage of
-                Just ( u, Got r ) ->
-                    go (Confirm u r) []
+            case readyOf fields.stage of
+                Just ( unit, Got release ) ->
+                    go (Confirm unit release) []
 
                 Just ( _, Fetching ) ->
                     ignore
@@ -57,47 +57,47 @@ hand msg ((Model m) as model) =
                     ignore
 
         Go ->
-            case confirmOf m.stage of
-                Just ( u, r ) ->
-                    case m.mode of
+            case confirmOf fields.stage of
+                Just ( unit, release ) ->
+                    case fields.mode of
                         Connected ->
-                            go (Running u r (Pre Checking)) [ status u.unit TStatus 0 ]
+                            go (Running unit release (Pre Checking)) [ status unit.unit TStatus 0 ]
 
                         -- Already in update mode: the device first (a click).
                         -- It may hold half an image: touched until written whole.
                         Stuck ->
-                            go (Running u r (Pre (PickingDevice { bk2 = AfterFlash, flash = Touched }))) []
+                            go (Running unit release (Pre (PickingDevice { bk2 = AfterFlash, flash = Touched }))) []
 
                 Nothing ->
                     ignore
 
         Cancel ->
-            case ( confirmOf m.stage, pickingOf m.stage, unsavedOf m.stage ) of
-                ( Just ( u, r ), _, _ ) ->
-                    go (Ready u (Got r)) []
+            case ( confirmOf fields.stage, pickingOf fields.stage, unsavedOf fields.stage ) of
+                ( Just ( unit, release ), _, _ ) ->
+                    go (Ready unit (Got release)) []
 
-                ( Nothing, Just ( u, r, b ), _ ) ->
-                    go (StoppedBefore u r (PickCancelled b)) []
+                ( Nothing, Just ( unit, release, bk2 ), _ ) ->
+                    go (StoppedBefore unit release (PickCancelled bk2)) []
 
                 -- Unsaved changes, and the user keeps them: back to the offer.
-                ( Nothing, Nothing, Just ( u, r, _ ) ) ->
-                    go (Ready u (Got r)) []
+                ( Nothing, Nothing, Just ( unit, release, _ ) ) ->
+                    go (Ready unit (Got release)) []
 
                 ( Nothing, Nothing, Nothing ) ->
                     ignore
 
         SaveAndUpdate ->
-            case unsavedOf m.stage of
-                Just ( u, r, _ ) ->
-                    go (Running u r (Pre (Saving False))) [ Ask TSave "ed project save" 15000 0 u.unit ]
+            case unsavedOf fields.stage of
+                Just ( unit, release, _ ) ->
+                    go (Running unit release (Pre (Saving False))) [ Ask TSave "ed project save" 15000 0 unit.unit ]
 
                 Nothing ->
                     ignore
 
         DiscardAndUpdate ->
-            case unsavedOf m.stage of
-                Just ( u, r, Just l ) ->
-                    go (Running u r (Pre Discarding)) [ Ask TSave ("ed project load " ++ String.fromInt l.id ++ " " ++ String.fromInt l.gen ++ " discard") 15000 0 u.unit ]
+            case unsavedOf fields.stage of
+                Just ( unit, release, Just loaded ) ->
+                    go (Running unit release (Pre Discarding)) [ Ask TSave ("ed project load " ++ String.fromInt loaded.id ++ " " ++ String.fromInt loaded.gen ++ " discard") 15000 0 unit.unit ]
 
                 Just ( _, _, Nothing ) ->
                     ignore
@@ -106,7 +106,7 @@ hand msg ((Model m) as model) =
                     ignore
 
         Pick ->
-            case ( pickingOf m.stage, stoppedBeforeOf m.stage ) of
+            case ( pickingOf fields.stage, stoppedBeforeOf fields.stage ) of
                 ( Just _, _ ) ->
                     ( model, [ PickDevice ] )
 
@@ -118,12 +118,12 @@ hand msg ((Model m) as model) =
 
         -- The click is the chooser's gesture: the device is picked again.
         WriteAgain ->
-            case ( stoppedBeforeOf m.stage, stoppedAfterOf m.stage ) of
+            case ( stoppedBeforeOf fields.stage, stoppedAfterOf fields.stage ) of
                 ( Just stopped, _ ) ->
                     pickAgain stopped
 
-                ( Nothing, Just ( u, r, ( b, WriteCut _ ) ) ) ->
-                    go (Running u r (Pre (PickingDevice { bk2 = b, flash = Touched }))) [ PickDevice ]
+                ( Nothing, Just ( unit, release, ( bk2, WriteCut _ ) ) ) ->
+                    go (Running unit release (Pre (PickingDevice { bk2 = bk2, flash = Touched }))) [ PickDevice ]
 
                 ( Nothing, Just ( _, _, ( _, LeaveFailed _ ) ) ) ->
                     ignore
@@ -149,32 +149,32 @@ hand msg ((Model m) as model) =
         -- After the write, both ask the unit what it runs now: the link
         -- opened again, `status`, and the install from there.
         CheckAgain ->
-            afterAgain m.stage |> Maybe.map (\( s, reqs ) -> go s reqs) |> Maybe.withDefault ignore
+            afterAgain fields.stage |> Maybe.map (\( stage, reqs ) -> go stage reqs) |> Maybe.withDefault ignore
 
         TryAgain ->
-            case stoppedBeforeOf m.stage of
-                Just ( u, r, f ) ->
-                    case f of
+            case stoppedBeforeOf fields.stage of
+                Just ( unit, release, failure ) ->
+                    case failure of
                         Unsaved _ ->
-                            go (Running u r (Pre Checking)) [ status u.unit TStatus 0 ]
+                            go (Running unit release (Pre Checking)) [ status unit.unit TStatus 0 ]
 
                         NothingFlashed _ ->
-                            go (Running u r (Pre Checking)) [ status u.unit TStatus 0 ]
+                            go (Running unit release (Pre Checking)) [ status unit.unit TStatus 0 ]
 
                         GarbledBefore _ ->
-                            go (Running u r (Pre Checking)) [ status u.unit TStatus 0 ]
+                            go (Running unit release (Pre Checking)) [ status unit.unit TStatus 0 ]
 
                         DfuSilent _ ->
-                            go (Running u r (Pre Checking)) [ status u.unit TStatus 0 ]
+                            go (Running unit release (Pre Checking)) [ status unit.unit TStatus 0 ]
 
                         SelfRefused _ ->
-                            go (Running u r (Pre Checking)) [ status u.unit TStatus 0 ]
+                            go (Running unit release (Pre Checking)) [ status unit.unit TStatus 0 ]
 
                         SelfAborted _ ->
-                            go (Running u r (Pre Checking)) [ status u.unit TStatus 0 ]
+                            go (Running unit release (Pre Checking)) [ status unit.unit TStatus 0 ]
 
                         OtherUnitBefore _ ->
-                            go (Running u r (Pre Checking)) [ status u.unit TStatus 0 ]
+                            go (Running unit release (Pre Checking)) [ status unit.unit TStatus 0 ]
 
                         PickCancelled _ ->
                             ignore
@@ -189,28 +189,28 @@ hand msg ((Model m) as model) =
                             ignore
 
                 Nothing ->
-                    afterAgain m.stage |> Maybe.map (\( s, reqs ) -> go s reqs) |> Maybe.withDefault ignore
+                    afterAgain fields.stage |> Maybe.map (\( stage, reqs ) -> go stage reqs) |> Maybe.withDefault ignore
 
         ConnectPort ->
-            case stoppedAfterOf m.stage of
-                Just ( u, r, ( b, f ) ) ->
+            case stoppedAfterOf fields.stage of
+                Just ( unit, release, ( bk2, failure ) ) ->
                     let
                         ( wait, secs ) =
-                            waitAgain u f
+                            waitAgain unit failure
                     in
-                    go (Running u r (Post b wait)) [ PickPort, Back secs False u.unit ]
+                    go (Running unit release (Post bk2 wait)) [ PickPort, Back secs False unit.unit ]
 
                 Nothing ->
                     ignore
 
         -- The self-update refused or undone: the same update by DFU instead.
         UseDfu ->
-            case stoppedBeforeOf m.stage of
-                Just ( u, r, SelfRefused _ ) ->
-                    go (Running { u | selfUpdate = Nothing } r (Pre Checking)) [ status u.unit TStatus 0 ]
+            case stoppedBeforeOf fields.stage of
+                Just ( unit, release, SelfRefused _ ) ->
+                    go (Running { unit | selfUpdate = Nothing } release (Pre Checking)) [ status unit.unit TStatus 0 ]
 
-                Just ( u, r, SelfAborted _ ) ->
-                    go (Running { u | selfUpdate = Nothing } r (Pre Checking)) [ status u.unit TStatus 0 ]
+                Just ( unit, release, SelfAborted _ ) ->
+                    go (Running { unit | selfUpdate = Nothing } release (Pre Checking)) [ status unit.unit TStatus 0 ]
 
                 Just ( _, _, Unsaved _ ) ->
                     ignore
@@ -248,7 +248,7 @@ hand msg ((Model m) as model) =
                 closing =
                     go Closing [ End ]
             in
-            case m.stage of
+            case fields.stage of
                 -- Never mid-update: the page has no CLOSE then.
                 Running _ _ _ ->
                     ignore
@@ -287,19 +287,19 @@ hand msg ((Model m) as model) =
 {-| A stop after the write, asked again: the unit's own state decides.
 -}
 afterAgain : Stage -> Maybe ( Stage, List Request )
-afterAgain s =
-    stoppedAfterOf s
+afterAgain stage =
+    stoppedAfterOf stage
         |> Maybe.andThen
-            (\( u, r, ( b, f ) ) ->
+            (\( unit, release, ( bk2, failure ) ) ->
                 let
                     ( wait, secs ) =
-                        waitAgain u f
+                        waitAgain unit failure
 
                     again : Maybe ( Stage, List Request )
                     again =
-                        Just ( Running u r (Post b wait), [ Back secs False u.unit ] )
+                        Just ( Running unit release (Post bk2 wait), [ Back secs False unit.unit ] )
                 in
-                case f of
+                case failure of
                     WriteCut _ ->
                         Nothing
 
@@ -328,8 +328,8 @@ afterAgain s =
 write's.
 -}
 waitAgain : UnitNow -> PostFail -> ( PostRun, Int )
-waitAgain u f =
-    case ( f, u.selfUpdate ) of
+waitAgain unit failure =
+    case ( failure, unit.selfUpdate ) of
         ( SelfNotBack _, _ ) ->
             ( RestartingSelf, 180 )
 
@@ -359,22 +359,22 @@ waitAgain u f =
 device can be picked again.
 -}
 inUpdateMode : PreFail -> Maybe InDfu
-inUpdateMode f =
-    case f of
-        DfuSilent b ->
-            Just { bk2 = b, flash = Untouched }
+inUpdateMode failure =
+    case failure of
+        DfuSilent bk2 ->
+            Just { bk2 = bk2, flash = Untouched }
 
-        PickCancelled d ->
-            Just d
+        PickCancelled inDfu ->
+            Just inDfu
 
-        WrongDevice d _ ->
-            Just d
+        WrongDevice inDfu _ ->
+            Just inDfu
 
-        CantOpen d ->
-            Just d
+        CantOpen inDfu ->
+            Just inDfu
 
-        Guarded d _ ->
-            Just d
+        Guarded inDfu _ ->
+            Just inDfu
 
         Unsaved _ ->
             Nothing
@@ -398,10 +398,10 @@ inUpdateMode f =
 {-| A stop on unsaved changes: the loaded project, if it can be reloaded.
 -}
 unsavedOf : Stage -> Maybe ( UnitNow, Release, Maybe Loaded )
-unsavedOf s =
-    case stoppedBeforeOf s of
-        Just ( u, r, Unsaved l ) ->
-            Just ( u, r, l )
+unsavedOf stage =
+    case stoppedBeforeOf stage of
+        Just ( unit, release, Unsaved loaded ) ->
+            Just ( unit, release, loaded )
 
         Just ( _, _, NothingFlashed _ ) ->
             Nothing

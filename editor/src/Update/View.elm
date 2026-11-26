@@ -21,23 +21,23 @@ import Update.Types exposing (Fields, Flash(..), InDfu, Mode(..), Model(..), Msg
 UPDATE module that says where the update is and what to do.
 -}
 view : (Page.Msg -> msg) -> (Msg -> msg) -> Page.State -> Model -> Html msg
-view pageMsg toMsg page (Model m) =
+view pageMsg toMsg page (Model fields) =
     Page.view pageMsg
         page
         (Page.new "UPDATE"
-            |> Page.meta (meta m.stage)
+            |> Page.meta (meta fields.stage)
             |> Page.link (Page.Linked "UNIT · UPDATE")
             |> Page.modules
                 [ Module.new Chip.Unit "UPDATE"
                     |> Module.full
-                    |> Module.body [ Html.map toMsg (div [ class "upd" ] (body m)) ]
+                    |> Module.body [ Html.map toMsg (div [ class "upd" ] (body fields)) ]
                 ]
         )
 
 
 meta : Stage -> String
-meta s =
-    case s of
+meta stage =
+    case stage of
         Opening ->
             "CHECKING"
 
@@ -53,8 +53,8 @@ meta s =
         Confirm _ _ ->
             "READY"
 
-        Running _ r run ->
-            runTitle r run
+        Running _ release run ->
+            runTitle release run
 
         Done _ _ _ ->
             "DONE"
@@ -73,7 +73,7 @@ meta s =
 
 
 runTitle : Release -> Run -> String
-runTitle r run =
+runTitle release run =
     case run of
         Pre Checking ->
             "CHECKING"
@@ -95,10 +95,10 @@ runTitle r run =
 
         -- The self-update, as the owner's screen says it.
         Pre (CopyingBin _) ->
-            "INSTALLING " ++ showVersion (Just r.version)
+            "INSTALLING " ++ showVersion (Just release.version)
 
         Pre InstallingSelf ->
-            "INSTALLING " ++ showVersion (Just r.version)
+            "INSTALLING " ++ showVersion (Just release.version)
 
         Pre (EnteringDfu _) ->
             "RESTARTING INTO UPDATE MODE"
@@ -132,8 +132,8 @@ runTitle r run =
 
 
 showVersion : Maybe String -> String
-showVersion v =
-    case v |> Maybe.map (trimPlus >> String.words) of
+showVersion version =
+    case version |> Maybe.map (trimPlus >> String.words) of
         Just [ number, hash ] ->
             number ++ " (" ++ hash ++ ")"
 
@@ -145,8 +145,8 @@ showVersion v =
 
 
 fact : String -> String -> Html msg
-fact k v =
-    div [ class "uline" ] [ span [ class "k" ] [ text k ], span [ class "v" ] [ text v ] ]
+fact key value =
+    div [ class "uline" ] [ span [ class "k" ] [ text key ], span [ class "v" ] [ text value ] ]
 
 
 btn : String -> Msg -> Html Msg
@@ -160,18 +160,18 @@ buttons =
 
 
 say : String -> Html msg
-say s =
-    p [] [ text s ]
+say line =
+    p [] [ text line ]
 
 
 change : UnitNow -> Release -> Html msg
-change u r =
-    fact "UPDATE" (showVersion u.build ++ " → " ++ showVersion (Just r.version))
+change unit release =
+    fact "UPDATE" (showVersion unit.build ++ " → " ++ showVersion (Just release.version))
 
 
 body : Fields -> List (Html Msg)
-body m =
-    case m.stage of
+body fields =
+    case fields.stage of
         Opening ->
             [ say "Checking the unit…" ]
 
@@ -186,39 +186,39 @@ body m =
         Closing ->
             [ say "Back to the editor…" ]
 
-        Choosing u _ ->
-            [ fact "THIS UNIT" (showVersion u.build), say "Choose CHIMERA.BIN, CHIMERA.BK2 and SHA256SUMS, all three at once…" ]
+        Choosing unit _ ->
+            [ fact "THIS UNIT" (showVersion unit.build), say "Choose CHIMERA.BIN, CHIMERA.BK2 and SHA256SUMS, all three at once…" ]
 
-        Ready u rel ->
-            ready m u rel
+        Ready unit rel ->
+            ready fields unit rel
 
-        Confirm u r ->
-            confirm m u r
+        Confirm unit release ->
+            confirm fields unit release
 
-        Running u r run ->
-            change u r :: stages (u.selfUpdate /= Nothing) r run :: runningText m.windows run
+        Running unit release run ->
+            change unit release :: stages (unit.selfUpdate /= Nothing) release run :: runningText fields.windows run
 
-        Done was r now ->
+        Done was release now ->
             [ fact "UPDATED" (showVersion was.build ++ " → " ++ showVersion now.build)
-            , say ("Done. The unit runs " ++ showVersion (Just r.version) ++ ".")
+            , say ("Done. The unit runs " ++ showVersion (Just release.version) ++ ".")
             , buttons [ btn "BACK TO THE EDITOR" Close ]
             ]
 
-        StoppedBefore u r f ->
-            change u r :: failedBefore m.windows m.webusb u f
+        StoppedBefore unit release failure ->
+            change unit release :: failedBefore fields.windows fields.webusb unit failure
 
-        StoppedAfter u r _ f ->
-            change u r :: failedAfter (u.selfUpdate /= Nothing) f
+        StoppedAfter unit release _ failure ->
+            change unit release :: failedAfter (unit.selfUpdate /= Nothing) failure
 
 
 ready : Fields -> UnitNow -> ReleaseState -> List (Html Msg)
-ready m u rel =
-    (case m.mode of
+ready fields unit rel =
+    (case fields.mode of
         Stuck ->
             fact "THIS UNIT" "UNKNOWN (IN UPDATE MODE)"
 
         Connected ->
-            fact "THIS UNIT" (showVersion u.build)
+            fact "THIS UNIT" (showVersion unit.build)
     )
         :: (case rel of
                 Fetching ->
@@ -231,20 +231,20 @@ ready m u rel =
                     , buttons [ btn "CHOOSE FILES…" Choose, btn "CLOSE" Close ]
                     ]
 
-                Got r ->
+                Got release ->
                     fact
-                        (case r.source of
+                        (case release.source of
                             Latest ->
                                 "LATEST"
 
                             Chosen ->
                                 "CHOSEN FILES"
                         )
-                        (showVersion (Just r.version))
+                        (showVersion (Just release.version))
                         -- The self-update needs no WebUSB; the DFU path does.
-                        :: (if m.webusb || u.selfUpdate /= Nothing then
-                                [ say (offerText m.mode (offer u r))
-                                , buttons [ btn (offerButton m.mode (offer u r)) Start, btn "CHOOSE FILES…" Choose, btn "CLOSE" Close ]
+                        :: (if fields.webusb || unit.selfUpdate /= Nothing then
+                                [ say (offerText fields.mode (offer unit release))
+                                , buttons [ btn (offerButton fields.mode (offer unit release)) Start, btn "CHOOSE FILES…" Choose, btn "CLOSE" Close ]
                                 ]
 
                             else
@@ -256,8 +256,8 @@ ready m u rel =
 
 
 offerText : Mode -> Offer -> String
-offerText mode o =
-    case ( mode, o ) of
+offerText mode comparison =
+    case ( mode, comparison ) of
         ( Stuck, _ ) ->
             "For a unit sitting in update mode (its screen dark after a stopped update). Can't tell which version this unit had: in update mode it can't say. This writes the release's firmware to it, then finishes the install once it restarts."
 
@@ -278,8 +278,8 @@ offerText mode o =
 
 
 offerButton : Mode -> Offer -> String
-offerButton mode o =
-    case ( mode, o ) of
+offerButton mode comparison =
+    case ( mode, comparison ) of
         ( Stuck, _ ) ->
             "FINISH THE UPDATE…"
 
@@ -300,10 +300,10 @@ offerButton mode o =
 
 
 confirm : Fields -> UnitNow -> Release -> List (Html Msg)
-confirm m u r =
-    [ change u r
+confirm fields unit release =
+    [ change unit release
     , say
-        (case ( m.mode, offer u r ) of
+        (case ( fields.mode, offer unit release ) of
             ( Stuck, _ ) ->
                 "Can't tell which version this unit had, so this can't say whether it is an update, a reinstall or a downgrade. It writes the firmware to the unit in update mode, then installs bank 2 when it restarts."
 
@@ -327,7 +327,7 @@ confirm m u r =
     , say "Your projects and Sounds on the card stay. The bootloader is never touched."
     , buttons
         [ btn
-            (case m.mode of
+            (case fields.mode of
                 Stuck ->
                     "FINISH THE UPDATE"
 
@@ -343,7 +343,7 @@ confirm m u r =
 {-| The stages in order, the current one marked, done ones ticked.
 -}
 stages : Bool -> Release -> Run -> Html msg
-stages self r run =
+stages self release run =
     let
         -- The self-update's steps, as the owner's screen has them: no update mode.
         selfAt : Int -> Int
@@ -406,11 +406,11 @@ stages self r run =
         pct : Maybe Progress
         pct =
             case run of
-                Pre (Copying p) ->
-                    Just p
+                Pre (Copying progress) ->
+                    Just progress
 
-                Pre (CopyingBin p) ->
-                    Just p
+                Pre (CopyingBin progress) ->
+                    Just progress
 
                 Pre (ReadingProject _) ->
                     Nothing
@@ -427,11 +427,11 @@ stages self r run =
                 Pre InstallingSelf ->
                     Nothing
 
-                Post _ (CopyingLate p) ->
-                    Just p
+                Post _ (CopyingLate progress) ->
+                    Just progress
 
-                Writing _ p ->
-                    Just p
+                Writing _ progress ->
+                    Just progress
 
                 Pre Checking ->
                     Nothing
@@ -463,35 +463,35 @@ stages self r run =
         names : List String
         names =
             if self then
-                [ "CHECKING", "INSTALLING " ++ showVersion (Just r.version), "RESTARTING · INSTALLING BANK 2" ]
+                [ "CHECKING", "INSTALLING " ++ showVersion (Just release.version), "RESTARTING · INSTALLING BANK 2" ]
 
             else
                 [ "CHECKING", "COPYING BANK 2", "RESTARTING INTO UPDATE MODE", "WRITING FIRMWARE", "INSTALLING" ]
     in
     ol [ class "ustages" ]
         (List.indexedMap
-            (\i n ->
+            (\idx name ->
                 li
                     [ class
-                        (if i < at then
+                        (if idx < at then
                             "done"
 
-                         else if i == at then
+                         else if idx == at then
                             "now"
 
                          else
                             "todo"
                         )
                     , attribute "aria-current"
-                        (if i == at then
+                        (if idx == at then
                             "step"
 
                          else
                             "false"
                         )
                     ]
-                    (text n
-                        :: (case ( i == at, pct ) of
+                    (text name
+                        :: (case ( idx == at, pct ) of
                                 ( True, Just pr ) ->
                                     [ span [ class "pct" ] [ text (" " ++ String.fromInt (percent pr) ++ " %") ]
                                     , div [ class "ubar" ] [ div [ style "width" (String.fromInt (percent pr) ++ "%") ] [] ]
@@ -643,8 +643,8 @@ selfWayOut webusb =
 
 
 failedBefore : Bool -> Bool -> UnitNow -> PreFail -> List (Html Msg)
-failedBefore windows webusb u f =
-    case f of
+failedBefore windows webusb unit failure =
+    case failure of
         Unsaved loaded ->
             [ say "THE PROJECT HAS UNSAVED CHANGES. Save them or drop them, and the update goes on; or CANCEL and keep working."
             , case loaded of
@@ -669,19 +669,19 @@ failedBefore windows webusb u f =
 
         NothingFlashed why ->
             [ say (why ++ ".")
-            , say ("Nothing was flashed: the unit still runs " ++ showVersion u.build ++ ". Check the USB cable, then press TRY AGAIN.")
+            , say ("Nothing was flashed: the unit still runs " ++ showVersion unit.build ++ ". Check the USB cable, then press TRY AGAIN.")
             , buttons [ btn "TRY AGAIN" TryAgain, btn "CLOSE" Close ]
             ]
 
         SelfRefused why ->
             [ say ("THE UNIT REFUSED TO INSTALL THE FIRMWARE ITSELF: " ++ why ++ ".")
-            , say ("Nothing was written: the unit still runs " ++ showVersion u.build ++ ".")
+            , say ("Nothing was written: the unit still runs " ++ showVersion unit.build ++ ".")
             , selfWayOut webusb
             ]
 
         SelfAborted why ->
             [ say ("THE UNIT STOPPED ITS OWN INSTALL (" ++ why ++ ") AND STARTED ITS OLD FIRMWARE AGAIN, UNTOUCHED.")
-            , say ("It still runs " ++ showVersion u.build ++ ".")
+            , say ("It still runs " ++ showVersion unit.build ++ ".")
             , selfWayOut webusb
             ]
 
@@ -706,9 +706,9 @@ failedBefore windows webusb u f =
             ]
                 ++ bootloaderSteps
 
-        PickCancelled d ->
+        PickCancelled inDfu ->
             [ say "NO UPDATE DEVICE WAS CHOSEN. The unit is waiting in update mode (its screen dark)."
-            , written d
+            , written inDfu
             , say "Press WRITE AGAIN and pick STM32 BOOTLOADER."
             ]
                 ++ (if windows then
@@ -718,18 +718,18 @@ failedBefore windows webusb u f =
                         []
                    )
                 ++ [ buttons [ btn "WRITE AGAIN" WriteAgain, btn "CLOSE" Close ] ]
-                ++ wayOut d
+                ++ wayOut inDfu
 
-        WrongDevice d why ->
+        WrongDevice inDfu why ->
             [ say ("THAT ISN'T THE UNIT'S UPDATE DEVICE. " ++ why ++ ".")
-            , written d
+            , written inDfu
             , buttons [ btn "WRITE AGAIN" WriteAgain, btn "CLOSE" Close ]
             ]
-                ++ wayOut d
+                ++ wayOut inDfu
 
-        CantOpen d ->
+        CantOpen inDfu ->
             [ say "THE BROWSER CAN'T OPEN THE UNIT'S UPDATE DEVICE. The bootloader is never touched."
-            , written d
+            , written inDfu
             , say "Another program may hold it: on Linux, fwupd takes every new DFU device for a moment (the editor waited 10 seconds for it). Press WRITE AGAIN to try once more."
             , say "Or write it from a terminal with dfu-util, in the folder holding the release's CHIMERA.BIN:"
             , p [ class "code" ] [ text "dfu-util -a0 -d 0x0483:0xdf11 -s 0x8020000:leave -D CHIMERA.BIN" ]
@@ -744,23 +744,23 @@ failedBefore windows webusb u f =
                         ]
                    )
                 ++ [ buttons [ btn "WRITE AGAIN" WriteAgain, btn "CLOSE" Close ] ]
-                ++ wayOut d
+                ++ wayOut inDfu
 
-        Guarded d why ->
+        Guarded inDfu why ->
             [ say ("THE UPDATE STOPPED BEFORE WRITING: " ++ why ++ ".")
-            , written d
+            , written inDfu
             , say "Press WRITE AGAIN to pick the device again."
             , buttons [ btn "WRITE AGAIN" WriteAgain, btn "CLOSE" Close ]
             ]
-                ++ wayOut d
+                ++ wayOut inDfu
 
 
 {-| What this stop wrote, by the firmware area's state: nothing, or, over
 an area an earlier write left half done, nothing more.
 -}
 written : InDfu -> Html msg
-written d =
-    case d.flash of
+written inDfu =
+    case inDfu.flash of
         Untouched ->
             say "Nothing has been written."
 
@@ -772,8 +772,8 @@ written d =
 else finishing the write, here or from the bootloader.
 -}
 wayOut : InDfu -> List (Html Msg)
-wayOut d =
-    case d.flash of
+wayOut inDfu =
+    case inDfu.flash of
         Untouched ->
             leaveUpdateMode :: bootloaderSteps
 
@@ -785,8 +785,8 @@ wayOut d =
 firmware area and can't say what the unit did.
 -}
 failedAfter : Bool -> PostFail -> List (Html Msg)
-failedAfter self f =
-    case f of
+failedAfter self failure =
+    case failure of
         WriteCut why ->
             [ say ("THE FIRMWARE WRITE WAS CUT OFF (" ++ why ++ ").")
             , say "The unit can't be bricked: its bootloader is never touched. Finish from the bootloader:"

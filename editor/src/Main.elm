@@ -98,9 +98,9 @@ update msg app =
 
         LatestIs latest ->
             case ( app.offer, latest ) of
-                ( Asking have, Just v ) ->
-                    if Update.Read.offerFor have v == Update.Types.Newer then
-                        ( { app | offer = Offered { have = have, latest = v } }, Cmd.none )
+                ( Asking have, Just version ) ->
+                    if Update.Read.offerFor have version == Update.Types.Newer then
+                        ( { app | offer = Offered { have = have, latest = version } }, Cmd.none )
 
                     else
                         ( { app | offer = Settled }, Cmd.none )
@@ -133,10 +133,10 @@ update msg app =
 
                 Nothing ->
                     let
-                        ( u, cmd ) =
+                        ( opened, cmd ) =
                             Update.begin
                     in
-                    ( { app | updating = Just u }, cmd )
+                    ( { app | updating = Just opened }, cmd )
 
         Page EnginePage.OpenStuck ->
             case app.updating of
@@ -145,10 +145,10 @@ update msg app =
 
                 Nothing ->
                     let
-                        ( u, cmd ) =
+                        ( opened, cmd ) =
                             Update.beginStuck
                     in
-                    ( { app | updating = Just u }, cmd )
+                    ( { app | updating = Just opened }, cmd )
 
         Page m ->
             let
@@ -168,8 +168,8 @@ update msg app =
                 Nothing ->
                     ( app, Cmd.none )
 
-                Just u ->
-                    case Update.update um u of
+                Just updating ->
+                    case Update.update um updating of
                         ( _, cmd, Just link ) ->
                             -- The link given back: the editor starts over on it.
                             let
@@ -206,13 +206,13 @@ asking unit offer =
 view : App -> Html Msg
 view app =
     case ( app.updating, app.offer ) of
-        ( Just u, _ ) ->
-            Update.View.view (EnginePage.PageMsg >> Page) Updating app.page.page u
+        ( Just updating, _ ) ->
+            Update.View.view (EnginePage.PageMsg >> Page) Updating app.page.page updating
 
-        ( Nothing, Offered o ) ->
+        ( Nothing, Offered offered ) ->
             div []
                 [ div [ class "ui offerbar" ]
-                    [ p [] [ text ("Chimera " ++ number o.latest ++ " is available. You're running " ++ number o.have ++ ". Update now?") ]
+                    [ p [] [ text ("Chimera " ++ number offered.latest ++ " is available. You're running " ++ number offered.have ++ ". Update now?") ]
                     , div [ class "connect" ]
                         [ button [ class "hbtn", onClick UpdateNow ] [ text "UPDATE" ]
                         , button [ class "hbtn", onClick NotNow ] [ text "NOT NOW" ]
@@ -235,5 +235,5 @@ firmware unit =
 {-| A version's number: `0.4.1` of `0.4.1 abcd1234` or `0.4.1-abcd1234`.
 -}
 number : String -> String
-number v =
-    String.replace "-" " " v |> String.words |> List.head |> Maybe.withDefault v
+number version =
+    String.replace "-" " " version |> String.words |> List.head |> Maybe.withDefault version

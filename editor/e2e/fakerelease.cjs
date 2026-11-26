@@ -6,13 +6,13 @@
 const crypto = require("node:crypto");
 
 /** CRC-32 (IEEE), its own: zlib.crc32 needs Node 20.15 or later. */
-function crc32(b) {
-  let c = 0xffffffff;
-  for (const x of b) {
-    c ^= x;
-    for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1;
+function crc32(bytes) {
+  let crc = 0xffffffff;
+  for (const byte of bytes) {
+    crc ^= byte;
+    for (let bit = 0; bit < 8; bit++) crc = crc & 1 ? 0xedb88320 ^ (crc >>> 1) : crc >>> 1;
   }
-  return (c ^ 0xffffffff) >>> 0;
+  return (crc ^ 0xffffffff) >>> 0;
 }
 
 /** `version` is "0.4.1 abcd1234"; `format` the .bk2's (0.4's is 2). */
@@ -20,7 +20,7 @@ function makeRelease(version, { binSize = 300 * 1024, bk2Size = 64 * 1024, forma
   const body = Buffer.alloc(bk2Size - 256);
   // The body differs per version, so each version's seal does.
   const seed = crypto.createHash("sha256").update(version).digest();
-  for (let i = 0; i < body.length; i++) body[i] = seed[i % 32] ^ (i & 0xff);
+  for (let idx = 0; idx < body.length; idx++) body[idx] = seed[idx % 32] ^ (idx & 0xff);
   const seal = crypto.createHash("sha256").update(body).digest().subarray(0, 8);
   const head = Buffer.alloc(256);
   head.write("CHIMERA2", 0, "ascii");
@@ -31,14 +31,14 @@ function makeRelease(version, { binSize = 300 * 1024, bk2Size = 64 * 1024, forma
   head.write(version, 0x20, "ascii");
   const bk2 = Buffer.concat([head, body]);
   const bin = Buffer.alloc(binSize);
-  for (let i = 8; i < bin.length; i++) bin[i] = (i * 13 + seed[i % 32]) & 0xff;
+  for (let idx = 8; idx < bin.length; idx++) bin[idx] = (idx * 13 + seed[idx % 32]) & 0xff;
   Buffer.from([0x00, 0xff, 0x00, 0x20, 0x99, 0x02, 0x02, 0x08]).copy(bin, 0);
   // No stray copy of the seal: the filler can't hold it by chance, but make sure.
   seal.copy(bin, 0x400);
-  const sha = (b) => crypto.createHash("sha256").update(b).digest("hex");
+  const sha = (bytes) => crypto.createHash("sha256").update(bytes).digest("hex");
   const sums = `${sha(bin)}  CHIMERA.BIN\n${sha(bk2)}  CHIMERA.BK2\n`;
-  const [v, build] = version.split(" ");
-  const manifest = { version: v, build, tag: `v${v}`, files: { "CHIMERA.BIN": { size: bin.length }, "CHIMERA.BK2": { size: bk2.length } } };
+  const [number, build] = version.split(" ");
+  const manifest = { version: number, build, tag: `v${number}`, files: { "CHIMERA.BIN": { size: bin.length }, "CHIMERA.BK2": { size: bk2.length } } };
   return { version, build, seal: seal.toString("hex"), bin, bk2, sums, manifest };
 }
 

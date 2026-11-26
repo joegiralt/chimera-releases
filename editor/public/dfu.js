@@ -26,33 +26,33 @@ var ChimeraDfu = (function () {
   var SET_ADDRESS = 0x21, ERASE = 0x41;
 
   /** A refusal of the writer's guards: nothing went on the wire. */
-  function Guard(msg) { var e = new Error(msg); e.guard = true; return e; }
+  function Guard(msg) { var error = new Error(msg); error.guard = true; return error; }
 
   /** An address in the firmware area: the only kind the writer sends. */
-  function FirmwareAddress(n) {
-    if (!(this instanceof FirmwareAddress)) return new FirmwareAddress(n);
-    if (!Number.isInteger(n) || n < BASE || n >= BASE + AREA) {
-      throw Guard('refused: 0x' + (n >>> 0).toString(16) + ' is outside the firmware area (0x08020000 up); the bootloader is never written');
+  function FirmwareAddress(address) {
+    if (!(this instanceof FirmwareAddress)) return new FirmwareAddress(address);
+    if (!Number.isInteger(address) || address < BASE || address >= BASE + AREA) {
+      throw Guard('refused: 0x' + (address >>> 0).toString(16) + ' is outside the firmware area (0x08020000 up); the bootloader is never written');
     }
-    this.value = n;
+    this.value = address;
     Object.freeze(this);
   }
 
-  function le32(op, a) {
-    var v = a.value;
-    return new Uint8Array([op, v & 0xff, (v >>> 8) & 0xff, (v >>> 16) & 0xff, (v >>> 24) & 0xff]);
+  function le32(op, address) {
+    var value = address.value;
+    return new Uint8Array([op, value & 0xff, (value >>> 8) & 0xff, (value >>> 16) & 0xff, (value >>> 24) & 0xff]);
   }
 
-  function setAddress(a) {
-    if (!(a instanceof FirmwareAddress)) throw Guard('refused: set address takes a firmware address');
-    return le32(SET_ADDRESS, a);
+  function setAddress(address) {
+    if (!(address instanceof FirmwareAddress)) throw Guard('refused: set address takes a firmware address');
+    return le32(SET_ADDRESS, address);
   }
 
   /** One sector's erase: the sector starting at `a`, never a mass erase. */
-  function eraseSector(a) {
-    if (!(a instanceof FirmwareAddress)) throw Guard('refused: erase takes a firmware address');
-    if ((a.value - BASE) % SECTOR !== 0) throw Guard('refused: an erase starts on a sector');
-    return le32(ERASE, a);
+  function eraseSector(address) {
+    if (!(address instanceof FirmwareAddress)) throw Guard('refused: erase takes a firmware address');
+    if ((address.value - BASE) % SECTOR !== 0) throw Guard('refused: an erase starts on a sector');
+    return le32(ERASE, address);
   }
 
   /** The last look before the wire: a command block is a set address or a
@@ -83,9 +83,9 @@ var ChimeraDfu = (function () {
     if (start.value !== BASE) throw Guard('refused: the firmware goes at 0x08020000 only');
     if (!(length > 0) || length >= AREA) throw Guard('refused: ' + length + ' bytes does not fit the firmware area');
     var erase = [];
-    for (var s = 0; s < length; s += SECTOR) erase.push(FirmwareAddress(BASE + s));
+    for (var sectorAt = 0; sectorAt < length; sectorAt += SECTOR) erase.push(FirmwareAddress(BASE + sectorAt));
     var blocks = [];
-    for (var o = 0; o < length; o += block) blocks.push({ at: FirmwareAddress(BASE + o), from: o, to: Math.min(length, o + block) });
+    for (var blockAt = 0; blockAt < length; blockAt += block) blocks.push({ at: FirmwareAddress(BASE + blockAt), from: blockAt, to: Math.min(length, blockAt + block) });
     return { erase: erase, blocks: blocks };
   }
 
@@ -97,15 +97,15 @@ var ChimeraDfu = (function () {
 
   /** "@Internal Flash   /0x08000000/16*128Kg" as [{ at, size, count }]. */
   function layout(name) {
-    var m = /^@[^/]*\/0x([0-9a-f]+)\/(.*)$/i.exec(name || '');
-    if (!m) return null;
-    var at = parseInt(m[1], 16), out = [];
-    var parts = m[2].split(',');
-    for (var i = 0; i < parts.length; i++) {
-      var p = /^\s*(\d+)\*(\d+)\s*([KMB ]?)\s*([a-g]?)\s*$/i.exec(parts[i]);
-      if (!p) return null;
-      var unit = { K: 1024, M: 1048576 }[p[3].toUpperCase()] || 1;
-      var size = Number(p[2]) * unit, count = Number(p[1]);
+    var match = /^@[^/]*\/0x([0-9a-f]+)\/(.*)$/i.exec(name || '');
+    if (!match) return null;
+    var at = parseInt(match[1], 16), out = [];
+    var parts = match[2].split(',');
+    for (var idx = 0; idx < parts.length; idx++) {
+      var piece = /^\s*(\d+)\*(\d+)\s*([KMB ]?)\s*([a-g]?)\s*$/i.exec(parts[idx]);
+      if (!piece) return null;
+      var unit = { K: 1024, M: 1048576 }[piece[3].toUpperCase()] || 1;
+      var size = Number(piece[2]) * unit, count = Number(piece[1]);
       out.push({ at: at, size: size, count: count });
       at += size * count;
     }
@@ -114,21 +114,21 @@ var ChimeraDfu = (function () {
 
   /** Every sector to erase lies in a 128 KB run of the device's layout. */
   function layoutFits(segs, erase) {
-    return erase.every(function (a) {
-      return segs.some(function (s) { return s.size === SECTOR && a.value >= s.at && a.value + SECTOR <= s.at + s.size * s.count && (a.value - s.at) % SECTOR === 0; });
+    return erase.every(function (address) {
+      return segs.some(function (seg) { return seg.size === SECTOR && address.value >= seg.at && address.value + SECTOR <= seg.at + seg.size * seg.count && (address.value - seg.at) % SECTOR === 0; });
     });
   }
 
-  function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
+  function sleep(ms) { return new Promise(function (resolve) { setTimeout(resolve, ms); }); }
 
   // The DFU interface: class FE, subclass 01, its first alternate (alt 0, the internal flash).
   function dfuInterface(dev) {
     var ifs = dev.configuration ? dev.configuration.interfaces : [];
-    for (var i = 0; i < ifs.length; i++) {
-      var alts = ifs[i].alternates;
-      for (var j = 0; j < alts.length; j++) {
-        var a = alts[j];
-        if (a.interfaceClass === 0xfe && a.interfaceSubclass === 0x01 && a.alternateSetting === 0) return { number: ifs[i].interfaceNumber, alt: a };
+    for (var idx = 0; idx < ifs.length; idx++) {
+      var alts = ifs[idx].alternates;
+      for (var altIdx = 0; altIdx < alts.length; altIdx++) {
+        var alt = alts[altIdx];
+        if (alt.interfaceClass === 0xfe && alt.interfaceSubclass === 0x01 && alt.alternateSetting === 0) return { number: ifs[idx].interfaceNumber, alt: alt };
       }
     }
     return null;
@@ -140,17 +140,17 @@ var ChimeraDfu = (function () {
       var head = await dev.controlTransferIn({ requestType: 'standard', recipient: 'device', request: 6, value: 0x0200, index: 0 }, 9);
       var total = head.data.getUint16(2, true);
       var all = await dev.controlTransferIn({ requestType: 'standard', recipient: 'device', request: 6, value: 0x0200, index: 0 }, total);
-      var d = all.data;
-      for (var at = 0; at + 1 < d.byteLength; ) {
-        var len = d.getUint8(at);
+      var data = all.data;
+      for (var at = 0; at + 1 < data.byteLength; ) {
+        var len = data.getUint8(at);
         if (len < 2) break;
-        if (d.getUint8(at + 1) === 0x21 && len >= 7) {
-          var size = d.getUint16(at + 5, true);
+        if (data.getUint8(at + 1) === 0x21 && len >= 7) {
+          var size = data.getUint16(at + 5, true);
           if (size >= 64 && size <= 4096) return size;
         }
         at += len;
       }
-    } catch (e) { /* refused below */ }
+    } catch (error) { /* refused below */ }
     throw Guard('refused: the device\'s DFU descriptor (its transfer size) could not be read; nothing was written');
   }
 
@@ -162,26 +162,26 @@ var ChimeraDfu = (function () {
     try {
       if (!dev.opened) await dev.open();
       if (!dev.configuration) await dev.selectConfiguration(1);
-      var f = dfuInterface(dev);
-      if (!f) throw Guard('this USB device has no DFU interface');
+      var iface = dfuInterface(dev);
+      if (!iface) throw Guard('this USB device has no DFU interface');
       // fwupd (Linux) claims every new 0483:df11 for a moment, and a claim
       // then fails busy: try again every 250 ms for the window. Nothing has
       // been written yet, so the retries are safe.
       for (var end = Date.now() + claimMs; ; ) {
         try {
-          await dev.claimInterface(f.number);
-          await dev.selectAlternateInterface(f.number, 0);
-          return f;
-        } catch (e) {
+          await dev.claimInterface(iface.number);
+          await dev.selectAlternateInterface(iface.number, 0);
+          return iface;
+        } catch (error) {
           held = true;
-          if (Date.now() >= end) throw e;
+          if (Date.now() >= end) throw error;
           await sleep(250);
         }
       }
-    } catch (e) {
-      try { await dev.close(); } catch (x) {}
-      if (e && e.guard) throw e;
-      var err = new Error((e && e.message) || String(e));
+    } catch (error) {
+      try { await dev.close(); } catch (closeError) {}
+      if (error && error.guard) throw error;
+      var err = new Error((error && error.message) || String(error));
       err.unopenable = true;
       // Opened, but its interface never came free: another program holds it.
       err.held = held;
@@ -191,33 +191,33 @@ var ChimeraDfu = (function () {
 
   /** The configuration descriptor, whole (standard GET_DESCRIPTOR). */
   async function configDescriptor(dev) {
-    var get = function (n) { return dev.controlTransferIn({ requestType: 'standard', recipient: 'device', request: 6, value: 0x0200, index: 0 }, n); };
+    var get = function (length) { return dev.controlTransferIn({ requestType: 'standard', recipient: 'device', request: 6, value: 0x0200, index: 0 }, length); };
     var head = await get(9);
     return (await get(head.data.getUint16(2, true))).data;
   }
 
   /** The DFU alternate's name: WebUSB's interfaceName, or (null there, as
    * Chrome on Windows may leave it) its string descriptor, read here. */
-  async function altName(dev, f) {
-    if (f.alt.interfaceName) return f.alt.interfaceName;
+  async function altName(dev, iface) {
+    if (iface.alt.interfaceName) return iface.alt.interfaceName;
     try {
-      var d = await configDescriptor(dev);
+      var desc = await configDescriptor(dev);
       var index = 0;
-      for (var at = 0; at + 9 <= d.byteLength; ) {
-        var len = d.getUint8(at);
+      for (var at = 0; at + 9 <= desc.byteLength; ) {
+        var len = desc.getUint8(at);
         if (len < 2) break;
-        if (d.getUint8(at + 1) === 4 && d.getUint8(at + 2) === f.number && d.getUint8(at + 3) === 0) index = d.getUint8(at + 8);
+        if (desc.getUint8(at + 1) === 4 && desc.getUint8(at + 2) === iface.number && desc.getUint8(at + 3) === 0) index = desc.getUint8(at + 8);
         at += len;
       }
       if (!index) return null;
-      var str = function (value, lang, n) { return dev.controlTransferIn({ requestType: 'standard', recipient: 'device', request: 6, value: value, index: lang }, n); };
+      var str = function (value, lang, length) { return dev.controlTransferIn({ requestType: 'standard', recipient: 'device', request: 6, value: value, index: lang }, length); };
       var langs = (await str(0x0300, 0, 255)).data;
       var lang = langs.byteLength >= 4 ? langs.getUint16(2, true) : 0x0409;
-      var s = (await str(0x0300 | index, lang, 255)).data;
+      var strDesc = (await str(0x0300 | index, lang, 255)).data;
       var out = '';
-      for (var i = 2; i + 1 < Math.min(s.byteLength, s.getUint8(0)); i += 2) out += String.fromCharCode(s.getUint16(i, true));
+      for (var idx = 2; idx + 1 < Math.min(strDesc.byteLength, strDesc.getUint8(0)); idx += 2) out += String.fromCharCode(strDesc.getUint16(idx, true));
       return out || null;
-    } catch (e) {
+    } catch (error) {
       return null;
     }
   }
@@ -225,15 +225,15 @@ var ChimeraDfu = (function () {
   function link(dev, iface) {
     var setup = function (request, value) { return { requestType: 'class', recipient: 'interface', request: request, value: value, index: iface }; };
     var out = async function (request, value, data) {
-      var r = await dev.controlTransferOut(setup(request, value), data);
-      if (r.status !== 'ok') throw new Error('the device stalled a request');
+      var reply = await dev.controlTransferOut(setup(request, value), data);
+      if (reply.status !== 'ok') throw new Error('the device stalled a request');
     };
     return {
       status: async function () {
-        var r = await dev.controlTransferIn(setup(GETSTATUS, 0), 6);
-        if (r.status !== 'ok' || !r.data || r.data.byteLength < 6) throw new Error('the device stalled its status');
-        var d = r.data;
-        return { status: d.getUint8(0), poll: d.getUint8(1) | (d.getUint8(2) << 8) | (d.getUint8(3) << 16), state: d.getUint8(4) };
+        var reply = await dev.controlTransferIn(setup(GETSTATUS, 0), 6);
+        if (reply.status !== 'ok' || !reply.data || reply.data.byteLength < 6) throw new Error('the device stalled its status');
+        var data = reply.data;
+        return { status: data.getUint8(0), poll: data.getUint8(1) | (data.getUint8(2) << 8) | (data.getUint8(3) << 16), state: data.getUint8(4) };
       },
       clear: function () { return out(CLRSTATUS, 0, new Uint8Array(0)); },
       abort: function () { return out(ABORT, 0, new Uint8Array(0)); },
@@ -245,35 +245,35 @@ var ChimeraDfu = (function () {
 
   /** Until the device has done the last download: its own poll time
    * between asks, however long an erase takes; never a deadline. */
-  async function settle(l, what) {
+  async function settle(dfuLink, what) {
     for (;;) {
-      var s = await l.status();
-      if (s.status !== 0 || s.state === ERROR) {
-        try { await l.clear(); } catch (e) {}
-        var err = new Error('the device refused ' + what + ' (status ' + s.status + ')');
+      var answer = await dfuLink.status();
+      if (answer.status !== 0 || answer.state === ERROR) {
+        try { await dfuLink.clear(); } catch (error) {}
+        var err = new Error('the device refused ' + what + ' (status ' + answer.status + ')');
         err.refused = true;
         throw err;
       }
       // After a download the spec allows only dfuDNLOAD-SYNC or dfuDNBUSY
       // (wait the device's poll time) and then dfuDNLOAD-IDLE (done).
-      if (s.state === DNLOAD_IDLE) return;
-      if (s.state === DNBUSY || s.state === DNLOAD_SYNC) {
-        await sleep(Math.max(s.poll, 1));
+      if (answer.state === DNLOAD_IDLE) return;
+      if (answer.state === DNBUSY || answer.state === DNLOAD_SYNC) {
+        await sleep(Math.max(answer.poll, 1));
         continue;
       }
-      var odd = new Error('the device is in DFU state ' + s.state + ' during ' + what);
+      var odd = new Error('the device is in DFU state ' + answer.state + ' during ' + what);
       odd.refused = true;
       throw odd;
     }
   }
 
   /** Back to dfuIDLE from wherever an earlier run left it. */
-  async function idle(l) {
-    var s = await l.status();
-    if (s.state === ERROR) { await l.clear(); s = await l.status(); }
-    if (s.state !== IDLE) { await l.abort(); s = await l.status(); }
-    if (s.state !== IDLE) {
-      var err = new Error('the device will not go idle (state ' + s.state + ')');
+  async function idle(dfuLink) {
+    var answer = await dfuLink.status();
+    if (answer.state === ERROR) { await dfuLink.clear(); answer = await dfuLink.status(); }
+    if (answer.state !== IDLE) { await dfuLink.abort(); answer = await dfuLink.status(); }
+    if (answer.state !== IDLE) {
+      var err = new Error('the device will not go idle (state ' + answer.state + ')');
       err.refused = true;
       throw err;
     }
@@ -288,64 +288,64 @@ var ChimeraDfu = (function () {
     checkImage(image);
     plan(at, image.length, 1024); // the guards, before the device is touched
     progress = progress || function () {};
-    var f = await open(dev, (opts && opts.claimMs) || 10000).catch(function (e) { e.started = false; throw e; });
-    var name = await altName(dev, f);
+    var iface = await open(dev, (opts && opts.claimMs) || 10000).catch(function (error) { error.started = false; throw error; });
+    var name = await altName(dev, iface);
     if (!isH7(name)) {
-      try { await dev.close(); } catch (e) {}
+      try { await dev.close(); } catch (error) {}
       throw Object.assign(Guard('refused: this DFU device is not the PreenFM3\'s STM32H7 (its flash: ' + (name || 'not named') + '). Unplug other boards in DFU mode'), { started: false });
     }
     var size = await transferSize(dev);
-    var p = plan(at, image.length, size);
-    if (!layoutFits(layout(name), p.erase)) {
-      try { await dev.close(); } catch (e) {}
+    var planned = plan(at, image.length, size);
+    if (!layoutFits(layout(name), planned.erase)) {
+      try { await dev.close(); } catch (error) {}
       throw Object.assign(Guard('refused: the device lays out its flash as ' + name + ', not 128 KB sectors from 0x08020000'), { started: false });
     }
-    var l = link(dev, f.number);
-    var total = p.erase.length + p.blocks.length;
+    var dfuLink = link(dev, iface.number);
+    var total = planned.erase.length + planned.blocks.length;
     var done = 0;
     var started = false;
     try {
-      await idle(l);
-      for (var i = 0; i < p.erase.length; i++) {
+      await idle(dfuLink);
+      for (var idx = 0; idx < planned.erase.length; idx++) {
         started = true;
-        await l.command(eraseSector(p.erase[i]));
-        await settle(l, 'an erase');
+        await dfuLink.command(eraseSector(planned.erase[idx]));
+        await settle(dfuLink, 'an erase');
         progress(++done, total);
       }
-      for (var j = 0; j < p.blocks.length; j++) {
-        var b = p.blocks[j];
-        await l.command(setAddress(b.at));
-        await settle(l, 'an address');
-        await l.data(image.subarray(b.from, b.to));
-        await settle(l, 'a write');
+      for (var blockIdx = 0; blockIdx < planned.blocks.length; blockIdx++) {
+        var block = planned.blocks[blockIdx];
+        await dfuLink.command(setAddress(block.at));
+        await settle(dfuLink, 'an address');
+        await dfuLink.data(image.subarray(block.from, block.to));
+        await settle(dfuLink, 'a write');
         progress(++done, total);
       }
-    } catch (e) {
-      if (!e.guard && !e.refused) e.lost = true;
-      e.started = started;
-      throw e;
+    } catch (error) {
+      if (!error.guard && !error.refused) error.lost = true;
+      error.started = started;
+      throw error;
     }
     try {
-      await leave(l, dev);
-    } catch (e) {
+      await leave(dfuLink, dev);
+    } catch (error) {
       // Every block is written: the firmware is in; the unit didn't start it.
-      e.leave = true;
-      e.started = true;
-      throw e;
+      error.leave = true;
+      error.started = true;
+      throw error;
     }
   }
 
   /** Start the firmware: the address, an empty download, a status. The
    * device resets under the last two, so their failures are its leaving. */
-  async function leave(l, dev) {
-    await l.command(setAddress(FirmwareAddress(BASE)));
-    await settle(l, 'an address');
+  async function leave(dfuLink, dev) {
+    await dfuLink.command(setAddress(FirmwareAddress(BASE)));
+    await settle(dfuLink, 'an address');
     try {
-      await l.data(new Uint8Array(0));
-      var s = await l.status();
-      if (s.state === MANIFEST) await l.status();
-    } catch (e) { /* gone: it is starting the firmware */ }
-    try { await dev.close(); } catch (e) {}
+      await dfuLink.data(new Uint8Array(0));
+      var answer = await dfuLink.status();
+      if (answer.state === MANIFEST) await dfuLink.status();
+    } catch (error) { /* gone: it is starting the firmware */ }
+    try { await dev.close(); } catch (error) {}
   }
 
   /** The browser's chooser for the DFU device (a click's): the device, or
@@ -353,9 +353,9 @@ var ChimeraDfu = (function () {
   async function choose() {
     try {
       return await navigator.usb.requestDevice({ filters: [ID] });
-    } catch (e) {
-      if (e && e.name === 'NotFoundError') return null;
-      throw e;
+    } catch (error) {
+      if (error && error.name === 'NotFoundError') return null;
+      throw error;
     }
   }
 

@@ -32,14 +32,14 @@ selfUpdateOf : List String -> Maybe SelfUpdate
 selfUpdateOf lines =
     lines
         |> List.filterMap
-            (\l ->
-                case String.words l of
-                    [ "selfupdate", n ] ->
-                        String.toInt n
+            (\line ->
+                case String.words line of
+                    [ "selfupdate", number ] ->
+                        String.toInt number
                             |> Maybe.andThen
-                                (\v ->
-                                    if v >= 1 then
-                                        Just { version = v }
+                                (\version ->
+                                    if version >= 1 then
+                                        Just { version = version }
 
                                     else
                                         Nothing
@@ -54,9 +54,9 @@ selfUpdateOf lines =
 {-| A unit's identity: 24 lowercase hex digits, the H750's 96-bit UID.
 -}
 unitId : String -> Maybe String
-unitId s =
-    if String.length s == 24 && String.all Char.isHexDigit s then
-        Just (String.toLower s)
+unitId text =
+    if String.length text == 24 && String.all Char.isHexDigit text then
+        Just (String.toLower text)
 
     else
         Nothing
@@ -67,10 +67,10 @@ both said who they are, and they differ. A unit that can't say is not
 another.
 -}
 otherUnit : UnitNow -> Answer -> Maybe String
-otherUnit u a =
-    case a of
+otherUnit unit answer =
+    case answer of
         Said lines _ ->
-            case ( u.unit, (readStatus lines).unit ) of
+            case ( unit.unit, (readStatus lines).unit ) of
                 ( Just was, Just now ) ->
                     if was /= now then
                         Just now
@@ -92,8 +92,8 @@ otherUnit u a =
 
 
 parseVersion : String -> Maybe Version
-parseVersion s =
-    case String.words (trimPlus s) of
+parseVersion text =
+    case String.words (trimPlus text) of
         [ numbers, build ] ->
             case List.map String.toInt (String.split "." numbers) of
                 [ Just major, Just minor, Just patch ] ->
@@ -115,10 +115,10 @@ parseVersion s =
 {-| Bank 2 already open with this release's seal: its .bk2 needn't go again.
 -}
 sealOpen : Release -> UnitNow -> Bool
-sealOpen r u =
-    case u.bank2 of
-        Just b ->
-            String.startsWith "open " b && String.endsWith (" seal=" ++ r.seal) b
+sealOpen release unit =
+    case unit.bank2 of
+        Just bank2 ->
+            String.startsWith "open " bank2 && String.endsWith (" seal=" ++ release.seal) bank2
 
         Nothing ->
             False
@@ -130,8 +130,8 @@ bank1Last : List String -> Maybe ( String, String )
 bank1Last lines =
     lines
         |> List.filterMap
-            (\l ->
-                case String.words l of
+            (\line ->
+                case String.words line of
                     "bank1" :: "last" :: word :: rest ->
                         Just ( word, String.join " " rest )
 
@@ -144,26 +144,26 @@ bank1Last lines =
 {-| Two CRC-32s in hex, whatever their case or leading zeros.
 -}
 crcEq : String -> String -> Bool
-crcEq a b =
+crcEq left right =
     let
         norm : String -> String
         norm =
             String.toLower >> String.trim >> dropZeros
 
         dropZeros : String -> String
-        dropZeros x =
-            if String.startsWith "0" x && String.length x > 1 then
-                dropZeros (String.dropLeft 1 x)
+        dropZeros digits =
+            if String.startsWith "0" digits && String.length digits > 1 then
+                dropZeros (String.dropLeft 1 digits)
 
             else
-                x
+                digits
     in
-    norm a == norm b
+    norm left == norm right
 
 
 verdictWhy : Verdict -> Maybe String
-verdictWhy v =
-    case v of
+verdictWhy outcome =
+    case outcome of
         Installed _ ->
             Nothing
 
@@ -182,8 +182,8 @@ later =
 installRefusal : String -> String
 installRefusal end =
     case foreignSlot end of
-        Just f ->
-            f
+        Just foreign ->
+            foreign
 
         Nothing ->
             if String.contains "staged: needs firmware" end then
@@ -194,8 +194,8 @@ installRefusal end =
 
 
 isOk : String -> Bool
-isOk l =
-    l == "OK" || String.startsWith "OK " l
+isOk line =
+    line == "OK" || String.startsWith "OK " line
 
 
 {-| `status`'s lines as a `UnitNow`.
@@ -227,10 +227,10 @@ loadedOf lines =
         |> List.filter (String.startsWith "project \"")
         |> List.head
         |> Maybe.map
-            (\l ->
-                case String.words (String.dropLeft (Maybe.withDefault 0 (List.head (List.reverse (String.indexes "\"" l))) + 1) l) of
-                    [ id, _, "gen", g ] ->
-                        Maybe.map2 Loaded (String.toInt id) (String.toInt g)
+            (\line ->
+                case String.words (String.dropLeft (Maybe.withDefault 0 (List.head (List.reverse (String.indexes "\"" line))) + 1) line) of
+                    [ id, _, "gen", gen ] ->
+                        Maybe.map2 Loaded (String.toInt id) (String.toInt gen)
 
                     _ ->
                         Nothing
@@ -238,8 +238,8 @@ loadedOf lines =
 
 
 unitOf : Answer -> UnitNow
-unitOf a =
-    case a of
+unitOf answer =
+    case answer of
         Said lines end ->
             if isOk end then
                 readStatus lines
@@ -261,16 +261,16 @@ naming BANK2.BK2 for a .bk2 over 512 KB), and a newer firmware judges an
 older format's .bk2 not a bank-2 image: both take it after the flash.
 -}
 staging : Release -> Answer -> Result String Bk2
-staging r a =
-    case a of
+staging release answer =
+    case answer of
         Said _ end ->
             if isOk end then
                 Ok Staged
 
-            else if oldPutRefusal end r.bk2Size then
+            else if oldPutRefusal end release.bk2Size then
                 Ok AfterFlash
 
-            else if String.contains "not a bank-2 image" end && r.format /= 2 then
+            else if String.contains "not a bank-2 image" end && release.format /= 2 then
                 Ok AfterFlash
 
             else
@@ -296,42 +296,42 @@ oldPutRefusal end bk2Size =
 hash, the .bk2 version's) and bank 2 open with this release's seal.
 -}
 verdict : Release -> Answer -> Verdict
-verdict r a =
-    case a of
+verdict release answer =
+    case answer of
         Said lines end ->
             if not (isOk end) then
                 NotFinished ("The unit answered status with " ++ end)
 
             else
                 let
-                    u : UnitNow
-                    u =
+                    unit : UnitNow
+                    unit =
                         readStatus lines
 
                     hash : Maybe String
                     hash =
-                        lastWord r.version
+                        lastWord release.version
 
                     runs : Maybe String
                     runs =
-                        u.build |> Maybe.andThen (trimPlus >> lastWord)
+                        unit.build |> Maybe.andThen (trimPlus >> lastWord)
                 in
                 if hash == Nothing || runs /= hash then
-                    NotFinished ("The unit says build " ++ Maybe.withDefault "(none)" u.build ++ ": the new firmware (" ++ r.version ++ ") isn't the one running")
+                    NotFinished ("The unit says build " ++ Maybe.withDefault "(none)" unit.build ++ ": the new firmware (" ++ release.version ++ ") isn't the one running")
 
                 else
-                    case u.bank2 of
-                        Just b ->
-                            case foreignSlot ("bank2 " ++ b) of
-                                Just f ->
-                                    NotFinished f
+                    case unit.bank2 of
+                        Just bank2 ->
+                            case foreignSlot ("bank2 " ++ bank2) of
+                                Just foreign ->
+                                    NotFinished foreign
 
                                 Nothing ->
-                                    if String.startsWith "open " b && String.endsWith (" seal=" ++ r.seal) b then
-                                        Installed u
+                                    if String.startsWith "open " bank2 && String.endsWith (" seal=" ++ release.seal) bank2 then
+                                        Installed unit
 
                                     else
-                                        NeedsInstall ("bank2 " ++ b)
+                                        NeedsInstall ("bank2 " ++ bank2)
 
                         Nothing ->
                             NeedsInstall "no bank2 line"
@@ -344,17 +344,17 @@ verdict r a =
 
 
 trimPlus : String -> String
-trimPlus s =
-    if String.endsWith "+" s then
-        String.dropRight 1 s
+trimPlus text =
+    if String.endsWith "+" text then
+        String.dropRight 1 text
 
     else
-        s
+        text
 
 
 lastWord : String -> Maybe String
-lastWord s =
-    String.words s |> List.reverse |> List.head
+lastWord text =
+    String.words text |> List.reverse |> List.head
 
 
 foreignSlot : String -> Maybe String
@@ -383,8 +383,8 @@ offerFor unitBuild version =
 
 
 offer : UnitNow -> Release -> Offer
-offer u r =
-    case ( u.build |> Maybe.andThen parseVersion, parseVersion r.version ) of
+offer unit release =
+    case ( unit.build |> Maybe.andThen parseVersion, parseVersion release.version ) of
         ( Just have, Just want ) ->
             case compare ( want.major, want.minor, want.patch ) ( have.major, have.minor, have.patch ) of
                 GT ->

@@ -10,33 +10,33 @@ const path = require("path");
 const { checkPair, crc32 } = require("../scripts/firmware.js");
 const { makeRelease } = require("../../editor/e2e/fakerelease.cjs");
 
-const a = makeRelease("0.4.1 abcd1234");
-const b = makeRelease("0.4.2 ffff0000");
-assert.strictEqual(checkPair(a.bin, a.bk2), null, "one build refused");
-assert.strictEqual(checkPair(a.bin, b.bk2), "CHIMERA.BIN and CHIMERA.BK2 are not one build");
-const torn = Buffer.from(a.bk2);
+const release = makeRelease("0.4.1 abcd1234");
+const other = makeRelease("0.4.2 ffff0000");
+assert.strictEqual(checkPair(release.bin, release.bk2), null, "one build refused");
+assert.strictEqual(checkPair(release.bin, other.bk2), "CHIMERA.BIN and CHIMERA.BK2 are not one build");
+const torn = Buffer.from(release.bk2);
 torn[400] ^= 1;
-assert.strictEqual(checkPair(a.bin, torn), "CHIMERA.BK2 is damaged");
-assert.strictEqual(checkPair(a.bk2, a.bk2), "CHIMERA.BIN is a .bk2 under a .bin name");
+assert.strictEqual(checkPair(release.bin, torn), "CHIMERA.BK2 is damaged");
+assert.strictEqual(checkPair(release.bk2, release.bk2), "CHIMERA.BIN is a .bk2 under a .bin name");
 // dfu.js's checkImage too: the reset vector inside the image at 0x08020000.
-const low = Buffer.from(a.bin);
+const low = Buffer.from(release.bin);
 low.writeUInt32LE(0x08001001, 4);
-assert.strictEqual(checkPair(low, a.bk2), "CHIMERA.BIN is not a firmware image for 0x08020000");
+assert.strictEqual(checkPair(low, release.bk2), "CHIMERA.BIN is not a firmware image for 0x08020000");
 // Its own CRC-32 (zlib.crc32 needs Node 20.15 or later): the check value.
 assert.strictEqual(crc32(Buffer.from("123456789")), 0xcbf43926);
 
 // The script itself: a mismatched pair whose SHA256SUMS match is not published.
 const dir = fs.mkdtempSync(path.join(os.tmpdir(), "firmware-check-"));
 try {
-  const sha = (x) => require("crypto").createHash("sha256").update(x).digest("hex");
-  fs.writeFileSync(path.join(dir, "CHIMERA.BIN"), a.bin);
-  fs.writeFileSync(path.join(dir, "CHIMERA.BK2"), b.bk2);
-  fs.writeFileSync(path.join(dir, "SHA256SUMS"), `${sha(a.bin)}  CHIMERA.BIN\n${sha(b.bk2)}  CHIMERA.BK2\n`);
+  const sha = (bytes) => require("crypto").createHash("sha256").update(bytes).digest("hex");
+  fs.writeFileSync(path.join(dir, "CHIMERA.BIN"), release.bin);
+  fs.writeFileSync(path.join(dir, "CHIMERA.BK2"), other.bk2);
+  fs.writeFileSync(path.join(dir, "SHA256SUMS"), `${sha(release.bin)}  CHIMERA.BIN\n${sha(other.bk2)}  CHIMERA.BK2\n`);
   let refused = false;
   try {
     execFileSync("node", [path.join(__dirname, "../scripts/firmware.js"), dir, "v0"], { stdio: "pipe" });
-  } catch (e) {
-    refused = /not one build/.test(String(e.stderr));
+  } catch (error) {
+    refused = /not one build/.test(String(error.stderr));
   }
   assert.ok(refused, "a mismatched pair was published");
   assert.ok(!fs.existsSync(path.join(dir, "manifest.json")), "a manifest written for a mismatched pair");

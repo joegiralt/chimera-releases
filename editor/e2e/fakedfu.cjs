@@ -34,36 +34,36 @@ function fakeUsb(scope, opts) {
   var lost = function () { return new DOMException('The device was disconnected.', 'NotFoundError'); };
   var listeners = { connect: [], disconnect: [] };
 
-  function bytes(d) {
-    if (!d) return new Uint8Array(0);
-    if (d instanceof Uint8Array) return d;
-    if (d.buffer) return new Uint8Array(d.buffer, d.byteOffset, d.byteLength);
-    return new Uint8Array(d);
+  function bytes(raw) {
+    if (!raw) return new Uint8Array(0);
+    if (raw instanceof Uint8Array) return raw;
+    if (raw.buffer) return new Uint8Array(raw.buffer, raw.byteOffset, raw.byteLength);
+    return new Uint8Array(raw);
   }
 
-  function run(p) {
-    if (p.kind === 'cmd') {
-      var c = p.data;
-      var at = c.length >= 5 ? (c[1] | (c[2] << 8) | (c[3] << 16) | (c[4] << 24)) >>> 0 : null;
-      log.commands.push({ op: c[0], at: at, length: c.length });
-      if (c[0] === 0x21 && at !== null) { pointer = at; return 0; }
-      if (c[0] === 0x41 && c.length === 1) { log.massErase = true; mem.fill(0xff); return 0; }
-      if (c[0] === 0x41 && at !== null) {
+  function run(pendingOp) {
+    if (pendingOp.kind === 'cmd') {
+      var cmdBytes = pendingOp.data;
+      var at = cmdBytes.length >= 5 ? (cmdBytes[1] | (cmdBytes[2] << 8) | (cmdBytes[3] << 16) | (cmdBytes[4] << 24)) >>> 0 : null;
+      log.commands.push({ op: cmdBytes[0], at: at, length: cmdBytes.length });
+      if (cmdBytes[0] === 0x21 && at !== null) { pointer = at; return 0; }
+      if (cmdBytes[0] === 0x41 && cmdBytes.length === 1) { log.massErase = true; mem.fill(0xff); return 0; }
+      if (cmdBytes[0] === 0x41 && at !== null) {
         if (mode.refuseErase) return 0x0b;
-        var s = Math.floor((at - FLASH) / SECTOR) * SECTOR;
-        if (s < 0 || s >= SIZE) return 0x08;
-        log.erased.push(FLASH + s);
-        mem.fill(0xff, s, s + SECTOR);
+        var sectorAt = Math.floor((at - FLASH) / SECTOR) * SECTOR;
+        if (sectorAt < 0 || sectorAt >= SIZE) return 0x08;
+        log.erased.push(FLASH + sectorAt);
+        mem.fill(0xff, sectorAt, sectorAt + SECTOR);
         return 0;
       }
       return 0x0f;
     }
-    if (p.kind === 'data') {
-      var off = pointer - FLASH + (p.block - 2) * XFER;
-      if (off < 0 || off + p.data.length > SIZE) return 0x08;
-      for (var i = 0; i < p.data.length; i++) if (mem[off + i] !== 0xff) return 0x03; // not erased: errWRITE
-      mem.set(p.data, off);
-      log.writes.push({ at: FLASH + off, length: p.data.length });
+    if (pendingOp.kind === 'data') {
+      var off = pointer - FLASH + (pendingOp.block - 2) * XFER;
+      if (off < 0 || off + pendingOp.data.length > SIZE) return 0x08;
+      for (var idx = 0; idx < pendingOp.data.length; idx++) if (mem[off + idx] !== 0xff) return 0x03; // not erased: errWRITE
+      mem.set(pendingOp.data, off);
+      log.writes.push({ at: FLASH + off, length: pendingOp.data.length });
       return 0;
     }
     return 0;
@@ -74,9 +74,9 @@ function fakeUsb(scope, opts) {
     present = false;
     device.opened = false;
     var start = 0x20000, end = start;
-    for (var i = 0; i < log.writes.length; i++) end = Math.max(end, log.writes[i].at - FLASH + log.writes[i].length);
+    for (var idx = 0; idx < log.writes.length; idx++) end = Math.max(end, log.writes[idx].at - FLASH + log.writes[idx].length);
     log.image = mem.slice(start, end);
-    listeners.disconnect.forEach(function (f) { f({ device: device }); });
+    listeners.disconnect.forEach(function (listener) { listener({ device: device }); });
     if (scope.__onDfuLeave) scope.__onDfuLeave(Array.from(log.image));
   }
 
@@ -86,9 +86,9 @@ function fakeUsb(scope, opts) {
 
   function configDescriptor() {
     var name = 4;
-    var d = [9, 2, 0, 0, 1, 1, 0, 0x80, 50, 9, 4, 0, 0, 0, 0xfe, 0x01, 0x02, name, 9, 0x21, 0x0b, 0xff, 0x00, XFER & 0xff, XFER >> 8, 0x1a, 0x01];
-    d[2] = d.length;
-    return new Uint8Array(d);
+    var raw = [9, 2, 0, 0, 1, 1, 0, 0x80, 50, 9, 4, 0, 0, 0, 0xfe, 0x01, 0x02, name, 9, 0x21, 0x0b, 0xff, 0x00, XFER & 0xff, XFER >> 8, 0x1a, 0x01];
+    raw[2] = raw.length;
+    return new Uint8Array(raw);
   }
 
   var device = {
@@ -128,14 +128,14 @@ function fakeUsb(scope, opts) {
         // String descriptors: 0 the language list, 4 the alternate's name.
         var str = (setup.value & 0xff) === 0 ? null : (setup.value & 0xff) === 4 ? (mode.nameString || LAYOUT) : '';
         var sd = str === null ? [4, 3, 0x09, 0x04] : [2 + str.length * 2, 3];
-        if (str) for (var k = 0; k < str.length; k++) sd.push(str.charCodeAt(k) & 0xff, str.charCodeAt(k) >> 8);
+        if (str) for (var charIdx = 0; charIdx < str.length; charIdx++) sd.push(str.charCodeAt(charIdx) & 0xff, str.charCodeAt(charIdx) >> 8);
         var sb = new Uint8Array(sd).slice(0, length);
         return { status: 'ok', data: new DataView(sb.buffer) };
       }
       if (setup.requestType === 'standard' && setup.request === 6) {
         if (mode.badDescriptor) return { status: 'stall' };
-        var d = configDescriptor().slice(0, length);
-        return { status: 'ok', data: new DataView(d.buffer) };
+        var raw = configDescriptor().slice(0, length);
+        return { status: 'ok', data: new DataView(raw.buffer) };
       }
       if (setup.request === 3) {
         var poll = 0, st = state;
@@ -154,10 +154,10 @@ function fakeUsb(scope, opts) {
     },
     async controlTransferOut(setup, data) {
       guard();
-      var d = bytes(data);
+      var raw = bytes(data);
       if (setup.request === 1) {
-        if (d.length === 0) { state = 7; return { status: 'ok', bytesWritten: 0 }; }
-        if (mode.failLeave && setup.value === 0 && d[0] === 0x21 && log.writes.length > 0 && (d[1] | (d[2] << 8) | (d[3] << 16) | (d[4] << 24)) >>> 0 === 0x08020000) {
+        if (raw.length === 0) { state = 7; return { status: 'ok', bytesWritten: 0 }; }
+        if (mode.failLeave && setup.value === 0 && raw[0] === 0x21 && log.writes.length > 0 && (raw[1] | (raw[2] << 8) | (raw[3] << 16) | (raw[4] << 24)) >>> 0 === 0x08020000) {
           present = false;
           device.opened = false;
           throw lost();
@@ -166,14 +166,14 @@ function fakeUsb(scope, opts) {
           if (mode.cutAfter !== undefined && blocks >= mode.cutAfter) {
             present = false;
             device.opened = false;
-            listeners.disconnect.forEach(function (f) { f({ device: device }); });
+            listeners.disconnect.forEach(function (listener) { listener({ device: device }); });
             throw lost();
           }
           blocks++;
         }
-        pending = setup.value === 0 ? { kind: 'cmd', data: d.slice() } : { kind: 'data', block: setup.value, data: d.slice() };
+        pending = setup.value === 0 ? { kind: 'cmd', data: raw.slice() } : { kind: 'data', block: setup.value, data: raw.slice() };
         state = 4;
-        return { status: 'ok', bytesWritten: d.length };
+        return { status: 'ok', bytesWritten: raw.length };
       }
       if (setup.request === 4) { status = 0; state = 2; return { status: 'ok', bytesWritten: 0 }; }
       if (setup.request === 6) { state = 2; return { status: 'ok', bytesWritten: 0 }; }
@@ -183,36 +183,36 @@ function fakeUsb(scope, opts) {
 
   var others = [];
   function addOther(layout) {
-    var o = {
+    var fakeDev = {
       vendorId: 0x0483, productId: 0xdf11, productName: 'STM32  BOOTLOADER', opened: false, configuration: null, sent: 0, outs: 0,
-      async open() { o.opened = true; },
-      async close() { o.opened = false; },
+      async open() { fakeDev.opened = true; },
+      async close() { fakeDev.opened = false; },
       async selectConfiguration() {
-        o.configuration = { configurationValue: 1, interfaces: [{ interfaceNumber: 0, alternates: [{ alternateSetting: 0, interfaceClass: 0xfe, interfaceSubclass: 0x01, interfaceProtocol: 0x02, interfaceName: layout }] }] };
+        fakeDev.configuration = { configurationValue: 1, interfaces: [{ interfaceNumber: 0, alternates: [{ alternateSetting: 0, interfaceClass: 0xfe, interfaceSubclass: 0x01, interfaceProtocol: 0x02, interfaceName: layout }] }] };
       },
       async claimInterface() {},
       async selectAlternateInterface() {},
-      async controlTransferIn() { o.sent++; return { status: 'stall' }; },
-      async controlTransferOut() { o.sent++; o.outs++; return { status: 'stall' }; },
+      async controlTransferIn() { fakeDev.sent++; return { status: 'stall' }; },
+      async controlTransferOut() { fakeDev.sent++; fakeDev.outs++; return { status: 'stall' }; },
     };
-    others.push(o);
-    return o;
+    others.push(fakeDev);
+    return fakeDev;
   }
 
   var granted = !!opts.granted;
   var usb = {
     async getDevices() { return (present && granted ? [device] : []).concat(others); },
-    async requestDevice(o) {
+    async requestDevice(options) {
       log.requests++;
       if (mode.pickOther && others.length) return others[0];
       if (!present || mode.cancel) throw new DOMException('No device selected.', 'NotFoundError');
-      var f = (o && o.filters) || [];
-      if (!f.some(function (x) { return x.vendorId === device.vendorId && x.productId === device.productId; })) throw new DOMException('No device selected.', 'NotFoundError');
+      var filters = (options && options.filters) || [];
+      if (!filters.some(function (filter) { return filter.vendorId === device.vendorId && filter.productId === device.productId; })) throw new DOMException('No device selected.', 'NotFoundError');
       granted = true;
       return device;
     },
-    addEventListener(kind, f) { (listeners[kind] = listeners[kind] || []).push(f); },
-    removeEventListener(kind, f) { listeners[kind] = (listeners[kind] || []).filter(function (g) { return g !== f; }); },
+    addEventListener(kind, listener) { (listeners[kind] = listeners[kind] || []).push(listener); },
+    removeEventListener(kind, listener) { listeners[kind] = (listeners[kind] || []).filter(function (other) { return other !== listener; }); },
   };
 
   scope.__usb = {
@@ -224,7 +224,7 @@ function fakeUsb(scope, opts) {
       present = true;
       state = 2; status = 0; pending = null; blocks = 0;
       device.configuration = null;
-      listeners.connect.forEach(function (f) { f({ device: device }); });
+      listeners.connect.forEach(function (listener) { listener({ device: device }); });
     },
     unplug: function () { present = false; device.opened = false; },
     addOther: addOther,

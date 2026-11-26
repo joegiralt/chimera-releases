@@ -92,18 +92,18 @@ opened =
 
 
 events : List Event -> Update.Types.Model -> Update.Types.Model
-events es m =
-    List.foldl (\e acc -> Update.Step.step e acc |> Tuple.first) m es
+events arriving model =
+    List.foldl (\event acc -> Update.Step.step event acc |> Tuple.first) model arriving
 
 
 hands : List Msg -> Update.Types.Model -> Update.Types.Model
-hands msgs m =
-    List.foldl (\msg acc -> Update.update msg acc |> (\( next, _, _ ) -> next)) m msgs
+hands msgs model =
+    List.foldl (\msg acc -> Update.update msg acc |> (\( next, _, _ ) -> next)) model msgs
 
 
 steps : List Event -> Update.Types.Model -> ( Stage, List Request )
-steps es m =
-    List.foldl (\e ( acc, reqs ) -> Update.Step.step e acc |> Tuple.mapSecond ((++) reqs)) ( m, [] ) es
+steps arriving model =
+    List.foldl (\event ( acc, reqs ) -> Update.Step.step event acc |> Tuple.mapSecond ((++) reqs)) ( model, [] ) arriving
         |> Tuple.mapFirst Update.stage
 
 
@@ -132,8 +132,8 @@ offerOf build =
 
 
 shown : Update.Types.Model -> Query.Single Update.Types.Msg
-shown m =
-    Update.View.view (\_ -> Update.Types.Close) identity (Page.init Tokens.Day) m |> List.singleton |> Html.div [] |> Query.fromHtml
+shown model =
+    Update.View.view (\_ -> Update.Types.Close) identity (Page.init Tokens.Day) model |> List.singleton |> Html.div [] |> Query.fromHtml
 
 
 idA : String
@@ -147,16 +147,16 @@ idB =
 
 
 withUnit : String -> Answer -> Answer
-withUnit id a =
-    case a of
+withUnit id answer =
+    case answer of
         Said lines end ->
             Said (lines ++ [ "unit " ++ id ]) end
 
         NoAnswer ->
-            a
+            answer
 
         Gone ->
-            a
+            answer
 
 
 idUnit : Update.Types.UnitNow
@@ -175,8 +175,8 @@ idFlashed =
 
 
 isBack : Request -> Bool
-isBack r =
-    case r of
+isBack request =
+    case request of
         Back _ _ _ ->
             True
 
@@ -258,8 +258,8 @@ isDone st =
 
 
 isGarbled : Event -> Bool
-isGarbled e =
-    case e of
+isGarbled event =
+    case event of
         Garbled _ ->
             True
 

@@ -13,13 +13,13 @@ const FW_MAX = 917504; // the stock bootloader erases itself at this size
 const BASE = 0x08020000; // the firmware area
 
 /** CRC-32 (IEEE), its own: zlib.crc32 needs Node 20.15 or later. */
-function crc32(b) {
-  let c = 0xffffffff;
-  for (const x of b) {
-    c ^= x;
-    for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1;
+function crc32(bytes) {
+  let crc = 0xffffffff;
+  for (const byte of bytes) {
+    crc ^= byte;
+    for (let bit = 0; bit < 8; bit++) crc = crc & 1 ? 0xedb88320 ^ (crc >>> 1) : crc >>> 1;
   }
-  return (c ^ 0xffffffff) >>> 0;
+  return (crc ^ 0xffffffff) >>> 0;
 }
 
 /** chimera-usb.py's `check_pair`: the .bin under the bootloader's limit and
@@ -37,9 +37,9 @@ function checkPair(bin, bk2) {
   if (bk2.readUInt32LE(0x0c) !== body.length || crc32(body) !== bk2.readUInt32LE(0x10)) return "CHIMERA.BK2 is damaged";
   const seal = bk2.subarray(0x18, 0x20);
   if (!crypto.createHash("sha256").update(body).digest().subarray(0, 8).equals(seal)) return "CHIMERA.BK2 is damaged (its seal)";
-  let n = 0;
-  for (let at = bin.indexOf(seal); at >= 0; at = bin.indexOf(seal, at + 1)) n++;
-  if (n !== 1) return "CHIMERA.BIN and CHIMERA.BK2 are not one build";
+  let seals = 0;
+  for (let at = bin.indexOf(seal); at >= 0; at = bin.indexOf(seal, at + 1)) seals++;
+  if (seals !== 1) return "CHIMERA.BIN and CHIMERA.BK2 are not one build";
   return null;
 }
 module.exports = { checkPair, crc32 };
@@ -47,17 +47,17 @@ if (require.main !== module) return;
 
 const [dir, tag = ""] = process.argv.slice(2);
 if (!dir) throw new Error("usage: node scripts/firmware.js <dir> [tag]");
-const read = (n) => fs.readFileSync(path.join(dir, n));
+const read = (name) => fs.readFileSync(path.join(dir, name));
 const bin = read("CHIMERA.BIN");
 const bk2 = read("CHIMERA.BK2");
 const sums = {};
-for (const l of read("SHA256SUMS").toString("utf8").split(/\r?\n/)) {
-  const m = /^([0-9a-f]{64})\s+\*?(\S+)$/i.exec(l.trim());
-  if (m) sums[m[2].toUpperCase()] = m[1].toLowerCase();
+for (const line of read("SHA256SUMS").toString("utf8").split(/\r?\n/)) {
+  const match = /^([0-9a-f]{64})\s+\*?(\S+)$/i.exec(line.trim());
+  if (match) sums[match[2].toUpperCase()] = match[1].toLowerCase();
 }
-for (const [n, b] of [["CHIMERA.BIN", bin], ["CHIMERA.BK2", bk2]]) {
-  const got = crypto.createHash("sha256").update(b).digest("hex");
-  if (sums[n] !== got) throw new Error(`firmware: ${n} does not match SHA256SUMS (${got})`);
+for (const [name, bytes] of [["CHIMERA.BIN", bin], ["CHIMERA.BK2", bk2]]) {
+  const got = crypto.createHash("sha256").update(bytes).digest("hex");
+  if (sums[name] !== got) throw new Error(`firmware: ${name} does not match SHA256SUMS (${got})`);
 }
 // chimera-usb.py's check_pair: never publish a pair the editor would refuse.
 const pairFault = checkPair(bin, bk2);

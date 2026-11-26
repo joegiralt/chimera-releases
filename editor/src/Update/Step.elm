@@ -37,39 +37,39 @@ type alias In =
 
 
 classify : Event -> In
-classify e =
+classify event =
     let
         none : In
         none =
             { begun = Nothing, release = Nothing, cancelled = False, answer = Nothing, copied = Nothing, written = Nothing, device = Nothing, write = Nothing, back = Nothing, broken = Nothing, unsent = Nothing }
     in
-    case e of
-        Begun b ->
-            { none | begun = Just b }
+    case event of
+        Begun carried ->
+            { none | begun = Just carried }
 
-        ReleaseIs r ->
-            { none | release = Just r }
+        ReleaseIs carried ->
+            { none | release = Just carried }
 
         ReleaseCancelled ->
             { none | cancelled = True }
 
-        Answered t a ->
-            { none | answer = Just ( t, a ) }
+        Answered ticket answer ->
+            { none | answer = Just ( ticket, answer ) }
 
-        Copied p ->
-            { none | copied = Just p }
+        Copied carried ->
+            { none | copied = Just carried }
 
-        Written p ->
-            { none | written = Just p }
+        Written carried ->
+            { none | written = Just carried }
 
-        DeviceIs d ->
-            { none | device = Just d }
+        DeviceIs carried ->
+            { none | device = Just carried }
 
-        WriteDone w ->
-            { none | write = Just w }
+        WriteDone carried ->
+            { none | write = Just carried }
 
-        BackDone b ->
-            { none | back = Just b }
+        BackDone carried ->
+            { none | back = Just carried }
 
         Mismatch why ->
             { none | broken = Just why }
@@ -83,17 +83,17 @@ classify e =
         Unrelated ->
             none
 
-        Unsent t ->
-            { none | answer = Just ( t, Gone ), unsent = Just t }
+        Unsent ticket ->
+            { none | answer = Just ( ticket, Gone ), unsent = Just ticket }
 
 
 answerFor : Ticket -> In -> Maybe Answer
-answerFor t i =
-    i.answer
+answerFor ticket incoming =
+    incoming.answer
         |> Maybe.andThen
-            (\( got, a ) ->
-                if got == t then
-                    Just a
+            (\( got, answer ) ->
+                if got == ticket then
+                    Just answer
 
                 else
                     Nothing
@@ -103,86 +103,86 @@ answerFor t i =
 {-| What came back from `update.js`, against where the update is.
 -}
 step : Event -> Model -> ( Model, List Request )
-step e ((Model m) as model) =
+step event ((Model fields) as model) =
     let
-        i : In
-        i =
-            classify e
+        incoming : In
+        incoming =
+            classify event
 
         ignore : ( Model, List Request )
         ignore =
             ( model, [] )
 
         to : Stage -> ( Model, List Request )
-        to s =
-            ( Model { m | stage = s }, [] )
+        to stage =
+            ( Model { fields | stage = stage }, [] )
     in
-    case m.stage of
+    case fields.stage of
         Opening ->
-            case i.begun of
-                Just b ->
+            case incoming.begun of
+                Just begun ->
                     let
-                        fields : Fields
-                        fields =
-                            { m | windows = b.windows, webusb = b.webusb }
+                        opened : Fields
+                        opened =
+                            { fields | windows = begun.windows, webusb = begun.webusb }
                     in
-                    case ( m.mode, b.open ) of
+                    case ( fields.mode, begun.open ) of
                         ( Stuck, _ ) ->
-                            ( Model { fields | stage = Reading (Just (readStatus [])) Fetching }, [ FetchLatest ] )
+                            ( Model { opened | stage = Reading (Just (readStatus [])) Fetching }, [ FetchLatest ] )
 
                         ( Connected, True ) ->
-                            ( Model { fields | stage = Reading Nothing Fetching }, [ status Nothing TStatus 0, FetchLatest ] )
+                            ( Model { opened | stage = Reading Nothing Fetching }, [ status Nothing TStatus 0, FetchLatest ] )
 
                         ( Connected, False ) ->
-                            ( Model { fields | stage = NoLink }, [] )
+                            ( Model { opened | stage = NoLink }, [] )
 
                 Nothing ->
                     ignore
 
-        Reading u rel ->
-            case ( answerFor TStatus i, i.release ) of
-                ( Just a, _ ) ->
-                    reading (Just (unitOf a)) rel m
+        Reading unit rel ->
+            case ( answerFor TStatus incoming, incoming.release ) of
+                ( Just answer, _ ) ->
+                    reading (Just (unitOf answer)) rel fields
 
-                ( Nothing, Just r ) ->
-                    reading u (releaseState r) m
+                ( Nothing, Just release ) ->
+                    reading unit (releaseState release) fields
 
                 ( Nothing, Nothing ) ->
                     ignore
 
-        Choosing u prev ->
-            case ( i.release, i.cancelled ) of
-                ( Just r, _ ) ->
-                    to (Ready u (releaseState r))
+        Choosing unit prev ->
+            case ( incoming.release, incoming.cancelled ) of
+                ( Just release, _ ) ->
+                    to (Ready unit (releaseState release))
 
                 -- A cancelled chooser keeps what was there.
                 ( Nothing, True ) ->
-                    to (Ready u prev)
+                    to (Ready unit prev)
 
                 ( Nothing, False ) ->
                     ignore
 
-        Running u r run ->
-            case i.broken of
+        Running unit release run ->
+            case incoming.broken of
                 Just why ->
                     -- Fail closed: a step that can't read its answer stops,
                     -- on the side of the write it is on.
                     case run of
                         -- The install's answer unreadable: it may be writing; wait for it.
                         Pre InstallingSelf ->
-                            ( Model { m | stage = Running u r (Post Staged RestartingSelf) }, [ Back 180 True u.unit ] )
+                            ( Model { fields | stage = Running unit release (Post Staged RestartingSelf) }, [ Back 180 True unit.unit ] )
 
                         Pre _ ->
-                            to (StoppedBefore u r (GarbledBefore why))
+                            to (StoppedBefore unit release (GarbledBefore why))
 
                         Writing at _ ->
-                            to (StoppedAfter u r at.bk2 (GarbledAfter why))
+                            to (StoppedAfter unit release at.bk2 (GarbledAfter why))
 
-                        Post b _ ->
-                            to (StoppedAfter u r b (GarbledAfter why))
+                        Post bk2 _ ->
+                            to (StoppedAfter unit release bk2 (GarbledAfter why))
 
                 Nothing ->
-                    running i u r run m
+                    running incoming unit release run fields
 
         Ready _ _ ->
             ignore
@@ -214,8 +214,8 @@ sincePages =
 
 
 status : Maybe String -> Ticket -> Int -> Request
-status unit t delay =
-    Ask t "status" 2000 delay unit
+status unit ticket delay =
+    Ask ticket "status" 2000 delay unit
 
 
 install : Maybe String -> Int -> Request
@@ -227,25 +227,25 @@ install unit delay =
 unit's (both said who they are): then it stops, whatever the step.
 -}
 running : In -> UnitNow -> Release -> Run -> Fields -> ( Model, List Request )
-running i u r run m =
+running incoming unit release run fields =
     let
         answered : Maybe Answer
         answered =
-            case ( i.back, answerFor TVerify i ) of
-                ( Just (Ok a), _ ) ->
-                    Just a
+            case ( incoming.back, answerFor TVerify incoming ) of
+                ( Just (Ok answer), _ ) ->
+                    Just answer
 
-                ( Just (Err _), v ) ->
-                    v
+                ( Just (Err _), verified ) ->
+                    verified
 
-                ( Nothing, v ) ->
-                    v
+                ( Nothing, verified ) ->
+                    verified
 
         after : Maybe Bk2
         after =
             case run of
-                Post b _ ->
-                    Just b
+                Post bk2 _ ->
+                    Just bk2
 
                 Pre _ ->
                     Nothing
@@ -253,40 +253,40 @@ running i u r run m =
                 Writing _ _ ->
                     Nothing
     in
-    case ( after, answered |> Maybe.andThen (otherUnit u) ) of
-        ( Just b, Just id ) ->
-            ( Model { m | stage = StoppedAfter u r b (OtherUnit id) }, [] )
+    case ( after, answered |> Maybe.andThen (otherUnit unit) ) of
+        ( Just bk2, Just id ) ->
+            ( Model { fields | stage = StoppedAfter unit release bk2 (OtherUnit id) }, [] )
 
         ( Just _, Nothing ) ->
-            runningOn i u r run m
+            runningOn incoming unit release run fields
 
         ( Nothing, _ ) ->
-            runningOn i u r run m
+            runningOn incoming unit release run fields
 
 
 runningOn : In -> UnitNow -> Release -> Run -> Fields -> ( Model, List Request )
-runningOn i u r run m =
+runningOn incoming unit release run fields =
     let
         ignore : ( Model, List Request )
         ignore =
-            ( Model m, [] )
+            ( Model fields, [] )
 
         to : Run -> List Request -> ( Model, List Request )
         to next reqs =
-            ( Model { m | stage = Running u r next }, reqs )
+            ( Model { fields | stage = Running unit release next }, reqs )
 
         before : PreFail -> ( Model, List Request )
-        before f =
-            ( Model { m | stage = StoppedBefore u r f }, [] )
+        before failure =
+            ( Model { fields | stage = StoppedBefore unit release failure }, [] )
 
         after : Bk2 -> PostFail -> ( Model, List Request )
-        after b f =
-            ( Model { m | stage = StoppedAfter u r b f }, [] )
+        after bk2 failure =
+            ( Model { fields | stage = StoppedAfter unit release bk2 failure }, [] )
 
         -- The self-update's bar counts both files.
         both : Int
         both =
-            r.bk2Size + r.binSize
+            release.bk2Size + release.binSize
 
         -- The first copy, for the unit as CHECKING read it: CHIMERA.BK2, unless
         -- a self-updating unit already has its seal open (then CHIMERA.BIN
@@ -296,23 +296,23 @@ runningOn i u r run m =
             let
                 copy : Run -> List Request -> ( Model, List Request )
                 copy next reqs =
-                    ( Model { m | stage = Running now r next }, reqs )
+                    ( Model { fields | stage = Running now release next }, reqs )
             in
-            case ( now.selfUpdate, sealOpen r now ) of
+            case ( now.selfUpdate, sealOpen release now ) of
                 ( Just _, True ) ->
-                    copy (Pre (CopyingBin { done = r.bk2Size, total = both })) [ PutBin r binRemote ]
+                    copy (Pre (CopyingBin { done = release.bk2Size, total = both })) [ PutBin release binRemote ]
 
                 ( Just _, False ) ->
-                    copy (Pre (Copying { done = 0, total = both })) [ Put r ]
+                    copy (Pre (Copying { done = 0, total = both })) [ Put release ]
 
                 ( Nothing, _ ) ->
-                    copy (Pre (Copying { done = 0, total = r.bk2Size })) [ Put r ]
+                    copy (Pre (Copying { done = 0, total = release.bk2Size })) [ Put release ]
 
         device : InDfu -> Device -> ( Model, List Request )
-        device at d =
-            case d of
+        device at picked =
+            case picked of
                 Found ->
-                    to (Writing at { done = 0, total = 1 }) [ Write r ]
+                    to (Writing at { done = 0, total = 1 }) [ Write release ]
 
                 NotFound ->
                     to (Pre (PickingDevice at)) []
@@ -331,12 +331,12 @@ runningOn i u r run m =
         -- one, or changed): another unit, or unsaved changes, stop it; a unit
         -- too old to say goes on, as the script does.
         Pre Checking ->
-            case answerFor TStatus i of
+            case answerFor TStatus incoming of
                 Just Gone ->
                     before (NothingFlashed "The unit isn't connected")
 
-                Just ((Said _ end) as a) ->
-                    case ( isOk end, otherUnit u a ) of
+                Just ((Said _ end) as answer) ->
+                    case ( isOk end, otherUnit unit answer ) of
                         ( False, _ ) ->
                             before (NothingFlashed ("The unit answered status with " ++ end))
 
@@ -347,16 +347,16 @@ runningOn i u r run m =
                             let
                                 now : UnitNow
                                 now =
-                                    afresh u a
+                                    afresh unit answer
                             in
                             if now.modified then
-                                ( Model { m | stage = Running now r (Pre (ReadingProject 1)) }, [ Ask TProject "ed since 0" 2000 0 now.unit ] )
+                                ( Model { fields | stage = Running now release (Pre (ReadingProject 1)) }, [ Ask TProject "ed since 0" 2000 0 now.unit ] )
 
                             else
                                 copyFirst now
 
                 Just NoAnswer ->
-                    copyFirst u
+                    copyFirst unit
 
                 Nothing ->
                     ignore
@@ -364,17 +364,17 @@ runningOn i u r run m =
         -- The project line may be on a later page of `ed since`.
         -- At most `sincePages` pages, each `next` a number, else as never saved.
         Pre (ReadingProject page) ->
-            case answerFor TProject i of
+            case answerFor TProject incoming of
                 Just (Said lines end) ->
                     case ( loadedOf lines, String.words end ) of
-                        ( Just l, _ ) ->
-                            before (Unsaved l)
+                        ( Just loaded, _ ) ->
+                            before (Unsaved loaded)
 
                         ( Nothing, [ "OK", next, "more" ] ) ->
                             case String.toInt next of
                                 Just from ->
                                     if page < sincePages then
-                                        to (Pre (ReadingProject (page + 1))) [ Ask TProject ("ed since " ++ String.fromInt from) 2000 0 u.unit ]
+                                        to (Pre (ReadingProject (page + 1))) [ Ask TProject ("ed since " ++ String.fromInt from) 2000 0 unit.unit ]
 
                                     else
                                         before (Unsaved Nothing)
@@ -396,13 +396,13 @@ runningOn i u r run m =
 
         -- A project never saved has no file of its own: saved as BEFORE_UPDATE.
         Pre (Saving asNew) ->
-            case answerFor TSave i of
+            case answerFor TSave incoming of
                 Just (Said _ end) ->
                     if isOk end then
-                        to (Pre (Settling 0)) [ status u.unit TStatus 500 ]
+                        to (Pre (Settling 0)) [ status unit.unit TStatus 500 ]
 
                     else if not asNew && String.contains "no file of its own" end then
-                        to (Pre (Saving True)) [ Ask TSave "ed project saveas BEFORE_UPDATE" 15000 0 u.unit ]
+                        to (Pre (Saving True)) [ Ask TSave "ed project saveas BEFORE_UPDATE" 15000 0 unit.unit ]
 
                     else
                         before (NothingFlashed ("The project couldn't be saved: " ++ end))
@@ -417,10 +417,10 @@ runningOn i u r run m =
                     ignore
 
         Pre Discarding ->
-            case answerFor TSave i of
+            case answerFor TSave incoming of
                 Just (Said _ end) ->
                     if isOk end then
-                        to (Pre (Settling 0)) [ status u.unit TStatus 500 ]
+                        to (Pre (Settling 0)) [ status unit.unit TStatus 500 ]
 
                     else
                         before (NothingFlashed ("The changes couldn't be discarded: " ++ end))
@@ -435,32 +435,32 @@ runningOn i u r run m =
                     ignore
 
         -- The save or reload is the unit's card work: `status` until the project is clean.
-        Pre (Settling n) ->
-            case answerFor TStatus i of
-                Just ((Said _ end) as a) ->
-                    case otherUnit u a of
+        Pre (Settling polls) ->
+            case answerFor TStatus incoming of
+                Just ((Said _ end) as answer) ->
+                    case otherUnit unit answer of
                         Just other ->
                             before (OtherUnitBefore other)
 
                         Nothing ->
-                            if not (unitOf a).modified then
+                            if not (unitOf answer).modified then
                                 copyFirst
                                     (if isOk end then
-                                        afresh u a
+                                        afresh unit answer
 
                                      else
-                                        u
+                                        unit
                                     )
 
-                            else if n < 20 then
-                                to (Pre (Settling (n + 1))) [ status u.unit TStatus 500 ]
+                            else if polls < 20 then
+                                to (Pre (Settling (polls + 1))) [ status unit.unit TStatus 500 ]
 
                             else
                                 before (Unsaved Nothing)
 
                 Just NoAnswer ->
-                    if n < 20 then
-                        to (Pre (Settling (n + 1))) [ status u.unit TStatus 500 ]
+                    if polls < 20 then
+                        to (Pre (Settling (polls + 1))) [ status unit.unit TStatus 500 ]
 
                     else
                         before (NothingFlashed "The unit stopped answering after the save")
@@ -472,19 +472,19 @@ runningOn i u r run m =
                     ignore
 
         Pre (Copying _) ->
-            case ( i.copied, answerFor TPut i ) of
-                ( Just p, _ ) ->
-                    to (Pre (Copying { p | total = Maybe.withDefault p.total (Maybe.map (\_ -> both) u.selfUpdate) })) []
+            case ( incoming.copied, answerFor TPut incoming ) of
+                ( Just progress, _ ) ->
+                    to (Pre (Copying { progress | total = Maybe.withDefault progress.total (Maybe.map (\_ -> both) unit.selfUpdate) })) []
 
-                ( Nothing, Just a ) ->
-                    case ( staging r a, u.selfUpdate ) of
+                ( Nothing, Just answer ) ->
+                    case ( staging release answer, unit.selfUpdate ) of
                         -- A unit that writes its own firmware: CHIMERA.BIN onto the card next.
                         ( Ok Staged, Just _ ) ->
-                            to (Pre (CopyingBin { done = r.bk2Size, total = both })) [ PutBin r binRemote ]
+                            to (Pre (CopyingBin { done = release.bk2Size, total = both })) [ PutBin release binRemote ]
 
                         -- Else update mode: the unit no longer on the self-update path.
-                        ( Ok b, _ ) ->
-                            ( Model { m | stage = Running { u | selfUpdate = Nothing } r (Pre (EnteringDfu b)) }, [ Dfu ] )
+                        ( Ok bk2, _ ) ->
+                            ( Model { fields | stage = Running { unit | selfUpdate = Nothing } release (Pre (EnteringDfu bk2)) }, [ Dfu ] )
 
                         ( Err why, _ ) ->
                             before (NothingFlashed why)
@@ -493,13 +493,13 @@ runningOn i u r run m =
                     ignore
 
         Pre (CopyingBin _) ->
-            case ( i.copied, answerFor TPutBin i ) of
-                ( Just p, _ ) ->
-                    to (Pre (CopyingBin { done = r.bk2Size + p.done, total = both })) []
+            case ( incoming.copied, answerFor TPutBin incoming ) of
+                ( Just progress, _ ) ->
+                    to (Pre (CopyingBin { done = release.bk2Size + progress.done, total = both })) []
 
                 ( Nothing, Just (Said _ end) ) ->
                     if isOk end then
-                        to (Pre InstallingSelf) [ Ask TSelf ("bank1 install " ++ String.fromInt r.binSize ++ " " ++ r.binCrc) 120000 0 u.unit ]
+                        to (Pre InstallingSelf) [ Ask TSelf ("bank1 install " ++ String.fromInt release.binSize ++ " " ++ release.binCrc) 120000 0 unit.unit ]
 
                     else
                         before (NothingFlashed ("The unit refused CHIMERA.BIN: " ++ end))
@@ -521,100 +521,100 @@ runningOn i u r run m =
         -- reply or a vanished port is the wait for it to come back, never a
         -- retry, re-plug or DFU. Only an ERR, or a verb never sent, may offer those.
         Pre InstallingSelf ->
-            case ( i.unsent, answerFor TSelf i ) of
+            case ( incoming.unsent, answerFor TSelf incoming ) of
                 ( Just TSelf, _ ) ->
                     before (NothingFlashed "The unit was disconnected before the install was sent")
 
                 ( _, Just (Said _ end) ) ->
                     if String.startsWith "OK bank1 verified " end then
-                        to (Post Staged RestartingSelf) [ Back 180 True u.unit ]
+                        to (Post Staged RestartingSelf) [ Back 180 True unit.unit ]
 
                     else if end == "OK already installed" then
-                        to (Post Staged Verifying) [ status u.unit TVerify 0 ]
+                        to (Post Staged Verifying) [ status unit.unit TVerify 0 ]
 
                     else if isOk end then
-                        to (Post Staged RestartingSelf) [ Back 180 True u.unit ]
+                        to (Post Staged RestartingSelf) [ Back 180 True unit.unit ]
 
                     else
                         -- An ERR is the verb refused: the unit isn't writing.
                         before (SelfRefused end)
 
                 ( _, Just Gone ) ->
-                    to (Post Staged RestartingSelf) [ Back 180 True u.unit ]
+                    to (Post Staged RestartingSelf) [ Back 180 True unit.unit ]
 
                 ( _, Just NoAnswer ) ->
-                    to (Post Staged RestartingSelf) [ Back 180 True u.unit ]
+                    to (Post Staged RestartingSelf) [ Back 180 True unit.unit ]
 
                 ( _, Nothing ) ->
                     ignore
 
         -- Back as the new firmware: bank 1 written and checked (`bank1 last
         -- ok <crc>`), the build, bank 2 open; or the old firmware, untouched.
-        Post b RestartingSelf ->
-            case i.back of
+        Post bk2 RestartingSelf ->
+            case incoming.back of
                 Just (Err cause) ->
-                    after b (SelfNotBack cause)
+                    after bk2 (SelfNotBack cause)
 
-                Just (Ok ((Said lines _) as a)) ->
+                Just (Ok ((Said lines _) as answer)) ->
                     case bank1Last lines of
                         Just ( "aborted", why ) ->
                             before (SelfAborted why)
 
                         Just ( "ok", crc ) ->
-                            if crcEq crc r.binCrc then
-                                case verdict r a of
+                            if crcEq crc release.binCrc then
+                                case verdict release answer of
                                     Installed now ->
-                                        ( Model { m | stage = Done u r now }, [] )
+                                        ( Model { fields | stage = Done unit release now }, [] )
 
                                     NeedsInstall _ ->
-                                        to (Post b (Installing 1)) [ install u.unit 0 ]
+                                        to (Post bk2 (Installing 1)) [ install unit.unit 0 ]
 
                                     NotFinished why ->
-                                        after b (Unfinished why)
+                                        after bk2 (Unfinished why)
 
                             else
-                                after b (Unfinished ("The unit says bank1 last ok " ++ crc ++ ", not this release's CHIMERA.BIN (" ++ r.binCrc ++ ")"))
+                                after bk2 (Unfinished ("The unit says bank1 last ok " ++ crc ++ ", not this release's CHIMERA.BIN (" ++ release.binCrc ++ ")"))
 
                         Just ( word, rest ) ->
-                            after b (Unfinished ("The unit says bank1 last " ++ word ++ " " ++ rest))
+                            after bk2 (Unfinished ("The unit says bank1 last " ++ word ++ " " ++ rest))
 
                         Nothing ->
-                            after b (Unfinished "The unit's status has no bank1 line")
+                            after bk2 (Unfinished "The unit's status has no bank1 line")
 
-                Just (Ok a) ->
-                    after b (Unfinished (Maybe.withDefault "no status" (verdictWhy (verdict r a))))
+                Just (Ok answer) ->
+                    after bk2 (Unfinished (Maybe.withDefault "no status" (verdictWhy (verdict release answer))))
 
                 Nothing ->
                     ignore
 
-        Pre (EnteringDfu b) ->
-            case ( i.unsent, answerFor TDfu i ) of
+        Pre (EnteringDfu bk2) ->
+            case ( incoming.unsent, answerFor TDfu incoming ) of
                 -- Never sent: the unit is as it was.
                 ( Just TDfu, _ ) ->
                     before (NothingFlashed "The unit was disconnected before the request for update mode was sent")
 
                 ( _, Just (Said _ end) ) ->
                     if isOk end then
-                        to (Pre (FindingDevice b)) [ FindDevice 10 ]
+                        to (Pre (FindingDevice bk2)) [ FindDevice 10 ]
 
                     else
                         before (NothingFlashed ("The unit refused update mode: " ++ end))
 
                 -- Sent: the OK was lost to the reset, not refused.
                 ( _, Just Gone ) ->
-                    to (Pre (FindingDevice b)) [ FindDevice 10 ]
+                    to (Pre (FindingDevice bk2)) [ FindDevice 10 ]
 
                 ( _, Just NoAnswer ) ->
-                    before (DfuSilent b)
+                    before (DfuSilent bk2)
 
                 ( _, Nothing ) ->
                     ignore
 
-        Pre (FindingDevice b) ->
-            i.device |> Maybe.map (device { bk2 = b, flash = Untouched }) |> Maybe.withDefault ignore
+        Pre (FindingDevice bk2) ->
+            incoming.device |> Maybe.map (device { bk2 = bk2, flash = Untouched }) |> Maybe.withDefault ignore
 
         Pre (PickingDevice at) ->
-            i.device |> Maybe.map (device at) |> Maybe.withDefault ignore
+            incoming.device |> Maybe.map (device at) |> Maybe.withDefault ignore
 
         Writing at _ ->
             let
@@ -627,14 +627,14 @@ runningOn i u r run m =
                     else
                         before (Guarded at why)
             in
-            case ( i.written, i.write ) of
-                ( Just p, _ ) ->
-                    to (Writing at p) []
+            case ( incoming.written, incoming.write ) of
+                ( Just progress, _ ) ->
+                    to (Writing at progress) []
 
-                ( Nothing, Just w ) ->
-                    case w of
+                ( Nothing, Just outcome ) ->
+                    case outcome of
                         WriteOk ->
-                            to (Post at.bk2 Restarting) [ Back 120 False u.unit ]
+                            to (Post at.bk2 Restarting) [ Back 120 False unit.unit ]
 
                         Unopenable ->
                             before (CantOpen at)
@@ -654,123 +654,123 @@ runningOn i u r run m =
                 ( Nothing, Nothing ) ->
                     ignore
 
-        Post b Restarting ->
-            case i.back of
+        Post bk2 Restarting ->
+            case incoming.back of
                 Just (Err cause) ->
-                    after b (NotBack cause)
+                    after bk2 (NotBack cause)
 
-                Just (Ok a) ->
-                    case verdict r a of
+                Just (Ok answer) ->
+                    case verdict release answer of
                         Installed now ->
-                            ( Model { m | stage = Done u r now }, [] )
+                            ( Model { fields | stage = Done unit release now }, [] )
 
                         -- A difference from the script, kept on purpose: where
                         -- `chimera-usb.py update` stops on a staged .bk2 its first boot
                         -- didn't install, this sends `bank2 install` (the unit
                         -- installs the staged file, or says why not).
                         NeedsInstall _ ->
-                            case b of
+                            case bk2 of
                                 Staged ->
-                                    to (Post b (Installing 1)) [ install u.unit 0 ]
+                                    to (Post bk2 (Installing 1)) [ install unit.unit 0 ]
 
                                 AfterFlash ->
-                                    to (Post b (CopyingLate { done = 0, total = r.bk2Size })) [ Put r ]
+                                    to (Post bk2 (CopyingLate { done = 0, total = release.bk2Size })) [ Put release ]
 
                         NotFinished why ->
-                            after b (Unfinished why)
+                            after bk2 (Unfinished why)
 
                 Nothing ->
                     ignore
 
-        Post b (CopyingLate _) ->
-            case ( i.copied, answerFor TPut i ) of
-                ( Just p, _ ) ->
-                    to (Post b (CopyingLate p)) []
+        Post bk2 (CopyingLate _) ->
+            case ( incoming.copied, answerFor TPut incoming ) of
+                ( Just progress, _ ) ->
+                    to (Post bk2 (CopyingLate progress)) []
 
                 ( Nothing, Just (Said _ end) ) ->
                     if String.startsWith "OK staged:" end then
-                        after b (Unfinished (String.dropLeft 3 end ++ later))
+                        after bk2 (Unfinished (String.dropLeft 3 end ++ later))
 
                     else if isOk end then
-                        to (Post b (Installing 1)) [ install u.unit 0 ]
+                        to (Post bk2 (Installing 1)) [ install unit.unit 0 ]
 
                     else
-                        after b (Unfinished ("Copying CHIMERA.BK2 after the flash: " ++ end))
+                        after bk2 (Unfinished ("Copying CHIMERA.BK2 after the flash: " ++ end))
 
                 ( Nothing, Just NoAnswer ) ->
-                    after b (Unfinished "The unit stopped answering while CHIMERA.BK2 was copied")
+                    after bk2 (Unfinished "The unit stopped answering while CHIMERA.BK2 was copied")
 
                 ( Nothing, Just Gone ) ->
-                    after b (Unfinished "The unit was disconnected while CHIMERA.BK2 was copied")
+                    after bk2 (Unfinished "The unit was disconnected while CHIMERA.BK2 was copied")
 
                 ( Nothing, Nothing ) ->
                     ignore
 
-        Post b (Installing tries) ->
-            case answerFor TInstall i of
+        Post bk2 (Installing tries) ->
+            case answerFor TInstall incoming of
                 Just (Said _ end) ->
                     if String.startsWith "OK bank2 open " end then
-                        to (Post b RestartingAfterInstall) [ Back 60 True u.unit ]
+                        to (Post bk2 RestartingAfterInstall) [ Back 60 True unit.unit ]
 
                     else if isOk end then
-                        to (Post b Verifying) [ status u.unit TVerify 0 ]
+                        to (Post bk2 Verifying) [ status unit.unit TVerify 0 ]
 
                     else if end == "ERR bank2: busy" && tries < 5 then
                         -- 0.2 s between tries, as the script waits.
-                        to (Post b (Installing (tries + 1))) [ install u.unit 200 ]
+                        to (Post bk2 (Installing (tries + 1))) [ install unit.unit 200 ]
 
                     else
-                        after b (Unfinished (installRefusal end))
+                        after bk2 (Unfinished (installRefusal end))
 
                 -- The install may have opened the door and restarted the unit.
                 Just Gone ->
-                    to (Post b RestartingAfterInstall) [ Back 60 True u.unit ]
+                    to (Post bk2 RestartingAfterInstall) [ Back 60 True unit.unit ]
 
                 Just NoAnswer ->
-                    after b (Unfinished "The unit didn't answer bank2 install")
+                    after bk2 (Unfinished "The unit didn't answer bank2 install")
 
                 Nothing ->
                     ignore
 
-        Post b RestartingAfterInstall ->
-            case i.back of
+        Post bk2 RestartingAfterInstall ->
+            case incoming.back of
                 Just (Err cause) ->
-                    after b (NotBack cause)
+                    after bk2 (NotBack cause)
 
-                Just (Ok a) ->
-                    finish u r b a m
+                Just (Ok answer) ->
+                    finish unit release bk2 answer fields
 
                 Nothing ->
                     ignore
 
-        Post b Verifying ->
-            case answerFor TVerify i of
-                Just a ->
-                    finish u r b a m
+        Post bk2 Verifying ->
+            case answerFor TVerify incoming of
+                Just answer ->
+                    finish unit release bk2 answer fields
 
                 Nothing ->
                     ignore
 
 
 reading : Maybe UnitNow -> ReleaseState -> Fields -> ( Model, List Request )
-reading u rel m =
-    case ( u, rel ) of
+reading maybeUnit rel fields =
+    case ( maybeUnit, rel ) of
         ( Just unit, Got _ ) ->
-            ( Model { m | stage = Ready unit rel }, [] )
+            ( Model { fields | stage = Ready unit rel }, [] )
 
         ( Just unit, Missing _ ) ->
-            ( Model { m | stage = Ready unit rel }, [] )
+            ( Model { fields | stage = Ready unit rel }, [] )
 
         ( Just _, Fetching ) ->
-            ( Model { m | stage = Reading u rel }, [] )
+            ( Model { fields | stage = Reading maybeUnit rel }, [] )
 
         ( Nothing, _ ) ->
-            ( Model { m | stage = Reading u rel }, [] )
+            ( Model { fields | stage = Reading maybeUnit rel }, [] )
 
 
 releaseState : Result String Release -> ReleaseState
-releaseState r =
-    case r of
+releaseState result =
+    case result of
         Ok rel ->
             Got rel
 
@@ -804,13 +804,13 @@ afresh confirmed answer =
 {-| The last `status`: done, or what it says instead.
 -}
 finish : UnitNow -> Release -> Bk2 -> Answer -> Fields -> ( Model, List Request )
-finish u r b a m =
-    case verdict r a of
+finish unit release bk2 answer fields =
+    case verdict release answer of
         Installed now ->
-            ( Model { m | stage = Done u r now }, [] )
+            ( Model { fields | stage = Done unit release now }, [] )
 
         NeedsInstall said ->
-            ( Model { m | stage = StoppedAfter u r b (Unfinished ("The unit says " ++ said ++ ", not bank2 open " ++ r.version ++ " seal=" ++ r.seal ++ " (a staged CHIMERA.BK2 stays on the card for the next start)")) }, [] )
+            ( Model { fields | stage = StoppedAfter unit release bk2 (Unfinished ("The unit says " ++ said ++ ", not bank2 open " ++ release.version ++ " seal=" ++ release.seal ++ " (a staged CHIMERA.BK2 stays on the card for the next start)")) }, [] )
 
         NotFinished why ->
-            ( Model { m | stage = StoppedAfter u r b (Unfinished why) }, [] )
+            ( Model { fields | stage = StoppedAfter unit release bk2 (Unfinished why) }, [] )

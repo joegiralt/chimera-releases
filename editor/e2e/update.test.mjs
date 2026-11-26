@@ -37,8 +37,8 @@ async function watchStages() {
   await page.evaluate(() => {
     window.__stages = [];
     const note = () => {
-      const m = document.querySelector(".pagehead .meta")?.textContent ?? "";
-      if (window.__stages.at(-1) !== m) window.__stages.push(m);
+      const shown = document.querySelector(".pagehead .meta")?.textContent ?? "";
+      if (window.__stages.at(-1) !== shown) window.__stages.push(shown);
     };
     window.__stageObs?.disconnect();
     window.__stageObs = new MutationObserver(note);
@@ -50,11 +50,11 @@ const stagesSeen = () => page.evaluate(() => window.__stages.slice());
 
 /** Out of an update page a failed test left open: CANCEL, then CLOSE. */
 async function leavePanel() {
-  for (let i = 0; i < 3 && (await page.locator(".upd").count()); i++) {
+  for (let idx = 0; idx < 3 && (await page.locator(".upd").count()); idx++) {
     for (const name of ["CANCEL", "BACK TO THE EDITOR", "CLOSE"]) {
-      const b = button(name);
-      if (await b.count()) {
-        await b.first().click();
+      const found = button(name);
+      if (await found.count()) {
+        await found.first().click();
         break;
       }
     }
@@ -103,12 +103,12 @@ async function start() {
 
 /** Whether the page holds a close or reload (its beforeunload prevented). */
 const held = () => page.evaluate(() => {
-  const e = new Event("beforeunload", { cancelable: true });
-  window.dispatchEvent(e);
-  return e.defaultPrevented;
+  const event = new Event("beforeunload", { cancelable: true });
+  window.dispatchEvent(event);
+  return event.defaultPrevented;
 });
 
-const usbLog = () => page.evaluate(() => ({ ...window.__usb.log, image: null, bootloader: window.__usb.mem.subarray(0, 0x20000).every((b) => b === 0xb0) }));
+const usbLog = () => page.evaluate(() => ({ ...window.__usb.log, image: null, bootloader: window.__usb.mem.subarray(0, 0x20000).every((byte) => byte === 0xb0) }));
 
 /** CLOSE (or BACK TO THE EDITOR): the editor follows the unit again. */
 async function backToEditor(name = "CLOSE") {
@@ -120,7 +120,7 @@ async function backToEditor(name = "CLOSE") {
 /** The guards, read from the fake device's log after a write. */
 function assertGuards(log, sectors) {
   assert.equal(log.massErase, false, "a mass erase was sent");
-  assert.ok(log.commands.every((c) => c.length === 5 && c.at >= 0x08020000), `a command below 0x08020000: ${JSON.stringify(log.commands.filter((c) => c.at < 0x08020000))}`);
+  assert.ok(log.commands.every((cmd) => cmd.length === 5 && cmd.at >= 0x08020000), `a command below 0x08020000: ${JSON.stringify(log.commands.filter((cmd) => cmd.at < 0x08020000))}`);
   assert.deepEqual(log.erased, sectors, "erased other sectors than the image's");
   assert.equal(log.bootloader, true, "the bootloader's sector changed");
 }
@@ -148,15 +148,15 @@ describe("UPDATE from the browser", () => {
     await button("CHOOSE UPDATE DEVICE").click();
     await until("DONE", async () => (await meta()) === "DONE", UPDATE_WAIT);
     assert.match(await said(), /UPDATED\s+0\.4\.0 \(de07edf9\) → 0\.4\.1 \(abcd1234\)/);
-    const stages = (await stagesSeen()).filter((s) => s !== "READY");
+    const stages = (await stagesSeen()).filter((stage) => stage !== "READY");
     const order = ["CHECKING", "COPYING BANK 2", "RESTARTING INTO UPDATE MODE", "WRITING FIRMWARE", "INSTALLING", "DONE"];
-    assert.deepEqual(order.filter((s) => stages.includes(s)), order, `stages seen: ${stages}`);
+    assert.deepEqual(order.filter((stage) => stages.includes(stage)), order, `stages seen: ${stages}`);
     const log = await usbLog();
     assertGuards(log, SECTORS);
     assert.equal(log.left, true);
     assert.equal(fake.build, "0.4.1 abcd1234", "the unit isn't running the release's CHIMERA.BIN");
     // The .bk2 went first, then dfu; the first boot installed it: no bank2 install.
-    const put = fake.log.findIndex((l) => l.startsWith("put /CHIMERA/SYSTEM/BANK2.BK2 "));
+    const put = fake.log.findIndex((line) => line.startsWith("put /CHIMERA/SYSTEM/BANK2.BK2 "));
     assert.ok(put >= 0 && put < fake.log.indexOf("dfu"), `the put before dfu: ${fake.log}`);
     assert.equal(fake.log.includes("bank2 install"), false);
     await backToEditor("BACK TO THE EDITOR");
@@ -175,11 +175,11 @@ describe("UPDATE from the browser", () => {
     await openUpdate();
     await start();
     await until("the choices", async () => /UNSAVED CHANGES/.test(await said()), 10000);
-    for (const b of ["SAVE AND UPDATE", "DISCARD AND UPDATE", "CANCEL"]) await button(b).waitFor();
+    for (const label of ["SAVE AND UPDATE", "DISCARD AND UPDATE", "CANCEL"]) await button(label).waitFor();
     assert.match(await said(), /Nothing has been written/);
     await button("CANCEL").click();
     await until("back to the offer", async () => (await meta()) === "READY", 5000);
-    assert.deepEqual(fake.log.filter((l) => /^(put|dfu|bank2|ed project)/.test(l)), []);
+    assert.deepEqual(fake.log.filter((line) => /^(put|dfu|bank2|ed project)/.test(line)), []);
     await backToEditor();
   });
 
@@ -193,7 +193,7 @@ describe("UPDATE from the browser", () => {
       if (await button("CHOOSE UPDATE DEVICE").count()) await button("CHOOSE UPDATE DEVICE").click().catch(() => {});
       return (await meta()) === "DONE";
     }, UPDATE_WAIT);
-    const verbs = fake.log.filter((l) => /^(put|dfu|ed project)/.test(l)).map((l) => (l.startsWith("put ") ? l.split(" ").slice(0, 2) : l.split(" ").slice(0, 3)).join(" "));
+    const verbs = fake.log.filter((line) => /^(put|dfu|ed project)/.test(line)).map((line) => (line.startsWith("put ") ? line.split(" ").slice(0, 2) : line.split(" ").slice(0, 3)).join(" "));
     assert.deepEqual(verbs.slice(0, 3), ["ed project save", "put /CHIMERA/SYSTEM/BANK2.BK2", "dfu"]);
     await backToEditor("BACK TO THE EDITOR");
   });
@@ -205,7 +205,7 @@ describe("UPDATE from the browser", () => {
     await button("DISCARD AND UPDATE").click();
     await until("DONE", async () => (await meta()) === "DONE", UPDATE_WAIT);
     assert.ok(fake.log.includes("ed project load 3 7 discard"), `no discard: ${fake.log}`);
-    assert.ok(fake.log.indexOf("ed project load 3 7 discard") < fake.log.findIndex((l) => l.startsWith("put ")));
+    assert.ok(fake.log.indexOf("ed project load 3 7 discard") < fake.log.findIndex((line) => line.startsWith("put ")));
     await backToEditor("BACK TO THE EDITOR");
   });
 
@@ -216,7 +216,7 @@ describe("UPDATE from the browser", () => {
     assert.match(await said(), /CHIMERA\.BIN does not match SHA256SUMS/);
     assert.equal(await button("UPDATE…").count(), 0, "UPDATE offered for files that failed their check");
     await button("CHOOSE FILES…").waitFor();
-    assert.deepEqual(fake.log.filter((l) => /^(put|dfu|bank2)/.test(l)), []);
+    assert.deepEqual(fake.log.filter((line) => /^(put|dfu|bank2)/.test(line)), []);
     await backToEditor();
   });
 
@@ -256,15 +256,15 @@ describe("UPDATE from the browser", () => {
         try {
           await ChimeraDfu.write(window.__usb.device, img, at);
           out.push("written");
-        } catch (e) {
-          out.push(e.guard ? "guard" : `other: ${e.message}`);
+        } catch (error) {
+          out.push(error.guard ? "guard" : `other: ${error.message}`);
         }
       }
       let built = "built";
       try {
         ChimeraDfu.eraseSector(ChimeraDfu.FirmwareAddress(0x08000000));
-      } catch (e) {
-        built = e.guard ? "guard" : e.message;
+      } catch (error) {
+        built = error.guard ? "guard" : error.message;
       }
       window.__usb.unplug();
       return { out, built, opened: window.__usb.log.opens - before };
@@ -283,7 +283,7 @@ describe("UPDATE from the browser", () => {
     assert.match(text, /Nothing was flashed: the unit still runs 0\.4\.0 \(de07edf9\)/);
     assert.match(text, /TRY AGAIN/);
     assert.equal(fake.log.includes("dfu"), false);
-    assert.deepEqual((await stagesSeen()).filter((s) => s !== "READY").slice(0, 2), ["CHECKING", "COPYING BANK 2"]);
+    assert.deepEqual((await stagesSeen()).filter((stage) => stage !== "READY").slice(0, 2), ["CHECKING", "COPYING BANK 2"]);
     await backToEditor();
   });
 
@@ -316,7 +316,7 @@ describe("UPDATE from the browser", () => {
     await start();
     await until("DONE", async () => (await meta()) === "DONE", UPDATE_WAIT);
     assert.match(await said(), /UPDATED\s+0\.2\.0 \(02e440e2\) → 0\.4\.1 \(abcd1234\)/);
-    const verbs = fake.log.filter((l) => /^(put|dfu|bank2|flashed)/.test(l)).map((l) => l.split(" ").slice(0, 2).join(" "));
+    const verbs = fake.log.filter((line) => /^(put|dfu|bank2|flashed)/.test(line)).map((line) => line.split(" ").slice(0, 2).join(" "));
     assert.deepEqual(verbs, ["put /CHIMERA/SYSTEM/BANK2.BK2", "dfu", `flashed ${NEXT.bin.length}`, "put /CHIMERA/SYSTEM/BANK2.BK2", "bank2 install"]);
     assert.equal(fake.bank2, `open 0.4.1 abcd1234 seal=${NEXT.seal}`);
     await backToEditor("BACK TO THE EDITOR");
@@ -404,7 +404,7 @@ describe("UPDATE from the browser", () => {
     const asked = fake.log.length;
     await button("TRY AGAIN").click();
     await until("DONE", async () => (await meta()) === "DONE", UPDATE_WAIT);
-    assert.equal(fake.log.slice(asked).some((l) => /^(put|dfu)/.test(l)), false, "TRY AGAIN after the flash started over");
+    assert.equal(fake.log.slice(asked).some((line) => /^(put|dfu)/.test(line)), false, "TRY AGAIN after the flash started over");
     await backToEditor("BACK TO THE EDITOR");
   });
 
@@ -474,11 +474,11 @@ describe("UPDATE from the browser", () => {
     await page.evaluate(() => Object.assign(window.__usb.log, { opens: 0, requests: 0 }));
     await openUpdate();
     await start();
-    await until("DONE", async () => (await meta()) === "DONE", UPDATE_WAIT).catch(async (e) => { throw new Error(`${e.message}: ${await meta()} :: ${await said()} :: ${fake.log.join(" | ")}`); });
+    await until("DONE", async () => (await meta()) === "DONE", UPDATE_WAIT).catch(async (error) => { throw new Error(`${error.message}: ${await meta()} :: ${await said()} :: ${fake.log.join(" | ")}`); });
     const stages = await stagesSeen();
     assert.ok(stages.includes("INSTALLING 0.4.1 (abcd1234)"), `stages: ${stages}`);
-    assert.ok(!stages.some((s) => /UPDATE MODE|WRITING FIRMWARE|CHOOSE/.test(s)), `a DFU stage on the self-update path: ${stages}`);
-    const verbs = fake.log.filter((l) => /^(put|dfu|bank1|bank2)/.test(l)).map((l) => l.split(" ").slice(0, 2).join(" "));
+    assert.ok(!stages.some((stage) => /UPDATE MODE|WRITING FIRMWARE|CHOOSE/.test(stage)), `a DFU stage on the self-update path: ${stages}`);
+    const verbs = fake.log.filter((line) => /^(put|dfu|bank1|bank2)/.test(line)).map((line) => line.split(" ").slice(0, 2).join(" "));
     assert.deepEqual(verbs, ["put /CHIMERA/SYSTEM/BANK2.BK2", "put /CHIMERA.BIN", "bank1 install"]);
     assert.ok(fake.log.includes(`bank1 install ${NEXT.bin.length} ${crc32(NEXT.bin).toString(16).padStart(8, "0")}`), "bank1 install's size and CRC");
     assert.equal(fake.cardBin.equals(NEXT.bin), true, "CHIMERA.BIN on the card's root");
@@ -493,8 +493,8 @@ describe("UPDATE from the browser", () => {
     await openUpdate();
     await start();
     await until("DONE", async () => (await meta()) === "DONE", UPDATE_WAIT);
-    assert.equal(fake.log.some((l) => l.startsWith("put /CHIMERA/SYSTEM/BANK2.BK2")), false, "the .bk2 sent again");
-    assert.ok(fake.log.some((l) => l.startsWith("put /CHIMERA.BIN")));
+    assert.equal(fake.log.some((line) => line.startsWith("put /CHIMERA/SYSTEM/BANK2.BK2")), false, "the .bk2 sent again");
+    assert.ok(fake.log.some((line) => line.startsWith("put /CHIMERA.BIN")));
     await backToEditor("BACK TO THE EDITOR");
   });
 
@@ -523,7 +523,7 @@ describe("UPDATE from the browser", () => {
     const text = await said();
     assert.match(text, /ERR bank1: card read failed/);
     assert.match(text, /Nothing was written: the unit still runs 0\.4\.0 \(de07edf9\)/);
-    for (const b of ["TRY AGAIN", "USE UPDATE MODE (DFU)", "CLOSE"]) await button(b).waitFor();
+    for (const label of ["TRY AGAIN", "USE UPDATE MODE (DFU)", "CLOSE"]) await button(label).waitFor();
     assert.equal(fake.build, "0.4.0 de07edf9");
     await backToEditor();
   });
@@ -560,18 +560,18 @@ describe("UPDATE from the browser", () => {
       window.__texts = [];
       window.__textObs?.disconnect();
       window.__textObs = new MutationObserver(() => {
-        const t = document.querySelector(".upd")?.innerText ?? "";
-        if (window.__texts.at(-1) !== t) window.__texts.push(t);
+        const shownText = document.querySelector(".upd")?.innerText ?? "";
+        if (window.__texts.at(-1) !== shownText) window.__texts.push(shownText);
       });
       window.__textObs.observe(document.body, { subtree: true, childList: true, characterData: true });
     });
     await until("DONE", async () => (await meta()) === "DONE", UPDATE_WAIT);
     const texts = await page.evaluate(() => window.__texts.slice());
-    assert.ok(texts.some((t) => /may be updating itself/.test(t)), "the wait never said the unit may be updating itself");
+    assert.ok(texts.some((shownText) => /may be updating itself/.test(shownText)), "the wait never said the unit may be updating itself");
     for (const bad of [/USE UPDATE MODE/, /TRY AGAIN/, /CHOOSE UPDATE DEVICE/, /[Uu]nplug the USB cable/, /Nothing was written/]) {
-      assert.ok(!texts.some((t) => bad.test(t)), `the page said ${bad} after bank1 install was sent`);
+      assert.ok(!texts.some((shownText) => bad.test(shownText)), `the page said ${bad} after bank1 install was sent`);
     }
-    assert.ok(fake.log.some((l) => l.startsWith("bank1 install")));
+    assert.ok(fake.log.some((line) => line.startsWith("bank1 install")));
     assert.equal(fake.build, "0.4.1 abcd1234");
     await backToEditor("BACK TO THE EDITOR");
   });
@@ -579,11 +579,11 @@ describe("UPDATE from the browser", () => {
   // Last: its pages take the bridge's one console from the main page.
   test("U17: on connect, a newer release is offered; NOT NOW keeps it away for the session; UPDATE opens the update", async () => {
     await ready();
-    const p = await secondEditor();
-    const offerbar = p.locator(".offerbar");
+    const second = await secondEditor();
+    const offerbar = second.locator(".offerbar");
     const connectAndFollow = async () => {
-      await p.getByRole("button", { name: "CONNECT UNIT" }).click();
-      await until("following", async () => /^UNIT · PART \d+ · \S+$/.test((await p.locator(".unit").innerText().catch(() => "")).trim()), 30000);
+      await second.getByRole("button", { name: "CONNECT UNIT" }).click();
+      await until("following", async () => /^UNIT · PART \d+ · \S+$/.test((await second.locator(".unit").innerText().catch(() => "")).trim()), 30000);
     };
     await connectAndFollow();
     await offerbar.waitFor({ timeout: 10000 });
@@ -591,18 +591,18 @@ describe("UPDATE from the browser", () => {
     await offerbar.getByRole("button", { name: "NOT NOW" }).click();
     await until("the offer gone", async () => (await offerbar.count()) === 0, 3000);
     // Reconnected in the same session: not offered again.
-    await p.evaluate(() => window.__serial.unplug());
-    await p.getByRole("button", { name: "CONNECT UNIT" }).waitFor();
+    await second.evaluate(() => window.__serial.unplug());
+    await second.getByRole("button", { name: "CONNECT UNIT" }).waitFor();
     await connectAndFollow();
-    await new Promise((r) => setTimeout(r, 1500));
+    await new Promise((resolve) => setTimeout(resolve, 1500));
     assert.equal(await offerbar.count(), 0, "offered again after NOT NOW");
     // A new session (a reload): offered again, and UPDATE opens the update's page.
-    await p.reload();
+    await second.reload();
     await connectAndFollow();
     await offerbar.waitFor({ timeout: 10000 });
     await offerbar.getByRole("button", { name: "UPDATE" }).click();
-    await until("the update's page", async () => (await p.locator(".pagehead .meta").innerText().catch(() => "")) === "READY", 10000);
-    await p.locator(".upd button", { hasText: "CLOSE" }).click();
-    await p.close();
+    await until("the update's page", async () => (await second.locator(".pagehead .meta").innerText().catch(() => "")) === "READY", 10000);
+    await second.locator(".upd button", { hasText: "CLOSE" }).click();
+    await second.close();
   });
 });

@@ -368,10 +368,10 @@ type Offer
 
 
 readyOf : Stage -> Maybe ( UnitNow, ReleaseState )
-readyOf s =
-    case s of
-        Ready u rel ->
-            Just ( u, rel )
+readyOf stage =
+    case stage of
+        Ready unit rel ->
+            Just ( unit, rel )
 
         Opening ->
             Nothing
@@ -405,10 +405,10 @@ readyOf s =
 
 
 confirmOf : Stage -> Maybe ( UnitNow, Release )
-confirmOf s =
-    case s of
-        Confirm u r ->
-            Just ( u, r )
+confirmOf stage =
+    case stage of
+        Confirm unit release ->
+            Just ( unit, release )
 
         Opening ->
             Nothing
@@ -442,10 +442,10 @@ confirmOf s =
 
 
 pickingOf : Stage -> Maybe ( UnitNow, Release, InDfu )
-pickingOf s =
-    case runningOf s of
-        Just ( u, r, Pre (PickingDevice b) ) ->
-            Just ( u, r, b )
+pickingOf stage =
+    case runningOf stage of
+        Just ( unit, release, Pre (PickingDevice bk2) ) ->
+            Just ( unit, release, bk2 )
 
         Just ( _, _, Pre Checking ) ->
             Nothing
@@ -488,10 +488,10 @@ pickingOf s =
 
 
 runningOf : Stage -> Maybe ( UnitNow, Release, Run )
-runningOf s =
-    case s of
-        Running u r run ->
-            Just ( u, r, run )
+runningOf stage =
+    case stage of
+        Running unit release run ->
+            Just ( unit, release, run )
 
         Opening ->
             Nothing
@@ -525,10 +525,10 @@ runningOf s =
 
 
 stoppedBeforeOf : Stage -> Maybe ( UnitNow, Release, PreFail )
-stoppedBeforeOf s =
-    case s of
-        StoppedBefore u r f ->
-            Just ( u, r, f )
+stoppedBeforeOf stage =
+    case stage of
+        StoppedBefore unit release failure ->
+            Just ( unit, release, failure )
 
         Opening ->
             Nothing
@@ -562,10 +562,10 @@ stoppedBeforeOf s =
 
 
 stoppedAfterOf : Stage -> Maybe ( UnitNow, Release, ( Bk2, PostFail ) )
-stoppedAfterOf s =
-    case s of
-        StoppedAfter u r b f ->
-            Just ( u, r, ( b, f ) )
+stoppedAfterOf stage =
+    case stage of
+        StoppedAfter unit release bk2 failure ->
+            Just ( unit, release, ( bk2, failure ) )
 
         Opening ->
             Nothing

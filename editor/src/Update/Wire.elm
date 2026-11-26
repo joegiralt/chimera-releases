@@ -13,8 +13,8 @@ import Update.Types exposing (Answer(..), Device(..), Event(..), Progress, Relea
 
 
 ticketId : Ticket -> String
-ticketId t =
-    case t of
+ticketId which =
+    case which of
         TStatus ->
             "status"
 
@@ -44,13 +44,13 @@ ticketId t =
 
 
 encode : Request -> E.Value
-encode r =
+encode request =
     let
         op : String -> List ( String, E.Value ) -> E.Value
         op name rest =
             E.object (( "op", E.string name ) :: rest)
     in
-    case r of
+    case request of
         Begin ->
             op "begin" []
 
@@ -60,8 +60,8 @@ encode r =
         ChooseFiles ->
             op "release" [ ( "how", E.string "choose" ) ]
 
-        Ask t line wait delay unit ->
-            op "ask" [ ( "id", E.string (ticketId t) ), ( "line", E.string line ), ( "wait", E.int wait ), ( "delay", E.int delay ), ( "unit", Maybe.map E.string unit |> Maybe.withDefault E.null ) ]
+        Ask which line wait delay unit ->
+            op "ask" [ ( "id", E.string (ticketId which) ), ( "line", E.string line ), ( "wait", E.int wait ), ( "delay", E.int delay ), ( "unit", Maybe.map E.string unit |> Maybe.withDefault E.null ) ]
 
         Put rel ->
             op "put" [ ( "id", E.string (ticketId TPut) ), ( "file", E.string "bk2" ), ( "seal", E.string rel.seal ), ( "sha", E.string rel.bk2Sha ) ]
@@ -98,10 +98,10 @@ encode r =
 with the reason, never a missing answer.
 -}
 decode : D.Value -> Event
-decode v =
-    case D.decodeValue event v of
-        Ok e ->
-            e
+decode value =
+    case D.decodeValue event value of
+        Ok decoded ->
+            decoded
 
         Err err ->
             Garbled ("an answer the editor can't read (" ++ String.left 160 (D.errorToString err) ++ ")")
@@ -114,7 +114,7 @@ event =
             (\op ->
                 case op of
                     "begun" ->
-                        D.map3 (\o w win -> Begun { open = o, webusb = w, windows = win })
+                        D.map3 (\open webusb win -> Begun { open = open, webusb = webusb, windows = win })
                             (D.field "open" D.bool)
                             (D.field "webusb" D.bool)
                             (D.field "windows" D.bool)
@@ -203,9 +203,9 @@ exactly : Bool -> Decoder Bool
 exactly want =
     D.bool
         |> D.andThen
-            (\b ->
-                if b == want then
-                    D.succeed b
+            (\got ->
+                if got == want then
+                    D.succeed got
 
                 else
                     D.fail "not this one"
@@ -216,8 +216,8 @@ ticket : Decoder Ticket
 ticket =
     D.string
         |> D.andThen
-            (\s ->
-                case s of
+            (\text ->
+                case text of
                     "status" ->
                         D.succeed TStatus
 
@@ -246,7 +246,7 @@ ticket =
                         D.succeed TVerify
 
                     _ ->
-                        D.fail ("not a request id: " ++ s)
+                        D.fail ("not a request id: " ++ text)
             )
 
 
@@ -263,8 +263,8 @@ answer =
 
 
 problem : String -> String
-problem p =
-    case p of
+problem reason =
+    case reason of
         "several" ->
             "More than one new STM32 DFU device is on USB: unplug the others, then press WRITE AGAIN"
 
@@ -272,12 +272,12 @@ problem p =
             "That DFU device was already there before the unit restarted into update mode, so it isn't this unit: press WRITE AGAIN and pick the new one"
 
         _ ->
-            "No new STM32 DFU device came up (" ++ p ++ ")"
+            "No new STM32 DFU device came up (" ++ reason ++ ")"
 
 
 backCause : String -> String
-backCause c =
-    case c of
+backCause cause =
+    case cause of
         "several" ->
             "more than one unit's console is on USB, and the editor can't tell which is this one: unplug the others"
 
@@ -301,7 +301,7 @@ progress key =
 
 release : Decoder Release
 release =
-    D.map7 (\v seal format binSize bk2Size binSha bk2Sha -> \binCrc src -> Release v seal format binSize bk2Size binSha bk2Sha binCrc src)
+    D.map7 (\value seal format binSize bk2Size binSha bk2Sha -> \binCrc src -> Release value seal format binSize bk2Size binSha bk2Sha binCrc src)
         (D.field "version" D.string)
         (D.field "seal" D.string)
         (D.field "format" D.int)
@@ -316,8 +316,8 @@ source : Decoder Source
 source =
     D.field "source" D.string
         |> D.andThen
-            (\s ->
-                case s of
+            (\text ->
+                case text of
                     "chosen" ->
                         D.succeed Chosen
 
@@ -325,5 +325,5 @@ source =
                         D.succeed Latest
 
                     _ ->
-                        D.fail ("not a source: " ++ s)
+                        D.fail ("not a source: " ++ text)
             )
