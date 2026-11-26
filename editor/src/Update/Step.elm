@@ -131,7 +131,7 @@ step e ((Model m) as model) =
                             ( Model { fields | stage = Reading (Just (readStatus [])) Fetching }, [ FetchLatest ] )
 
                         ( Connected, True ) ->
-                            ( Model { fields | stage = Reading Nothing Fetching }, [ status TStatus 0, FetchLatest ] )
+                            ( Model { fields | stage = Reading Nothing Fetching }, [ status Nothing TStatus 0, FetchLatest ] )
 
                         ( Connected, False ) ->
                             ( Model { fields | stage = NoLink }, [] )
@@ -206,14 +206,14 @@ step e ((Model m) as model) =
             ignore
 
 
-status : Ticket -> Int -> Request
-status t delay =
-    Ask t "status" 2000 delay
+status : Maybe String -> Ticket -> Int -> Request
+status unit t delay =
+    Ask t "status" 2000 delay unit
 
 
-install : Int -> Request
-install delay =
-    Ask TInstall "bank2 install" 120000 delay
+install : Maybe String -> Int -> Request
+install unit delay =
+    Ask TInstall "bank2 install" 120000 delay unit
 
 
 {-| A step, unless the console that answered after a restart is another
@@ -281,19 +281,25 @@ runningOn i u r run m =
         both =
             r.bk2Size + r.binSize
 
-        -- The first copy: CHIMERA.BK2, unless a self-updating unit already has
-        -- its seal open (then CHIMERA.BIN straight away).
-        copyFirst : ( Model, List Request )
-        copyFirst =
-            case ( u.selfUpdate, sealOpen r u ) of
+        -- The first copy, for the unit as CHECKING read it: CHIMERA.BK2, unless
+        -- a self-updating unit already has its seal open (then CHIMERA.BIN
+        -- straight away).
+        copyFirst : UnitNow -> ( Model, List Request )
+        copyFirst now =
+            let
+                copy : Run -> List Request -> ( Model, List Request )
+                copy next reqs =
+                    ( Model { m | stage = Running now r next }, reqs )
+            in
+            case ( now.selfUpdate, sealOpen r now ) of
                 ( Just _, True ) ->
-                    to (Pre (CopyingBin { done = r.bk2Size, total = both })) [ PutBin r binRemote ]
+                    copy (Pre (CopyingBin { done = r.bk2Size, total = both })) [ PutBin r binRemote ]
 
                 ( Just _, False ) ->
-                    to (Pre (Copying { done = 0, total = both })) [ Put r ]
+                    copy (Pre (Copying { done = 0, total = both })) [ Put r ]
 
                 ( Nothing, _ ) ->
-                    to (Pre (Copying { done = 0, total = r.bk2Size })) [ Put r ]
+                    copy (Pre (Copying { done = 0, total = r.bk2Size })) [ Put r ]
 
         device : InDfu -> Device -> ( Model, List Request )
         device at d =
@@ -314,21 +320,36 @@ runningOn i u r run m =
                     before (CantOpen at)
     in
     case run of
-        -- CHECKING: unsaved changes stop it; a unit too old to say goes on, as the script does.
+        -- CHECKING: the unit read afresh (after TRY AGAIN it may be another
+        -- one, or changed): another unit, or unsaved changes, stop it; a unit
+        -- too old to say goes on, as the script does.
         Pre Checking ->
             case answerFor TStatus i of
                 Just Gone ->
                     before (NothingFlashed "The unit isn't connected")
 
-                Just ((Said _ _) as a) ->
-                    if (unitOf a).modified then
-                        to (Pre ReadingProject) [ Ask TProject "ed since 0" 2000 0 ]
+                Just ((Said _ end) as a) ->
+                    case ( isOk end, otherUnit u a ) of
+                        ( False, _ ) ->
+                            before (NothingFlashed ("The unit answered status with " ++ end))
 
-                    else
-                        copyFirst
+                        ( True, Just other ) ->
+                            before (OtherUnitBefore other)
+
+                        ( True, Nothing ) ->
+                            let
+                                now : UnitNow
+                                now =
+                                    afresh u a
+                            in
+                            if now.modified then
+                                ( Model { m | stage = Running now r (Pre ReadingProject) }, [ Ask TProject "ed since 0" 2000 0 now.unit ] )
+
+                            else
+                                copyFirst now
 
                 Just NoAnswer ->
-                    copyFirst
+                    copyFirst u
 
                 Nothing ->
                     ignore
@@ -342,7 +363,7 @@ runningOn i u r run m =
                             before (Unsaved l)
 
                         ( Nothing, [ "OK", next, "more" ] ) ->
-                            to (Pre ReadingProject) [ Ask TProject ("ed since " ++ next) 2000 0 ]
+                            to (Pre ReadingProject) [ Ask TProject ("ed since " ++ next) 2000 0 u.unit ]
 
                         ( Nothing, _ ) ->
                             before (Unsaved Nothing)
@@ -361,10 +382,10 @@ runningOn i u r run m =
             case answerFor TSave i of
                 Just (Said _ end) ->
                     if isOk end then
-                        to (Pre (Settling 0)) [ status TStatus 500 ]
+                        to (Pre (Settling 0)) [ status u.unit TStatus 500 ]
 
                     else if not asNew && String.contains "no file of its own" end then
-                        to (Pre (Saving True)) [ Ask TSave "ed project saveas BEFORE_UPDATE" 15000 0 ]
+                        to (Pre (Saving True)) [ Ask TSave "ed project saveas BEFORE_UPDATE" 15000 0 u.unit ]
 
                     else
                         before (NothingFlashed ("The project couldn't be saved: " ++ end))
@@ -382,7 +403,7 @@ runningOn i u r run m =
             case answerFor TSave i of
                 Just (Said _ end) ->
                     if isOk end then
-                        to (Pre (Settling 0)) [ status TStatus 500 ]
+                        to (Pre (Settling 0)) [ status u.unit TStatus 500 ]
 
                     else
                         before (NothingFlashed ("The changes couldn't be discarded: " ++ end))
@@ -399,19 +420,30 @@ runningOn i u r run m =
         -- The save or reload is the unit's card work: `status` until the project is clean.
         Pre (Settling n) ->
             case answerFor TStatus i of
-                Just ((Said _ _) as a) ->
-                    if not (unitOf a).modified then
-                        copyFirst
+                Just ((Said _ end) as a) ->
+                    case otherUnit u a of
+                        Just other ->
+                            before (OtherUnitBefore other)
 
-                    else if n < 20 then
-                        to (Pre (Settling (n + 1))) [ status TStatus 500 ]
+                        Nothing ->
+                            if not (unitOf a).modified then
+                                copyFirst
+                                    (if isOk end then
+                                        afresh u a
 
-                    else
-                        before (Unsaved Nothing)
+                                     else
+                                        u
+                                    )
+
+                            else if n < 20 then
+                                to (Pre (Settling (n + 1))) [ status u.unit TStatus 500 ]
+
+                            else
+                                before (Unsaved Nothing)
 
                 Just NoAnswer ->
                     if n < 20 then
-                        to (Pre (Settling (n + 1))) [ status TStatus 500 ]
+                        to (Pre (Settling (n + 1))) [ status u.unit TStatus 500 ]
 
                     else
                         before (NothingFlashed "The unit stopped answering after the save")
@@ -449,7 +481,7 @@ runningOn i u r run m =
 
                 ( Nothing, Just (Said _ end) ) ->
                     if isOk end then
-                        to (Pre InstallingSelf) [ Ask TSelf ("bank1 install " ++ String.fromInt r.binSize ++ " " ++ r.binCrc) 120000 0 ]
+                        to (Pre InstallingSelf) [ Ask TSelf ("bank1 install " ++ String.fromInt r.binSize ++ " " ++ r.binCrc) 120000 0 u.unit ]
 
                     else
                         before (NothingFlashed ("The unit refused CHIMERA.BIN: " ++ end))
@@ -480,7 +512,7 @@ runningOn i u r run m =
                         to (Post Staged RestartingSelf) [ Back 180 True u.unit ]
 
                     else if end == "OK already installed" then
-                        to (Post Staged Verifying) [ status TVerify 0 ]
+                        to (Post Staged Verifying) [ status u.unit TVerify 0 ]
 
                     else if isOk end then
                         to (Post Staged RestartingSelf) [ Back 180 True u.unit ]
@@ -517,7 +549,7 @@ runningOn i u r run m =
                                         ( Model { m | stage = Done u r now }, [] )
 
                                     NeedsInstall _ ->
-                                        to (Post b (Installing 1)) [ install 0 ]
+                                        to (Post b (Installing 1)) [ install u.unit 0 ]
 
                                     NotFinished why ->
                                         after b (Unfinished why)
@@ -621,7 +653,7 @@ runningOn i u r run m =
                         NeedsInstall _ ->
                             case b of
                                 Staged ->
-                                    to (Post b (Installing 1)) [ install 0 ]
+                                    to (Post b (Installing 1)) [ install u.unit 0 ]
 
                                 AfterFlash ->
                                     to (Post b (CopyingLate { done = 0, total = r.bk2Size })) [ Put r ]
@@ -642,7 +674,7 @@ runningOn i u r run m =
                         after b (Unfinished (String.dropLeft 3 end ++ later))
 
                     else if isOk end then
-                        to (Post b (Installing 1)) [ install 0 ]
+                        to (Post b (Installing 1)) [ install u.unit 0 ]
 
                     else
                         after b (Unfinished ("Copying CHIMERA.BK2 after the flash: " ++ end))
@@ -663,11 +695,11 @@ runningOn i u r run m =
                         to (Post b RestartingAfterInstall) [ Back 60 True u.unit ]
 
                     else if isOk end then
-                        to (Post b Verifying) [ status TVerify 0 ]
+                        to (Post b Verifying) [ status u.unit TVerify 0 ]
 
                     else if end == "ERR bank2: busy" && tries < 5 then
                         -- 0.2 s between tries, as the script waits.
-                        to (Post b (Installing (tries + 1))) [ install 200 ]
+                        to (Post b (Installing (tries + 1))) [ install u.unit 200 ]
 
                     else
                         after b (Unfinished (installRefusal end))
@@ -726,6 +758,29 @@ releaseState r =
 
         Err why ->
             Missing why
+
+
+{-| The unit as CHECKING's `status` reads it, for the rest of the update:
+its self-update only while the confirmed one had it (USE UPDATE MODE stays
+chosen), its identity the confirmed one's where it can't say.
+-}
+afresh : UnitNow -> Answer -> UnitNow
+afresh confirmed answer =
+    let
+        now : UnitNow
+        now =
+            unitOf answer
+    in
+    { now
+        | selfUpdate = confirmed.selfUpdate |> Maybe.andThen (\_ -> now.selfUpdate)
+        , unit =
+            case now.unit of
+                Just _ ->
+                    now.unit
+
+                Nothing ->
+                    confirmed.unit
+    }
 
 
 {-| The last `status`: done, or what it says instead.

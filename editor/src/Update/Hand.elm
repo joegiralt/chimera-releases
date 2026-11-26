@@ -61,7 +61,7 @@ hand msg ((Model m) as model) =
                 Just ( u, r ) ->
                     case m.mode of
                         Connected ->
-                            go (Running u r (Pre Checking)) [ status TStatus 0 ]
+                            go (Running u r (Pre Checking)) [ status u.unit TStatus 0 ]
 
                         -- Already in update mode: the device first (a click).
                         -- It may hold half an image: touched until written whole.
@@ -89,7 +89,7 @@ hand msg ((Model m) as model) =
         SaveAndUpdate ->
             case unsavedOf m.stage of
                 Just ( u, r, _ ) ->
-                    go (Running u r (Pre (Saving False))) [ Ask TSave "ed project save" 15000 0 ]
+                    go (Running u r (Pre (Saving False))) [ Ask TSave "ed project save" 15000 0 u.unit ]
 
                 Nothing ->
                     ignore
@@ -97,7 +97,7 @@ hand msg ((Model m) as model) =
         DiscardAndUpdate ->
             case unsavedOf m.stage of
                 Just ( u, r, Just l ) ->
-                    go (Running u r (Pre Discarding)) [ Ask TSave ("ed project load " ++ String.fromInt l.id ++ " " ++ String.fromInt l.gen ++ " discard") 15000 0 ]
+                    go (Running u r (Pre Discarding)) [ Ask TSave ("ed project load " ++ String.fromInt l.id ++ " " ++ String.fromInt l.gen ++ " discard") 15000 0 u.unit ]
 
                 Just ( _, _, Nothing ) ->
                     ignore
@@ -156,22 +156,25 @@ hand msg ((Model m) as model) =
                 Just ( u, r, f ) ->
                     case f of
                         Unsaved _ ->
-                            go (Running u r (Pre Checking)) [ status TStatus 0 ]
+                            go (Running u r (Pre Checking)) [ status u.unit TStatus 0 ]
 
                         NothingFlashed _ ->
-                            go (Running u r (Pre Checking)) [ status TStatus 0 ]
+                            go (Running u r (Pre Checking)) [ status u.unit TStatus 0 ]
 
                         GarbledBefore _ ->
-                            go (Running u r (Pre Checking)) [ status TStatus 0 ]
+                            go (Running u r (Pre Checking)) [ status u.unit TStatus 0 ]
 
                         DfuSilent _ ->
-                            go (Running u r (Pre Checking)) [ status TStatus 0 ]
+                            go (Running u r (Pre Checking)) [ status u.unit TStatus 0 ]
 
                         SelfRefused _ ->
-                            go (Running u r (Pre Checking)) [ status TStatus 0 ]
+                            go (Running u r (Pre Checking)) [ status u.unit TStatus 0 ]
 
                         SelfAborted _ ->
-                            go (Running u r (Pre Checking)) [ status TStatus 0 ]
+                            go (Running u r (Pre Checking)) [ status u.unit TStatus 0 ]
+
+                        OtherUnitBefore _ ->
+                            go (Running u r (Pre Checking)) [ status u.unit TStatus 0 ]
 
                         PickCancelled _ ->
                             ignore
@@ -200,10 +203,10 @@ hand msg ((Model m) as model) =
         UseDfu ->
             case stoppedBeforeOf m.stage of
                 Just ( u, r, SelfRefused _ ) ->
-                    go (Running { u | selfUpdate = Nothing } r (Pre Checking)) [ status TStatus 0 ]
+                    go (Running { u | selfUpdate = Nothing } r (Pre Checking)) [ status u.unit TStatus 0 ]
 
                 Just ( u, r, SelfAborted _ ) ->
-                    go (Running { u | selfUpdate = Nothing } r (Pre Checking)) [ status TStatus 0 ]
+                    go (Running { u | selfUpdate = Nothing } r (Pre Checking)) [ status u.unit TStatus 0 ]
 
                 Just ( _, _, Unsaved _ ) ->
                     ignore
@@ -227,6 +230,9 @@ hand msg ((Model m) as model) =
                     ignore
 
                 Just ( _, _, GarbledBefore _ ) ->
+                    ignore
+
+                Just ( _, _, OtherUnitBefore _ ) ->
                     ignore
 
                 Nothing ->
@@ -341,6 +347,9 @@ inUpdateMode f =
         SelfAborted _ ->
             Nothing
 
+        OtherUnitBefore _ ->
+            Nothing
+
 
 {-| A stop on unsaved changes: the loaded project, if it can be reloaded.
 -}
@@ -375,6 +384,9 @@ unsavedOf s =
             Nothing
 
         Just ( _, _, SelfAborted _ ) ->
+            Nothing
+
+        Just ( _, _, OtherUnitBefore _ ) ->
             Nothing
 
         Nothing ->

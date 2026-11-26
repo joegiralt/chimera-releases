@@ -74,6 +74,13 @@ newUnit =
     Update.Read.readStatus [ "build 0.4.1 abcd1234", "state NEW", "bank2 open 0.4.1 abcd1234 seal=0123456789abcdef" ]
 
 
+{-| `unit` as CHECKING reads it with unsaved changes.
+-}
+edited : Update.Types.UnitNow
+edited =
+    Update.Read.readStatus [ "build 0.4.0 de07edf9", "state MODIFIED", "bank2 open" ]
+
+
 unit : Update.Types.UnitNow
 unit =
     Update.Read.readStatus [ "build 0.4.0 de07edf9", "state SAVED", "bank2 open 0.4.0 de07edf9 seal=ffffffffffffffff" ]
@@ -182,7 +189,7 @@ isBack r =
         ChooseFiles ->
             False
 
-        Ask _ _ _ _ ->
+        Ask _ _ _ _ _ ->
             False
 
         Put _ ->
@@ -304,7 +311,7 @@ suite =
                 Expect.equal { build = Just "0.4.0 de07edf9", modified = False, bank2 = Just "open 0.4.0 de07edf9 seal=ffffffffffffffff", selfUpdate = Nothing, unit = Nothing } unit
         , test "the_panel_asks_status_and_the_release_and_shows_both" <|
             \_ ->
-                Expect.equal ( Ready unit (Got rel), [ Ask TStatus "status" 2000 0, FetchLatest ] )
+                Expect.equal ( Ready unit (Got rel), [ Ask TStatus "status" 2000 0 Nothing, FetchLatest ] )
                     (steps opened (Tuple.first Update.begin))
         , test "no_link_says_so" <|
             \_ -> Expect.equal NoLink (steps [ Begun { open = False, webusb = True, windows = False } ] (Tuple.first Update.begin) |> Tuple.first)
@@ -324,7 +331,7 @@ suite =
         , describe "unsaved changes: save or drop them, and the update goes on"
             [ test "modified_reads_the_loaded_project_through_its_pages_then_asks" <|
                 \_ ->
-                    Expect.equal ( StoppedBefore unit rel (Unsaved (Just { id = 3, gen = 7 })), [ Ask TProject "ed since 0" 2000 0, Ask TProject "ed since 41" 2000 0 ] )
+                    Expect.equal ( StoppedBefore edited rel (Unsaved (Just { id = 3, gen = 7 })), [ Ask TProject "ed since 0" 2000 0 Nothing, Ask TProject "ed since 41" 2000 0 Nothing ] )
                         (steps
                             [ Answered TStatus (status "0.4.0 de07edf9" "MODIFIED" "open")
                             , Answered TProject (Said [ "part 5 DRUM", "val DRUM.PAD1 0 0 \"0\"" ] "OK 41 more")
@@ -334,7 +341,7 @@ suite =
                         )
             , test "a_project_never_saved_can_only_be_saved" <|
                 \_ ->
-                    Expect.equal (StoppedBefore unit rel (Unsaved Nothing))
+                    Expect.equal (StoppedBefore edited rel (Unsaved Nothing))
                         (steps [ Answered TStatus (status "0.4.0 de07edf9" "MODIFIED" "open"), Answered TProject (Said [ "project \"NEW PROJECT\" new edited gen -" ] "OK 9") ] started |> Tuple.first)
             , test "save_and_update_saves_waits_for_clean_then_copies" <|
                 \_ ->
@@ -346,7 +353,7 @@ suite =
                         ( saving, saveReqs ) =
                             Update.press SaveAndUpdate asked
                     in
-                    Expect.equal ( Running unit rel (Pre (Copying { done = 0, total = rel.bk2Size })), [ Ask TSave "ed project save" 15000 0, Ask TStatus "status" 2000 500, Ask TStatus "status" 2000 500, Put rel ] )
+                    Expect.equal ( Running unit rel (Pre (Copying { done = 0, total = rel.bk2Size })), [ Ask TSave "ed project save" 15000 0 Nothing, Ask TStatus "status" 2000 500 Nothing, Ask TStatus "status" 2000 500 Nothing, Put rel ] )
                         (steps [ Answered TSave (Said [] "OK"), Answered TStatus (status "0.4.0 de07edf9" "MODIFIED" "open"), Answered TStatus old ] saving
                             |> Tuple.mapSecond (\later -> saveReqs ++ later)
                         )
@@ -356,7 +363,7 @@ suite =
                         ( saving, _ ) =
                             Update.press SaveAndUpdate (events [ Answered TStatus (status "0.4.0 de07edf9" "MODIFIED" "open"), Answered TProject (Said [ "project \"NEW PROJECT\" new edited gen -" ] "OK 9") ] started)
                     in
-                    Expect.equal ( Running unit rel (Pre (Saving True)), [ Ask TSave "ed project saveas BEFORE_UPDATE" 15000 0 ] )
+                    Expect.equal ( Running edited rel (Pre (Saving True)), [ Ask TSave "ed project saveas BEFORE_UPDATE" 15000 0 Nothing ] )
                         (steps [ Answered TSave (Said [] "ERR ed project save has no file of its own: saveas") ] saving)
             , test "discard_and_update_reloads_with_discard" <|
                 \_ ->
@@ -364,10 +371,10 @@ suite =
                         ( discarding, reqs ) =
                             Update.press DiscardAndUpdate (events [ Answered TStatus (status "0.4.0 de07edf9" "MODIFIED" "open"), Answered TProject (Said [ "project \"MY SONG\" 3 edited gen 7" ] "OK 9") ] started)
                     in
-                    Expect.equal ( Running unit rel (Pre Discarding), [ Ask TSave "ed project load 3 7 discard" 15000 0 ] ) ( Update.stage discarding, reqs )
+                    Expect.equal ( Running edited rel (Pre Discarding), [ Ask TSave "ed project load 3 7 discard" 15000 0 Nothing ] ) ( Update.stage discarding, reqs )
             , test "cancel_keeps_the_changes_and_goes_back_to_the_offer" <|
                 \_ ->
-                    Expect.equal (Ready unit (Got rel))
+                    Expect.equal (Ready edited (Got rel))
                         (Update.stage (hands [ Cancel ] (events [ Answered TStatus (status "0.4.0 de07edf9" "MODIFIED" "open"), Answered TProject (Said [ "project \"MY SONG\" 3 edited gen 7" ] "OK 9") ] started)))
             ]
         , describe "the self-update path (ADR 0344): no DFU"
@@ -375,7 +382,7 @@ suite =
                 \_ -> Expect.equal [ Just { version = 1 }, Nothing, Nothing ] [ (Update.Read.readStatus [ "selfupdate 1" ]).selfUpdate, (Update.Read.readStatus [ "selfupdate yes" ]).selfUpdate, (Update.Read.readStatus [ "build 0.4.0 de07edf9" ]).selfUpdate ]
             , test "bk2_then_bin_to_the_card_root_then_bank1_install_then_status" <|
                 \_ ->
-                    Expect.equal ( Done selfUnit rel selfNew, [ Put rel, PutBin rel "/CHIMERA.BIN", Ask TSelf "bank1 install 900000 0a1b2c3d" 120000 0, Back 180 True Nothing ] )
+                    Expect.equal ( Done selfUnit rel selfNew, [ Put rel, PutBin rel "/CHIMERA.BIN", Ask TSelf "bank1 install 900000 0a1b2c3d" 120000 0 Nothing, Back 180 True Nothing ] )
                         (steps
                             [ Answered TStatus selfOld
                             , Copied { done = 5, total = 10 }
@@ -402,7 +409,7 @@ suite =
                         (steps [ Answered TStatus selfOld, Answered TPut (Said [] "OK"), Copied { done = 100, total = rel.binSize } ] selfStarted |> Tuple.first)
             , test "already_installed_is_done_without_a_restart" <|
                 \_ ->
-                    Expect.equal ( Running selfUnit rel (Post Staged Verifying), [ Ask TVerify "status" 2000 0 ] )
+                    Expect.equal ( Running selfUnit rel (Post Staged Verifying), [ Ask TVerify "status" 2000 0 Nothing ] )
                         (steps [ Answered TSelf (Said [] "OK already installed") ] (events [ Answered TStatus selfOld, Answered TPut (Said [] "OK"), Answered TPutBin (Said [] "OK") ] selfStarted))
             , test "err_bank1_wrote_nothing_retry_or_dfu" <|
                 \_ ->
@@ -467,15 +474,15 @@ suite =
             \_ -> Expect.equal ( Running unit rel (Pre Checking), [] ) (steps [ Answered TDfu Gone, Answered TPut (Said [] "OK"), Answered TVerify new, WriteDone WriteOk, BackDone (Ok new) ] started)
         , test "a_staged_bk2_not_installed_at_boot_gets_bank2_install" <|
             \_ ->
-                Expect.equal ( Running unit rel (Post Staged (Installing 1)), [ Ask TInstall "bank2 install" 120000 0 ] )
+                Expect.equal ( Running unit rel (Post Staged (Installing 1)), [ Ask TInstall "bank2 install" 120000 0 Nothing ] )
                     (steps [ BackDone (Ok (status "0.4.1 abcd1234" "NEW" "empty")) ] (flashed (Said [] "OK")))
         , test "bank2_busy_is_asked_again_200_ms_later" <|
             \_ ->
-                Expect.equal ( Running unit rel (Post Staged (Installing 2)), [ Ask TInstall "bank2 install" 120000 200 ] )
+                Expect.equal ( Running unit rel (Post Staged (Installing 2)), [ Ask TInstall "bank2 install" 120000 200 Nothing ] )
                     (steps [ Answered TInstall (Said [] "ERR bank2: busy") ] (events [ BackDone (Ok (status "0.4.1 abcd1234" "NEW" "empty")) ] (flashed (Said [] "OK"))))
         , test "older_firmware_takes_the_bk2_after_the_flash" <|
             \_ ->
-                Expect.equal ( Done unit rel (Update.Read.readStatus [ "firmware 0.4.1 release", "build 0.4.1 abcd1234", "protocol 4", "state NEW", "bank2 open 0.4.1 abcd1234 seal=0123456789abcdef" ]), [ Put rel, Ask TInstall "bank2 install" 120000 0, Back 60 True Nothing ] )
+                Expect.equal ( Done unit rel (Update.Read.readStatus [ "firmware 0.4.1 release", "build 0.4.1 abcd1234", "protocol 4", "state NEW", "bank2 open 0.4.1 abcd1234 seal=0123456789abcdef" ]), [ Put rel, Ask TInstall "bank2 install" 120000 0 Nothing, Back 60 True Nothing ] )
                     (steps
                         [ BackDone (Ok (status "0.4.1 abcd1234" "NEW" "empty"))
                         , Answered TPut (Said [] "OK")
@@ -590,7 +597,7 @@ suite =
             \_ -> Expect.equal (Running unit rel (Pre Checking)) (Update.stage (hands [ Close ] started))
         , test "unsaved_then_try_again_asks_status_again" <|
             \_ ->
-                Expect.equal (Running unit rel (Pre Checking))
+                Expect.equal (Running edited rel (Pre Checking))
                     (Update.stage (hands [ TryAgain ] (events [ Answered TStatus (status "0.4.0 de07edf9" "MODIFIED" "open"), Answered TProject (Said [] "OK 9") ] started)))
         , test "a_release_that_fails_its_checks_offers_choosing_files" <|
             \_ ->
@@ -707,6 +714,33 @@ suite =
                 \_ ->
                     Expect.equal (StoppedAfter idUnit rel Staged (OtherUnit idB))
                         (steps [ BackDone (Ok (withUnit idB new)) ] idFlashed |> Tuple.first)
+            , test "checking_another_unit_stops_before_anything_is_written" <|
+                \_ ->
+                    let
+                        swapped : Update.Types.Model
+                        swapped =
+                            events [ Answered TStatus Gone ] idStarted |> hands [ TryAgain ]
+                    in
+                    Expect.equal
+                        [ ( StoppedBefore idUnit rel (OtherUnitBefore idB), [] )
+                        , ( StoppedBefore idUnit rel (OtherUnitBefore idB), [] )
+                        ]
+                        [ steps [ Answered TStatus (withUnit idB old) ] idStarted
+                        , steps [ Answered TStatus (withUnit idB old) ] swapped
+                        ]
+            , test "checking_asks_the_confirmed_unit" <|
+                \_ ->
+                    Expect.equal [ Ask TStatus "status" 2000 0 (Just idA) ]
+                        (Update.press TryAgain (events [ Answered TStatus Gone ] idStarted) |> Tuple.second)
+            , test "checking_reads_the_unit_afresh" <|
+                \_ ->
+                    let
+                        selfId : Update.Types.Model
+                        selfId =
+                            events [ Begun { open = True, webusb = True, windows = False }, Answered TStatus (withUnit idA selfOld), ReleaseIs (Ok rel) ] (Tuple.first Update.begin) |> hands [ Start, Go ]
+                    in
+                    Expect.equal ( Running idUnit rel (Pre (Copying { done = 0, total = rel.bk2Size })), [ Put rel ] )
+                        (steps [ Answered TStatus (withUnit idA old) ] selfId)
             , test "no_unit_line_is_not_another_unit" <|
                 \_ -> Expect.equal True (isDone (steps [ BackDone (Ok new) ] idFlashed |> Tuple.first))
             , test "a_dry_run_result_reads_without_error_and_isnt_this_install" <|

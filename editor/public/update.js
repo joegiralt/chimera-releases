@@ -222,9 +222,10 @@ var ChimeraUpdate = (function () {
 
   /** `line`'s answer: { lines, end } (end: its OK or ERR line), GONE, or
    * { noAnswer: true }; the first line waited for `first` ms. A link that
-   * went (the unit restarted, the cable came back) is opened again first. */
-  async function ask1(line, first) {
-    if (!linkUp) await relink();
+   * went (the unit restarted, the cable came back) is opened again first,
+   * to `unit`'s console when several are there. */
+  async function ask1(line, first, unit) {
+    if (!linkUp) await relink(unit);
     await drain(50);
     // A line that never reached the unit is said so: the unit is as it was.
     if (!linkUp || !(await ports.write(line))) return UNSENT;
@@ -265,10 +266,10 @@ var ChimeraUpdate = (function () {
   }
 
   /** `ask1`, again while the unit says `ERR busy`: 5 tries, 200 ms apart, doubling. */
-  async function ask(line, first) {
+  async function ask(line, first, unit) {
     var wait = BUSY_WAIT_MS, a;
     for (var i = 0; i < BUSY_TRIES; i++) {
-      a = await ask1(line, first);
+      a = await ask1(line, first, unit);
       if (a.end !== 'ERR busy') return a;
       await sleep(wait);
       wait *= 2;
@@ -480,7 +481,7 @@ var ChimeraUpdate = (function () {
       }
       case 'ask': {
         if (m.delay) await sleep(m.delay);
-        var a = await ask(m.line, m.wait || SILENCE_MS);
+        var a = await ask(m.line, m.wait || SILENCE_MS, typeof m.unit === 'string' ? m.unit : null);
         return say(Object.assign({ op: 'answer', id: m.id }, a));
       }
       case 'put': return put(m);

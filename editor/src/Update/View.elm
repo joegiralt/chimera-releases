@@ -685,6 +685,12 @@ failedBefore windows webusb u f =
             , selfWayOut webusb
             ]
 
+        OtherUnitBefore id ->
+            [ say ("THE UNIT THAT ANSWERED IS ANOTHER ONE (unit " ++ id ++ "), not the one you chose to update.")
+            , say "Nothing was written. Unplug the other units, connect this one, then press TRY AGAIN."
+            , buttons [ btn "TRY AGAIN" TryAgain, btn "CLOSE" Close ]
+            ]
+
         GarbledBefore why ->
             [ say ("THE UPDATE STOPPED: " ++ why ++ ".")
             , say "Nothing was flashed. Press TRY AGAIN, or CLOSE and reload the page."

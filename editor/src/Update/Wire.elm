@@ -60,8 +60,8 @@ encode r =
         ChooseFiles ->
             op "release" [ ( "how", E.string "choose" ) ]
 
-        Ask t line wait delay ->
-            op "ask" [ ( "id", E.string (ticketId t) ), ( "line", E.string line ), ( "wait", E.int wait ), ( "delay", E.int delay ) ]
+        Ask t line wait delay unit ->
+            op "ask" [ ( "id", E.string (ticketId t) ), ( "line", E.string line ), ( "wait", E.int wait ), ( "delay", E.int delay ), ( "unit", Maybe.map E.string unit |> Maybe.withDefault E.null ) ]
 
         Put rel ->
             op "put" [ ( "id", E.string (ticketId TPut) ), ( "file", E.string "bk2" ), ( "seal", E.string rel.seal ), ( "sha", E.string rel.bk2Sha ) ]

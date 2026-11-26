@@ -136,6 +136,13 @@ async function pickedByUnit() {
   eq(closed, 1, 'the other unit\'s port closed');
   claim.state('lost');
   eq(await U.relink('ffffffffffffffffffffffff'), 'other', 'no console is this unit');
+  // An ask on a lost link reopens the confirmed unit's port, not any.
+  claim.state('lost');
+  var said = [];
+  U.attach({ ports: { updateIn: { send: function (m) { said.push(m); } } } }, ports);
+  await U.run({ op: 'ask', id: 'status', line: 'status', wait: 100, delay: 0, unit: '0011002233445566778899aa' });
+  eq(open, 'p2', 'the ask\'s port is the confirmed unit\'s');
+  eq(said.length === 1 && said[0].end, 'OK', 'the ask answered');
 }
 
 (async function () {

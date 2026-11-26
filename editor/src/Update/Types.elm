@@ -197,6 +197,8 @@ type PreFail
       -- the unit back on its old firmware after aborting the install.
     | SelfRefused String
     | SelfAborted String
+      -- CHECKING's `status` from another unit than the one confirmed (its `unit`).
+    | OtherUnitBefore String
 
 
 {-| A stop once the write started: the firmware area is not what it was.
@@ -266,8 +268,9 @@ type Request
     = Begin
     | FetchLatest
     | ChooseFiles
-      -- The ticket, the line, the first byte's wait (ms), a delay before it (ms).
-    | Ask Ticket String Int Int
+      -- The ticket, the line, the first byte's wait (ms), a delay before it
+      -- (ms), and the unit (`status`'s `unit`) to reopen a lost link to.
+    | Ask Ticket String Int Int (Maybe String)
     | Put Release
     | PutBin Release String
     | Dfu
