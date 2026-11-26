@@ -20,12 +20,12 @@ kit:
 # (screen.wasm painted from node, every layout screen included, its spec from
 # editor/screens/LayoutScreens.elm). Elm itself is pinned in editor/package.json.
 editor-test: kit
-    cd editor && npm install --no-audit --no-fund --silent && node tests/gen-fixture.js && npx elm-test --compiler node_modules/.bin/elm && npx elm-review --compiler node_modules/.bin/elm && npx elm-format --validate src tests review/src screens >/dev/null && node public/ports.check.js && node public/theme.check.js && node public/screen.check.js
+    cd editor && npm install --no-audit --no-fund --silent && node tests/gen-fixture.js && npx elm-test --compiler node_modules/.bin/elm && npx elm-review --compiler node_modules/.bin/elm && npx elm-format --validate src tests review/src screens >/dev/null && node public/ports.check.js && node public/theme.check.js && node public/screen.check.js && node public/dfu.check.js && node public/update.check.js
     cd editor/screens && ../node_modules/.bin/elm make LayoutScreens.elm --optimize --output=layout-screens.js >/dev/null && node layout-screens.check.js
 
 # The editor, optimised, into editor/dist/
 editor-build: kit
-    cd editor && npm install --no-audit --no-fund --silent && rm -rf dist && mkdir -p dist/glyphs && npx elm make src/Main.elm --optimize --output=dist/elm.js && cp public/index.html public/ports.js public/theme.js public/style.css public/screen.js public/screen.wasm dist/ && cp public/glyphs/*.png dist/glyphs/ && cp ../site/public/favicon.svg ../site/public/favicon-32.png ../site/public/apple-touch-icon.png dist/
+    cd editor && npm install --no-audit --no-fund --silent && rm -rf dist && mkdir -p dist/glyphs && npx elm make src/Main.elm --optimize --output=dist/elm.js && cp public/index.html public/ports.js public/dfu.js public/update.js public/theme.js public/style.css public/screen.js public/screen.wasm dist/ && cp public/glyphs/*.png dist/glyphs/ && cp ../site/public/favicon.svg ../site/public/favicon-32.png ../site/public/apple-touch-icon.png dist/
 
 # The UI component gallery (every component, every state, DAY and NIGHT, and
 # the JITTER probe), into editor/gallery/
@@ -111,6 +111,7 @@ site-build base=site_base: editor-build
 site-publish: (site-build "/chimera-releases/")
     #!/usr/bin/env bash
     set -euo pipefail
+    just site-firmware site/dist
     rev=$(git rev-parse --short HEAD)
     pages=$(mktemp -d)
     trap 'rm -rf "$pages"' EXIT
@@ -128,13 +129,28 @@ site-publish: (site-build "/chimera-releases/")
         echo "site: published $rev to https://joegiralt.github.io/chimera-releases/"
     fi
 
+# The latest release's firmware into <dist>/firmware/preenfm3/latest/ for the
+# editor's UPDATE: CHIMERA.BIN, CHIMERA.BK2 and SHA256SUMS by `gh release
+# download` (a release asset has no CORS, so the browser reads these, same
+# origin), checked against SHA256SUMS, and manifest.json (version, build
+# hash, tag, sizes) beside them
+site-firmware dist="site/dist":
+    #!/usr/bin/env bash
+    set -euo pipefail
+    out="{{dist}}/firmware/preenfm3/latest"
+    rm -rf "$out"
+    mkdir -p "$out"
+    tag=$(gh release view --repo joegiralt/chimera-releases --json tagName --jq .tagName)
+    gh release download "$tag" --repo joegiralt/chimera-releases --dir "$out" --pattern CHIMERA.BIN --pattern CHIMERA.BK2 --pattern SHA256SUMS
+    node site/scripts/firmware.js "$out" "$tag"
+
 # site/dist on http://127.0.0.1:8000/, unknown paths answered as Pages does
 site-serve port="8000":
     node site/scripts/serve.js {{port}}
 
 # The site's Elm tests (every guide at the root included) and elm-review
 site-test:
-    cd site && npm install --no-audit --no-fund --silent && node tests/gen-fixtures.js && node tests/icons.check.js && node tests/pages.check.js && node tests/manual.check.js && npx elm-test && npx elm-review
+    cd site && npm install --no-audit --no-fund --silent && node tests/gen-fixtures.js && node tests/icons.check.js && node tests/pages.check.js && node tests/manual.check.js && node tests/firmware.check.js && npx elm-test && npx elm-review
 
 # The manual's manual.md and llms.txt, from its chapters
 manual:

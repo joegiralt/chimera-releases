@@ -10,6 +10,7 @@
 // page said a notice the test did not expect (`expectNotice`) or threw.
 
 import assert from "node:assert/strict";
+import { createRequire } from "node:module";
 import path from "node:path";
 import { after, afterEach, before } from "node:test";
 import { fileURLToPath } from "node:url";
@@ -19,6 +20,8 @@ import { describeAll } from "./contract.mjs";
 import { SLOW, startUnit, tokens, UNIT, until } from "./unit.mjs";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
+/** The fake DfuSe device (WebUSB, 0483:df11) every page has: absent until `__usb.plug()`. */
+const fakeUsb = createRequire(import.meta.url)("./fakedfu.cjs");
 export const editorDir = path.resolve(here, "..");
 export const root = path.resolve(editorDir, "..");
 
@@ -91,12 +94,12 @@ export async function newProject() {
   await unit.ok("key EDIT");
   await until("SETTINGS > PROJECT > LOAD", async () => (await unit.at()) === "SETTINGS > PROJECT > LOAD");
   // LOAD's rows wrap: one up from the first is the last, + CREATE NEW.
-  await unit.ok("turn 1 -1");
+  await detents(-1);
   await at("SETTINGS > PROJECT > LOAD");
   await unit.ok("key EDIT");
   if (edited) {
-    await unit.ok("turn 1 -64");
-    await unit.ok("turn 1 1");
+    await toEnd(-1);
+    await detents(1);
     await unit.ok("key EDIT");
   }
   await until("a new project (state NEW)", async () => (await projectState()) === "NEW", 5000).catch(async (e) => {
@@ -107,19 +110,57 @@ export async function newProject() {
   await until("Part 1's pages", async () => (await unit.at()).startsWith("PART 1 > "));
 }
 
+/* Encoder 1 turned by the box's own queue (`turn`: a detent every 25 ms),
+ * each move confirmed on its screen before the next key. On the real unit
+ * (0.4.0's menu acceleration) a queued turn could land after the `key EDIT`
+ * sent behind it, and EDIT took the wrong row; no console line names the
+ * browser's highlighted row, so the screen is the state read. */
+
+/** The screen unchanged for `ms` (two shots that far apart alike). */
+async function stillFor(ms) {
+  let last = await unit.shot();
+  for (const end = Date.now() + 15000 * SLOW; ; ) {
+    if (Date.now() > end) throw new Error(`the unit's screen never held still for ${ms} ms`);
+    await new Promise((r) => setTimeout(r, ms));
+    const now = await unit.shot();
+    if (now.equals(last)) return;
+    last = now;
+  }
+}
+
+/** Encoder 1 to the list's end (`dir` -1: the top), and every queued
+ * detent landed: 64 detents take the queue 1.6 s, so the screen must hold
+ * still for longer than that. */
+async function toEnd(dir) {
+  await unit.ok(`turn 1 ${64 * dir}`);
+  await stillFor(2000);
+}
+
+/** `n` detents of encoder 1, one at a time, each seen to move the screen;
+ * one that moves nothing (a one-row list, a clamped prompt) is waited out
+ * instead: the screen still for well past a detent's 25 ms. */
+async function detents(n) {
+  for (let i = 0; i < Math.abs(n); i++) {
+    const was = await unit.shot();
+    await unit.ok(`turn 1 ${Math.sign(n)}`);
+    const moved = await until("the detent on the unit's screen", async () => !(await unit.shot()).equals(was), 1000).catch(() => false);
+    if (!moved) await stillFor(500);
+  }
+  if (n) await stillFor(300);
+}
+
 /** Part `n` to the INIT Sound on browser row `row`: EDIT+B<n>, the list's top, down `row`, EDIT.
  * Only over a clean Part: an edited one would ask REPLACE? and wait for a hand. */
 export async function loadInit(n, engine) {
-  const sound = (await unit.ask("ed since 0")).find((l) => l.startsWith(`sound ${n} `)) ?? "";
+  const sound = (await unit.since()).lines.find((l) => l.startsWith(`sound ${n} `)) ?? "";
   if (!sound.endsWith(" clean")) throw new Error(`Part ${n} is not clean (${JSON.stringify(sound)}): loading over it would ask REPLACE? and wait for a hand`);
   await unit.ok(`key EDIT+B${n}`);
   await until(`the unit's SOUND ${n} browser`, async () => (await unit.at()) === `SOUND ${n}`);
-  await unit.ok("turn 1 -64");
-  const row = ENGINES.indexOf(engine);
-  if (row > 0) await unit.ok(`turn 1 ${row}`);
+  await toEnd(-1);
+  await detents(ENGINES.indexOf(engine));
   await unit.ok("key EDIT");
   await until(`INIT ${engine} on Part ${n}`, async () => {
-    const all = await unit.ask("ed since 0");
+    const all = (await unit.since()).lines;
     return all.includes(`part ${n} ${engine}`) && all.includes(`sound ${n} "INIT" clean`);
   }, 15000);
 }
@@ -286,6 +327,7 @@ async function newEditorPage(ctx, ws = bridge.ws) {
     };
   }, ws);
   await p.addInitScript(fakeSerial, ws);
+  await p.addInitScript({ content: `(${fakeUsb.toString()})(window, {});` });
   pages.add(p);
   return p;
 }
@@ -492,7 +534,7 @@ export const cableText = (a) => {
 /** The unit's routes of the followed Part: `ed since 0`'s route lines, as { cell: { amount, text } }. */
 export async function unitRoutes() {
   const out = {};
-  for (const l of await unit.ask("ed since 0")) {
+  for (const l of (await unit.since()).lines) {
     const w = tokens(l);
     if (w[0] === "route" && /^-?\d+$/.test(w[2])) out[w[1]] = { amount: Number(w[2]), text: w[3] };
   }
@@ -684,7 +726,7 @@ export async function describeMap(schema) {
 /** The unit's panels now (`ed since 0`'s `panel` lines) as { NAME: VARIANT }. */
 export async function unitPanels() {
   const out = {};
-  for (const l of await unit.ask("ed since 0")) {
+  for (const l of (await unit.since()).lines) {
     const w = tokens(l);
     if (w[0] === "panel") out[w[1]] = w[2];
   }

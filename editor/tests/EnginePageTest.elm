@@ -15,6 +15,7 @@ import Json.Encode as Encode
 import Layout.Algo
 import Layout.Page exposing (DrawnPage(..), PadDrawn(..))
 import Layout.Shared as Shared
+import Links
 import Model
 import Protocol exposing (Value(..))
 import Schema
@@ -434,7 +435,7 @@ suite =
                     in
                     Page.view old (Page.init Day)
                         |> Query.fromHtml
-                        |> Query.find [ Sel.tag "a", Sel.attribute (attribute "href" Model.downloadUrl) ]
+                        |> Query.find [ Sel.tag "a", Sel.attribute (attribute "href" Links.downloadUrl) ]
                         |> Query.has [ Sel.text "DOWNLOAD CHIMERA 0.4 OR LATER" ]
             , test "a_refusal_shows_on_its_control_with_the_units_reason" <|
                 \_ ->

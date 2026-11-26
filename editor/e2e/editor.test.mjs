@@ -229,7 +229,7 @@ for (const engine of ENGINES) {
     test("MOD bay: the unit's routes are the cables; patch, amount and unpatch reach the unit", async () => {
       await followPart(n, engine);
       const bay = page.locator(".bay");
-      const unitHas = (await unit.ask("ed since 0")).some((l) => l.startsWith(`routes ${n}`));
+      const unitHas = (await unit.since()).lines.some((l) => l.startsWith(`routes ${n}`));
       assert.ok(unitHas, `the unit reports no routes for Part ${n}`);
       await bay.first().waitFor({ timeout: 5000 * SLOW }).catch(() => {});
       assert.equal(await bay.count(), 1, "the unit reports the Part's routes: the editor draws one MOD bay for them");
@@ -296,7 +296,7 @@ for (const engine of ENGINES) {
       await until(`the cable to show the unit's amount ${moved.amount} as ${cableText(moved.amount)}`, async () => (await att.getAttribute("aria-valuetext")) === cableText(moved.amount));
       // Unpatch: a double click.
       await att.dblclick();
-      await until(`${patched} gone from the unit`, async () => !cellOf(await unitRoutes()));
+      await until(`${patched} gone from the unit`, async () => !cellOf(await unitRoutes()), 5000 * SLOW);
       await att.waitFor({ state: "detached" });
       // And a route made on the unit shows as a cable.
       await unit.ok(`ed route ${patched} 50`);

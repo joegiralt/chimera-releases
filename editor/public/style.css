@@ -257,3 +257,26 @@ html, body { margin: 0; background: #121212; }
 .ui .mixer .strip .setup[open] > summary::before { content: "▾ "; }
 .ui .mixer .strip .setup > .grp { justify-content: center; border: 0; padding: 6px 0 0; }
 .ui .mixer .strip .body { flex: 1; }
+
+/* UPDATE: the firmware update's one module, its stages and their progress */
+.ui .upd { display: grid; gap: 10px; max-width: 72ch; font: 400 15px/1.4 var(--sans); }
+.ui .upd p, .ui .upd ol { margin: 0; }
+.ui .upd ol { padding-left: 22px; display: grid; gap: 4px; }
+.ui .upd a { color: var(--ink); }
+.ui .upd .uline { display: flex; gap: 12px; align-items: baseline; }
+.ui .upd .uline .k { font: 700 12px/1 var(--sans); letter-spacing: .16em; color: var(--mid); min-width: 13ch; }
+.ui .upd .uline .v { font: 700 16px/1.2 var(--mono); }
+.ui .upd .ustages { list-style: none; padding: 0; gap: 6px; font: 700 13px/1.2 var(--sans); letter-spacing: .12em; }
+.ui .upd .ustages li { padding-left: 22px; position: relative; }
+.ui .upd .ustages li::before { position: absolute; left: 0; }
+.ui .upd .ustages li.done { color: var(--mid); }
+.ui .upd .ustages li.done::before { content: "✓"; }
+.ui .upd .ustages li.now::before { content: "▸"; color: var(--led); }
+.ui .upd .ustages li.todo { color: var(--dim); }
+.ui .upd .ubar { height: 6px; margin-top: 6px; background: var(--slot); border-radius: 3px; overflow: hidden; }
+.ui .upd .ubar > div { height: 100%; background: var(--led); transition: width .2s; }
+.ui .upd .code { font: 600 12px/1.4 var(--mono); background: var(--pn2); border: 1px solid var(--line); padding: 8px; overflow-wrap: anywhere; }
+
+/* The offer on connect: a newer release, above the page */
+.ui.offerbar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 16px; padding: 12px 16px; background: var(--pn2); border-bottom: 2px solid var(--ink); font: 600 15px/1.3 var(--sans); }
+.ui.offerbar p { margin: 0; }

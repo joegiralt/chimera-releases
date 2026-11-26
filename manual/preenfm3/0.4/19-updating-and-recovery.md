@@ -15,13 +15,41 @@ File names never carry a version (that is in the release title, the boot splash 
 
 | Way | When |
 |---|---|
+| [The browser editor](#updating-from-the-browser-editor) | The unit runs Chimera 0.4 or later (or connects as an older unit), in Chrome or Edge. One button |
 | [The update tool over USB](#updating-with-the-update-tool-over-usb) | The unit runs Chimera 0.3 or later, on macOS or Linux. One command |
 | [The SD card](#updating-from-the-sd-card) | A first install, Windows, or if the tool stops |
 | [USB DFU with dfu-util](#updating-over-usb-dfu-with-dfu-util) | When the card can't be used, on macOS or Linux |
 
-All three end on the same install screen, and your projects and Sounds stay on the card.
+All four end on the same install screen, and your projects and Sounds stay on the card.
 
 **Why two halves:** the flash area the bootloader writes is too small for Chimera; the rest lives where the bootloader doesn't reach, so Chimera writes it itself. The tool and install screen make the two halves one step.
+
+## Updating from the browser editor
+
+You need Chrome or Edge (they have Web Serial and WebUSB; Firefox and Safari don't), a data USB cable, and the unit connected in the [browser editor](18-browser-editor.md).
+
+1. Connect the unit in the editor. When a newer release is out, the editor says so right away (**Chimera 0.4.1 is available. You're running 0.4.0. Update now?**): press **UPDATE**, or **NOT NOW** to be asked again only the next time you open the editor. It never offers the same version, or an older one.
+2. Or press **UPDATE** in the editor's top bar at any time. It shows **THIS UNIT** (the version the unit runs) and **LATEST** (the newest release). When they match it offers **REINSTALL…** instead; when the release is older than the unit's firmware, **DOWNGRADE…**, with a warning.
+3. Press **UPDATE…**, read the confirm screen, and press **START UPDATE**. Don't unplug the unit or power it off until the page says **DONE**.
+4. If the project has unsaved changes, the page asks first: **SAVE AND UPDATE** saves it over its own file (a project never saved becomes **BEFORE_UPDATE**), **DISCARD AND UPDATE** reloads it as last saved, and **CANCEL** keeps working with the changes and updates nothing.
+
+The page goes through **CHECKING**, **COPYING BANK 2** (with a percentage), **RESTARTING INTO UPDATE MODE**, **WRITING FIRMWARE** (with a percentage) and **INSTALLING**, and ends on **UPDATED** with the old and new versions. The first time, the browser asks which device to use for update mode: press **CHOOSE UPDATE DEVICE** and pick **STM32 BOOTLOADER**. The editor writes only to the one STM32 DFU device that appears after the unit restarts into update mode, and only if its flash is laid out as the PreenFM3's STM32H7; one that was already there, or a board with another chip, is refused. It can't tell two STM32H7 boards apart, though: another one in DFU mode (a Daisy Seed, say), picked in the browser's list or plugged in at the same moment, could pass. Keep other boards out of DFU mode while you update. While it runs, the browser asks before you close or reload the tab.
+
+When the new firmware starts with `CHIMERA.BK2` on the card but bank 2 not installed, the editor sends `bank2 install` to finish it. The update tool stops there instead (and the next start installs it); the editor's way ends in the same place without another restart by hand.
+
+**A unit that updates itself** (firmware 0.4.1 and later, which says so to the editor) takes a shorter way: the editor copies `CHIMERA.BK2` (unless the same one is already installed) and `CHIMERA.BIN` onto the card, and the unit writes its own firmware. The page shows **INSTALLING** and the version with a bar, then **RESTARTING · INSTALLING BANK 2** (up to three minutes), then **UPDATED**. There is no update mode, no device to pick and no Windows driver. If the unit gives up, it starts its old firmware untouched and the page offers **TRY AGAIN** or **USE UPDATE MODE (DFU)**. If it doesn't come back within three minutes, hold **MENU** at power-on, step to `CHIMERA.BIN` (already on the card) and press button 1.
+
+**Which unit:** firmware that updates itself also tells the editor which unit it is. After the restart the editor reconnects to that same unit, even with others connected, and stops if another one answers. An older unit can't say, so with more than one Chimera connected the editor asks you to unplug the others.
+
+**CHOOSE FILES…** takes a release's `CHIMERA.BIN`, `CHIMERA.BK2` and `SHA256SUMS` from your computer instead (choose all three at once). Every file is checked against `SHA256SUMS`, and the two as one build, before anything is written.
+
+**If the browser can't open update mode's device**, another program may hold it: on Linux, fwupd takes every new DFU device for a moment, and the editor waits up to 10 seconds for it. Press **WRITE AGAIN**, or write the firmware from a terminal with `dfu-util -a0 -d 0x0483:0xdf11 -s 0x8020000:leave -D CHIMERA.BIN`.
+
+**On Windows**, the browser needs a driver for update mode, once: the editor says so and lists the steps (Zadig, select **STM32 BOOTLOADER**, **WinUSB**, **Install Driver**), then **WRITE AGAIN**.
+
+**If it stops**, the page says what happened and what to do. Before **WRITING FIRMWARE** the firmware is as it was, though `CHIMERA.BK2` may already be on the card (harmless) and the unit may be waiting in update mode with its screen dark: unplug the cable and plug it back in and it starts as before. If the write is cut off, the bootloader is untouched: hold **MENU** at power-on, press button 2 (DFU Mode) and press **WRITE AGAIN**, or use [the SD card](#updating-from-the-sd-card). After the write, **TRY AGAIN** and **CHECK AGAIN** ask the unit what it runs and finish from there.
+
+**A unit stuck in update mode** (its screen dark after a stopped update, or after button 2 in the bootloader): open the editor and press **UNIT STUCK IN UPDATE MODE? FINISH THE UPDATE** on its connect page. In update mode the unit can't say which version it had, so the page can't either. It writes the firmware, then installs bank 2 once the unit restarts (if the page never had the unit's port, **CONNECT UNIT…** asks for it). Once a write has been cut off, the firmware area holds half an image: finish it (here, or from the bootloader) rather than unplugging, which won't bring the old firmware back.
 
 ## Updating with the update tool over USB
 

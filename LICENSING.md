@@ -8,4 +8,6 @@ It is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
 
 The Yellow Sign (the site's mark and the browser tab icon, traced from the firmware's boot splash) is Christian Knutsson's design for Pelgrane Press, released into the public domain in 2020: [Our Yellow Sign is your Yellow Sign](https://pelgranepress.com/2020/02/06/our-yellow-sign-is-your-yellow-sign/). Attribution is not required; it is credited here with thanks.
 
+The editor's firmware update writes `CHIMERA.BIN` over WebUSB with its own DfuSe writer (`editor/public/dfu.js`), written for this project from the USB Device Firmware Upgrade 1.1 class specification (USB-IF) and ST's application note AN3156, *USB DFU protocol used in the STM32 bootloader*. No code is taken from another DFU tool; its leave sequence (set the address, an empty download, a status) is the one [dfu-util](https://dfu-util.sourceforge.net/) uses for `:leave`, credited here with thanks.
+
 Releases before 0.4 were distributed under the tester licence in [LICENSE.md](LICENSE.md).

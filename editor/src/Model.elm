@@ -20,7 +20,6 @@ module Model exposing
     , Via(..)
     , armedOn
     , download
-    , downloadUrl
     , init
     , lastRefusal
     , notice
@@ -69,6 +68,7 @@ import Cache
 import Dict exposing (Dict)
 import Flow exposing (Flow)
 import Hash exposing (Hash)
+import Links
 import Protocol exposing (AnswerLine(..), Cell, Command(..), Degree, Edits, Fault(..), Generation, Health, Learn, Line(..), MapCommand(..), MapInput, MapKind, MapRow(..), Note, NotePool, OnOff, OrbitCommand, Outgoing, OverEdits, PageNo, ProjectFile, ProjectId, ProjectName, Protocol(..), RouteTo, RowStatus, ScaleMask, SchemaId(..), Slot, Song, SoundStatus, SpanPlace, Value, VariantName, cellKey, encode, parse, ringNoToInt, rowIndexToInt, sceneNoToInt, schemaToken, segmentToInt, stepNoToInt)
 import Schema exposing (Schema)
 import Set exposing (Set)
@@ -237,6 +237,7 @@ type Seat
 
 type alias Model =
     { link : Maybe Link
+    , firmware : Maybe String
     , via : Maybe Via
     , schema : Schema
     , mixer : Schema
@@ -403,6 +404,7 @@ pollMs =
 init : Model
 init =
     { link = Nothing
+    , firmware = Nothing
     , via = Nothing
     , schema = Schema.empty
     , mixer = Schema.empty
@@ -2039,25 +2041,17 @@ needsNewer =
     "THIS EDITOR NEEDS CHIMERA 0.4 OR LATER."
 
 
-{-| Where to get the firmware this editor needs: the site's INSTALL & UPDATE
-page (the latest release, and the steps that also update an older one).
--}
-downloadUrl : String
-downloadUrl =
-    "https://joegiralt.github.io/chimera-releases/install"
-
-
 {-| The download page, while the unit is too old for this editor.
 -}
 download : Model -> Maybe String
 download m =
     case m.stage of
         Halted (OldUnit _) ->
-            Just downloadUrl
+            Just Links.downloadUrl
 
         Halted (OtherProtocol n) ->
             if n < Protocol.supported then
-                Just downloadUrl
+                Just Links.downloadUrl
 
             else
                 Nothing
@@ -2075,7 +2069,7 @@ answer : AnswerLine -> Model -> Model
 answer a m =
     case a of
         HelloIs (Speaks h) ->
-            { m | part = Just h.part, engine = Just h.engine, partEngines = Dict.insert (Unit.partNumber h.part) h.engine m.partEngines }
+            { m | firmware = Just h.build, part = Just h.part, engine = Just h.engine, partEngines = Dict.insert (Unit.partNumber h.part) h.engine m.partEngines }
 
         HelloIs (TooNew n) ->
             { m | stage = Halted (OtherProtocol n) }

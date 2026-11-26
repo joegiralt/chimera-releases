@@ -8,12 +8,18 @@
 var ChimeraPorts = (function () {
   var link = null; // { write(line) -> Promise, close() }
   var app = null;
+  // While an update owns the link (update.js), its lines and state go to
+  // it, not to Elm's model, and the model's own lines are not sent.
+  var claim = null; // { line(line), state(name) }
+  var lastSocket = null; // the URL the socket link was opened to
   var queue = Promise.resolve(); // the last write: the next waits for it
 
   // A socket holding more than this unsent waits before the next line.
   var SOCKET_HIGH = 4096;
 
-  function state(s) { app.ports.linkState.send(s); }
+  function state(name) { if (claim) claim.state(name); else app.ports.linkState.send(name); }
+
+  function emit(line) { if (claim) claim.line(line); else app.ports.lineIn.send(line); }
 
   // Split a stream of text into lines on \n, CR stripped.
   function liner(emit) {
@@ -59,25 +65,34 @@ var ChimeraPorts = (function () {
     if (run) await run();
   }
 
+  var CONSOLE = { usbVendorId: 0x0483, usbProductId: 0x5740 };
+  var SERIAL = { baudRate: 115200, dataBits: 8, stopBits: 1, parity: 'none' };
+
   // Open the port and make it the link; resolves to the read loop, or nothing.
   async function openSerial() {
     await drop();
     if (!('serial' in navigator)) { state('unsupported'); return null; }
     var port;
     try {
-      port = await navigator.serial.requestPort({ filters: [{ usbVendorId: 0x0483, usbProductId: 0x5740 }] });
-      await port.open({ baudRate: 115200, dataBits: 8, stopBits: 1, parity: 'none' });
+      port = await navigator.serial.requestPort({ filters: [CONSOLE] });
+      await port.open(SERIAL);
     } catch (e) {
       // A cancelled chooser is not a fault; a port someone else holds is.
       if (e && e.name === 'NotFoundError') { return null; }
       state('busy');
       return null;
     }
+    lastSocket = null;
+    return adopt(port);
+  }
+
+  // An open port as the link; resolves to its read loop.
+  function adopt(port) {
     var enc = new TextEncoder();
     var writer = port.writable.getWriter();
     var reader = port.readable.getReader();
     var dec = new TextDecoder('utf-8');
-    var feed = liner(function (l) { app.ports.lineIn.send(l); });
+    var feed = liner(emit);
     var mine = {
       write: async function (line) {
         await writer.ready;
@@ -104,9 +119,11 @@ var ChimeraPorts = (function () {
 
   async function openSocket(url) {
     await drop();
+    lastSocket = url;
     var ws;
     try { ws = new WebSocket(url); } catch (e) { state('absent'); return null; }
     var mine = {
+      ws: ws,
       write: function (line) { return drained(ws).then(function () { ws.send(line); }); },
       close: function () { ws.close(); },
     };
@@ -114,9 +131,9 @@ var ChimeraPorts = (function () {
     link = mine;
     ws.onopen = function () { opened = true; state('open'); };
     // The bridge sends one line per message; tolerate a CR or trailing \n.
-    ws.onmessage = function (m) {
-      String(m.data).split('\n').forEach(function (l, i, a) {
-        if (i < a.length - 1 || l !== '') app.ports.lineIn.send(l.replace(/\r$/, ''));
+    ws.onmessage = function (message) {
+      String(message.data).split('\n').forEach(function (line, idx, all) {
+        if (idx < all.length - 1 || line !== '') emit(line.replace(/\r$/, ''));
       });
     };
     ws.onclose = function () {
@@ -143,9 +160,14 @@ var ChimeraPorts = (function () {
   // to Elm, and the link is dropped and released, so a reconnect can open
   // the same port; the lines queued behind it on that link are said too.
   function send(line) {
+    if (claim) return queue; // the update owns the link: the model is paused
+    return push(line, function () { app.ports.writeFailed.send(line); });
+  }
+
+  function push(line, said) {
     var l = link;
     var failed = function () {
-      app.ports.writeFailed.send(line);
+      said();
       if (l && link === l) { link = null; state('lost'); Promise.resolve(l.close()).catch(function () {}); }
     };
     if (!l) { failed(); return queue; }
@@ -154,6 +176,66 @@ var ChimeraPorts = (function () {
       return l.write(line);
     }).catch(failed);
     return queue;
+  }
+
+  // The update's side (update.js): the link taken from the model and given
+  // back, its own writes (resolving true once written, false if the link
+  // went), and the link opened again after the unit restarts: a serial port
+  // this page was given before (by its USB id), else the same socket.
+  // `reopen` resolves true, false, or 'several' (more than one unit).
+  function take(claimer) { claim = claimer; }
+  function giveBack() { claim = null; return link ? 'open' : 'lost'; }
+  function write(line) {
+    var ok = true;
+    return push(line, function () { ok = false; }).then(function () { return ok; });
+  }
+  function isOpen() { return !!link; }
+
+  // The console's granted ports (by USB id), to open one at a time when
+  // several are there and the unit is picked by what `status` says of it.
+  async function candidates() {
+    if (lastSocket || !('serial' in navigator)) return [];
+    var ports = [];
+    try { ports = await navigator.serial.getPorts(); } catch (error) { return []; }
+    return ports.filter(function (port) {
+      var info = port.getInfo ? port.getInfo() : CONSOLE;
+      return info.usbVendorId === CONSOLE.usbVendorId && info.usbProductId === CONSOLE.usbProductId;
+    });
+  }
+
+  async function openPort(port) {
+    await drop();
+    try { await port.open(SERIAL); } catch (error) { return false; }
+    adopt(port)();
+    return true;
+  }
+
+  async function reopen() {
+    if (link) return true;
+    if (lastSocket) {
+      openSocket(lastSocket);
+      for (var tries = 0; tries < 60; tries++) {
+        if (!link) return false;
+        if (link.ws && link.ws.readyState === 1) return true;
+        await new Promise(function (resolve) { setTimeout(resolve, 50); });
+      }
+      return false;
+    }
+    if (!('serial' in navigator)) return false;
+    var ports = [];
+    try { ports = await navigator.serial.getPorts(); } catch (error) { return false; }
+    // Only the console's USB id; with more than one such port there is no
+    // telling which is this unit (the console names no serial number), so
+    // none is taken: 'several'.
+    var mine = ports.filter(function (port) {
+      var info = port.getInfo ? port.getInfo() : CONSOLE;
+      return info.usbVendorId === CONSOLE.usbVendorId && info.usbProductId === CONSOLE.usbProductId;
+    });
+    if (mine.length > 1) return 'several';
+    if (!mine.length) return false;
+    try { await mine[0].open(SERIAL); } catch (error) { return false; }
+    adopt(mine[0])();
+    return true;
   }
 
   // The schema cache: IndexedDB, one store, a schema's describe
@@ -209,6 +291,14 @@ var ChimeraPorts = (function () {
   return {
     release: release,
     send: send,
+    take: take,
+    giveBack: giveBack,
+    write: write,
+    isOpen: isOpen,
+    reopen: reopen,
+    candidates: candidates,
+    openPort: openPort,
+    close: drop,
     liner: liner,
     recall: recall,
     keep: keep,
@@ -230,4 +320,5 @@ if (typeof Elm !== 'undefined' && typeof document !== 'undefined') {
   var main = Elm.Main.init({ node: document.getElementById('app'), flags: theme.flags() });
   if (main.ports.storeTheme) main.ports.storeTheme.subscribe(theme.store);
   ChimeraPorts.attach(main);
+  if (typeof ChimeraUpdate !== 'undefined') ChimeraUpdate.attach(main, ChimeraPorts);
 }
