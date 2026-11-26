@@ -12,6 +12,9 @@ import Model
 import Transport
 import Ui.Tokens as Tokens
 import Update
+import Update.Read
+import Update.Types
+import Update.View
 import View.EnginePage as EnginePage
 
 
@@ -27,7 +30,7 @@ until it gives the link back, then starts over.
 type alias App =
     { unit : Model.Model
     , page : EnginePage.State
-    , updating : Maybe Update.Model
+    , updating : Maybe Update.Types.Model
     , offer : Offer
     }
 
@@ -46,7 +49,7 @@ type Offer
 type Msg
     = Unit Model.Msg
     | Page EnginePage.Msg
-    | Updating Update.Msg
+    | Updating Update.Types.Msg
     | LatestIs (Maybe String)
     | NotNow
     | UpdateNow
@@ -96,7 +99,7 @@ update msg app =
         LatestIs latest ->
             case ( app.offer, latest ) of
                 ( Asking have, Just v ) ->
-                    if Update.offerFor have v == Update.Newer then
+                    if Update.Read.offerFor have v == Update.Types.Newer then
                         ( { app | offer = Offered { have = have, latest = v } }, Cmd.none )
 
                     else
@@ -183,7 +186,7 @@ update msg app =
 -}
 asking : Model.Model -> Offer -> ( Offer, Cmd Msg )
 asking unit offer =
-    case ( offer, Model.firmware unit, unit.via ) of
+    case ( offer, firmware unit, unit.via ) of
         ( NotAsked, Just have, Just Model.ViaUnit ) ->
             ( Asking have, Update.askLatest )
 
@@ -204,7 +207,7 @@ view : App -> Html Msg
 view app =
     case ( app.updating, app.offer ) of
         ( Just u, _ ) ->
-            Update.view (EnginePage.PageMsg >> Page) Updating app.page.page u
+            Update.View.view (EnginePage.PageMsg >> Page) Updating app.page.page u
 
         ( Nothing, Offered o ) ->
             div []
@@ -220,6 +223,13 @@ view app =
 
         ( Nothing, _ ) ->
             Html.map Page (EnginePage.view app.unit app.page)
+
+
+{-| The firmware the followed unit runs, as `ed hello` named it (`0.4.0-de07edf9`), once it is followed.
+-}
+firmware : Model.Model -> Maybe String
+firmware unit =
+    Model.status unit |> Maybe.andThen (\_ -> unit.firmware)
 
 
 {-| A version's number: `0.4.1` of `0.4.1 abcd1234` or `0.4.1-abcd1234`.

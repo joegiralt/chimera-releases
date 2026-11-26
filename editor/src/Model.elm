@@ -20,8 +20,6 @@ module Model exposing
     , Via(..)
     , armedOn
     , download
-    , downloadUrl
-    , firmware
     , init
     , lastRefusal
     , notice
@@ -70,6 +68,7 @@ import Cache
 import Dict exposing (Dict)
 import Flow exposing (Flow)
 import Hash exposing (Hash)
+import Links
 import Protocol exposing (AnswerLine(..), Cell, Command(..), Degree, Edits, Fault(..), Generation, Health, Learn, Line(..), MapCommand(..), MapInput, MapKind, MapRow(..), Note, NotePool, OnOff, OrbitCommand, Outgoing, OverEdits, PageNo, ProjectFile, ProjectId, ProjectName, Protocol(..), RouteTo, RowStatus, ScaleMask, SchemaId(..), Slot, Song, SoundStatus, SpanPlace, Value, VariantName, cellKey, encode, parse, ringNoToInt, rowIndexToInt, sceneNoToInt, schemaToken, segmentToInt, stepNoToInt)
 import Schema exposing (Schema)
 import Set exposing (Set)
@@ -238,8 +237,6 @@ type Seat
 
 type alias Model =
     { link : Maybe Link
-
-    -- The unit's firmware as `ed hello` names it (`0.4.0-de07edf9`).
     , firmware : Maybe String
     , via : Maybe Via
     , schema : Schema
@@ -2044,32 +2041,17 @@ needsNewer =
     "THIS EDITOR NEEDS CHIMERA 0.4 OR LATER."
 
 
-{-| Where to get the firmware this editor needs: the site's INSTALL & UPDATE
-page (the latest release, and the steps that also update an older one).
--}
-downloadUrl : String
-downloadUrl =
-    "https://joegiralt.github.io/chimera-releases/install"
-
-
-{-| The firmware the followed unit runs, as `ed hello` named it, once it is followed.
--}
-firmware : Model -> Maybe String
-firmware m =
-    status m |> Maybe.andThen (\_ -> m.firmware)
-
-
 {-| The download page, while the unit is too old for this editor.
 -}
 download : Model -> Maybe String
 download m =
     case m.stage of
         Halted (OldUnit _) ->
-            Just downloadUrl
+            Just Links.downloadUrl
 
         Halted (OtherProtocol n) ->
             if n < Protocol.supported then
-                Just downloadUrl
+                Just Links.downloadUrl
 
             else
                 Nothing

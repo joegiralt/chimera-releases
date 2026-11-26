@@ -10,6 +10,7 @@ import Fixture
 import FixtureData
 import Flow
 import Hash
+import Links
 import Model exposing (Effect(..), Msg(..), Notice(..))
 import Protocol exposing (Clock(..), Command(..), Learn(..), MapCommand(..), MapInput(..), MapKind(..), MapRow(..), OnOff(..), OptIndex, OrbitCommand(..), Playback(..), RowStatus(..), SaveInto(..), SchemaId(..), SlotState(..), Value(..))
 import Schema
@@ -478,7 +479,7 @@ suite =
              , test "before_the_status_answers_it_says_so_without_the_version" <|
                 \_ -> Expect.equal (Just "THIS EDITOR NEEDS CHIMERA 0.4 OR LATER.") (Model.notice refused)
              , test "the_download_page_is_given_with_it" <|
-                \_ -> Expect.equal ( Just Model.downloadUrl, Nothing ) ( Model.download told, Model.download following )
+                \_ -> Expect.equal ( Just Links.downloadUrl, Nothing ) ( Model.download told, Model.download following )
              , test "nothing_the_status_says_is_a_notice_of_its_own" <|
                 \_ -> Expect.equal 0 (List.length (Model.notices told))
              ]
@@ -1132,7 +1133,7 @@ suite =
                 in
                 Expect.all
                     [ \x -> Expect.equal (Just "THIS EDITOR NEEDS CHIMERA 0.4 OR LATER.") (Model.notice x)
-                    , \x -> Expect.equal (Just Model.downloadUrl) (Model.download x)
+                    , \x -> Expect.equal (Just Links.downloadUrl) (Model.download x)
                     , \x -> Expect.equal [] (tick 33 x |> Tuple.second)
                     ]
                     (feed [ "ed hello 3 x part 1 ALGO", "OK" ] m)
