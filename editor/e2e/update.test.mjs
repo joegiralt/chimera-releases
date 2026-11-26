@@ -551,6 +551,31 @@ describe("UPDATE from the browser", () => {
     await backToEditor("BACK TO THE EDITOR");
   });
 
+  test("U23: the reply to bank1 install lost and the port gone: the wait for the unit, never DFU, retry or re-plug", async () => {
+    const fake = await ready({ selfUpdate: true, dropInstallReply: true });
+    await openUpdate();
+    await start();
+    // Every text the page shows from here on.
+    await page.evaluate(() => {
+      window.__texts = [];
+      window.__textObs?.disconnect();
+      window.__textObs = new MutationObserver(() => {
+        const t = document.querySelector(".upd")?.innerText ?? "";
+        if (window.__texts.at(-1) !== t) window.__texts.push(t);
+      });
+      window.__textObs.observe(document.body, { subtree: true, childList: true, characterData: true });
+    });
+    await until("DONE", async () => (await meta()) === "DONE", UPDATE_WAIT);
+    const texts = await page.evaluate(() => window.__texts.slice());
+    assert.ok(texts.some((t) => /may be updating itself/.test(t)), "the wait never said the unit may be updating itself");
+    for (const bad of [/USE UPDATE MODE/, /TRY AGAIN/, /CHOOSE UPDATE DEVICE/, /[Uu]nplug the USB cable/, /Nothing was written/]) {
+      assert.ok(!texts.some((t) => bad.test(t)), `the page said ${bad} after bank1 install was sent`);
+    }
+    assert.ok(fake.log.some((l) => l.startsWith("bank1 install")));
+    assert.equal(fake.build, "0.4.1 abcd1234");
+    await backToEditor("BACK TO THE EDITOR");
+  });
+
   // Last: its pages take the bridge's one console from the main page.
   test("U17: on connect, a newer release is offered; NOT NOW keeps it away for the session; UPDATE opens the update", async () => {
     await ready();

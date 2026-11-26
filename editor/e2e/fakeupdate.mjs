@@ -17,8 +17,8 @@ export const OLD_PUT = "ERR put takes /CHIMERA/PROJECTS/P#######.A or /CHIMERA/S
 export class FakeFirmware {
   /** `bridge`, the `page` (its fake DFU device), the `release` it may be updated to;
    * the unit's `build` and `bank2`, its project `state`, `old` (firmware before bank 2). */
-  constructor({ bridge, page, release, build = "0.4.0 de07edf9", bank2 = "open 0.4.0 de07edf9 seal=ffffffffffffffff", state = "SAVED", old = false, dfuSilent = false, selfUpdate = false, selfAbort = null, selfRefuse = null, unit = null, unitAfter = null }) {
-    Object.assign(this, { bridge, page, release, build, bank2, state, old, dfuSilent, selfUpdate, selfAbort, selfRefuse, unit, unitAfter });
+  constructor({ bridge, page, release, build = "0.4.0 de07edf9", bank2 = "open 0.4.0 de07edf9 seal=ffffffffffffffff", state = "SAVED", old = false, dfuSilent = false, selfUpdate = false, selfAbort = null, selfRefuse = null, unit = null, unitAfter = null, dropInstallReply = false }) {
+    Object.assign(this, { bridge, page, release, build, bank2, state, old, dfuSilent, selfUpdate, selfAbort, selfRefuse, unit, unitAfter, dropInstallReply });
     this.cardBin = null; // /CHIMERA.BIN on the card's root
     this.bank1Last = null;
     this.putting = null; // { size, crc, data: [] } while a put's lines come
@@ -52,7 +52,9 @@ export class FakeFirmware {
     if (this.build === this.release.version && bin.equals(this.release.bin)) return ["OK already installed"];
     const crc8 = crc.toString(16).padStart(8, "0");
     this.bridge.down = true;
-    setTimeout(() => this.bridge.hangUp(), 30);
+    // dropInstallReply: the unit hands off before its OK reaches the editor
+    // (it resets USB ~20 ms after replying): no answer, the port gone.
+    setTimeout(() => this.bridge.hangUp(), this.dropInstallReply ? 5 : 30);
     setTimeout(() => {
       if (this.selfAbort) {
         this.bank1Last = `aborted ${this.selfAbort}`;
@@ -62,7 +64,7 @@ export class FakeFirmware {
       }
       this.bridge.down = false;
     }, 600);
-    return [`OK bank1 verified ${size} ${crc8}, restarting`];
+    return this.dropInstallReply ? [] : [`OK bank1 verified ${size} ${crc8}, restarting`];
   }
 
   /** Its own bank 1 written: it boots it, and the boot installs a staged .bk2 sealed for it. */

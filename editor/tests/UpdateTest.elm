@@ -287,6 +287,9 @@ isGarbled e =
         Unrelated ->
             False
 
+        Unsent _ ->
+            False
+
 
 suite : Test
 suite =
@@ -705,6 +708,46 @@ suite =
                 \_ ->
                     Expect.equal (StoppedAfter selfUnit rel Staged (Unfinished "The unit says bank1 last dry ok 0a1b2c3d"))
                         (steps [ BackDone (Ok (Said [ "build 0.4.1 abcd1234", "bank2 open 0.4.1 abcd1234 seal=0123456789abcdef", "selfupdate 1", "bank1 last dry ok 0a1b2c3d" ] "OK")) ] installing |> Tuple.first)
+            ]
+        , describe "after bank1 install is sent: the unit may be flashing"
+            [ test "a_lost_reply_a_vanished_port_or_an_unreadable_one_all_wait_for_it" <|
+                \_ ->
+                    let
+                        sent : Update.Model
+                        sent =
+                            events [ Answered TStatus selfOld, Answered TPut (Said [] "OK"), Answered TPutBin (Said [] "OK") ] selfStarted
+
+                        waiting : ( Stage, List Request )
+                        waiting =
+                            ( Running selfUnit rel (Post Staged RestartingSelf), [ Back 180 True Nothing ] )
+                    in
+                    Expect.equal [ waiting, waiting, waiting ]
+                        [ steps [ Answered TSelf NoAnswer ] sent
+                        , steps [ Answered TSelf Gone ] sent
+                        , steps [ Garbled "x" ] sent
+                        ]
+            , test "the_wait_never_offers_dfu_retry_or_replug" <|
+                \_ ->
+                    events [ Answered TStatus selfOld, Answered TPut (Said [] "OK"), Answered TPutBin (Said [] "OK"), Answered TSelf Gone ] selfStarted
+                        |> shown
+                        |> Expect.all
+                            [ Query.has [ Sel.containing [ Sel.text "may be updating itself" ] ]
+                            , Query.hasNot [ Sel.containing [ Sel.text "USE UPDATE MODE" ] ]
+                            , Query.hasNot [ Sel.containing [ Sel.text "TRY AGAIN" ] ]
+                            ]
+            , test "not_back_after_it_never_offers_dfu_or_unplugging" <|
+                \_ ->
+                    events [ Answered TStatus selfOld, Answered TPut (Said [] "OK"), Answered TPutBin (Said [] "OK"), Answered TSelf Gone, BackDone (Err "off") ] selfStarted
+                        |> shown
+                        |> Expect.all
+                            [ Query.has [ Sel.containing [ Sel.text "may still be updating itself" ] ]
+                            , Query.hasNot [ Sel.containing [ Sel.text "USE UPDATE MODE" ] ]
+                            , Query.hasNot [ Sel.containing [ Sel.text "Unplug the USB cable" ] ]
+                            ]
+            , test "a_verb_never_sent_may_offer_try_again" <|
+                \_ ->
+                    Expect.equal (StoppedBefore selfUnit rel (NothingFlashed "The unit was disconnected before the install was sent"))
+                        (steps [ Answered TStatus selfOld, Answered TPut (Said [] "OK"), Answered TPutBin (Said [] "OK"), Unsent TSelf ] selfStarted |> Tuple.first)
             ]
         , describe "answers read strictly"
             [ test "a_malformed_answer_is_an_error_not_no_answer" <|

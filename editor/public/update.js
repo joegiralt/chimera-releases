@@ -208,6 +208,7 @@ var ChimeraUpdate = (function () {
   }
 
   var GONE = { gone: true };
+  var UNSENT = { unsent: true };
 
   /** Drop a stalled earlier answer's tail: lines until `quiet` ms pass without one. */
   async function drain(quiet) {
@@ -225,7 +226,8 @@ var ChimeraUpdate = (function () {
   async function ask1(line, first) {
     if (!linkUp) await relink();
     await drain(50);
-    if (!linkUp || !(await ports.write(line))) return GONE;
+    // A line that never reached the unit is said so: the unit is as it was.
+    if (!linkUp || !(await ports.write(line))) return UNSENT;
     var lines = [];
     for (var wait = first; ; wait = SILENCE_MS) {
       var l = await nextLine(wait);
@@ -352,7 +354,7 @@ var ChimeraUpdate = (function () {
       if (linkUp) {
         var a = await ask1('status', Math.max(50, Math.min(SILENCE_MS, end - Date.now())));
         if (a.end && a.end !== 'ERR busy') return say({ op: 'back', lines: a.lines, end: a.end });
-        cause = a.gone ? 'off' : a.end ? 'busy' : 'silent';
+        cause = a.gone || a.unsent ? 'off' : a.end ? 'busy' : 'silent';
       }
       var left = end - Date.now();
       if (left <= 0) return say({ op: 'back', cause: cause });

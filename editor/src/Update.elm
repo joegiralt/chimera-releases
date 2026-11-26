@@ -464,6 +464,9 @@ type Event
     | Garbled String
       -- An answer for the offer on connect, not for an update: changes nothing here.
     | Unrelated
+      -- The request's line never reached the unit (the write failed): the
+      -- link gone before it, as a Gone answer, but known unsent.
+    | Unsent Ticket
 
 
 type Msg
@@ -648,6 +651,9 @@ endedLink e =
             Nothing
 
         Unrelated ->
+            Nothing
+
+        Unsent _ ->
             Nothing
 
 
@@ -1328,6 +1334,7 @@ type alias In =
     , write : Maybe WriteResult
     , back : Maybe (Result String Answer)
     , broken : Maybe String
+    , unsent : Maybe Ticket
     }
 
 
@@ -1336,7 +1343,7 @@ classify e =
     let
         none : In
         none =
-            { begun = Nothing, release = Nothing, cancelled = False, answer = Nothing, copied = Nothing, written = Nothing, device = Nothing, write = Nothing, back = Nothing, broken = Nothing }
+            { begun = Nothing, release = Nothing, cancelled = False, answer = Nothing, copied = Nothing, written = Nothing, device = Nothing, write = Nothing, back = Nothing, broken = Nothing, unsent = Nothing }
     in
     case e of
         Begun b ->
@@ -1377,6 +1384,9 @@ classify e =
 
         Unrelated ->
             none
+
+        Unsent t ->
+            { none | answer = Just ( t, Gone ), unsent = Just t }
 
 
 answerFor : Ticket -> In -> Maybe Answer
@@ -1460,6 +1470,10 @@ step e ((Model m) as model) =
                     -- Fail closed: a step that can't read its answer stops,
                     -- on the side of the write it is on.
                     case run of
+                        -- The install's answer unreadable: it may be writing; wait for it.
+                        Pre InstallingSelf ->
+                            ( Model { m | stage = Running u r (Post Staged RestartingSelf) }, [ Back 180 True u.unit ] )
+
                         Pre _ ->
                             to (StoppedBefore u r (GarbledBefore why))
 
@@ -1754,9 +1768,16 @@ runningOn i u r run m =
         -- `bank1 install`: verified and restarting (the unit writes its own
         -- bank 1, restarts, installs bank 2: up to three minutes), already
         -- installed, or refused with nothing written.
+        -- Once `bank1 install` is sent the unit may already be writing its own
+        -- bank 1 (it hands off ~20 ms after its OK, then resets USB): a lost
+        -- reply or a vanished port is the wait for it to come back, never a
+        -- retry, re-plug or DFU. Only an ERR, or a verb never sent, may offer those.
         Pre InstallingSelf ->
-            case answerFor TSelf i of
-                Just (Said _ end) ->
+            case ( i.unsent, answerFor TSelf i ) of
+                ( Just TSelf, _ ) ->
+                    before (NothingFlashed "The unit was disconnected before the install was sent")
+
+                ( _, Just (Said _ end) ) ->
                     if String.startsWith "OK bank1 verified " end then
                         to (Post Staged RestartingSelf) [ Back 180 True u.unit ]
 
@@ -1767,15 +1788,16 @@ runningOn i u r run m =
                         to (Post Staged RestartingSelf) [ Back 180 True u.unit ]
 
                     else
+                        -- An ERR is the verb refused: the unit isn't writing.
                         before (SelfRefused end)
 
-                Just Gone ->
+                ( _, Just Gone ) ->
                     to (Post Staged RestartingSelf) [ Back 180 True u.unit ]
 
-                Just NoAnswer ->
-                    after Staged (SelfNotBack "it didn't answer bank1 install")
+                ( _, Just NoAnswer ) ->
+                    to (Post Staged RestartingSelf) [ Back 180 True u.unit ]
 
-                Nothing ->
+                ( _, Nothing ) ->
                     ignore
 
         -- Back as the new firmware: bank 1 written and checked (`bank1 last
@@ -1818,8 +1840,12 @@ runningOn i u r run m =
                     ignore
 
         Pre (EnteringDfu b) ->
-            case answerFor TDfu i of
-                Just (Said _ end) ->
+            case ( i.unsent, answerFor TDfu i ) of
+                -- Never sent: the unit is as it was.
+                ( Just TDfu, _ ) ->
+                    before (NothingFlashed "The unit was disconnected before the request for update mode was sent")
+
+                ( _, Just (Said _ end) ) ->
                     if isOk end then
                         to (Pre (FindingDevice b)) [ FindDevice 10 ]
 
@@ -1827,13 +1853,13 @@ runningOn i u r run m =
                         before (NothingFlashed ("The unit refused update mode: " ++ end))
 
                 -- Sent: the OK was lost to the reset, not refused.
-                Just Gone ->
+                ( _, Just Gone ) ->
                     to (Pre (FindingDevice b)) [ FindDevice 10 ]
 
-                Just NoAnswer ->
+                ( _, Just NoAnswer ) ->
                     before (DfuSilent b)
 
-                Nothing ->
+                ( _, Nothing ) ->
                     ignore
 
         Pre (FindingDevice b) ->
@@ -2453,7 +2479,10 @@ event =
                             ]
 
                     "answer" ->
-                        D.map2 Answered (D.field "id" ticket) answer
+                        D.oneOf
+                            [ D.field "unsent" (exactly True) |> D.andThen (\_ -> D.map Unsent (D.field "id" ticket))
+                            , D.map2 Answered (D.field "id" ticket) answer
+                            ]
 
                     "copied" ->
                         D.map Copied (progress "sent")
@@ -3194,7 +3223,7 @@ runningText windows run =
             [ say "Don't unplug the unit or power it off." ]
 
         Pre InstallingSelf ->
-            [ say "Don't unplug the unit or power it off." ]
+            [ say "The unit may be updating itself: don't power it off or unplug it." ]
 
         Pre (EnteringDfu _) ->
             [ say "Don't unplug the unit or power it off." ]
@@ -3205,7 +3234,22 @@ runningText windows run =
         Writing _ _ ->
             [ say "Don't unplug the unit or power it off." ]
 
-        Post _ _ ->
+        Post _ RestartingSelf ->
+            [ say "The unit may be updating itself: don't power it off or unplug it. It writes its firmware, restarts and installs bank 2, then comes back here by itself (up to three minutes)." ]
+
+        Post _ Restarting ->
+            [ say "Don't unplug the unit or power it off." ]
+
+        Post _ (CopyingLate _) ->
+            [ say "Don't unplug the unit or power it off." ]
+
+        Post _ (Installing _) ->
+            [ say "Don't unplug the unit or power it off." ]
+
+        Post _ RestartingAfterInstall ->
+            [ say "Don't unplug the unit or power it off." ]
+
+        Post _ Verifying ->
             [ say "Don't unplug the unit or power it off." ]
 
 
@@ -3444,6 +3488,7 @@ failedAfter f =
 
         SelfNotBack cause ->
             [ say ("THE UNIT HASN'T COME BACK FROM ITS OWN INSTALL (" ++ cause ++ "). It writes its firmware, restarts and installs bank 2: up to three minutes.")
+            , say "The unit may still be updating itself: don't power it off or unplug it while its screen shows it working."
             , say "If its screen says DON'T POWER OFF, leave it on and press CHECK AGAIN when it changes. Otherwise press CHECK AGAIN."
             , buttons [ btn "CHECK AGAIN" CheckAgain, btn "CONNECT UNIT…" ConnectPort, btn "CLOSE" Close ]
             , say "If it never comes back, finish from the bootloader, which is never touched: CHIMERA.BIN is already on the card."
