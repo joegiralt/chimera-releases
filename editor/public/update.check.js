@@ -179,10 +179,74 @@ async function oneOtherPort() {
   eq(wrote.filter(function (line) { return line !== 'status'; }).length, 0, 'dfu written to another unit');
 }
 
+// One console reopened that can't say who it is (silent, busy, or a status
+// with no unit line): nothing is written to it.
+async function oneUnnamedPort() {
+  var mine = '0034002b3138510a37363337';
+  var replies = { silent: null, busy: ['ERR busy'], nameless: ['build 0.4.1 abcd1234', 'OK'] };
+  for (var kind in replies) {
+    var claim = null, wrote = [], reply = replies[kind];
+    var ports = {
+      isOpen: function () { return false; },
+      take: function (claimer) { claim = claimer; },
+      giveBack: function () { return 'open'; },
+      reopen: function () { claim.state('open'); return Promise.resolve(true); },
+      candidates: function () { return Promise.resolve(['p1']); },
+      close: function () { claim.state('lost'); return Promise.resolve(); },
+      write: function (line) {
+        wrote.push(line);
+        if (line === 'status' && reply) setTimeout(function () { reply.forEach(function (answer) { claim.line(answer); }); }, 1);
+        return Promise.resolve(true);
+      },
+    };
+    Update.attach({ ports: { updateIn: { send: function () {} } } }, ports);
+    await Update.run({ op: 'begin' });
+    await Update.run({ op: 'ask', id: 'self', line: 'bank1 install 1 0', wait: 100, delay: 0, unit: mine });
+    eq(wrote.filter(function (line) { return line !== 'status'; }).length, 0, 'bank1 install written to a ' + kind + ' console');
+  }
+}
+
+// The wait after a restart: the other unit's console first (this one still
+// restarting), this one on a later poll: this one's status, no false stop.
+async function backPastTheOther() {
+  var mine = '0034002b3138510a37363337', theOther = '0011002233445566778899aa';
+  var claim = null, reopens = 0;
+  var ports = {
+    isOpen: function () { return false; },
+    take: function (claimer) { claim = claimer; },
+    giveBack: function () { return 'open'; },
+    reopen: function () { reopens++; claim.state('open'); return Promise.resolve(true); },
+    candidates: function () { return Promise.resolve(['p1']); },
+    close: function () { claim.state('lost'); return Promise.resolve(); },
+    write: function (line) {
+      var who = reopens === 1 ? theOther : mine;
+      if (line === 'status') setTimeout(function () { claim.line('build 0.4.1 abcd1234'); claim.line('unit ' + who); claim.line('OK'); }, 1);
+      return Promise.resolve(true);
+    },
+  };
+  var said = [];
+  Update.attach({ ports: { updateIn: { send: function (message) { said.push(message); } } } }, ports);
+  await Update.run({ op: 'begin' });
+  await Update.run({ op: 'back', secs: 5, restart: false, unit: mine });
+  var last = said[said.length - 1];
+  eq((last.lines || []).indexOf('unit ' + mine) >= 0, true, 'the wait handed back ' + JSON.stringify(last));
+  // Only the other unit, to the end: its status, for Elm to say whose.
+  reopens = 0;
+  ports.write = function (line) {
+    if (line === 'status') setTimeout(function () { claim.line('unit ' + theOther); claim.line('OK'); }, 1);
+    return Promise.resolve(true);
+  };
+  said = [];
+  await Update.run({ op: 'back', secs: 1, restart: false, unit: mine });
+  eq((said[said.length - 1].lines || []).indexOf('unit ' + theOther) >= 0, true, 'the other unit said at the end');
+}
+
 (async function () {
   await checks();
   await pickedByUnit();
   await oneOtherPort();
+  await oneUnnamedPort();
+  await backPastTheOther();
   await onlyTheConfirmedRelease();
   deviceChoice();
   await putLines();

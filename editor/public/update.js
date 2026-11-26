@@ -241,14 +241,15 @@ var ChimeraUpdate = (function () {
 
   /** The link opened again: a port this page was given (by the console's
    * USB id), checked to be `unit`'s; 'several' when more than one unit's
-   * console is there, 'other' when the one opened is another unit's. */
-  async function relink(unit) {
+   * console is there, 'other' when the one opened is another unit's.
+   * `waiting`: the wait after a restart, which writes nothing. */
+  async function relink(unit, waiting) {
     inbox = [];
     otherUnit = null;
     otherAnswer = null;
     var result = await ports.reopen();
     if (result === 'several' && unit) result = await byUnit(unit);
-    else if (result === true && unit && (await ports.candidates()).length) result = await sameUnit(unit);
+    else if (result === true && unit && (await ports.candidates()).length) result = await sameUnit(unit, waiting);
     linkUp = result === true;
     return result;
   }
@@ -257,25 +258,32 @@ var ChimeraUpdate = (function () {
    * for Elm's stop. */
   var otherUnit = null, otherAnswer = null;
 
-  /** `status`'s `unit <id>`, if it names one. */
+  /** `status`'s `unit <id>` (24 hex digits, the H750's UID), if it names one. */
   function unitIn(lines) {
     var line = (lines || []).find(function (candidate) { return candidate.indexOf('unit ') === 0; });
-    return line ? line.slice(5).trim().toLowerCase() : null;
+    var id = line ? line.slice(5).trim().toLowerCase() : '';
+    return /^[0-9a-f]{24}$/.test(id) ? id : null;
   }
 
   /** The one console reopened (a serial port, not the socket): kept only
-   * if its `status` doesn't name another unit; else closed, 'other'. */
-  async function sameUnit(unit) {
+   * if its `status` names this unit; another unit's is closed ('other').
+   * One that can't say (silent, busy, no unit line) is closed too (false),
+   * except by the wait after a restart, which writes nothing and keeps a
+   * whole status for Elm to judge (an older firmware names no unit). */
+  async function sameUnit(unit, waiting) {
     linkUp = true;
     var answer = await ask1('status', SILENCE_MS);
     var named = unitIn(answer.lines);
-    if (!named || named === unit) return linkUp ? true : false;
-    otherUnit = named;
-    otherAnswer = answer;
+    if (named === unit && linkUp) return true;
+    if (!named && waiting && linkUp && answer.end && (answer.end === 'OK' || answer.end.indexOf('OK ') === 0)) return true;
+    if (named && named !== unit) {
+      otherUnit = named;
+      otherAnswer = answer;
+    }
     await ports.close();
     linkUp = false;
     inbox = [];
-    return 'other';
+    return named && named !== unit ? 'other' : false;
   }
 
   /** Several consoles granted: each opened in turn and asked `status`; the
@@ -375,11 +383,13 @@ var ChimeraUpdate = (function () {
       inbox = [];
     }
     var cause = 'off';
+    // Another unit's console, seen while this one restarts: its `status`,
+    // handed to Elm (to say whose) only if this one never comes back.
+    var sawOther = null;
     for (;;) {
       if (!linkUp) {
-        var result = await relink(unit);
-        // Another unit's console: its `status`, for Elm to say whose.
-        if (result === 'other' && otherAnswer) return say({ op: 'back', lines: otherAnswer.lines, end: otherAnswer.end });
+        var result = await relink(unit, true);
+        if (result === 'other' && otherAnswer) sawOther = otherAnswer;
         if (result === 'several' || result === 'other') cause = result;
         else if (!linkUp) cause = 'off';
       }
@@ -389,6 +399,7 @@ var ChimeraUpdate = (function () {
         cause = answer.gone || answer.unsent ? 'off' : answer.end ? 'busy' : 'silent';
       }
       var left = end - Date.now();
+      if (left <= 0 && sawOther) return say({ op: 'back', lines: sawOther.lines, end: sawOther.end });
       if (left <= 0) return say({ op: 'back', cause: cause });
       await sleep(Math.min(BACK_POLL_MS, left));
     }
