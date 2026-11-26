@@ -193,8 +193,12 @@ hand msg ((Model m) as model) =
 
         ConnectPort ->
             case stoppedAfterOf m.stage of
-                Just ( u, r, ( b, _ ) ) ->
-                    go (Running u r (Post b Restarting)) [ PickPort, Back 120 False u.unit ]
+                Just ( u, r, ( b, f ) ) ->
+                    let
+                        ( wait, secs ) =
+                            waitAgain u f
+                    in
+                    go (Running u r (Post b wait)) [ PickPort, Back secs False u.unit ]
 
                 Nothing ->
                     ignore
@@ -287,28 +291,68 @@ afterAgain s =
     stoppedAfterOf s
         |> Maybe.andThen
             (\( u, r, ( b, f ) ) ->
+                let
+                    ( wait, secs ) =
+                        waitAgain u f
+
+                    again : Maybe ( Stage, List Request )
+                    again =
+                        Just ( Running u r (Post b wait), [ Back secs False u.unit ] )
+                in
                 case f of
                     WriteCut _ ->
                         Nothing
 
                     LeaveFailed _ ->
-                        Just ( Running u r (Post b Restarting), [ Back 120 False u.unit ] )
+                        again
 
                     NotBack _ ->
-                        Just ( Running u r (Post b Restarting), [ Back 120 False u.unit ] )
+                        again
 
                     Unfinished _ ->
-                        Just ( Running u r (Post b Restarting), [ Back 120 False u.unit ] )
+                        again
 
                     GarbledAfter _ ->
-                        Just ( Running u r (Post b Restarting), [ Back 120 False u.unit ] )
+                        again
 
                     SelfNotBack _ ->
-                        Just ( Running u r (Post b RestartingSelf), [ Back 180 False u.unit ] )
+                        again
 
                     OtherUnit _ ->
-                        Just ( Running u r (Post b Restarting), [ Back 120 False u.unit ] )
+                        again
             )
+
+
+{-| The wait for the unit after a stop past the write: the self-update's
+(three minutes, its `bank1 last` read) after its own install, else the DFU
+write's.
+-}
+waitAgain : UnitNow -> PostFail -> ( PostRun, Int )
+waitAgain u f =
+    case ( f, u.selfUpdate ) of
+        ( SelfNotBack _, _ ) ->
+            ( RestartingSelf, 180 )
+
+        ( OtherUnit _, Just _ ) ->
+            ( RestartingSelf, 180 )
+
+        ( OtherUnit _, Nothing ) ->
+            ( Restarting, 120 )
+
+        ( WriteCut _, _ ) ->
+            ( Restarting, 120 )
+
+        ( LeaveFailed _, _ ) ->
+            ( Restarting, 120 )
+
+        ( NotBack _, _ ) ->
+            ( Restarting, 120 )
+
+        ( Unfinished _, _ ) ->
+            ( Restarting, 120 )
+
+        ( GarbledAfter _, _ ) ->
+            ( Restarting, 120 )
 
 
 {-| A stop that left the unit in update mode with nothing written: its DFU

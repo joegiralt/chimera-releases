@@ -237,7 +237,7 @@ holding (Model m) =
         Just ( _, _, Pre Checking ) ->
             False
 
-        Just ( _, _, Pre ReadingProject ) ->
+        Just ( _, _, Pre (ReadingProject _) ) ->
             False
 
         Just ( _, _, Pre (Saving _) ) ->

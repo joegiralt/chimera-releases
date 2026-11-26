@@ -78,7 +78,7 @@ runTitle r run =
         Pre Checking ->
             "CHECKING"
 
-        Pre ReadingProject ->
+        Pre (ReadingProject _) ->
             "CHECKING"
 
         Pre (Saving _) ->
@@ -208,7 +208,7 @@ body m =
             change u r :: failedBefore m.windows m.webusb u f
 
         StoppedAfter u r _ f ->
-            change u r :: failedAfter f
+            change u r :: failedAfter (u.selfUpdate /= Nothing) f
 
 
 ready : Fields -> UnitNow -> ReleaseState -> List (Html Msg)
@@ -367,7 +367,7 @@ stages self r run =
                     Pre Checking ->
                         0
 
-                    Pre ReadingProject ->
+                    Pre (ReadingProject _) ->
                         0
 
                     Pre (Saving _) ->
@@ -412,7 +412,7 @@ stages self r run =
                 Pre (CopyingBin p) ->
                     Just p
 
-                Pre ReadingProject ->
+                Pre (ReadingProject _) ->
                     Nothing
 
                 Pre (Saving _) ->
@@ -534,7 +534,7 @@ runningText windows run =
         Pre (Copying _) ->
             [ say "Don't unplug the unit or power it off." ]
 
-        Pre ReadingProject ->
+        Pre (ReadingProject _) ->
             [ say "Don't unplug the unit or power it off." ]
 
         Pre (Saving _) ->
@@ -781,8 +781,11 @@ wayOut d =
             bootloaderSteps
 
 
-failedAfter : PostFail -> List (Html Msg)
-failedAfter f =
+{-| `self`: the unit's own install, where the editor never wrote the
+firmware area and can't say what the unit did.
+-}
+failedAfter : Bool -> PostFail -> List (Html Msg)
+failedAfter self f =
     case f of
         WriteCut why ->
             [ say ("THE FIRMWARE WRITE WAS CUT OFF (" ++ why ++ ").")
@@ -813,7 +816,16 @@ failedAfter f =
                 ++ bootloaderSteps
 
         Unfinished why ->
-            [ say ("THE FIRMWARE IS WRITTEN, BUT THE UPDATE ISN'T FINISHED: " ++ why ++ ".")
+            [ say
+                ((if self then
+                    "THE UPDATE ISN'T FINISHED: "
+
+                  else
+                    "THE FIRMWARE IS WRITTEN, BUT THE UPDATE ISN'T FINISHED: "
+                 )
+                    ++ why
+                    ++ "."
+                )
             , say "Press TRY AGAIN: the editor asks the unit what it runs now and finishes from there."
             , buttons [ btn "TRY AGAIN" TryAgain, btn "CLOSE" Close ]
             ]

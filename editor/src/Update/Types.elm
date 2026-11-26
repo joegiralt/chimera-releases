@@ -147,8 +147,9 @@ type alias InDfu =
 -}
 type PreRun
     = Checking
-      -- Unsaved changes: the loaded project read (`ed since`, paged), then saved or dropped.
-    | ReadingProject
+      -- Unsaved changes: the loaded project read (`ed since`, its pages
+      -- counted), then saved or dropped.
+    | ReadingProject Int
     | Saving Bool
     | Discarding
     | Settling Int
@@ -449,7 +450,7 @@ pickingOf s =
         Just ( _, _, Pre Checking ) ->
             Nothing
 
-        Just ( _, _, Pre ReadingProject ) ->
+        Just ( _, _, Pre (ReadingProject _) ) ->
             Nothing
 
         Just ( _, _, Pre (Saving _) ) ->

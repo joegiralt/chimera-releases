@@ -339,6 +339,17 @@ suite =
                             ]
                             started
                         )
+            , test "ed_since_pages_are_capped_and_numbered" <|
+                \_ ->
+                    let
+                        modified : Update.Types.Model
+                        modified =
+                            events [ Answered TStatus (status "0.4.0 de07edf9" "MODIFIED" "open") ] started
+                    in
+                    Expect.equal [ StoppedBefore edited rel (Unsaved Nothing), StoppedBefore edited rel (Unsaved Nothing) ]
+                        [ Update.stage (events [ Answered TProject (Said [] "OK x1 more") ] modified)
+                        , Update.stage (events (List.repeat 64 (Answered TProject (Said [] "OK 5 more"))) modified)
+                        ]
             , test "a_project_never_saved_can_only_be_saved" <|
                 \_ ->
                     Expect.equal (StoppedBefore edited rel (Unsaved Nothing))
@@ -444,6 +455,25 @@ suite =
                         , \_ -> shown stopped |> Query.has [ Sel.containing [ Sel.text "Under Firmware to flash, step with − / + until it shows CHIMERA.BIN." ] ]
                         ]
                         ()
+            , test "connect_unit_after_not_back_waits_for_its_own_install" <|
+                \_ ->
+                    Expect.equal ( Running selfUnit rel (Post Staged RestartingSelf), [ PickPort, Back 180 False Nothing ] )
+                        (Update.press ConnectPort (events [ BackDone (Err "off") ] installing) |> Tuple.mapFirst Update.stage)
+            , test "another_unit_after_its_own_install_checks_again_as_one" <|
+                \_ ->
+                    let
+                        selfId : Update.Types.Model
+                        selfId =
+                            events [ Begun { open = True, webusb = True, windows = False }, Answered TStatus (withUnit idA selfOld), ReleaseIs (Ok rel) ] (Tuple.first Update.begin)
+                                |> hands [ Start, Go ]
+                                |> events [ Answered TStatus (withUnit idA selfOld), Answered TPut (Said [] "OK"), Answered TPutBin (Said [] "OK"), Answered TSelf (Said [] "OK bank1 verified 900000 0a1b2c3d, restarting"), BackDone (Ok (withUnit idB selfBack)) ]
+                    in
+                    Expect.equal (Running { selfUnit | unit = Just idA } rel (Post Staged RestartingSelf)) (Update.stage (hands [ CheckAgain ] selfId))
+            , test "unfinished_after_its_own_install_never_says_the_editor_wrote_it" <|
+                \_ ->
+                    events [ BackDone (Ok (Said [ "build 0.4.1 abcd1234", "bank2 open 0.4.1 abcd1234 seal=0123456789abcdef", "bank1 last ok deadbeef" ] "OK")) ] installing
+                        |> shown
+                        |> Query.hasNot [ Sel.containing [ Sel.text "THE FIRMWARE IS WRITTEN" ] ]
             , test "the_stage_reads_installing_the_version_and_no_picker" <|
                 \_ ->
                     events [ Answered TStatus selfOld, Answered TPut (Said [] "OK") ] selfStarted

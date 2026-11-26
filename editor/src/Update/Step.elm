@@ -206,6 +206,13 @@ step e ((Model m) as model) =
             ignore
 
 
+{-| The most pages of `ed since` read for the loaded project's line.
+-}
+sincePages : Int
+sincePages =
+    64
+
+
 status : Maybe String -> Ticket -> Int -> Request
 status unit t delay =
     Ask t "status" 2000 delay unit
@@ -343,7 +350,7 @@ runningOn i u r run m =
                                     afresh u a
                             in
                             if now.modified then
-                                ( Model { m | stage = Running now r (Pre ReadingProject) }, [ Ask TProject "ed since 0" 2000 0 now.unit ] )
+                                ( Model { m | stage = Running now r (Pre (ReadingProject 1)) }, [ Ask TProject "ed since 0" 2000 0 now.unit ] )
 
                             else
                                 copyFirst now
@@ -355,7 +362,8 @@ runningOn i u r run m =
                     ignore
 
         -- The project line may be on a later page of `ed since`.
-        Pre ReadingProject ->
+        -- At most `sincePages` pages, each `next` a number, else as never saved.
+        Pre (ReadingProject page) ->
             case answerFor TProject i of
                 Just (Said lines end) ->
                     case ( loadedOf lines, String.words end ) of
@@ -363,7 +371,16 @@ runningOn i u r run m =
                             before (Unsaved l)
 
                         ( Nothing, [ "OK", next, "more" ] ) ->
-                            to (Pre ReadingProject) [ Ask TProject ("ed since " ++ next) 2000 0 u.unit ]
+                            case String.toInt next of
+                                Just from ->
+                                    if page < sincePages then
+                                        to (Pre (ReadingProject (page + 1))) [ Ask TProject ("ed since " ++ String.fromInt from) 2000 0 u.unit ]
+
+                                    else
+                                        before (Unsaved Nothing)
+
+                                Nothing ->
+                                    before (Unsaved Nothing)
 
                         ( Nothing, _ ) ->
                             before (Unsaved Nothing)
@@ -465,8 +482,9 @@ runningOn i u r run m =
                         ( Ok Staged, Just _ ) ->
                             to (Pre (CopyingBin { done = r.bk2Size, total = both })) [ PutBin r binRemote ]
 
+                        -- Else update mode: the unit no longer on the self-update path.
                         ( Ok b, _ ) ->
-                            to (Pre (EnteringDfu b)) [ Dfu ]
+                            ( Model { m | stage = Running { u | selfUpdate = Nothing } r (Pre (EnteringDfu b)) }, [ Dfu ] )
 
                         ( Err why, _ ) ->
                             before (NothingFlashed why)
