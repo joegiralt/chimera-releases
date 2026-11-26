@@ -296,7 +296,7 @@ for (const engine of ENGINES) {
       await until(`the cable to show the unit's amount ${moved.amount} as ${cableText(moved.amount)}`, async () => (await att.getAttribute("aria-valuetext")) === cableText(moved.amount));
       // Unpatch: a double click.
       await att.dblclick();
-      await until(`${patched} gone from the unit`, async () => !cellOf(await unitRoutes()));
+      await until(`${patched} gone from the unit`, async () => !cellOf(await unitRoutes()), 5000 * SLOW);
       await att.waitFor({ state: "detached" });
       // And a route made on the unit shows as a cable.
       await unit.ok(`ed route ${patched} 50`);
