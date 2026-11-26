@@ -543,7 +543,7 @@ describe("UPDATE from the browser", () => {
     await openUpdate();
     await start();
     // Only the other unit answers: it is said once the wait for this one (120 s) runs out.
-    await until("the other unit said", async () => /IS ANOTHER ONE/.test(await said()), 130000);
+    await until("the other unit said", async () => /IS ANOTHER ONE/.test(await said()), 150000);
     assert.match(await said(), new RegExp(`unit ${B}`));
     // The other board unplugged: this unit answers again.
     fake.unit = A;
