@@ -245,6 +245,7 @@ var ChimeraUpdate = (function () {
   async function relink(unit) {
     inbox = [];
     otherUnit = null;
+    otherAnswer = null;
     var result = await ports.reopen();
     if (result === 'several' && unit) result = await byUnit(unit);
     else if (result === true && unit && (await ports.candidates()).length) result = await sameUnit(unit);
@@ -252,8 +253,9 @@ var ChimeraUpdate = (function () {
     return result;
   }
 
-  /** The other unit a reopened link found (its `unit`), for Elm's stop. */
-  var otherUnit = null;
+  /** The other unit a reopened link found (its `unit`) and its `status`,
+   * for Elm's stop. */
+  var otherUnit = null, otherAnswer = null;
 
   /** `status`'s `unit <id>`, if it names one. */
   function unitIn(lines) {
@@ -269,6 +271,7 @@ var ChimeraUpdate = (function () {
     var named = unitIn(answer.lines);
     if (!named || named === unit) return linkUp ? true : false;
     otherUnit = named;
+    otherAnswer = answer;
     await ports.close();
     linkUp = false;
     inbox = [];
@@ -375,6 +378,8 @@ var ChimeraUpdate = (function () {
     for (;;) {
       if (!linkUp) {
         var result = await relink(unit);
+        // Another unit's console: its `status`, for Elm to say whose.
+        if (result === 'other' && otherAnswer) return say({ op: 'back', lines: otherAnswer.lines, end: otherAnswer.end });
         if (result === 'several' || result === 'other') cause = result;
         else if (!linkUp) cause = 'off';
       }
