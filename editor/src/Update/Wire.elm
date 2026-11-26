@@ -61,16 +61,16 @@ encode request =
             op "release" [ ( "how", E.string "choose" ) ]
 
         Ask which line wait delay unit ->
-            op "ask" [ ( "id", E.string (ticketId which) ), ( "line", E.string line ), ( "wait", E.int wait ), ( "delay", E.int delay ), ( "unit", Maybe.map E.string unit |> Maybe.withDefault E.null ) ]
+            op "ask" [ ( "id", E.string (ticketId which) ), ( "line", E.string line ), ( "wait", E.int wait ), ( "delay", E.int delay ), ( "unit", unitValue unit ) ]
 
-        Put rel ->
-            op "put" [ ( "id", E.string (ticketId TPut) ), ( "file", E.string "bk2" ), ( "seal", E.string rel.seal ), ( "sha", E.string rel.bk2Sha ) ]
+        Put rel unit ->
+            op "put" [ ( "id", E.string (ticketId TPut) ), ( "file", E.string "bk2" ), ( "seal", E.string rel.seal ), ( "sha", E.string rel.bk2Sha ), ( "unit", unitValue unit ) ]
 
-        PutBin rel remote ->
-            op "put" [ ( "id", E.string (ticketId TPutBin) ), ( "file", E.string "bin" ), ( "remote", E.string remote ), ( "seal", E.string rel.seal ), ( "sha", E.string rel.binSha ) ]
+        PutBin rel remote unit ->
+            op "put" [ ( "id", E.string (ticketId TPutBin) ), ( "file", E.string "bin" ), ( "remote", E.string remote ), ( "seal", E.string rel.seal ), ( "sha", E.string rel.binSha ), ( "unit", unitValue unit ) ]
 
-        Dfu ->
-            op "dfu" [ ( "id", E.string (ticketId TDfu) ) ]
+        Dfu unit ->
+            op "dfu" [ ( "id", E.string (ticketId TDfu) ), ( "unit", unitValue unit ) ]
 
         FindDevice secs ->
             op "findDevice" [ ( "secs", E.int secs ) ]
@@ -82,7 +82,7 @@ encode request =
             op "write" [ ( "seal", E.string rel.seal ), ( "sha", E.string rel.binSha ) ]
 
         Back secs restart unit ->
-            op "back" [ ( "secs", E.int secs ), ( "restart", E.bool restart ), ( "unit", Maybe.map E.string unit |> Maybe.withDefault E.null ) ]
+            op "back" [ ( "secs", E.int secs ), ( "restart", E.bool restart ), ( "unit", unitValue unit ) ]
 
         PickPort ->
             op "pickPort" []
@@ -92,6 +92,11 @@ encode request =
 
         End ->
             op "end" []
+
+
+unitValue : Maybe String -> E.Value
+unitValue unit =
+    Maybe.map E.string unit |> Maybe.withDefault E.null
 
 
 {-| What `update.js` said, read strictly: anything malformed is `Garbled`
@@ -129,6 +134,7 @@ event =
                     "answer" ->
                         D.oneOf
                             [ D.field "unsent" (exactly True) |> D.andThen (\_ -> D.map Unsent (D.field "id" ticket))
+                            , D.map OtherOnLink (D.field "other" (D.nullable D.string))
                             , D.map2 Answered (D.field "id" ticket) answer
                             ]
 

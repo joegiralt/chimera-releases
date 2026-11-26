@@ -145,9 +145,44 @@ async function pickedByUnit() {
   eq(said.length === 1 && said[0].end, 'OK', 'the ask answered');
 }
 
+// One console granted and it is another unit's: a lost link reopened to
+// it is asked `status` first, and nothing is written to it.
+async function oneOtherPort() {
+  var release = makeRelease('0.4.1 abcd1234', { bk2Size: 4096 + 256 });
+  var rel = await Update.adopt(u8(release.bin), u8(release.bk2), release.sums, 'latest', null);
+  var claim = null, opened = false, closed = 0, wrote = [];
+  var ports = {
+    isOpen: function () { return false; },
+    take: function (claimer) { claim = claimer; },
+    giveBack: function () { return 'open'; },
+    reopen: function () { opened = true; claim.state('open'); return Promise.resolve(true); },
+    candidates: function () { return Promise.resolve(['p1']); },
+    close: function () { closed++; opened = false; claim.state('lost'); return Promise.resolve(); },
+    write: function (line) {
+      wrote.push(line);
+      if (line === 'status') setTimeout(function () { claim.line('build 0.4.1 abcd1234'); claim.line('unit 0011002233445566778899aa'); claim.line('OK'); }, 1);
+      return Promise.resolve(true);
+    },
+  };
+  var said = [];
+  Update.attach({ ports: { updateIn: { send: function (message) { said.push(message); } } } }, ports);
+  await Update.run({ op: 'begin' });
+  var mine = '0034002b3138510a37363337';
+  await Update.run({ op: 'put', id: 'putbin', file: 'bin', remote: '/CHIMERA.BIN', seal: rel.seal, sha: rel.binSha, unit: mine });
+  eq(wrote.filter(function (line) { return line !== 'status'; }).length, 0, 'a put written to another unit');
+  eq(said[said.length - 1].other, '0011002233445566778899aa', 'the put said which unit answered');
+  eq(closed, 1, 'the other unit\'s port closed');
+  await Update.run({ op: 'ask', id: 'self', line: 'bank1 install 1 0', wait: 100, delay: 0, unit: mine });
+  eq(wrote.filter(function (line) { return line !== 'status'; }).length, 0, 'an ask written to another unit');
+  eq(said[said.length - 1].other, '0011002233445566778899aa', 'the ask said which unit answered');
+  await Update.run({ op: 'dfu', id: 'dfu', unit: mine });
+  eq(wrote.filter(function (line) { return line !== 'status'; }).length, 0, 'dfu written to another unit');
+}
+
 (async function () {
   await checks();
   await pickedByUnit();
+  await oneOtherPort();
   await onlyTheConfirmedRelease();
   deviceChoice();
   await putLines();

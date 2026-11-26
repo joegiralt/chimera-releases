@@ -225,7 +225,7 @@ var ChimeraUpdate = (function () {
    * went (the unit restarted, the cable came back) is opened again first,
    * to `unit`'s console when several are there. */
   async function ask1(line, first, unit) {
-    if (!linkUp) await relink(unit);
+    if (!linkUp && (await relink(unit)) === 'other') return { other: otherUnit };
     await drain(50);
     // A line that never reached the unit is said so: the unit is as it was.
     if (!linkUp || !(await ports.write(line))) return UNSENT;
@@ -240,13 +240,39 @@ var ChimeraUpdate = (function () {
   }
 
   /** The link opened again: a port this page was given (by the console's
-   * USB id); 'several' when more than one unit's console is there. */
+   * USB id), checked to be `unit`'s; 'several' when more than one unit's
+   * console is there, 'other' when the one opened is another unit's. */
   async function relink(unit) {
     inbox = [];
+    otherUnit = null;
     var result = await ports.reopen();
     if (result === 'several' && unit) result = await byUnit(unit);
+    else if (result === true && unit && (await ports.candidates()).length) result = await sameUnit(unit);
     linkUp = result === true;
     return result;
+  }
+
+  /** The other unit a reopened link found (its `unit`), for Elm's stop. */
+  var otherUnit = null;
+
+  /** `status`'s `unit <id>`, if it names one. */
+  function unitIn(lines) {
+    var line = (lines || []).find(function (candidate) { return candidate.indexOf('unit ') === 0; });
+    return line ? line.slice(5).trim().toLowerCase() : null;
+  }
+
+  /** The one console reopened (a serial port, not the socket): kept only
+   * if its `status` doesn't name another unit; else closed, 'other'. */
+  async function sameUnit(unit) {
+    linkUp = true;
+    var answer = await ask1('status', SILENCE_MS);
+    var named = unitIn(answer.lines);
+    if (!named || named === unit) return linkUp ? true : false;
+    otherUnit = named;
+    await ports.close();
+    linkUp = false;
+    inbox = [];
+    return 'other';
   }
 
   /** Several consoles granted: each opened in turn and asked `status`; the
@@ -257,7 +283,7 @@ var ChimeraUpdate = (function () {
       if (!(await ports.openPort(granted[idx]))) continue;
       linkUp = true;
       var answer = await ask1('status', SILENCE_MS);
-      if (answer.lines && answer.lines.indexOf('unit ' + unit) >= 0) return true;
+      if (unitIn(answer.lines) === unit) return true;
       await ports.close();
       linkUp = false;
       inbox = [];
@@ -296,8 +322,8 @@ var ChimeraUpdate = (function () {
   /** `put BANK2.BK2 <size> <crc32>`, the data once the unit says READY, then
    * its last line: { end } (OK, OK PRESENT, OK staged:..., or the ERR),
    * GONE or { noAnswer }. Progress as `copied`. */
-  async function put1(data, remote) {
-    if (!linkUp) await relink();
+  async function put1(data, remote, unit) {
+    if (!linkUp && (await relink(unit)) === 'other') return { other: otherUnit };
     await drain(50);
     var head = 'put ' + remote + ' ' + data.length + ' ' + crc32(data).toString(16).padStart(8, '0');
     if (!linkUp || !(await ports.write(head))) return GONE;
@@ -327,7 +353,7 @@ var ChimeraUpdate = (function () {
     var data = held[file], remote = file === 'bin' ? request.remote : BANK2_REMOTE;
     var wait = BUSY_WAIT_MS, answer;
     for (var idx = 0; idx < BUSY_TRIES; idx++) {
-      answer = await put1(data, remote);
+      answer = await put1(data, remote, typeof request.unit === 'string' ? request.unit : null);
       if (answer.end !== 'ERR busy') break;
       await sleep(wait);
       wait *= 2;
@@ -399,7 +425,7 @@ var ChimeraUpdate = (function () {
    * (the unit reset before its OK: sent, not refused). */
   async function dfu(request) {
     before = await dfuDevices();
-    var answer = await ask1('dfu', SILENCE_MS);
+    var answer = await ask1('dfu', SILENCE_MS, typeof request.unit === 'string' ? request.unit : null);
     say(Object.assign({ op: 'answer', id: request.id }, answer));
   }
 

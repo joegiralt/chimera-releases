@@ -272,9 +272,10 @@ type Request
       -- The ticket, the line, the first byte's wait (ms), a delay before it
       -- (ms), and the unit (`status`'s `unit`) to reopen a lost link to.
     | Ask Ticket String Int Int (Maybe String)
-    | Put Release
-    | PutBin Release String
-    | Dfu
+      -- Each write names the unit (`status`'s `unit`) a lost link may reopen to.
+    | Put Release (Maybe String)
+    | PutBin Release String (Maybe String)
+    | Dfu (Maybe String)
     | FindDevice Int
     | PickDevice
     | Write Release
@@ -332,6 +333,9 @@ type Event
       -- The request's line never reached the unit (the write failed): the
       -- link gone before it, as a Gone answer, but known unsent.
     | Unsent Ticket
+      -- The link went and reopened to another unit's console (its `unit`, if
+      -- it said one): the request's line never reached it.
+    | OtherOnLink (Maybe String)
 
 
 type Msg

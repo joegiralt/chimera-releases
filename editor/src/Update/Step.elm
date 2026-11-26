@@ -33,6 +33,9 @@ type alias In =
     , back : Maybe (Result String Answer)
     , broken : Maybe String
     , unsent : Maybe Ticket
+
+    -- The link reopened to another unit (its `unit`, if it said one).
+    , other : Maybe (Maybe String)
     }
 
 
@@ -41,7 +44,7 @@ classify event =
     let
         none : In
         none =
-            { begun = Nothing, release = Nothing, cancelled = False, answer = Nothing, copied = Nothing, written = Nothing, device = Nothing, write = Nothing, back = Nothing, broken = Nothing, unsent = Nothing }
+            { begun = Nothing, release = Nothing, cancelled = False, answer = Nothing, copied = Nothing, written = Nothing, device = Nothing, write = Nothing, back = Nothing, broken = Nothing, unsent = Nothing, other = Nothing }
     in
     case event of
         Begun carried ->
@@ -82,6 +85,9 @@ classify event =
 
         Unrelated ->
             none
+
+        OtherOnLink id ->
+            { none | other = Just id }
 
         Unsent ticket ->
             { none | answer = Just ( ticket, Gone ), unsent = Just ticket }
@@ -182,7 +188,26 @@ step event ((Model fields) as model) =
                             to (StoppedAfter unit release bk2 (GarbledAfter why))
 
                 Nothing ->
-                    running incoming unit release run fields
+                    case incoming.other of
+                        -- Never written to it: stopped on the side of the write it is on.
+                        Just maybeId ->
+                            let
+                                id : String
+                                id =
+                                    Maybe.withDefault "unknown" maybeId
+                            in
+                            case run of
+                                Pre _ ->
+                                    to (StoppedBefore unit release (OtherUnitBefore id))
+
+                                Writing at _ ->
+                                    to (StoppedAfter unit release at.bk2 (OtherUnit id))
+
+                                Post bk2 _ ->
+                                    to (StoppedAfter unit release bk2 (OtherUnit id))
+
+                        Nothing ->
+                            running incoming unit release run fields
 
         Ready _ _ ->
             ignore
@@ -300,13 +325,13 @@ runningOn incoming unit release run fields =
             in
             case ( now.selfUpdate, sealOpen release now ) of
                 ( Just _, True ) ->
-                    copy (Pre (CopyingBin { done = release.bk2Size, total = both })) [ PutBin release binRemote ]
+                    copy (Pre (CopyingBin { done = release.bk2Size, total = both })) [ PutBin release binRemote now.unit ]
 
                 ( Just _, False ) ->
-                    copy (Pre (Copying { done = 0, total = both })) [ Put release ]
+                    copy (Pre (Copying { done = 0, total = both })) [ Put release now.unit ]
 
                 ( Nothing, _ ) ->
-                    copy (Pre (Copying { done = 0, total = release.bk2Size })) [ Put release ]
+                    copy (Pre (Copying { done = 0, total = release.bk2Size })) [ Put release now.unit ]
 
         device : InDfu -> Device -> ( Model, List Request )
         device at picked =
@@ -480,11 +505,11 @@ runningOn incoming unit release run fields =
                     case ( staging release answer, unit.selfUpdate ) of
                         -- A unit that writes its own firmware: CHIMERA.BIN onto the card next.
                         ( Ok Staged, Just _ ) ->
-                            to (Pre (CopyingBin { done = release.bk2Size, total = both })) [ PutBin release binRemote ]
+                            to (Pre (CopyingBin { done = release.bk2Size, total = both })) [ PutBin release binRemote unit.unit ]
 
                         -- Else update mode: the unit no longer on the self-update path.
                         ( Ok bk2, _ ) ->
-                            ( Model { fields | stage = Running { unit | selfUpdate = Nothing } release (Pre (EnteringDfu bk2)) }, [ Dfu ] )
+                            ( Model { fields | stage = Running { unit | selfUpdate = Nothing } release (Pre (EnteringDfu bk2)) }, [ Dfu unit.unit ] )
 
                         ( Err why, _ ) ->
                             before (NothingFlashed why)
@@ -674,7 +699,7 @@ runningOn incoming unit release run fields =
                                     to (Post bk2 (Installing 1)) [ install unit.unit 0 ]
 
                                 AfterFlash ->
-                                    to (Post bk2 (CopyingLate { done = 0, total = release.bk2Size })) [ Put release ]
+                                    to (Post bk2 (CopyingLate { done = 0, total = release.bk2Size })) [ Put release unit.unit ]
 
                         NotFinished why ->
                             after bk2 (Unfinished why)

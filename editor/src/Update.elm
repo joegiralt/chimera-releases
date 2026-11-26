@@ -228,6 +228,9 @@ endedLink event =
         Unsent _ ->
             Nothing
 
+        OtherOnLink _ ->
+            Nothing
+
 
 {-| Whether the tab is held: while anything past CHECKING runs.
 -}

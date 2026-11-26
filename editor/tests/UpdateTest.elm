@@ -192,13 +192,13 @@ isBack request =
         Ask _ _ _ _ _ ->
             False
 
-        Put _ ->
+        Put _ _ ->
             False
 
-        PutBin _ _ ->
+        PutBin _ _ _ ->
             False
 
-        Dfu ->
+        Dfu _ ->
             False
 
         FindDevice _ ->
@@ -299,6 +299,9 @@ isGarbled event =
         Unrelated ->
             False
 
+        OtherOnLink _ ->
+            False
+
         Unsent _ ->
             False
 
@@ -364,7 +367,7 @@ suite =
                         ( saving, saveReqs ) =
                             Update.press SaveAndUpdate asked
                     in
-                    Expect.equal ( Running unit rel (Pre (Copying { done = 0, total = rel.bk2Size })), [ Ask TSave "ed project save" 15000 0 Nothing, Ask TStatus "status" 2000 500 Nothing, Ask TStatus "status" 2000 500 Nothing, Put rel ] )
+                    Expect.equal ( Running unit rel (Pre (Copying { done = 0, total = rel.bk2Size })), [ Ask TSave "ed project save" 15000 0 Nothing, Ask TStatus "status" 2000 500 Nothing, Ask TStatus "status" 2000 500 Nothing, Put rel Nothing ] )
                         (steps [ Answered TSave (Said [] "OK"), Answered TStatus (status "0.4.0 de07edf9" "MODIFIED" "open"), Answered TStatus old ] saving
                             |> Tuple.mapSecond (\later -> saveReqs ++ later)
                         )
@@ -393,7 +396,7 @@ suite =
                 \_ -> Expect.equal [ Just { version = 1 }, Nothing, Nothing ] [ (Update.Read.readStatus [ "selfupdate 1" ]).selfUpdate, (Update.Read.readStatus [ "selfupdate yes" ]).selfUpdate, (Update.Read.readStatus [ "build 0.4.0 de07edf9" ]).selfUpdate ]
             , test "bk2_then_bin_to_the_card_root_then_bank1_install_then_status" <|
                 \_ ->
-                    Expect.equal ( Done selfUnit rel selfNew, [ Put rel, PutBin rel "/CHIMERA.BIN", Ask TSelf "bank1 install 900000 0a1b2c3d" 120000 0 Nothing, Back 180 True Nothing ] )
+                    Expect.equal ( Done selfUnit rel selfNew, [ Put rel Nothing, PutBin rel "/CHIMERA.BIN" Nothing, Ask TSelf "bank1 install 900000 0a1b2c3d" 120000 0 Nothing, Back 180 True Nothing ] )
                         (steps
                             [ Answered TStatus selfOld
                             , Copied { done = 5, total = 10 }
@@ -412,7 +415,7 @@ suite =
                         sealed =
                             Said [ "build 0.4.0 de07edf9", "state SAVED", "bank2 open 0.4.1 abcd1234 seal=0123456789abcdef", "selfupdate 1" ] "OK"
                     in
-                    Expect.equal [ PutBin rel "/CHIMERA.BIN" ]
+                    Expect.equal [ PutBin rel "/CHIMERA.BIN" Nothing ]
                         (Update.Step.step (Answered TStatus sealed) (events [ Begun { open = True, webusb = True, windows = False }, Answered TStatus sealed, ReleaseIs (Ok rel) ] (Tuple.first Update.begin) |> hands [ Start, Go ]) |> Tuple.second)
             , test "the_bar_counts_both_files" <|
                 \_ ->
@@ -487,7 +490,7 @@ suite =
             \_ -> Expect.equal [ Newer, Same, Older ] [ Update.Read.offerFor "0.4.0-de07edf9" "0.4.1 abcd1234", Update.Read.offerFor "0.4.1-abcd1234" "0.4.1 abcd1234", Update.Read.offerFor "0.5.0-11112222" "0.4.1 abcd1234" ]
         , test "the_happy_path_stages_then_flashes_then_checks" <|
             \_ ->
-                Expect.equal ( Done unit rel newUnit, [ Put rel, Dfu, FindDevice 10, Write rel, Back 120 False Nothing ] )
+                Expect.equal ( Done unit rel newUnit, [ Put rel Nothing, Dfu Nothing, FindDevice 10, Write rel, Back 120 False Nothing ] )
                     (steps
                         [ Answered TStatus old
                         , Copied { done = 1000, total = 1048576 }
@@ -512,7 +515,7 @@ suite =
                     (steps [ Answered TInstall (Said [] "ERR bank2: busy") ] (events [ BackDone (Ok (status "0.4.1 abcd1234" "NEW" "empty")) ] (flashed (Said [] "OK"))))
         , test "older_firmware_takes_the_bk2_after_the_flash" <|
             \_ ->
-                Expect.equal ( Done unit rel (Update.Read.readStatus [ "firmware 0.4.1 release", "build 0.4.1 abcd1234", "protocol 4", "state NEW", "bank2 open 0.4.1 abcd1234 seal=0123456789abcdef" ]), [ Put rel, Ask TInstall "bank2 install" 120000 0 Nothing, Back 60 True Nothing ] )
+                Expect.equal ( Done unit rel (Update.Read.readStatus [ "firmware 0.4.1 release", "build 0.4.1 abcd1234", "protocol 4", "state NEW", "bank2 open 0.4.1 abcd1234 seal=0123456789abcdef" ]), [ Put rel Nothing, Ask TInstall "bank2 install" 120000 0 Nothing, Back 60 True Nothing ] )
                     (steps
                         [ BackDone (Ok (status "0.4.1 abcd1234" "NEW" "empty"))
                         , Answered TPut (Said [] "OK")
@@ -565,7 +568,7 @@ suite =
                     (steps [ Answered TStatus old, Answered TPut (Said [] "OK"), Answered TDfu Gone, DeviceIs NotFound, DeviceIs Cancelled ] started |> Tuple.first)
         , test "the_wrong_device_is_refused_before_writing" <|
             \_ ->
-                Expect.equal ( StoppedBefore unit rel (WrongDevice { bk2 = Staged, flash = Untouched } "two"), [ Put rel, Dfu, FindDevice 10 ] )
+                Expect.equal ( StoppedBefore unit rel (WrongDevice { bk2 = Staged, flash = Untouched } "two"), [ Put rel Nothing, Dfu Nothing, FindDevice 10 ] )
                     (steps [ Answered TStatus old, Answered TPut (Said [] "OK"), Answered TDfu Gone, DeviceIs (Wrong "two") ] started)
         , test "a_device_that_wont_open_can_write_again" <|
             \_ ->
@@ -758,6 +761,23 @@ suite =
                         [ steps [ Answered TStatus (withUnit idB old) ] idStarted
                         , steps [ Answered TStatus (withUnit idB old) ] swapped
                         ]
+            , test "a_link_reopened_to_another_unit_stops_on_its_side_of_the_write" <|
+                \_ ->
+                    Expect.equal
+                        [ StoppedBefore idUnit rel (OtherUnitBefore idB)
+                        , StoppedBefore idUnit rel (OtherUnitBefore "unknown")
+                        , StoppedAfter idUnit rel Staged (OtherUnit idB)
+                        ]
+                        [ Update.stage (events [ Answered TStatus (withUnit idA old), OtherOnLink (Just idB) ] idStarted)
+                        , Update.stage (events [ Answered TStatus (withUnit idA old), Answered TPut (Said [] "OK"), OtherOnLink Nothing ] idStarted)
+                        , Update.stage (events [ BackDone (Ok (withUnit idA (status "0.4.1 abcd1234" "NEW" "closed"))), OtherOnLink (Just idB) ] idFlashed)
+                        ]
+            , test "the_writes_name_the_confirmed_unit" <|
+                \_ ->
+                    Expect.equal [ Put rel (Just idA), Dfu (Just idA) ]
+                        (steps [ Answered TStatus (withUnit idA old), Answered TPut (Said [] "OK") ] idStarted |> Tuple.second)
+            , test "an_answer_from_another_unit_reads_as_one" <|
+                \_ -> Expect.equal (OtherOnLink (Just idB)) (Update.Wire.decode (E.object [ ( "op", E.string "answer" ), ( "id", E.string "putbin" ), ( "other", E.string idB ) ]))
             , test "checking_asks_the_confirmed_unit" <|
                 \_ ->
                     Expect.equal [ Ask TStatus "status" 2000 0 (Just idA) ]
@@ -769,7 +789,7 @@ suite =
                         selfId =
                             events [ Begun { open = True, webusb = True, windows = False }, Answered TStatus (withUnit idA selfOld), ReleaseIs (Ok rel) ] (Tuple.first Update.begin) |> hands [ Start, Go ]
                     in
-                    Expect.equal ( Running idUnit rel (Pre (Copying { done = 0, total = rel.bk2Size })), [ Put rel ] )
+                    Expect.equal ( Running idUnit rel (Pre (Copying { done = 0, total = rel.bk2Size })), [ Put rel (Just idA) ] )
                         (steps [ Answered TStatus (withUnit idA old) ] selfId)
             , test "no_unit_line_is_not_another_unit" <|
                 \_ -> Expect.equal True (isDone (steps [ BackDone (Ok new) ] idFlashed |> Tuple.first))
