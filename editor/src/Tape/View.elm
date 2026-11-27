@@ -313,7 +313,7 @@ work link console held =
                 ( Unlinked, _ ) ->
                     [ say "Connect a unit to send it: the editor's link is closed." ]
 
-                ( Linked, Draining ) ->
+                ( Linked, Draining _ ) ->
                     [ say "Waiting for the unit to finish the stopped copy…" ]
 
                 ( Linked, Idle ) ->

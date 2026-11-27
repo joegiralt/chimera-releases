@@ -38,6 +38,7 @@ type Model
         , link : Link
         , console : Console
         , tick : Int
+        , drains : Int
         }
 
 
@@ -48,7 +49,8 @@ time, so it can't be swallowed or take the old `put`'s answer as its own.
 -}
 type Console
     = Idle
-    | Draining
+      -- By its number: only its own wait ends it, whatever else moves the tick.
+    | Draining Int
 
 
 {-| Whether the editor's link to the unit was open when the panel took it:
@@ -123,6 +125,7 @@ type Msg
     = FromJs D.Value
     | Hand Hand
     | TimedOut Int
+    | QuietOver Int
 
 
 {-| A hand on the page.
@@ -161,7 +164,8 @@ type Event
 
 {-| What is asked: of `tape.js`, or Elm's own waits, each ending in
 `TimedOut` with its tick: `Await`, a reply due within `replyWaitMs`;
-`AwaitQuiet`, an aborted `put`'s drain, `drainMs`.
+`AwaitQuiet`, an aborted `put`'s drain by its number, `drainMs`, ending
+in `QuietOver`.
 -}
 type Request
     = ToJs Js

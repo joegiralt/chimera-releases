@@ -69,7 +69,7 @@ take =
 
 modelWith : Link -> Work -> Model
 modelWith link work =
-    Model { stage = Holding { take = take, settings = Settings.defaults take, work = work }, link = link, console = Idle, tick = 0 }
+    Model { stage = Holding { take = take, settings = Settings.defaults take, work = work }, link = link, console = Idle, tick = 0, drains = 0 }
 
 
 workOf : Model -> Maybe Work
@@ -321,7 +321,7 @@ suite =
                     withSource <|
                         \source ->
                             replies [ "READY", "ACK 1000" ] (Tuple.first (sent (modelWith Linked (Made source Silent))))
-                                |> Expect.equal ( modelWith Linked (Sent source (Failed (OutOfTurn "ACK 1000"))) |> withTick 3 |> draining, [ [ ToJs (SendChunk 0), Await 2 ], [ ToJs Abort, AwaitQuiet 3 ] ] )
+                                |> Expect.equal ( modelWith Linked (Sent source (Failed (OutOfTurn "ACK 1000"))) |> withTick 2 |> draining, [ [ ToJs (SendChunk 0), Await 2 ], [ ToJs Abort, AwaitQuiet 1 ] ] )
             , test "no answer to the newest wait: abort; an older wait's timeout does nothing" <|
                 \_ ->
                     withSource <|
@@ -331,7 +331,7 @@ suite =
                                     replies [ "READY" ] (Tuple.first (sent (modelWith Linked (Made source Silent))))
                             in
                             ( Step.timedOut 1 chunked |> Tuple.second, Step.timedOut 2 chunked )
-                                |> Expect.equal ( [], ( modelWith Linked (Sent source (Failed NoAnswer)) |> withTick 3 |> draining, [ ToJs Abort, AwaitQuiet 3 ] ) )
+                                |> Expect.equal ( [], ( modelWith Linked (Sent source (Failed NoAnswer)) |> withTick 2 |> draining, [ ToJs Abort, AwaitQuiet 1 ] ) )
             , test "after an abort, a re-SEND waits for the old put's answer, which is never taken as the new one's" <|
                 \_ ->
                     withSource <|
@@ -354,8 +354,35 @@ suite =
                             ( ( earlyAsked, workOf answered ), ( againAsked, workOf again ) )
                                 |> Expect.equal
                                     ( ( [], Just (Sent source (Failed NoAnswer)) )
-                                    , ( [ ToJs (SendLine "put /CHIMERA/TAPES/8266E80B.SRC 600000 0BADF00D"), Await 4 ], Just (Sending source Asking) )
+                                    , ( [ ToJs (SendLine "put /CHIMERA/TAPES/8266E80B.SRC 600000 0BADF00D"), Await 3 ], Just (Sending source Asking) )
                                     )
+            , test "a seal's OK lost: the timeout's abort meets no put; a MAKE within the drain doesn't keep SEND off" <|
+                \_ ->
+                    withSource <|
+                        \source ->
+                            let
+                                ( sealing, _ ) =
+                                    replies [ "READY", "ACK 262144", "ACK 524288", "ACK 600000" ] (Tuple.first (sent (modelWith Linked (Made source Silent))))
+
+                                ( aborted, abortAsked ) =
+                                    Step.timedOut 5 sealing
+
+                                ( unknown, _ ) =
+                                    replies [ "ERR unknown command abort, try help" ] aborted
+
+                                ( remade, _ ) =
+                                    Step.hand Make aborted
+
+                                ( converted, _ ) =
+                                    Step.step (Converted 6 (Ok source)) remade
+
+                                ( drained, _ ) =
+                                    List.foldl (\wait ( model, _ ) -> ( Step.drainOver wait model, [] )) ( converted, [] ) (quietWaits abortAsked)
+                            in
+                            ( Tuple.second (sent unknown) |> List.length
+                            , Tuple.second (sent drained) |> List.length
+                            )
+                                |> Expect.equal ( 2, 2 )
             , test "a drain with no answer is over after its wait" <|
                 \_ ->
                     withSource <|
@@ -363,9 +390,8 @@ suite =
                             modelWith Linked (Sent source (Failed NoAnswer))
                                 |> withTick 3
                                 |> draining
-                                |> Step.timedOut 3
-                                |> Tuple.first
-                                |> Expect.equal (modelWith Linked (Sent source (Failed NoAnswer)) |> withTick 3)
+                                |> Step.drainOver 1
+                                |> Expect.equal (modelWith Linked (Sent source (Failed NoAnswer)) |> withTick 3 |> draining |> idle)
             , test "the link gone mid-copy" <|
                 \_ ->
                     withSource <|
@@ -400,7 +426,7 @@ suite =
         , describe "making it"
             [ test "a WAV read is made at once with the defaults" <|
                 \_ ->
-                    Step.step (Loaded "sine.wav" (Ok take)) (Model { stage = Reading "sine.wav", link = Linked, console = Idle, tick = 0 })
+                    Step.step (Loaded "sine.wav" (Ok take)) (Model { stage = Reading "sine.wav", link = Linked, console = Idle, tick = 0, drains = 0 })
                         |> Tuple.mapFirst workOf
                         |> Tuple.mapSecond List.length
                         |> Expect.equal ( Just (Making 1), 1 )
@@ -408,7 +434,7 @@ suite =
                 \_ ->
                     withSource <|
                         \source ->
-                            Step.step (Loaded "sine.wav" (Ok take)) (Model { stage = Reading "sine.wav", link = Linked, console = Idle, tick = 0 })
+                            Step.step (Loaded "sine.wav" (Ok take)) (Model { stage = Reading "sine.wav", link = Linked, console = Idle, tick = 0, drains = 0 })
                                 |> Tuple.first
                                 |> Step.hand (SetRate K48)
                                 |> Tuple.first
@@ -420,9 +446,9 @@ suite =
                                 |> Expect.equal (Just (Making 2))
             , test "a WAV refused: said, and another can be chosen" <|
                 \_ ->
-                    Step.step (Loaded "x.wav" (Err { problem = NotWav, detail = "" })) (Model { stage = Reading "x.wav", link = Linked, console = Idle, tick = 0 })
+                    Step.step (Loaded "x.wav" (Err { problem = NotWav, detail = "" })) (Model { stage = Reading "x.wav", link = Linked, console = Idle, tick = 0, drains = 0 })
                         |> Tuple.first
-                        |> Expect.equal (Model { stage = Empty (Unread "x.wav" { problem = NotWav, detail = "" }), link = Linked, console = Idle, tick = 0 })
+                        |> Expect.equal (Model { stage = Empty (Unread "x.wav" { problem = NotWav, detail = "" }), link = Linked, console = Idle, tick = 0, drains = 0 })
             , test "a choice changed: the source is to make again, its preview stopped" <|
                 \_ ->
                     withSource <|
@@ -435,7 +461,7 @@ suite =
                     withSource <|
                         \source ->
                             Step.step (Picked "b.wav") (modelWith Linked (Made source Playing))
-                                |> Expect.equal ( Model { stage = Reading "b.wav", link = Linked, console = Idle, tick = 0 }, [ ToJs StopPlay, ToJs ReadFile ] )
+                                |> Expect.equal ( Model { stage = Reading "b.wav", link = Linked, console = Idle, tick = 0, drains = 0 }, [ ToJs StopPlay, ToJs ReadFile ] )
             ]
         , describe "the page"
             [ test "a source made: its file, where it plays from, and SEND" <|
@@ -459,9 +485,32 @@ suite =
         ]
 
 
+{-| The drain waits a step asked for.
+-}
+quietWaits : List Request -> List Int
+quietWaits =
+    List.filterMap
+        (\request ->
+            case request of
+                AwaitQuiet drain ->
+                    Just drain
+
+                ToJs _ ->
+                    Nothing
+
+                Await _ ->
+                    Nothing
+        )
+
+
 draining : Model -> Model
 draining (Model fields) =
-    Model { fields | console = Draining }
+    Model { fields | console = Draining 1, drains = 1 }
+
+
+idle : Model -> Model
+idle (Model fields) =
+    Model { fields | console = Idle }
 
 
 withTick : Int -> Model -> Model

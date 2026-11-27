@@ -22,7 +22,7 @@ in `Tape.Wire`, the page in `Tape.View`.
 import Json.Decode as D
 import Json.Encode as E
 import Process
-import Tape.Step exposing (drainMs, hand, replyWaitMs, step, timedOut)
+import Tape.Step exposing (drainMs, drainOver, hand, replyWaitMs, step, timedOut)
 import Tape.Types exposing (Console(..), Event(..), Js(..), Link(..), Model(..), Msg(..), Request(..), Stage(..))
 import Tape.Wire exposing (decode, encode)
 import Task
@@ -38,7 +38,7 @@ port tapeIn : (D.Value -> msg) -> Sub msg
 -}
 begin : ( Model, Cmd Msg )
 begin =
-    ( Model { stage = Opening, link = Unlinked, console = Idle, tick = 0 }, send [ ToJs Begin ] )
+    ( Model { stage = Opening, link = Unlinked, console = Idle, tick = 0, drains = 0 }, send [ ToJs Begin ] )
 
 
 subscriptions : Sub Msg
@@ -76,6 +76,9 @@ update msg model =
                     timedOut tick model
             in
             ( next, send reqs, Nothing )
+
+        QuietOver drain ->
+            ( drainOver drain model, Cmd.none, Nothing )
 
 
 ended : Event -> Maybe String
@@ -126,5 +129,5 @@ one request =
         Await tick ->
             Process.sleep (toFloat replyWaitMs) |> Task.perform (\_ -> TimedOut tick)
 
-        AwaitQuiet tick ->
-            Process.sleep (toFloat drainMs) |> Task.perform (\_ -> TimedOut tick)
+        AwaitQuiet drain ->
+            Process.sleep (toFloat drainMs) |> Task.perform (\_ -> QuietOver drain)

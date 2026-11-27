@@ -1,7 +1,7 @@
 -- SPDX-License-Identifier: GPL-3.0-or-later
 
 
-module Tape.Step exposing (chunkBytes, chunks, drainMs, hand, replyWaitMs, step, timedOut)
+module Tape.Step exposing (chunkBytes, chunks, drainMs, drainOver, hand, replyWaitMs, step, timedOut)
 
 {-| Every transition of TAPE import, pure: an event from `tape.js` (`step`),
 a hand on the page (`hand`) or a wait run out (`timedOut`) gives the next
@@ -264,8 +264,9 @@ step event ((Model fields) as model) =
 
 
 {-| A line with no `put` out: the end of an aborted one, if it is its
-answer (an `OK` or an `ERR`), quiets a draining console; any other is
-dropped.
+answer (an `OK` or an `ERR`), quiets a draining console; so does the
+console refusing `abort` as a command, which says the unit had already
+left the `put` (its last answer lost). Any other is dropped.
 -}
 quieted : Reply -> Model -> Model
 quieted reply ((Model fields) as model) =
@@ -291,14 +292,14 @@ quieted reply ((Model fields) as model) =
                 Ack _ ->
                     False
 
-                Unexpected _ ->
-                    False
+                Unexpected line ->
+                    String.startsWith "ERR unknown command abort" line
     in
     case ( fields.console, ends ) of
-        ( Draining, True ) ->
+        ( Draining _, True ) ->
             Model { fields | console = Idle }
 
-        ( Draining, False ) ->
+        ( Draining _, False ) ->
             model
 
         ( Idle, _ ) ->
@@ -311,10 +312,31 @@ quieted reply ((Model fields) as model) =
 abort : Failure -> Source -> Held -> Model -> ( Model, List Request )
 abort failure source held model =
     let
-        ( Model fields, tick ) =
-            ticked (holding { held | work = Sent source (Failed failure) } model)
+        (Model fields) =
+            holding { held | work = Sent source (Failed failure) } model
+
+        drain : Int
+        drain =
+            fields.drains + 1
     in
-    ( Model { fields | console = Draining }, [ ToJs Abort, AwaitQuiet tick ] )
+    ( Model { fields | console = Draining drain, drains = drain }, [ ToJs Abort, AwaitQuiet drain ] )
+
+
+{-| Drain `drain`'s wait run out with no answer: if it is still the one
+draining, the console is taken as quiet.
+-}
+drainOver : Int -> Model -> Model
+drainOver drain ((Model fields) as model) =
+    case fields.console of
+        Draining current ->
+            if current == drain then
+                Model { fields | console = Idle }
+
+            else
+                model
+
+        Idle ->
+            model
 
 
 {-| The choices made into a source, if they are whole; else the work
@@ -558,35 +580,21 @@ sendable work =
             Nothing
 
 
-{-| A wait run out: if it is the newest, a `put` with no reply aborts, and
-a drain with no answer is taken as over.
+{-| A reply wait run out: if it is the newest and a `put` is out, it aborts.
 -}
 timedOut : Int -> Model -> ( Model, List Request )
 timedOut tick ((Model fields) as model) =
-    if tick /= fields.tick then
-        ( model, [] )
+    case ( tick == fields.tick, fields.stage ) of
+        ( True, Holding held ) ->
+            case sendingOf held.work of
+                Just ( source, _ ) ->
+                    abort NoAnswer source held model
 
-    else
-        case fields.stage of
-            Holding held ->
-                case sendingOf held.work of
-                    Just ( source, _ ) ->
-                        abort NoAnswer source held model
+                Nothing ->
+                    ( model, [] )
 
-                    Nothing ->
-                        ( Model { fields | console = Idle }, [] )
-
-            Opening ->
-                ( Model { fields | console = Idle }, [] )
-
-            Empty _ ->
-                ( Model { fields | console = Idle }, [] )
-
-            Reading _ ->
-                ( Model { fields | console = Idle }, [] )
-
-            Closing ->
-                ( Model { fields | console = Idle }, [] )
+        _ ->
+            ( model, [] )
 
 
 {-| A change to what's held stops a preview of the old source first.
