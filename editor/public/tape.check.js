@@ -2,11 +2,8 @@
 // node public/tape.check.js: tape.wasm (the firmware kit's, copied by `just
 // kit`) against the kit's reference set, every case's .SRC made by the
 // firmware's own `chimera-import tape` from the same frames under the same
-// flags: the file the editor makes must be that file, byte for byte. The
-// one allowance is the resampler's rounding: the CLI's rubato runs its
-// SIMD dot product (AVX on x86-64, Neon on ARM) where wasm32 runs it
-// scalar, which can put a sample 1 LSB apart (and so the CRC the file is
-// named by); a case that doesn't resample has none of it. Then the WAV
+// flags: the file the editor makes must be that file, byte for byte (both
+// resample with rubato's scalar dot product, ADR 0345). Then the WAV
 // reader as a trust boundary, fuzzed: random bytes and damaged WAVs are
 // refused with a status, never a trap, and the module still converts the
 // references as before. Then the put's chunk lines.
@@ -35,7 +32,7 @@ function u32(bytes, at) { return (bytes[at] | (bytes[at + 1] << 8) | (bytes[at +
 
 // ---- the .SRC file (ADR 0087/0093): header 28, records, CRC trailer ----
 
-var HEADER = 28, SOURCE_HEAD = 0x8017, SOURCE_DATA = 0x0018;
+var HEADER = 28, SOURCE_DATA = 0x0018;
 
 /** Its records as { tag, start, len }; a file that doesn't frame fails. */
 function records(file, what) {
@@ -66,34 +63,14 @@ function samples(file, recs) {
   return out;
 }
 
-/** How `mine` differs from the CLI's `want`: { same } or { lsb, of },
- * failing on anything but whole samples 1 LSB apart (and the CRCs that
- * follow them). */
-function compare(mine, want, what) {
+/** `mine` must be the CLI's `want`, byte for byte; a mismatch names how
+ * many samples differ. */
+function same(mine, want, what) {
+  if (Buffer.compare(Buffer.from(mine), Buffer.from(want)) === 0) return;
   eq(mine.length, want.length, what + ': its length');
-  if (Buffer.compare(Buffer.from(mine), Buffer.from(want)) === 0) return { same: true };
-  var mineRecs = records(mine, what + ' (editor)'), wantRecs = records(want, what + ' (CLI)');
-  eq(Buffer.compare(Buffer.from(mine.subarray(0, HEADER)), Buffer.from(want.subarray(0, HEADER))), 0, what + ': the header');
-  eq(mineRecs.length, wantRecs.length, what + ': its records');
-  mineRecs.forEach(function (rec, idx) {
-    eq(rec.tag, wantRecs[idx].tag, what + ': record ' + idx + "'s tag");
-    eq(rec.len, wantRecs[idx].len, what + ': record ' + idx + "'s length");
-    if (rec.tag === SOURCE_HEAD) {
-      // The CRC (4) differs with the samples; the frames, rate, shape, count, root, period and name never.
-      var head = Buffer.from(mine.subarray(rec.start + 4, rec.start + rec.len)), other = Buffer.from(want.subarray(rec.start + 4, rec.start + rec.len));
-      eq(Buffer.compare(head, other), 0, what + ': the head past its CRC');
-    }
-  });
-  var have = samples(mine, mineRecs), wanted = samples(want, wantRecs);
-  var lsb = 0;
-  have.forEach(function (sample, idx) {
-    if (sample === wanted[idx]) return;
-    ok(Math.abs(sample - wanted[idx]) === 1, what + ': sample ' + idx + ' is ' + sample + ', the CLI\'s ' + wanted[idx]);
-    lsb++;
-  });
-  ok(lsb > 0, what + ': the files differ but no sample does');
-  ok(lsb * 1000 <= have.length, what + ': ' + lsb + ' of ' + have.length + ' samples apart: more than rounding');
-  return { lsb: lsb, of: have.length };
+  var have = samples(mine, records(mine, what + ' (editor)')), wanted = samples(want, records(want, what + ' (CLI)'));
+  var apart = have.filter(function (sample, idx) { return sample !== wanted[idx]; }).length;
+  fail(what + ': not the CLI\'s file (' + apart + ' of ' + have.length + ' samples differ)');
 }
 
 function cases() {
@@ -110,7 +87,7 @@ function rateOf(take) {
 
 /** Every reference case through the module: each file the CLI's. */
 function references(wasm, quiet) {
-  var identical = 0, notes = [], all = cases();
+  var all = cases();
   all.forEach(function (one) {
     var wav = fs.readFileSync(path.join(refs, one.name + '.wav'));
     var take = Tape.loadWav(wasm, one.name + '.wav', wav);
@@ -121,15 +98,10 @@ function references(wasm, quiet) {
     ok(new RegExp('^crc ' + crc32(made.file).toString(16).toUpperCase().padStart(8, '0') + '$', 'm').test(made.report), one.name + ': the report gives the file\'s CRC-32');
     ok(made.preview.length > 0 && made.rate >= 8000, one.name + ': a preview');
     var want = fs.readFileSync(path.join(refs, one.name + '.SRC'));
-    var said = compare(made.file, new Uint8Array(want), one.name);
-    var rateAt = one.args.indexOf('--rate');
-    var target = rateAt >= 0 ? Number(one.args[rateAt + 1].replace('k', '')) * 1000 : 0;
-    if (target === rateOf(take)) ok(said.same, one.name + ': no resample, yet not byte-identical');
-    if (said.same) identical++;
-    else notes.push(one.name + ': ' + said.lsb + ' of ' + said.of + ' samples 1 LSB apart');
+    same(made.file, new Uint8Array(want), one.name);
   });
-  if (!quiet) console.log('tape.wasm: ' + identical + ' of ' + all.length + ' reference files byte-identical to chimera-import tape\'s' + (notes.length ? '; ' + notes.join('; ') + ' (the CLI\'s SIMD resampler)' : ''));
-  return identical;
+  if (!quiet) console.log('tape.wasm: all ' + all.length + ' reference files byte-identical to chimera-import tape\'s');
+  return all.length;
 }
 
 var STATUSES = [0, -1, -2, -3, -4, -5, -6, -7, -8, -9, -10, -11, -12, -13, -14, -15];
