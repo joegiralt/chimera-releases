@@ -100,6 +100,8 @@ type Msg
     | OpenUpdate
       -- The connect page's FINISH THE UPDATE: a unit already in update mode.
     | OpenStuck
+      -- TAPE IMPORT: a WAV to a TAPE source on the card (`Tape`, which Main opens).
+    | OpenTape
 
 
 {-| What the page shows: the followed Part's engine page, or the unit's
@@ -309,10 +311,20 @@ update msg m s0 =
 
         -- Main takes these before they get here.
         OpenUpdate ->
-            ( s, [], Nothing )
+            mainTakes s0
 
         OpenStuck ->
-            ( s, [], Nothing )
+            mainTakes s0
+
+        OpenTape ->
+            mainTakes s0
+
+
+{-| A message Main takes before it gets here: the page as it was.
+-}
+mainTakes : State -> ( State, List Model.Msg, Maybe Theme )
+mainTakes state =
+    ( state, [], Nothing )
 
 
 bayKey : BayId -> String
@@ -1212,8 +1224,8 @@ partName m pt =
             Dict.get (Unit.partNumber pt) m.sounds |> Maybe.map .name |> Maybe.withDefault "PART"
 
 
-{-| The unit's own pages it describes: MIXER, for now; and, for a unit on
-USB, its firmware UPDATE.
+{-| The unit's own pages it describes: MIXER, for now; for a unit on USB,
+its firmware UPDATE; and TAPE IMPORT, a WAV onto its card.
 -}
 unitTabs : Model -> State -> List (Page.Tab Msg)
 unitTabs m s =
@@ -1239,6 +1251,7 @@ unitTabs m s =
             else
                 []
            )
+        ++ [ { kicker = "TAPE", name = "IMPORT", current = Elsewhere, go = OpenTape } ]
 
 
 {-| The unit's MIXER as a desk (`Layout.Mixer`, from its `describe MIXER`):

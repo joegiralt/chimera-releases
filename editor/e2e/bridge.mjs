@@ -124,6 +124,8 @@ export async function startBridge(dist, unit) {
     },
     /** `(line) => lines | null`: lines answer it in the unit's place (none: no answer), null passes it on. */
     intercept: null,
+    /** A `put` under way: the editor's lines are its data, sent on unanswered. */
+    streaming: false,
   };
   let socket = null;
   const extra = { files: new Map(), down: false };
@@ -170,6 +172,25 @@ export async function startBridge(dist, unit) {
         const at = Date.now();
         const seq = flow.sentAt.length;
         flow.sentAt.push(at);
+        // A transfer (`put`): its data lines go straight on, and each line of
+        // the unit's answer (READY, ACK, the OK or ERR) back as it comes.
+        if (flow.streaming) {
+          unit.con.raw(line);
+          continue;
+        }
+        // Only the unit's own `put`: a rule's, or a fake firmware's (`intercept`), is answered as any line.
+        if (/^put /.test(line) && !flow.intercept && !flow.rules.some((r) => r.times > 0 && r.test(line))) {
+          flow.streaming = true;
+          const to = sock;
+          unit.con
+            .stream(line, "editor", (said) => {
+              if (to === socket && !to.destroyed) to.write(frame(0x1, Buffer.from(said, "utf8")));
+            })
+            .then(() => {
+              flow.streaming = false;
+            });
+          continue;
+        }
         const rule = flow.rules.find((r) => r.times > 0 && r.test(line));
         if (rule) {
           rule.times--;

@@ -9,6 +9,9 @@ import Html.Attributes exposing (class)
 import Html.Events exposing (onClick)
 import Json.Decode as Decode
 import Model
+import Tape
+import Tape.Types
+import Tape.View
 import Transport
 import Ui.Tokens as Tokens
 import Update
@@ -23,16 +26,25 @@ import View.EnginePage as EnginePage
 port storeTheme : String -> Cmd msg
 
 
-{-| The unit's state, the hands on the page, and a firmware update while
-one is open: it holds the link, and the editor waits (no polls, no lines)
-until it gives the link back, then starts over.
+{-| The unit's state, the hands on the page, the panel open, and the
+offer on connect.
 -}
 type alias App =
     { unit : Model.Model
     , page : EnginePage.State
-    , updating : Maybe Update.Types.Model
+    , panel : Panel
     , offer : Offer
     }
+
+
+{-| A panel that holds the link while it is open, a firmware update or a
+TAPE import, never both: the editor waits (no polls, no lines) until it
+gives the link back, then starts over.
+-}
+type Panel
+    = NoPanel
+    | UpdatePanel Update.Types.Model
+    | TapePanel Tape.Types.Model
 
 
 {-| The offer on connect: once a unit on USB is followed, its firmware
@@ -50,6 +62,7 @@ type Msg
     = Unit Model.Msg
     | Page EnginePage.Msg
     | Updating Update.Types.Msg
+    | Taping Tape.Types.Msg
     | LatestIs (Maybe String)
     | NotNow
     | UpdateNow
@@ -68,11 +81,14 @@ main =
 
 subscriptions : App -> Sub Msg
 subscriptions app =
-    case app.updating of
-        Just _ ->
+    case app.panel of
+        UpdatePanel _ ->
             Sub.batch [ Sub.map Updating Update.subscriptions, Sub.map Page (EnginePage.subscriptions app.page) ]
 
-        Nothing ->
+        TapePanel _ ->
+            Sub.batch [ Sub.map Taping Tape.subscriptions, Sub.map Page (EnginePage.subscriptions app.page) ]
+
+        NoPanel ->
             Sub.batch [ Sub.map Unit Model.subscriptions, Sub.map Page (EnginePage.subscriptions app.page), Update.latestSub LatestIs Ignore ]
 
 
@@ -80,7 +96,7 @@ subscriptions app =
 -}
 init : Decode.Value -> ( App, Cmd Msg )
 init flags =
-    ( { unit = Model.init, page = EnginePage.init (Tokens.fromPreference (Tokens.preference flags)), updating = Nothing, offer = NotAsked }, Cmd.none )
+    ( { unit = Model.init, page = EnginePage.init (Tokens.fromPreference (Tokens.preference flags)), panel = NoPanel, offer = NotAsked }, Cmd.none )
 
 
 update : Msg -> App -> ( App, Cmd Msg )
@@ -127,28 +143,13 @@ update msg app =
             ( app, Cmd.none )
 
         Page EnginePage.OpenUpdate ->
-            case app.updating of
-                Just _ ->
-                    ( app, Cmd.none )
+            opening app (Tuple.mapFirst UpdatePanel Update.begin)
 
-                Nothing ->
-                    let
-                        ( opened, cmd ) =
-                            Update.begin
-                    in
-                    ( { app | updating = Just opened }, cmd )
+        Page EnginePage.OpenTape ->
+            opening app (Tuple.mapBoth TapePanel (Cmd.map Taping) Tape.begin)
 
         Page EnginePage.OpenStuck ->
-            case app.updating of
-                Just _ ->
-                    ( app, Cmd.none )
-
-                Nothing ->
-                    let
-                        ( opened, cmd ) =
-                            Update.beginStuck
-                    in
-                    ( { app | updating = Just opened }, cmd )
+            opening app (Tuple.mapFirst UpdatePanel Update.beginStuck)
 
         Page m ->
             let
@@ -164,22 +165,66 @@ update msg app =
             )
 
         Updating um ->
-            case app.updating of
-                Nothing ->
+            case app.panel of
+                UpdatePanel updating ->
+                    let
+                        ( next, cmd, link ) =
+                            Update.update um updating
+                    in
+                    closing app (UpdatePanel next) (Cmd.map Updating cmd) link
+
+                TapePanel _ ->
                     ( app, Cmd.none )
 
-                Just updating ->
-                    case Update.update um updating of
-                        ( _, cmd, Just link ) ->
-                            -- The link given back: the editor starts over on it.
-                            let
-                                ( unit, more ) =
-                                    Model.update (Model.LinkChanged (Transport.parseLink link)) app.unit
-                            in
-                            ( { app | updating = Nothing, unit = unit, page = EnginePage.follow unit app.page }, Cmd.batch [ Cmd.map Updating cmd, Cmd.map Unit more ] )
+                NoPanel ->
+                    ( app, Cmd.none )
 
-                        ( next, cmd, Nothing ) ->
-                            ( { app | updating = Just next }, Cmd.map Updating cmd )
+        Taping tm ->
+            case app.panel of
+                TapePanel taping ->
+                    let
+                        ( next, cmd, link ) =
+                            Tape.update tm taping
+                    in
+                    closing app (TapePanel next) (Cmd.map Taping cmd) link
+
+                UpdatePanel _ ->
+                    ( app, Cmd.none )
+
+                NoPanel ->
+                    ( app, Cmd.none )
+
+
+{-| A panel opened, only when none is.
+-}
+opening : App -> ( Panel, Cmd Msg ) -> ( App, Cmd Msg )
+opening app ( panel, cmd ) =
+    case app.panel of
+        NoPanel ->
+            ( { app | panel = panel }, cmd )
+
+        UpdatePanel _ ->
+            ( app, Cmd.none )
+
+        TapePanel _ ->
+            ( app, Cmd.none )
+
+
+{-| The panel after a step; once it gives the link back, closed, and the
+editor starts over on the link.
+-}
+closing : App -> Panel -> Cmd Msg -> Maybe String -> ( App, Cmd Msg )
+closing app panel cmd given =
+    case given of
+        Just link ->
+            let
+                ( unit, more ) =
+                    Model.update (Model.LinkChanged (Transport.parseLink link)) app.unit
+            in
+            ( { app | panel = NoPanel, unit = unit, page = EnginePage.follow unit app.page }, Cmd.batch [ cmd, Cmd.map Unit more ] )
+
+        Nothing ->
+            ( { app | panel = panel }, cmd )
 
 
 {-| The offer asked once a unit on USB is followed and its firmware known.
@@ -205,11 +250,14 @@ asking unit offer =
 
 view : App -> Html Msg
 view app =
-    case ( app.updating, app.offer ) of
-        ( Just updating, _ ) ->
+    case ( app.panel, app.offer ) of
+        ( UpdatePanel updating, _ ) ->
             Update.View.view (EnginePage.PageMsg >> Page) Updating app.page.page updating
 
-        ( Nothing, Offered offered ) ->
+        ( TapePanel taping, _ ) ->
+            Tape.View.view (EnginePage.PageMsg >> Page) Taping app.page.page taping
+
+        ( NoPanel, Offered offered ) ->
             div []
                 [ div [ class "ui offerbar" ]
                     [ p [] [ text ("Chimera " ++ number offered.latest ++ " is available. You're running " ++ number offered.have ++ ". Update now?") ]
@@ -221,7 +269,7 @@ view app =
                 , Html.map Page (EnginePage.view app.unit app.page)
                 ]
 
-        ( Nothing, _ ) ->
+        ( NoPanel, _ ) ->
             Html.map Page (EnginePage.view app.unit app.page)
 
 

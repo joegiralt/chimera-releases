@@ -1,31 +1,34 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 # The browser editor (editor/) and the website (site/). GPLv3: LICENSING.md.
 
-# The firmware kit the editor is built and tested against: screen.wasm and
-# the unit's `ed describe` answers, from the firmware's `just editor-kit`
+# The firmware kit the editor is built and tested against: screen.wasm,
+# tape.wasm and its reference set, and the unit's `ed describe` answers, from
+# the firmware's `just editor-kit`
 kit_dir := "editor/kit/0.4"
 
 # The user manual for this release, per machine: chapters in Markdown, joined
 # by `just manual` into manual.md (and llms.txt) beside them
 manual_dir := "manual/preenfm3/0.4"
 
-# The kit into the places the editor reads it from (both gitignored):
-# public/screen.wasm and tests/fixtures/
+# The kit into the places the editor reads it from (all gitignored):
+# public/screen.wasm, public/tape.wasm, tests/fixtures/ and tests/tape-refs/
 kit:
-    rm -rf editor/tests/fixtures
+    rm -rf editor/tests/fixtures editor/tests/tape-refs
     cp -r {{kit_dir}}/fixtures editor/tests/fixtures
+    cp -r {{kit_dir}}/tape editor/tests/tape-refs
     cp {{kit_dir}}/screen.wasm editor/public/screen.wasm
+    cp {{kit_dir}}/tape.wasm editor/public/tape.wasm
 
 # The editor's Elm tests, elm-review, elm-format, and the JS glue's checks
 # (screen.wasm painted from node, every layout screen included, its spec from
 # editor/screens/LayoutScreens.elm). Elm itself is pinned in editor/package.json.
 editor-test: kit
-    cd editor && npm install --no-audit --no-fund --silent && node tests/gen-fixture.js && npx elm-test --compiler node_modules/.bin/elm && npx elm-review --compiler node_modules/.bin/elm && npx elm-format --validate src tests review/src screens >/dev/null && node public/ports.check.js && node public/theme.check.js && node public/screen.check.js && node public/dfu.check.js && node public/update.check.js
+    cd editor && npm install --no-audit --no-fund --silent && node tests/gen-fixture.js && npx elm-test --compiler node_modules/.bin/elm && npx elm-review --compiler node_modules/.bin/elm && npx elm-format --validate src tests review/src screens >/dev/null && node public/ports.check.js && node public/theme.check.js && node public/screen.check.js && node public/dfu.check.js && node public/update.check.js && node public/tape.check.js
     cd editor/screens && ../node_modules/.bin/elm make LayoutScreens.elm --optimize --output=layout-screens.js >/dev/null && node layout-screens.check.js
 
 # The editor, optimised, into editor/dist/
 editor-build: kit
-    cd editor && npm install --no-audit --no-fund --silent && rm -rf dist && mkdir -p dist/glyphs && npx elm make src/Main.elm --optimize --output=dist/elm.js && cp public/index.html public/ports.js public/dfu.js public/update.js public/theme.js public/style.css public/screen.js public/screen.wasm dist/ && cp public/glyphs/*.png dist/glyphs/ && cp ../site/public/favicon.svg ../site/public/favicon-32.png ../site/public/apple-touch-icon.png dist/
+    cd editor && npm install --no-audit --no-fund --silent && rm -rf dist && mkdir -p dist/glyphs && npx elm make src/Main.elm --optimize --output=dist/elm.js && cp public/index.html public/ports.js public/dfu.js public/update.js public/theme.js public/style.css public/screen.js public/screen.wasm public/tape.js public/tape.wasm dist/ && cp public/glyphs/*.png dist/glyphs/ && cp ../site/public/favicon.svg ../site/public/favicon-32.png ../site/public/apple-touch-icon.png dist/
 
 # The UI component gallery (every component, every state, DAY and NIGHT, and
 # the JITTER probe), into editor/gallery/
