@@ -110,6 +110,27 @@ export class Console {
     });
   }
 
+  /** `line` as a transfer (`put`): each line of its answer handed to
+   * `onLine` as it comes, not held for the last; resolves at the OK or ERR
+   * that ends it. Its data goes by `raw` meanwhile. */
+  stream(line, who, onLine) {
+    if (this.dead) return Promise.resolve({ line, who, lines: [], body: null });
+    const no = this.guard && refusedOnUnit(line);
+    if (no) {
+      onLine(`ERR e2e refuses ${no} on a real unit`);
+      return Promise.resolve({ line, who, lines: [], body: null });
+    }
+    return new Promise((done) => {
+      this.queue.push({ line, who, done, lines: [], body: null, shot: false, onLine });
+      this.next();
+    });
+  }
+
+  /** A transfer's data line(s), straight to the console: no answer is waited for. */
+  raw(text) {
+    if (!this.dead && this.current?.onLine) this.sock.write(text + "\n");
+  }
+
   /** The console gone (its unit restarted): every request waiting is answered with nothing. */
   fail() {
     this.dead = true;
@@ -142,6 +163,7 @@ export class Console {
       const l = this.buf.subarray(0, i).toString("utf8").replace(/\r$/, "");
       this.buf = this.buf.subarray(i + 1);
       c.lines.push(l);
+      c.onLine?.(l);
       if (terminal(l) && !(c.shot && l.startsWith("SHOT "))) {
         this.current = null;
         c.done(c);

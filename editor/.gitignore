@@ -6,7 +6,9 @@
 /tests/FixtureData.elm
 # The firmware kit's, copied by `just kit`
 /tests/fixtures/
+/tests/tape-refs/
 /public/screen.wasm
+/public/tape.wasm
 /screens/elm-stuff
 /screens/layout-screens.js
 /e2e/contract/contract.js

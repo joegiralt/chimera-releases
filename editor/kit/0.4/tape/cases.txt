@@ -1,0 +1,9 @@
+sine16m48 0 24000 --rate|24k
+chord24s44 0 17640 --rate|32k|--name|CHORD STAB
+hat16m22 0 6615 --rate|12k
+trim16s48 12000 33600 --rate|16k|--name|TRIMMED
+low24m96 0 28800 --rate|8k|--root|A3
+right16s48 0 14400 --rate|48k|--channel|R
+drone16s44 0 66150 --rate|24k
+wave16m48 0 24000 --transwave|480|--frames|8
+wide16m48 0 24000 --transwave|480|--frames|4|--top|1024|--name|WIDE

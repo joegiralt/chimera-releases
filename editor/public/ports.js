@@ -321,4 +321,5 @@ if (typeof Elm !== 'undefined' && typeof document !== 'undefined') {
   if (main.ports.storeTheme) main.ports.storeTheme.subscribe(theme.store);
   ChimeraPorts.attach(main);
   if (typeof ChimeraUpdate !== 'undefined') ChimeraUpdate.attach(main, ChimeraPorts);
+  if (typeof ChimeraTape !== 'undefined') ChimeraTape.attach(main, ChimeraPorts);
 }
