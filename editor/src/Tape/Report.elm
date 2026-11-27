@@ -3,6 +3,7 @@
 
 module Tape.Report exposing
     ( Fit(..)
+    , LoadRefusal(..)
     , Problem(..)
     , Refusal
     , Shape(..)
@@ -46,14 +47,24 @@ type Shape
     | Transwave
 
 
-{-| Where a project of NEW plays it from (the firmware's `load_kind`):
-whole in memory, streamed from the card (a plain source too big for
-memory), or not at all (a transwave too big for memory).
+{-| Where a project of NEW plays it from, as the engine's own `load_kind`
+says for a neutral TAPE Sound: whole in memory, streamed from the card, or
+not at all, and why.
 -}
 type Fit
     = Whole
     | Streams
-    | WontLoad
+    | WontLoad LoadRefusal
+
+
+{-| Why a source too big for memory won't load (`project::Refusal`).
+-}
+type LoadRefusal
+    = NeedsRam
+    | WavetableTooBig
+    | ZoneSetTooBig
+    | TooShortToStream
+    | BankClosed
 
 
 {-| A source made: the file (`bytes`, `crc` as `put` names them) and its
@@ -96,6 +107,7 @@ type Problem
     | NoWav
     | BadText
     | Unwritten
+    | WavetableTooLong
     | Trapped
     | UnknownStatus Int
 
@@ -150,6 +162,9 @@ problemOf status =
 
         14 ->
             Unwritten
+
+        15 ->
+            WavetableTooLong
 
         _ ->
             UnknownStatus status
@@ -300,10 +315,32 @@ fit dict =
             Ok Streams
 
         Just "refused" ->
-            Ok WontLoad
+            Result.map WontLoad (loadRefusal dict)
 
         _ ->
             Err "fit: whole, streams or refused"
+
+
+loadRefusal : Dict String String -> Result String LoadRefusal
+loadRefusal dict =
+    case Dict.get "why" dict of
+        Just "needs-ram" ->
+            Ok NeedsRam
+
+        Just "transwave" ->
+            Ok WavetableTooBig
+
+        Just "zoneset" ->
+            Ok ZoneSetTooBig
+
+        Just "too-short" ->
+            Ok TooShortToStream
+
+        Just "closed" ->
+            Ok BankClosed
+
+        _ ->
+            Err "why: a refusal it knows"
 
 
 {-| `convert`'s report.

@@ -158,7 +158,7 @@ sayError error =
             "the file arrived damaged (CRC mismatch)"
 
         Damaged ->
-            "a sealed copy on the card fails its check; remove it on a computer, then send again"
+            "a sealed copy of this audio on the card is damaged, and the unit never writes over a sealed file; change the rate or the length to send it as a new source"
 
         ChunkCrc ->
             "a chunk arrived damaged"

@@ -8,10 +8,10 @@ import Fuzz exposing (Fuzzer)
 import Json.Encode as E
 import Tape.Name as Name
 import Tape.Reply as Reply exposing (PutError(..), Reply(..))
-import Tape.Report as Report exposing (Fit(..), Problem(..), Shape(..))
+import Tape.Report as Report exposing (Fit(..), LoadRefusal(..), Problem(..), Shape(..))
 import Tape.Settings as Settings exposing (Form(..), Rate(..), Top(..))
 import Tape.Step as Step
-import Tape.Types exposing (Dropped(..), Event(..), Failure(..), Hand(..), Js(..), Link(..), Model(..), Msg(..), Outcome(..), Playback(..), Request(..), Stage(..), Work(..))
+import Tape.Types exposing (Console(..), Dropped(..), Event(..), Failure(..), Hand(..), Js(..), Link(..), Model(..), Msg(..), Outcome(..), Playback(..), Request(..), Send(..), Stage(..), Work(..))
 import Tape.View
 import Tape.Wire as Wire
 import Test exposing (Test, describe, fuzz, test)
@@ -40,6 +40,7 @@ sourceReport =
         , "free 158000"
         , "fit streams"
         , "limit 1048576"
+        , "why -"
         , ""
         ]
 
@@ -68,7 +69,7 @@ take =
 
 modelWith : Link -> Work -> Model
 modelWith link work =
-    Model { stage = Holding { take = take, settings = Settings.defaults take, work = work }, link = link, tick = 0 }
+    Model { stage = Holding { take = take, settings = Settings.defaults take, work = work }, link = link, console = Idle, tick = 0 }
 
 
 workOf : Model -> Maybe Work
@@ -196,9 +197,16 @@ suite =
                         |> Report.parseSource
                         |> Result.toMaybe
                         |> Expect.equal Nothing
+            , test "a refusal to load says why" <|
+                \_ ->
+                    String.replace "fit streams" "fit refused" sourceReport
+                        |> String.replace "why -" "why transwave"
+                        |> Report.parseSource
+                        |> Result.map .fit
+                        |> Expect.equal (Ok (WontLoad WavetableTooBig))
             , test "statuses" <|
                 \_ ->
-                    List.map Report.problemOf [ -1, -5, -9, -14, -99 ] |> Expect.equal [ NotWav, NoSound, Report.TooBig, Unwritten, UnknownStatus -99 ]
+                    List.map Report.problemOf [ -1, -5, -9, -14, -15, -99 ] |> Expect.equal [ NotWav, NoSound, Report.TooBig, Unwritten, WavetableTooLong, UnknownStatus -99 ]
             ]
         , describe "tape.js's answers"
             [ test "a WAV refused, a trap, a source, a line, an op it doesn't know" <|
@@ -250,6 +258,11 @@ suite =
                     Settings.args take (Settings.defaults take)
                         |> Result.map (\made -> ( Settings.argsLines made, Settings.argsFrom made, Settings.argsTo made ))
                         |> Expect.equal (Ok ( [ "--rate", "24k", "--name", "SINE" ], 0, 24000 ))
+            , test "a long take: END defaults to what one copy holds at 24 kHz" <|
+                \_ ->
+                    Settings.defaults { take | frames = 44100 * 300, rate = 44100 }
+                        |> .end
+                        |> Expect.equal "28.870"
             , test "a piece of it, a wavetable at 1024" <|
                 \_ ->
                     Settings.args take { rate = K8, start = "0.1", end = "0.25", name = "wave", form = Wavetable { cycle = "480", frames = 8, top = Top1024 } }
@@ -308,7 +321,7 @@ suite =
                     withSource <|
                         \source ->
                             replies [ "READY", "ACK 1000" ] (Tuple.first (sent (modelWith Linked (Made source Silent))))
-                                |> Expect.equal ( modelWith Linked (Sent source (Failed (OutOfTurn "ACK 1000"))) |> withTick 2, [ [ ToJs (SendChunk 0), Await 2 ], [ ToJs (SendLine "abort") ] ] )
+                                |> Expect.equal ( modelWith Linked (Sent source (Failed (OutOfTurn "ACK 1000"))) |> withTick 3 |> draining, [ [ ToJs (SendChunk 0), Await 2 ], [ ToJs Abort, AwaitQuiet 3 ] ] )
             , test "no answer to the newest wait: abort; an older wait's timeout does nothing" <|
                 \_ ->
                     withSource <|
@@ -318,7 +331,41 @@ suite =
                                     replies [ "READY" ] (Tuple.first (sent (modelWith Linked (Made source Silent))))
                             in
                             ( Step.timedOut 1 chunked |> Tuple.second, Step.timedOut 2 chunked )
-                                |> Expect.equal ( [], ( modelWith Linked (Sent source (Failed NoAnswer)) |> withTick 2, [ ToJs (SendLine "abort") ] ) )
+                                |> Expect.equal ( [], ( modelWith Linked (Sent source (Failed NoAnswer)) |> withTick 3 |> draining, [ ToJs Abort, AwaitQuiet 3 ] ) )
+            , test "after an abort, a re-SEND waits for the old put's answer, which is never taken as the new one's" <|
+                \_ ->
+                    withSource <|
+                        \source ->
+                            let
+                                ( aborted, _ ) =
+                                    replies [ "READY" ] (Tuple.first (sent (modelWith Linked (Made source Silent))))
+                                        |> Tuple.first
+                                        |> Step.timedOut 2
+
+                                ( early, earlyAsked ) =
+                                    sent aborted
+
+                                ( answered, _ ) =
+                                    replies [ "ERR put: aborted" ] early
+
+                                ( again, againAsked ) =
+                                    sent answered
+                            in
+                            ( ( earlyAsked, workOf answered ), ( againAsked, workOf again ) )
+                                |> Expect.equal
+                                    ( ( [], Just (Sent source (Failed NoAnswer)) )
+                                    , ( [ ToJs (SendLine "put /CHIMERA/TAPES/8266E80B.SRC 600000 0BADF00D"), Await 4 ], Just (Sending source Asking) )
+                                    )
+            , test "a drain with no answer is over after its wait" <|
+                \_ ->
+                    withSource <|
+                        \source ->
+                            modelWith Linked (Sent source (Failed NoAnswer))
+                                |> withTick 3
+                                |> draining
+                                |> Step.timedOut 3
+                                |> Tuple.first
+                                |> Expect.equal (modelWith Linked (Sent source (Failed NoAnswer)) |> withTick 3)
             , test "the link gone mid-copy" <|
                 \_ ->
                     withSource <|
@@ -353,7 +400,7 @@ suite =
         , describe "making it"
             [ test "a WAV read is made at once with the defaults" <|
                 \_ ->
-                    Step.step (Loaded "sine.wav" (Ok take)) (Model { stage = Reading "sine.wav", link = Linked, tick = 0 })
+                    Step.step (Loaded "sine.wav" (Ok take)) (Model { stage = Reading "sine.wav", link = Linked, console = Idle, tick = 0 })
                         |> Tuple.mapFirst workOf
                         |> Tuple.mapSecond List.length
                         |> Expect.equal ( Just (Making 1), 1 )
@@ -361,7 +408,7 @@ suite =
                 \_ ->
                     withSource <|
                         \source ->
-                            Step.step (Loaded "sine.wav" (Ok take)) (Model { stage = Reading "sine.wav", link = Linked, tick = 0 })
+                            Step.step (Loaded "sine.wav" (Ok take)) (Model { stage = Reading "sine.wav", link = Linked, console = Idle, tick = 0 })
                                 |> Tuple.first
                                 |> Step.hand (SetRate K48)
                                 |> Tuple.first
@@ -373,9 +420,9 @@ suite =
                                 |> Expect.equal (Just (Making 2))
             , test "a WAV refused: said, and another can be chosen" <|
                 \_ ->
-                    Step.step (Loaded "x.wav" (Err { problem = NotWav, detail = "" })) (Model { stage = Reading "x.wav", link = Linked, tick = 0 })
+                    Step.step (Loaded "x.wav" (Err { problem = NotWav, detail = "" })) (Model { stage = Reading "x.wav", link = Linked, console = Idle, tick = 0 })
                         |> Tuple.first
-                        |> Expect.equal (Model { stage = Empty (Unread "x.wav" { problem = NotWav, detail = "" }), link = Linked, tick = 0 })
+                        |> Expect.equal (Model { stage = Empty (Unread "x.wav" { problem = NotWav, detail = "" }), link = Linked, console = Idle, tick = 0 })
             , test "a choice changed: the source is to make again, its preview stopped" <|
                 \_ ->
                     withSource <|
@@ -388,7 +435,7 @@ suite =
                     withSource <|
                         \source ->
                             Step.step (Picked "b.wav") (modelWith Linked (Made source Playing))
-                                |> Expect.equal ( Model { stage = Reading "b.wav", link = Linked, tick = 0 }, [ ToJs StopPlay, ToJs ReadFile ] )
+                                |> Expect.equal ( Model { stage = Reading "b.wav", link = Linked, console = Idle, tick = 0 }, [ ToJs StopPlay, ToJs ReadFile ] )
             ]
         , describe "the page"
             [ test "a source made: its file, where it plays from, and SEND" <|
@@ -410,6 +457,11 @@ suite =
                     List.map Tape.View.kib [ 1024, 18214, 158000 ] |> Expect.equal [ "1.0 KiB", "17.8 KiB", "154.3 KiB" ]
             ]
         ]
+
+
+draining : Model -> Model
+draining (Model fields) =
+    Model { fields | console = Draining }
 
 
 withTick : Int -> Model -> Model

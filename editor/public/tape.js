@@ -11,12 +11,14 @@ var ChimeraTape = (function () {
   var CHUNK_BYTES = 256 * 1024; // PUT_CHUNK_BYTES
   var LINE_BYTES = 48; // a data line: 64 base64 characters
   var BATCH_LINES = 256; // lines a write carries
-  var MAX_WAV_BYTES = 256 * 1024 * 1024; // the converter's MAX_EDITOR_WAV
+  var MAX_WAV_BYTES = 64 * 1024 * 1024; // the converter's MAX_EDITOR_WAV
 
   var crc32 = (typeof ChimeraUpdate !== 'undefined' ? ChimeraUpdate : require('./update.js')).crc32;
 
   var app = null, ports = null;
-  var exportsPromise = null; // tape.wasm's exports, instantiated once (again after a trap)
+  var compiled = null; // tape.wasm compiled, once a page
+  var exportsPromise = null; // its instance's exports: a fresh one for each WAV, dropped on close
+  var attempt = 0; // the copy's chunks are this attempt's: `abort` moves it on, so a chunk being written stops
   var held = null; // the last source made: { file: Uint8Array, preview: Float32Array, rate }
   var audio = null, playing = null; // the AudioContext, and the preview's node while it plays
   var dropping = false;
@@ -66,14 +68,21 @@ var ChimeraTape = (function () {
     return WebAssembly.instantiate(bytes, {}).then(function (made) { return made.instance.exports; });
   }
 
+  /** The module's exports. Its memory only grows (a 64 MiB WAV takes some
+   * hundreds of MB while read), so each WAV gets a new instance, and close
+   * drops it: the old memory goes with it. The compiled module is kept. */
   function wasmExports() {
     if (!exportsPromise) {
-      exportsPromise = fetch('tape.wasm')
-        .then(function (response) {
-          if (!response.ok) throw new Error('tape.wasm: ' + response.status);
-          return response.arrayBuffer();
-        })
-        .then(instantiate);
+      if (!compiled) {
+        compiled = fetch('tape.wasm')
+          .then(function (response) {
+            if (!response.ok) throw new Error('tape.wasm: ' + response.status);
+            return response.arrayBuffer();
+          })
+          .then(function (bytes) { return WebAssembly.compile(bytes); });
+        compiled.catch(function () { compiled = null; });
+      }
+      exportsPromise = compiled.then(function (module) { return WebAssembly.instantiate(module, {}); }).then(function (instance) { return instance.exports; });
       exportsPromise.catch(function () { exportsPromise = null; });
     }
     return exportsPromise;
@@ -109,6 +118,7 @@ var ChimeraTape = (function () {
     pending = null;
     if (!file) return say({ op: 'loaded', file: '', trapped: 'no file' });
     if (file.size > MAX_WAV_BYTES) return say({ op: 'loaded', file: file.name, status: -4, report: 'a ' + file.size + ' B WAV' });
+    exportsPromise = null; // a fresh instance: the last WAV's memory goes
     var bytes;
     try {
       bytes = new Uint8Array(await file.arrayBuffer());
@@ -197,8 +207,11 @@ var ChimeraTape = (function () {
     return lines;
   }
 
-  async function writeLines(lines) {
+  /** `lines` written a batch at a time; stopped between batches once
+   * `abort` has moved `attempt` past `mine`. */
+  async function writeLines(lines, mine) {
     for (var at = 0; at < lines.length; at += BATCH_LINES) {
+      if (mine !== undefined && mine !== attempt) return false;
       if (!(await ports.write(lines.slice(at, at + BATCH_LINES).join('\n')))) {
         say({ op: 'lost' });
         return false;
@@ -209,7 +222,7 @@ var ChimeraTape = (function () {
 
   async function sendChunk(index) {
     if (!held || index * CHUNK_BYTES >= held.file.length) return say({ op: 'chunkless', index: index });
-    await writeLines(chunkLines(held.file, index));
+    await writeLines(chunkLines(held.file, index), attempt);
   }
 
   function onLine(line) { say({ op: 'line', line: line }); }
@@ -237,9 +250,15 @@ var ChimeraTape = (function () {
       case 'stop': return stopPlay();
       case 'line': return writeLines([request.line]);
       case 'chunk': return sendChunk(request.index);
+      case 'abort':
+        attempt++;
+        return writeLines(['abort']);
       case 'end':
         stopPlay();
         dropOn(false);
+        attempt++;
+        held = null;
+        exportsPromise = null;
         return say({ op: 'ended', link: ports.giveBack() });
     }
   }

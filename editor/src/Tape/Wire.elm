@@ -55,6 +55,9 @@ encode request =
         SendChunk index ->
             op "chunk" [ ( "index", E.int index ) ]
 
+        Abort ->
+            op "abort" []
+
         End ->
             op "end" []
 

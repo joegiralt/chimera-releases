@@ -311,13 +311,20 @@ update msg m s0 =
 
         -- Main takes these before they get here.
         OpenUpdate ->
-            ( s, [], Nothing )
+            mainTakes s0
 
         OpenStuck ->
-            ( s, [], Nothing )
+            mainTakes s0
 
         OpenTape ->
-            ( s, [], Nothing )
+            mainTakes s0
+
+
+{-| A message Main takes before it gets here: the page as it was.
+-}
+mainTakes : State -> ( State, List Model.Msg, Maybe Theme )
+mainTakes state =
+    ( state, [], Nothing )
 
 
 bayKey : BayId -> String

@@ -12,10 +12,10 @@ import Html exposing (Html, button, div, input, label, option, p, select, span, 
 import Html.Attributes exposing (attribute, class, disabled, id, maxlength, selected, style, type_, value)
 import Html.Events exposing (onClick, onInput)
 import Tape.Reply as Reply
-import Tape.Report as Report exposing (Fit(..), Problem(..), Refusal, Shape(..), Source, Take)
+import Tape.Report as Report exposing (Fit(..), LoadRefusal(..), Problem(..), Refusal, Shape(..), Source, Take)
 import Tape.Settings as Settings exposing (Form(..), Settings, Top(..))
 import Tape.Step as Step
-import Tape.Types exposing (Dropped(..), Failure(..), Hand(..), Held, Link(..), Model(..), Msg(..), Outcome(..), Playback(..), Send(..), Stage(..), Work(..))
+import Tape.Types exposing (Console(..), Dropped(..), Failure(..), Hand(..), Held, Link(..), Model(..), Msg(..), Outcome(..), Playback(..), Send(..), Stage(..), Work(..))
 import Ui.Chip as Chip
 import Ui.Module as Module
 import Ui.Page as Page
@@ -31,7 +31,7 @@ view pageMsg toMsg page (Model fields) =
             |> Page.modules
                 [ Module.new Chip.Unit "IMPORT"
                     |> Module.full
-                    |> Module.body [ Html.map (Hand >> toMsg) (div [ class "upd tape", id "tape-drop" ] (body fields.link fields.stage)) ]
+                    |> Module.body [ Html.map (Hand >> toMsg) (div [ class "upd tape", id "tape-drop" ] (body fields.link fields.console fields.stage)) ]
                 ]
         )
 
@@ -138,8 +138,8 @@ field key name typed toMsg extra =
         ]
 
 
-body : Link -> Stage -> List (Html Hand)
-body link stage =
+body : Link -> Console -> Stage -> List (Html Hand)
+body link console stage =
     case stage of
         Opening ->
             [ say "Getting ready…" ]
@@ -159,7 +159,7 @@ body link stage =
             [ fact "FILE" file, say "Reading the WAV…" ]
 
         Holding held ->
-            takeFacts held.take :: choices held ++ work link held
+            takeFacts held.take :: choices held ++ work link console held
 
         Closing ->
             [ say "Closing…" ]
@@ -291,8 +291,8 @@ choices held =
                 ++ issue
 
 
-work : Link -> Held -> List (Html Hand)
-work link held =
+work : Link -> Console -> Held -> List (Html Hand)
+work link console held =
     let
         canMake : Bool
         canMake =
@@ -309,16 +309,19 @@ work link held =
 
         unlinked : List (Html Hand)
         unlinked =
-            case link of
-                Linked ->
-                    []
-
-                Unlinked ->
+            case ( link, console ) of
+                ( Unlinked, _ ) ->
                     [ say "Connect a unit to send it: the editor's link is closed." ]
+
+                ( Linked, Draining ) ->
+                    [ say "Waiting for the unit to finish the stopped copy…" ]
+
+                ( Linked, Idle ) ->
+                    []
 
         sendButton : String -> Html Hand
         sendButton caption =
-            btnIf (link == Linked) caption SendIt
+            btnIf (link == Linked && console == Idle) caption SendIt
     in
     case held.work of
         Unmade ->
@@ -440,8 +443,27 @@ memory source =
         Streams ->
             "STREAMS FROM THE CARD: " ++ kib source.cost ++ ", past the " ++ kib source.free ++ " a project of NEW leaves in memory. PLAY, TRON and REEL stream it; KIT, SCRUB, STRETCH and WAVE need it in memory."
 
-        WontLoad ->
-            "TOO BIG FOR MEMORY: " ++ kib source.cost ++ ", past the " ++ kib source.free ++ " a project of NEW leaves, and a wavetable doesn't stream. Fewer frames, or TOP 512, make it smaller."
+        WontLoad why ->
+            "WON'T LOAD: " ++ kib source.cost ++ ", past the " ++ kib source.free ++ " a project of NEW leaves in memory, " ++ loadRefusalText why
+
+
+loadRefusalText : LoadRefusal -> String
+loadRefusalText why =
+    case why of
+        NeedsRam ->
+            "and a neutral TAPE Sound plays it a way that needs it in memory."
+
+        WavetableTooBig ->
+            "and a wavetable doesn't stream. Fewer frames, or TOP 512, make it smaller."
+
+        ZoneSetTooBig ->
+            "and a zone set doesn't stream."
+
+        TooShortToStream ->
+            "and too short past START to stream."
+
+        BankClosed ->
+            "and streaming needs bank 2 open."
 
 
 kib : Int -> String
@@ -505,7 +527,7 @@ problemText refusal =
                     "Its samples aren't audio (NaN, infinite or far past full scale)."
 
                 WavTooBig ->
-                    "Too big: the editor reads WAVs up to 256 MiB."
+                    "Too big: the editor reads WAVs up to 64 MiB (about 6 minutes of 44.1 kHz stereo)."
 
                 NoSound ->
                     "Nothing to hear: it is empty or silent."
@@ -536,6 +558,9 @@ problemText refusal =
 
                 Unwritten ->
                     "The source didn't come out whole."
+
+                WavetableTooLong ->
+                    "A wavetable is cut from a minute of the take at most: a shorter piece (START and END)."
 
                 Trapped ->
                     "The converter stopped on this file: it is damaged, or not a WAV."

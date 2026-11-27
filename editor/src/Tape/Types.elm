@@ -2,7 +2,8 @@
 
 
 module Tape.Types exposing
-    ( Dropped(..)
+    ( Console(..)
+    , Dropped(..)
     , Event(..)
     , Failure(..)
     , Hand(..)
@@ -35,8 +36,19 @@ type Model
     = Model
         { stage : Stage
         , link : Link
+        , console : Console
         , tick : Int
         }
+
+
+{-| The console after a copy: `Idle`, or `Draining` an aborted `put` (the
+unit reads and drops what the host still sends, up to 5 s, then answers
+`ERR put: aborted`). A new SEND waits for that answer, or for the drain's
+time, so it can't be swallowed or take the old `put`'s answer as its own.
+-}
+type Console
+    = Idle
+    | Draining
 
 
 {-| Whether the editor's link to the unit was open when the panel took it:
@@ -147,12 +159,14 @@ type Event
     | Garbled String
 
 
-{-| What is asked: of `tape.js`, or Elm's own `Await`, a reply due within
-its milliseconds, else `TimedOut`.
+{-| What is asked: of `tape.js`, or Elm's own waits, each ending in
+`TimedOut` with its tick: `Await`, a reply due within `replyWaitMs`;
+`AwaitQuiet`, an aborted `put`'s drain, `drainMs`.
 -}
 type Request
     = ToJs Js
     | Await Int
+    | AwaitQuiet Int
 
 
 {-| What `tape.js` is asked to do.
@@ -166,4 +180,6 @@ type Js
     | StopPlay
     | SendLine String
     | SendChunk Int
+      -- The chunk being written stopped, then `abort` sent.
+    | Abort
     | End

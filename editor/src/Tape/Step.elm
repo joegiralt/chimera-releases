@@ -1,26 +1,27 @@
 -- SPDX-License-Identifier: GPL-3.0-or-later
 
 
-module Tape.Step exposing (chunkBytes, chunks, hand, replyWaitMs, step, timedOut)
+module Tape.Step exposing (chunkBytes, chunks, drainMs, hand, replyWaitMs, step, timedOut)
 
-{-| Every transition of TAPE import, pure: an event from `tape.js` (`step`)
-or a hand on the page (`hand`) gives the next model and what to ask of
-`tape.js`.
+{-| Every transition of TAPE import, pure: an event from `tape.js` (`step`),
+a hand on the page (`hand`) or a wait run out (`timedOut`) gives the next
+model and what to ask.
 
 The `put` is ADR 0106's: the request line; on `READY` the 256 KiB chunks
 one at a time, each sent only once the one before it is `ACK`ed with the
 bytes so far; after the last, the unit's `OK` once it has read the file
 back and sealed it. `OK PRESENT` in place of `READY` is the same source
-already on the card. A reply out of turn, or none within
-`replyWaitMs`, sends `abort` (the line that ends a transfer early) and
-stops.
+already on the card. A reply out of turn, or none within `replyWaitMs`,
+aborts: the chunk being written stops, `abort` goes, and the console is
+`Draining` until the old `put`'s own answer comes (or `drainMs` pass), so a
+new SEND never meets it.
 
 -}
 
 import Tape.Reply exposing (Reply(..))
 import Tape.Report exposing (Shape(..), Source, remotePath)
 import Tape.Settings as Settings exposing (Form(..), Settings)
-import Tape.Types exposing (Dropped(..), Event(..), Failure(..), Hand(..), Held, Js(..), Link(..), Model(..), Outcome(..), Playback(..), Request(..), Send(..), Stage(..), Work(..))
+import Tape.Types exposing (Console(..), Dropped(..), Event(..), Failure(..), Hand(..), Held, Js(..), Link(..), Model(..), Outcome(..), Playback(..), Request(..), Send(..), Stage(..), Work(..))
 
 
 {-| `PUT_CHUNK_BYTES`.
@@ -36,6 +37,14 @@ reply is waited for 35 s, as `chimera-usb.py` waits.
 replyWaitMs : Int
 replyWaitMs =
     35000
+
+
+{-| An aborted `put` drains the host for up to 5 s (`DRAIN_MS`) before its
+`ERR`: a second more, and the console is taken as quiet without it.
+-}
+drainMs : Int
+drainMs =
+    6000
 
 
 {-| How many chunks a file of `bytes` goes in.
@@ -55,11 +64,78 @@ holding held =
     with (Holding held)
 
 
-{-| An `Await`: the tick moves on, so only the newest wait can time out.
+{-| The tick moved on: only the newest wait can time out.
 -}
-await : Model -> ( Model, Request )
-await (Model fields) =
-    ( Model { fields | tick = fields.tick + 1 }, Await (fields.tick + 1) )
+ticked : Model -> ( Model, Int )
+ticked (Model fields) =
+    ( Model { fields | tick = fields.tick + 1 }, fields.tick + 1 )
+
+
+{-| The source being sent, and where its `put` is.
+-}
+sendingOf : Work -> Maybe ( Source, Send )
+sendingOf work =
+    case work of
+        Sending source send ->
+            Just ( source, send )
+
+        Unmade ->
+            Nothing
+
+        Making _ ->
+            Nothing
+
+        Made _ _ ->
+            Nothing
+
+        Unmakeable _ ->
+            Nothing
+
+        Sent _ _ ->
+            Nothing
+
+
+sending : Stage -> Bool
+sending stage =
+    case stage of
+        Holding held ->
+            sendingOf held.work /= Nothing
+
+        Opening ->
+            False
+
+        Empty _ ->
+            False
+
+        Reading _ ->
+            False
+
+        Closing ->
+            False
+
+
+{-| A source made and not being sent, and whether its preview plays.
+-}
+madeOf : Work -> Maybe ( Source, Playback )
+madeOf work =
+    case work of
+        Made source playback ->
+            Just ( source, playback )
+
+        Unmade ->
+            Nothing
+
+        Making _ ->
+            Nothing
+
+        Unmakeable _ ->
+            Nothing
+
+        Sending _ _ ->
+            Nothing
+
+        Sent _ _ ->
+            Nothing
 
 
 step : Event -> Model -> ( Model, List Request )
@@ -105,102 +181,79 @@ step event ((Model fields) as model) =
             ( model, [] )
 
         ( Converted number result, Holding held ) ->
-            case ( held.work, result ) of
-                ( Making asked, Ok source ) ->
-                    if asked == number then
-                        ( holding { held | work = Made source Silent } model, [] )
-
-                    else
+            case held.work of
+                Making asked ->
+                    if asked /= number then
                         ( model, [] )
 
-                ( Making asked, Err refusal ) ->
-                    if asked == number then
-                        ( holding { held | work = Unmakeable refusal } model, [] )
-
                     else
-                        ( model, [] )
+                        case result of
+                            Ok source ->
+                                ( holding { held | work = Made source Silent } model, [] )
 
-                _ ->
+                            Err refusal ->
+                                ( holding { held | work = Unmakeable refusal } model, [] )
+
+                Unmade ->
+                    ( model, [] )
+
+                Made _ _ ->
+                    ( model, [] )
+
+                Unmakeable _ ->
+                    ( model, [] )
+
+                Sending _ _ ->
+                    ( model, [] )
+
+                Sent _ _ ->
                     ( model, [] )
 
         ( Converted _ _, _ ) ->
             ( model, [] )
 
         ( PlayEnded, Holding held ) ->
-            case held.work of
-                Made source Playing ->
+            case madeOf held.work of
+                Just ( source, Playing ) ->
                     ( holding { held | work = Made source Silent } model, [] )
 
-                _ ->
+                Just ( _, Silent ) ->
+                    ( model, [] )
+
+                Nothing ->
                     ( model, [] )
 
         ( PlayEnded, _ ) ->
             ( model, [] )
 
         ( Line reply, Holding held ) ->
-            case held.work of
-                Sending source send ->
+            case sendingOf held.work of
+                Just ( source, send ) ->
                     sendStep reply source send held model
 
-                Unmade ->
-                    ( model, [] )
+                Nothing ->
+                    ( quieted reply model, [] )
 
-                Making _ ->
-                    ( model, [] )
-
-                Made _ _ ->
-                    ( model, [] )
-
-                Unmakeable _ ->
-                    ( model, [] )
-
-                Sent _ _ ->
-                    ( model, [] )
-
-        ( Line _, _ ) ->
-            ( model, [] )
+        ( Line reply, _ ) ->
+            ( quieted reply model, [] )
 
         ( LinkLost, Holding held ) ->
-            case held.work of
-                Sending source _ ->
-                    ( Model { fields | link = Unlinked, stage = Holding { held | work = Sent source (Failed LinkGone) } }, [] )
+            case sendingOf held.work of
+                Just ( source, _ ) ->
+                    ( Model { fields | link = Unlinked, console = Idle, stage = Holding { held | work = Sent source (Failed LinkGone) } }, [] )
 
-                Unmade ->
-                    ( Model { fields | link = Unlinked }, [] )
-
-                Making _ ->
-                    ( Model { fields | link = Unlinked }, [] )
-
-                Made _ _ ->
-                    ( Model { fields | link = Unlinked }, [] )
-
-                Unmakeable _ ->
-                    ( Model { fields | link = Unlinked }, [] )
-
-                Sent _ _ ->
-                    ( Model { fields | link = Unlinked }, [] )
+                Nothing ->
+                    ( Model { fields | link = Unlinked, console = Idle }, [] )
 
         ( LinkLost, _ ) ->
-            ( Model { fields | link = Unlinked }, [] )
+            ( Model { fields | link = Unlinked, console = Idle }, [] )
 
         ( Garbled what, Holding held ) ->
-            case held.work of
-                Sending source _ ->
-                    ( holding { held | work = Sent source (Failed (OutOfTurn what)) } model, [ ToJs (SendLine "abort") ] )
+            case sendingOf held.work of
+                Just ( source, _ ) ->
+                    abort (OutOfTurn what) source held model
 
-                Unmade ->
-                    ( model, [] )
-
-                Making _ ->
-                    ( model, [] )
-
-                Made _ _ ->
-                    ( model, [] )
-
-                Unmakeable _ ->
-                    ( model, [] )
-
-                Sent _ _ ->
+                Nothing ->
                     ( model, [] )
 
         ( Garbled _, _ ) ->
@@ -210,55 +263,72 @@ step event ((Model fields) as model) =
             ( model, [] )
 
 
-sending : Stage -> Bool
-sending stage =
-    case stage of
-        Holding held ->
-            case held.work of
-                Sending _ _ ->
+{-| A line with no `put` out: the end of an aborted one, if it is its
+answer (an `OK` or an `ERR`), quiets a draining console; any other is
+dropped.
+-}
+quieted : Reply -> Model -> Model
+quieted reply ((Model fields) as model) =
+    let
+        ends : Bool
+        ends =
+            case reply of
+                Refused _ ->
                     True
 
-                Unmade ->
+                Done ->
+                    True
+
+                Present ->
+                    True
+
+                Busy ->
+                    True
+
+                Ready ->
                     False
 
-                Making _ ->
+                Ack _ ->
                     False
 
-                Made _ _ ->
+                Unexpected _ ->
                     False
+    in
+    case ( fields.console, ends ) of
+        ( Draining, True ) ->
+            Model { fields | console = Idle }
 
-                Unmakeable _ ->
-                    False
+        ( Draining, False ) ->
+            model
 
-                Sent _ _ ->
-                    False
+        ( Idle, _ ) ->
+            model
 
-        Opening ->
-            False
 
-        Empty _ ->
-            False
-
-        Reading _ ->
-            False
-
-        Closing ->
-            False
+{-| The copy stopped for `failure`: the chunk being written stopped and
+`abort` sent; the console drains until the old `put`'s answer.
+-}
+abort : Failure -> Source -> Held -> Model -> ( Model, List Request )
+abort failure source held model =
+    let
+        ( Model fields, tick ) =
+            ticked (holding { held | work = Sent source (Failed failure) } model)
+    in
+    ( Model { fields | console = Draining }, [ ToJs Abort, AwaitQuiet tick ] )
 
 
 {-| The choices made into a source, if they are whole; else the work
 waits on them (the page says what is wrong).
 -}
 make : Held -> Model -> ( Model, List Request )
-make held ((Model fields) as model) =
+make held model =
     case Settings.args held.take held.settings of
         Ok made ->
             let
-                number : Int
-                number =
-                    fields.tick + 1
+                ( Model fields, number ) =
+                    ticked model
             in
-            ( Model { fields | tick = number, stage = Holding { held | work = Making number } }, [ ToJs (Convert number made) ] )
+            ( Model { fields | stage = Holding { held | work = Making number } }, [ ToJs (Convert number made) ] )
 
         Err _ ->
             ( holding { held | work = Unmade } model, [] )
@@ -269,58 +339,103 @@ make held ((Model fields) as model) =
 sendStep : Reply -> Source -> Send -> Held -> Model -> ( Model, List Request )
 sendStep reply source send held model =
     let
-        stop : Outcome -> List Request -> ( Model, List Request )
-        stop outcome reqs =
-            ( holding { held | work = Sent source outcome } model, reqs )
+        stop : Outcome -> ( Model, List Request )
+        stop outcome =
+            ( holding { held | work = Sent source outcome } model, [] )
 
-        out : List Request
-        out =
-            [ ToJs (SendLine "abort") ]
+        outOfTurn : ( Model, List Request )
+        outOfTurn =
+            abort (OutOfTurn (replyWord reply)) source held model
 
         next : Send -> List Request -> ( Model, List Request )
         next to reqs =
             let
-                ( waited, wait ) =
-                    await (holding { held | work = Sending source to } model)
+                ( waited, tick ) =
+                    ticked (holding { held | work = Sending source to } model)
             in
-            ( waited, reqs ++ [ wait ] )
+            ( waited, reqs ++ [ Await tick ] )
     in
-    case ( send, reply ) of
-        ( _, Refused error ) ->
-            stop (Failed (UnitRefused error)) []
+    case send of
+        Asking ->
+            case reply of
+                Ready ->
+                    next (Chunk 0) [ ToJs (SendChunk 0) ]
 
-        ( Asking, Ready ) ->
-            next (Chunk 0) [ ToJs (SendChunk 0) ]
+                Present ->
+                    stop AlreadyThere
 
-        ( Asking, Present ) ->
-            stop AlreadyThere []
+                Busy ->
+                    stop (Failed UnitBusy)
 
-        ( Asking, Busy ) ->
-            stop (Failed UnitBusy) []
+                Refused error ->
+                    stop (Failed (UnitRefused error))
 
-        ( Chunk index, Ack bytes ) ->
-            let
-                end : Int
-                end =
-                    min source.bytes ((index + 1) * chunkBytes)
-            in
-            if bytes /= end then
-                stop (Failed (OutOfTurn ("ACK " ++ String.fromInt bytes))) out
+                Ack _ ->
+                    outOfTurn
 
-            else if end == source.bytes then
-                next Sealing []
+                Done ->
+                    outOfTurn
 
-            else
-                next (Chunk (index + 1)) [ ToJs (SendChunk (index + 1)) ]
+                Unexpected _ ->
+                    outOfTurn
 
-        ( Sealing, Done ) ->
-            stop Landed []
+        Chunk index ->
+            case reply of
+                Ack bytes ->
+                    let
+                        end : Int
+                        end =
+                            min source.bytes ((index + 1) * chunkBytes)
+                    in
+                    if bytes /= end then
+                        outOfTurn
 
-        ( _, Unexpected line ) ->
-            stop (Failed (OutOfTurn line)) out
+                    else if end == source.bytes then
+                        next Sealing []
 
-        ( _, other ) ->
-            stop (Failed (OutOfTurn (replyWord other))) out
+                    else
+                        next (Chunk (index + 1)) [ ToJs (SendChunk (index + 1)) ]
+
+                Refused error ->
+                    stop (Failed (UnitRefused error))
+
+                Ready ->
+                    outOfTurn
+
+                Present ->
+                    outOfTurn
+
+                Done ->
+                    outOfTurn
+
+                Busy ->
+                    outOfTurn
+
+                Unexpected _ ->
+                    outOfTurn
+
+        Sealing ->
+            case reply of
+                Done ->
+                    stop Landed
+
+                Refused error ->
+                    stop (Failed (UnitRefused error))
+
+                Ready ->
+                    outOfTurn
+
+                Present ->
+                    outOfTurn
+
+                Ack _ ->
+                    outOfTurn
+
+                Busy ->
+                    outOfTurn
+
+                Unexpected _ ->
+                    outOfTurn
 
 
 replyWord : Reply -> String
@@ -373,145 +488,119 @@ hand msg ((Model fields) as model) =
                 make held model |> stopFirst held
 
         ( Play, Holding held ) ->
-            case held.work of
-                Made source Silent ->
+            case madeOf held.work of
+                Just ( source, Silent ) ->
                     ( holding { held | work = Made source Playing } model, [ ToJs StartPlay ] )
 
-                _ ->
+                Just ( _, Playing ) ->
+                    ( model, [] )
+
+                Nothing ->
                     ( model, [] )
 
         ( Stop, Holding held ) ->
-            case held.work of
-                Made source Playing ->
+            case madeOf held.work of
+                Just ( source, Playing ) ->
                     ( holding { held | work = Made source Silent } model, [ ToJs StopPlay ] )
 
-                _ ->
+                Just ( _, Silent ) ->
+                    ( model, [] )
+
+                Nothing ->
                     ( model, [] )
 
         ( SendIt, Holding held ) ->
-            case ( held.work, fields.link ) of
-                ( Made source playback, Linked ) ->
+            case ( sendable held.work, fields.link, fields.console ) of
+                ( Just ( source, playback ), Linked, Idle ) ->
                     let
-                        ( waited, wait ) =
-                            await (holding { held | work = Sending source Asking } model)
+                        ( waited, tick ) =
+                            ticked (holding { held | work = Sending source Asking } model)
                     in
-                    ( waited, stopping playback ++ [ ToJs (SendLine (putLine source)), wait ] )
-
-                ( Sent source _, Linked ) ->
-                    let
-                        ( waited, wait ) =
-                            await (holding { held | work = Sending source Asking } model)
-                    in
-                    ( waited, [ ToJs (SendLine (putLine source)), wait ] )
+                    ( waited, stopping playback ++ [ ToJs (SendLine (putLine source)), Await tick ] )
 
                 _ ->
                     ( model, [] )
 
         ( _, Holding held ) ->
-            case held.work of
-                Sending _ _ ->
+            case ( sendingOf held.work, setting msg held.settings ) of
+                ( Nothing, Just settings ) ->
+                    ( holding { held | settings = settings, work = Unmade } model, [] )
+                        |> stopFirst held
+
+                _ ->
                     ( model, [] )
-
-                Unmade ->
-                    case setting msg held.settings of
-                        Just settings ->
-                            ( holding { held | settings = settings, work = Unmade } model, [] )
-                                |> stopFirst held
-
-                        Nothing ->
-                            ( model, [] )
-
-                Making _ ->
-                    case setting msg held.settings of
-                        Just settings ->
-                            ( holding { held | settings = settings, work = Unmade } model, [] )
-                                |> stopFirst held
-
-                        Nothing ->
-                            ( model, [] )
-
-                Made _ _ ->
-                    case setting msg held.settings of
-                        Just settings ->
-                            ( holding { held | settings = settings, work = Unmade } model, [] )
-                                |> stopFirst held
-
-                        Nothing ->
-                            ( model, [] )
-
-                Unmakeable _ ->
-                    case setting msg held.settings of
-                        Just settings ->
-                            ( holding { held | settings = settings, work = Unmade } model, [] )
-                                |> stopFirst held
-
-                        Nothing ->
-                            ( model, [] )
-
-                Sent _ _ ->
-                    case setting msg held.settings of
-                        Just settings ->
-                            ( holding { held | settings = settings, work = Unmade } model, [] )
-                                |> stopFirst held
-
-                        Nothing ->
-                            ( model, [] )
 
         _ ->
             ( model, [] )
 
 
-{-| No reply to the newest wait: the copy stops, and the unit is told so.
+{-| What SEND sends: a source made, or one sent before (again).
+-}
+sendable : Work -> Maybe ( Source, Playback )
+sendable work =
+    case work of
+        Made source playback ->
+            Just ( source, playback )
+
+        Sent source _ ->
+            Just ( source, Silent )
+
+        Unmade ->
+            Nothing
+
+        Making _ ->
+            Nothing
+
+        Unmakeable _ ->
+            Nothing
+
+        Sending _ _ ->
+            Nothing
+
+
+{-| A wait run out: if it is the newest, a `put` with no reply aborts, and
+a drain with no answer is taken as over.
 -}
 timedOut : Int -> Model -> ( Model, List Request )
 timedOut tick ((Model fields) as model) =
-    case fields.stage of
-        Holding held ->
-            case held.work of
-                Sending source _ ->
-                    if tick == fields.tick then
-                        ( holding { held | work = Sent source (Failed NoAnswer) } model, [ ToJs (SendLine "abort") ] )
+    if tick /= fields.tick then
+        ( model, [] )
 
-                    else
-                        ( model, [] )
+    else
+        case fields.stage of
+            Holding held ->
+                case sendingOf held.work of
+                    Just ( source, _ ) ->
+                        abort NoAnswer source held model
 
-                Unmade ->
-                    ( model, [] )
+                    Nothing ->
+                        ( Model { fields | console = Idle }, [] )
 
-                Making _ ->
-                    ( model, [] )
+            Opening ->
+                ( Model { fields | console = Idle }, [] )
 
-                Made _ _ ->
-                    ( model, [] )
+            Empty _ ->
+                ( Model { fields | console = Idle }, [] )
 
-                Unmakeable _ ->
-                    ( model, [] )
+            Reading _ ->
+                ( Model { fields | console = Idle }, [] )
 
-                Sent _ _ ->
-                    ( model, [] )
-
-        Opening ->
-            ( model, [] )
-
-        Empty _ ->
-            ( model, [] )
-
-        Reading _ ->
-            ( model, [] )
-
-        Closing ->
-            ( model, [] )
+            Closing ->
+                ( Model { fields | console = Idle }, [] )
 
 
 {-| A change to what's held stops a preview of the old source first.
 -}
 stopFirst : Held -> ( Model, List Request ) -> ( Model, List Request )
 stopFirst held ( model, reqs ) =
-    case held.work of
-        Made _ Playing ->
+    case madeOf held.work of
+        Just ( _, Playing ) ->
             ( model, ToJs StopPlay :: reqs )
 
-        _ ->
+        Just ( _, Silent ) ->
+            ( model, reqs )
+
+        Nothing ->
             ( model, reqs )
 
 

@@ -140,11 +140,17 @@ cycleDefault =
     "2048"
 
 
-{-| The whole take at 24 kHz, a plain source, under the importer's name.
+{-| The take at 24 kHz, a plain source, under the importer's name: all of
+it, or as much from its start as one copy holds at 24 kHz.
 -}
 defaults : Take -> Settings
 defaults take =
-    { rate = K24, start = "0", end = seconds take.frames take.rate, name = take.name, form = Sample }
+    let
+        most : Int
+        most =
+            floor (maxSeconds 1048576 K24 * toFloat take.rate)
+    in
+    { rate = K24, start = "0", end = seconds (min take.frames most) take.rate, name = take.name, form = Sample }
 
 
 {-| Frames at a rate as seconds, to the millisecond.
@@ -159,13 +165,14 @@ seconds frames rate =
     String.fromInt (millis // 1000) ++ "." ++ String.padLeft 3 '0' (String.fromInt (modBy 1000 millis))
 
 
-{-| About the longest plain source `put` takes at `rate`: two frames in
-three bytes, under `limit` less the file's framing (a record head every
-504 bytes, and the head).
+{-| A little under the longest plain source `put` takes at `rate`: two
+frames in three bytes, under `limit` less the file's framing (a record head
+every 504 bytes, the header, head and trailer), with 1 KiB to spare for the
+resampler's rounding.
 -}
 maxSeconds : Int -> Rate -> Float
 maxSeconds limit rate =
-    toFloat (limit - 128) * (504 / 508) * 2 / 3 / toFloat (rateHz rate)
+    toFloat (limit - 1024) * (504 / 508) * 2 / 3 / toFloat (rateHz rate)
 
 
 {-| Seconds as typed, inside the take: a frame number.
